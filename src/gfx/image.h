@@ -1,0 +1,26 @@
+#ifndef GFX_IMAGE_H
+#define GFX_IMAGE_H
+
+#define MAX_IMAGES 64
+
+extern uint32          imagec;
+extern VkImage*        images;
+extern VkImageView*    imageviews;
+extern VkDeviceMemory* imagemems;
+
+extern VkImage        depthimg;
+extern VkImageView    depthview;
+extern VkDeviceMemory depthmem;
+extern VkFormat       depthfmt;
+extern VkImageLayout  depthlayout;
+
+extern VkSampler sampler;
+
+void image_init();
+void image_create(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp);
+VkImageView image_create_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp);
+void image_create_depth_image();
+void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new);
+void image_free();
+
+#endif
