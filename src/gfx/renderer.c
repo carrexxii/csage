@@ -8,6 +8,7 @@
 #include "image.h"
 #include "pipeline.h"
 #include "swapchain.h"
+#include "model.h"
 #include "vertices.h"
 #include "renderer.h"
 
@@ -111,6 +112,7 @@ void renderer_init(SDL_Window* win)
 	pipeln_init(&pipeln, renderpass);
 
 	trivbo = vbo_new(sizeof(triverts), triverts);
+	struct Model mdl = create_model(MODEL_PATH "plane");
 }
 
 void renderer_draw()

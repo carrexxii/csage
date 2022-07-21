@@ -79,14 +79,15 @@ valgrind: BUILD_WITH += valgrind
 valgrind: game
 
 .PHONY: game
-game:
-	@make shared -j12
+game: all
 	@make spir-v -j12
-	@$(BUILD_WITH) luajit $(LUAFLAGS) -e "CSAGE_DIM = $(DIM)  \
-	                        dofile(\"src/csage.lua\")          \
-	                        package.path = package.path ..      \
-	                                       \";$(GAMEDIR)/?.lua\" \
-	                        dofile(\"$(GAMEDIR)/game.lua\")"
+	./$(BIN)
+# 	@make shared -j12
+# 	@$(BUILD_WITH) luajit $(LUAFLAGS) -e "CSAGE_DIM = $(DIM)  \
+# 	                       dofile(\"src/csage.lua\")          \
+# 	                       package.path = package.path ..      \
+# 	                                      \";$(GAMEDIR)/?.lua\" \
+# 	                       dofile(\"$(GAMEDIR)/game.lua\")"
 
 .PHONY: clean
 clean:

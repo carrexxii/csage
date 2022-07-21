@@ -29,6 +29,7 @@
 #define DEBUG_MALLOC_MIN 64
 
 #define SHADER_DIR "shaders/spirv/"
+#define MODEL_PATH "data/models/"
 
 /*  +------------------------------------------+
  *  |           Integral Types Chart           |

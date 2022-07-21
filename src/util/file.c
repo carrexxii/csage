@@ -7,7 +7,7 @@ FILE* file_open(const char* restrict path, const char* restrict mode)
 	if (!file)
 		ERROR("[RES] Failed to open file: \"%s\"", path);
 	else
-		DEBUG(4, "[RES] Opened file \"%s\"", path);
+		DEBUG(3, "[RES] Opened file \"%s\"", path);
 
 	return file;
 }
