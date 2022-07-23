@@ -67,7 +67,7 @@ void image_create(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
 	VkMemoryAllocateInfo alloci = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.allocationSize  = memreq.size,
-		.memoryTypeIndex = find_mem_index(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
+		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
 	if (vkAllocateMemory(gpu, &alloci, alloccb, &imagemems[imagec]) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate memory for image");
@@ -141,7 +141,7 @@ void image_create_depth_image()
 	VkMemoryAllocateInfo alloci = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.allocationSize = memreq.size,
-		.memoryTypeIndex = find_mem_index(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
+		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
 	if (vkAllocateMemory(gpu, &alloci, alloccb, &depthmem) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate memory for depth image");

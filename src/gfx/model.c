@@ -49,7 +49,7 @@ struct Model create_model(char* const path)
 	fclose(file);
 	print_model(mdl);
 
-	mdl.vbo = vbo_new(mdl.vertc*SIZEOF_VERTEX, mdl.verts);
+	mdl.vbo = create_vbo(mdl.vertc*SIZEOF_VERTEX, mdl.verts);
 
 	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles)", path, mdl.vertc/3);
 	return mdl;

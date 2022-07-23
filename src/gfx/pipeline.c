@@ -158,7 +158,7 @@ void pipeln_free(struct Pipeline* pipeln)
 	DEBUG(3, "[VK] Destroying descriptor set...");
 	vkDestroyDescriptorSetLayout(gpu, pipeln->dsetlay, alloccb);
 
-	ubo_free(pipeln->ubo);
+	free_ubo(pipeln->ubo);
 }
 
 /* TODO: Tesselation shaders */
@@ -187,36 +187,35 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 			.pName = "main",
 	};
 
-	if (pipeln->ubosz > 0)
-		pipeln->ubo = ubo_new(pipeln->ubosz);
-	VkDescriptorSetLayoutBinding samplerlay = {
+	if (pipeln->ubosz)
+		pipeln->ubo = create_ubo(pipeln->ubosz);
+	VkDescriptorSetLayoutBinding ubolay = {
 		.binding            = 0,
+		.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT,
+		.descriptorCount    = 1,
+		.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.pImmutableSamplers = NULL,
+	};
+	VkDescriptorSetLayoutBinding samplerlay = {
+		.binding            = 1,
 		.stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.descriptorCount    = 1,
 		.descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLER,
 		.pImmutableSamplers = NULL,
 	};
 	VkDescriptorSetLayoutBinding imagelay = {
-		.binding            = 1,
+		.binding            = 2,
 		.stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.descriptorCount    = 1,
 		.descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 		.pImmutableSamplers = NULL,
 	};
-	VkDescriptorSetLayoutBinding ubolay = {
-		.binding            = 2,
-		.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT,
-		.descriptorCount    = 1,
-		.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		.pImmutableSamplers = NULL,
-	};
 
 	uint dsetbc = 0;
-	VkDescriptorSetLayoutBinding dsetbs[imagec];
+	VkDescriptorSetLayoutBinding dsetbs[3];
+	dsetbs[dsetbc++] = ubolay;
 	dsetbs[dsetbc++] = samplerlay;
 	dsetbs[dsetbc++] = imagelay;
-	if (pipeln->ubosz > 0)
-		dsetbs[dsetbc++] = ubolay;
 	VkDescriptorSetLayoutCreateInfo dsetci = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.bindingCount = dsetbc,
@@ -225,16 +224,16 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 	if (vkCreateDescriptorSetLayout(gpu, &dsetci, alloccb, &pipeln->dsetlay))
 		ERROR("[VK] Failed to create descriptor set layout");
 	else
-		DEBUG(4, "[VK] Created descriptor set layout");
+		DEBUG(3, "[VK] Created descriptor set layout");
 	VkDescriptorPoolCreateInfo dpoolci = {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.poolSizeCount = 2 + (pipeln->ubosz > 0 ? 1 : 0),
+		.poolSizeCount = 3,
 		.pPoolSizes    = (VkDescriptorPoolSize[]){
+			{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			 .descriptorCount = 1, },
 			{.type = VK_DESCRIPTOR_TYPE_SAMPLER,
 			 .descriptorCount = 1, },
 			{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			 .descriptorCount = 1, },
-			{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			 .descriptorCount = 1, },
 		},
 		.maxSets = 1,
@@ -275,31 +274,31 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 		 .dstBinding       = 0,
 		 .dstArrayElement  = 0,
 		 .descriptorCount  = 1,
+		 .descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		 .pBufferInfo      = &dbufi,
+		 .pImageInfo       = NULL,
+		 .pTexelBufferView = NULL, },
+		{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		 .dstSet           = pipeln->dset,
+		 .dstBinding       = 1,
+		 .dstArrayElement  = 0,
+		 .descriptorCount  = 1,
 		 .descriptorType   = VK_DESCRIPTOR_TYPE_SAMPLER,
 		 .pBufferInfo      = NULL,
 		 .pImageInfo       = &dimgis[0],
 		 .pTexelBufferView = NULL, },
 		{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		 .dstSet           = pipeln->dset,
-		 .dstBinding       = 1,
+		 .dstBinding       = 2,
 		 .dstArrayElement  = 0,
 		 .descriptorCount  = imagec,
 		 .descriptorType   = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 		 .pBufferInfo      = NULL,
 		 .pImageInfo       = &dimgis[1],
 		 .pTexelBufferView = NULL, },
-		{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-		 .dstSet           = pipeln->dset,
-		 .dstBinding       = 2,
-		 .dstArrayElement  = 0,
-		 .descriptorCount  = pipeln->ubosz > 0 ? 1 : 0,
-		 .descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		 .pBufferInfo      = &dbufi,
-		 .pImageInfo       = NULL,
-		 .pTexelBufferView = NULL, },
 	};
-	vkUpdateDescriptorSets(gpu, 1 + imagec + (pipeln->ubosz > 0 ? 1 : 0), dwrites, 0, NULL);
-	DEBUG(3, "[VK] Updated %u descriptor sets", 1 + imagec + (pipeln->ubosz > 0 ? 1 : 0));
+	vkUpdateDescriptorSets(gpu, 2 + imagec, dwrites, 0, NULL);
+	DEBUG(3, "[VK] Updated %u descriptor sets", 2 + imagec);
 
 	return stageic;
 }

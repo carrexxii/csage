@@ -12,6 +12,7 @@ struct Pipeline {
 	VkDescriptorSet       dset;
 	VkDescriptorSetLayout dsetlay;
 
+	UBO ubo;
 	/* Caller-defined values */
 	struct {
 		VkVertexInputBindingDescription*   vbinds;
@@ -24,7 +25,6 @@ struct Pipeline {
 	VkShaderModule teshader;
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
-	UBO  ubo;
 	uint ubosz;
 	uint pushsz;
 	VkShaderStageFlags pushstages;

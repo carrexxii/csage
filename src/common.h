@@ -26,6 +26,8 @@
 	#include <io.h>
 #endif
 
+#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #define DEBUG_MALLOC_MIN 64
 
 #define SHADER_DIR "shaders/spirv/"

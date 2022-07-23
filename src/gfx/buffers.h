@@ -14,24 +14,30 @@ typedef struct Buffer SBO;
 
 VkCommandBuffer begin_command_buffer();
 void end_command_buffer(VkCommandBuffer buf, VkFence fence);
-void buffer_new(VkDeviceSize s, VkBufferUsageFlags use,
-	VkMemoryPropertyFlags prop, VkBuffer* buf, VkDeviceMemory* mem);
+void create_buffer(VkDeviceSize sz, VkBufferUsageFlags use, VkMemoryPropertyFlags propfs,
+                   VkBuffer* buf, VkDeviceMemory* mem);
 /* TODO: switch to memory size as last parameter */
-VBO _vbo_new(VkDeviceSize s, void* verts, const char* file, int line, const char* fn);
-IBO _ibo_new(VkDeviceSize s, void* inds, const char* file, int line, const char* fn);
-UBO _ubo_new(VkDeviceSize s, const char* file, int line, const char* fn);
-SBO _sbo_new(VkDeviceSize s, void* mem, const char* file, int line, const char* fn);
-uint find_mem_index(uint type, uint prop);
+VBO _create_vbo(VkDeviceSize s, void* verts, const char* file, int line, const char* fn);
+IBO _create_ibo(VkDeviceSize s, void* inds, const char* file, int line, const char* fn);
+UBO _create_ubo(VkDeviceSize s, const char* file, int line, const char* fn);
+SBO _create_sbo(VkDeviceSize s, void* mem, const char* file, int line, const char* fn);
+uint find_memory_index(uint type, uint prop);
 
-#define vbo_new(s, v) _vbo_new((s), (v), __FILE__, __LINE__, __func__)
-#define ibo_new(s, i) _ibo_new((s), (i), __FILE__, __LINE__, __func__)
-#define ubo_new(s)    _ubo_new((s),      __FILE__, __LINE__, __func__)
-#define sbo_new(s, m) _sbo_new((s), (m), __FILE__, __LINE__, __func__)
+#define create_vbo(s, v) _create_vbo((s), (v), __FILE__, __LINE__, __func__)
+#define create_ibo(s, i) _create_ibo((s), (i), __FILE__, __LINE__, __func__)
+#define create_ubo(s)    _create_ubo((s),      __FILE__, __LINE__, __func__)
+#define create_sbo(s, m) _create_sbo((s), (m), __FILE__, __LINE__, __func__)
 
-void buf_free(struct Buffer buf);
-static inline void vbo_free(VBO buf) { buf_free(buf); }
-static inline void ibo_free(IBO buf) { buf_free(buf); }
-static inline void ubo_free(UBO buf) { buf_free(buf); }
-static inline void sbo_free(SBO buf) { buf_free(buf); }
+void update_buffer(struct Buffer buf, VkDeviceSize sz, void* data);
+static inline void update_vbo(VBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
+static inline void update_ibo(IBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
+static inline void update_ubo(UBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
+static inline void update_sbo(SBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
+
+void free_buffer(struct Buffer buf);
+static inline void free_vbo(VBO buf) { free_buffer(buf); }
+static inline void free_ibo(IBO buf) { free_buffer(buf); }
+static inline void free_ubo(UBO buf) { free_buffer(buf); }
+static inline void free_sbo(SBO buf) { free_buffer(buf); }
 
 #endif

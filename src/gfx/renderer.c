@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <vulkan/vulkan.h>
+#include "cglm/cglm.h"
 
 #include "config.h"
 #include "vulkan.h"
@@ -10,9 +11,11 @@
 #include "swapchain.h"
 #include "model.h"
 #include "vertices.h"
+#include "camera.h"
 #include "renderer.h"
 
 static void record_command(uint imgi);
+inline static void update_vp();
 static void create_framebuffers();
 static void create_command_buffers();
 static void create_sync_objects();
@@ -111,10 +114,14 @@ void renderer_init(SDL_Window* win)
 	pipeln.vbinds  = vertbinds;
 	pipeln.vattrc  = 2;
 	pipeln.vattrs  = vertattrs;
+	pipeln.ubosz   = sizeof(mat4);
 	pipeln_init(&pipeln, renderpass);
 
-	trivbo = vbo_new(sizeof(triverts), triverts);
+	trivbo = create_vbo(sizeof(triverts), triverts);
 	mdl = create_model(MODEL_PATH "plane");
+
+	init_camera();
+	update_vp();
 }
 
 void renderer_draw()
@@ -229,6 +236,13 @@ static void record_command(uint imgi)
 	vkCmdEndRenderPass(cmdbuf);
 	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)
 		ERROR("[VK] Failed to record comand buffer");
+}
+
+inline static void update_vp()
+{
+	mat4 vp;
+	get_cam_vp(vp);
+	update_buffer(pipeln.ubo, sizeof(mat4), vp);
 }
 
 static void create_framebuffers()
