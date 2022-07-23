@@ -31,6 +31,8 @@ static VkFramebuffer*   framebufs;
 static VkCommandBuffer* cmdbufs;
 static struct Pipeline  pipeln;
 
+struct Model mdl;
+
 void renderer_init(SDL_Window* win)
 {
 	vulkan_init(win);
@@ -112,7 +114,7 @@ void renderer_init(SDL_Window* win)
 	pipeln_init(&pipeln, renderpass);
 
 	trivbo = vbo_new(sizeof(triverts), triverts);
-	struct Model mdl = create_model(MODEL_PATH "plane");
+	mdl = create_model(MODEL_PATH "plane");
 }
 
 void renderer_draw()
@@ -220,9 +222,9 @@ static void record_command(uint imgi)
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		                    pipeln.lay, 0, 1, &pipeln.dset, 0, NULL);
-	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &trivbo.buf, (VkDeviceSize[]) { 0 });
-	vkCmdDraw(cmdbuf, trivertc, 1, 0, 0);
+	                        pipeln.lay, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdl.vbo.buf, (VkDeviceSize[]) { 0 });
+	vkCmdDraw(cmdbuf, mdl.vertc, 1, 0, 0);
 
 	vkCmdEndRenderPass(cmdbuf);
 	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)

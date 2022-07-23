@@ -17,7 +17,6 @@ VkImageView* swapchainimgviews;
 struct SwapchainDetails swapdetails;
 
 static void create_command_pool();
-static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf);
 static VkSurfaceFormatKHR choose_surface_format();
 static VkPresentModeKHR choose_present_mode();
 

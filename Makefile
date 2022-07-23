@@ -13,10 +13,10 @@ LIBDIR    = ./lib
 COMPILE_WITH = -DDEBUG_LEVEL=3
 BUILD_WITH   =
 
-WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Winline   \
-           -Wdangling-else -Wstrict-overflow=2 -Wrestrict -Wstrict-aliasing \
-           -Wsuggest-attribute=noreturn -Wno-parentheses -Wno-missing-braces \
-           -Wno-missing-field-initializers -Wno-unused-parameter -Wno-ignored-qualifiers
+WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 \
+           -Wrestrict -Wstrict-aliasing -Wsuggest-attribute=noreturn -Wno-parentheses               \
+           -Wno-missing-braces -Wno-missing-field-initializers -Wno-unused-parameter                \
+           -Wno-ignored-qualifiers
 CFLAGS   = -std=c11 -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb \
            -pipe $(WARNINGS) -I$(SRCDIR) -isystem $(LIBDIR)/include -ftabstop=4      \
            -include $(SRCDIR)/common.h $(COMPILE_WITH)

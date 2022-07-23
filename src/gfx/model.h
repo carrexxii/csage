@@ -3,14 +3,18 @@
 
 #include "buffers.h"
 
+struct Material {
+	float rgb[3];
+}; //static_assert(sizeof(struct Material) == , "struct Material");
+
 struct Model {
-	uint32 vertc;
+	uint16 vertc;
+	uint8  materialc;
 	float* verts;
+	struct Material* materials;
 	VBO vbo;
-	// struct Material material;
 }; //static_assert(sizeof(struct Model) == 8, "struct Model");
 
 struct Model create_model(char* const path);
-void print_model(struct Model mdl, char* name);
 
 #endif

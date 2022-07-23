@@ -5,10 +5,12 @@
 
 #include "buffers.h"
 
+#define SIZEOF_VERTEX sizeof(float[6])
+
 static VkVertexInputBindingDescription vertbinds[] = {
 	/* xyzrgb */
 	{ .binding   = 0,
-	  .stride    = sizeof(float[6]),
+	  .stride    = SIZEOF_VERTEX,
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
 };
 
