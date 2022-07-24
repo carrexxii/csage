@@ -12,6 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <math.h>
 
 #if defined __STDC_NO_ATOMICS__ || defined __STDC_NO_THREADS__
 	#error "Both C11 threads and atomics are required"
@@ -65,12 +66,12 @@ typedef cnd_t  Condition;
 typedef tss_t  ThreadLocal;
 
 #ifndef _WIN32
-#define min(a, b)        ((a) < (b)? (a): (b))
-#define max(a, b)        ((a) > (b)? (a): (b))
+#define MIN(a, b)        ((a) < (b)? (a): (b))
+#define MAX(a, b)        ((a) > (b)? (a): (b))
 #endif
-#define between(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
-#define clamp(a, b, c)   ((a) < (b)? (b): (a) > (c)? (c): (a))
-#define array_len(a)     (sizeof(a)/sizeof(a[0]))
+#define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
+#define CLAMP(a, b, c)   ((a) < (b)? (b): (a) > (c)? (c): (a))
+#define ARRAY_LEN(a)     (sizeof(a)/sizeof(a[0]))
 
 #define STRING_TF(x) ((x)? "true": "false")
 #define STRING_YN(x) ((x)? "yes" : "no"   )

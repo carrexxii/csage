@@ -112,7 +112,7 @@ void renderer_init(SDL_Window* win)
 	pipeln.fshader = vulkan_new_shader(SHADER_DIR "shader.frag");
 	pipeln.vbindc  = 1;
 	pipeln.vbinds  = vertbinds;
-	pipeln.vattrc  = 2;
+	pipeln.vattrc  = ARRAY_LEN(vertattrs);
 	pipeln.vattrs  = vertattrs;
 	pipeln.ubosz   = sizeof(mat4);
 	pipeln_init(&pipeln, renderpass);

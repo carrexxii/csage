@@ -38,11 +38,12 @@ struct Model create_model(char* const path)
 			materials[index].rgb[2] = rgb[2];
 		/* Mesh vertices */
 		} else {
-			if (sscanf(line, "%f %f %f %hhu", vert, vert + 1, vert + 2, &index) >= 4) {
+			if (sscanf(line, "%f %f %f %f %f %f %hhu", vert    , vert + 1, vert + 2,
+			                                           vert + 6, vert + 7, vert + 8, &index) >= 7) {
 				vert[3] = (float)materials[index].rgb[0];
 				vert[4] = (float)materials[index].rgb[1];
 				vert[5] = (float)materials[index].rgb[2];
-				vert += 6;
+				vert += 9;
 			}
 		}
 	}
@@ -61,7 +62,8 @@ static void print_model(struct Model mdl)
 	for (uint i = 0; i < mdl.materialc; i++)
 		DEBUG(1, "\tMaterial %u: [%3.2f, %3.2f, %3.2f]", i, mdl.materials[i].rgb[0],
 		      mdl.materials[i].rgb[1], mdl.materials[i].rgb[2]);
-	for (uint i = 0; i < 6*mdl.vertc; i += 6)
-		DEBUG(1, "\t[%u] %7.3f, %7.3f, %7.3f [%3.2f, %3.2f, %3.2f]", i/6, mdl.verts[i], mdl.verts[i+1],
-		      mdl.verts[i+2], mdl.verts[i+3], mdl.verts[i+4], mdl.verts[i+5]);
+	for (uint i = 0; i < 9*mdl.vertc; i += 9)
+		DEBUG(1, "\t[%3u] %7.3f, %7.3f, %7.3f [%3.2f, %3.2f, %3.2f] [%5.2f %5.2f %5.2f]", i/9,
+		      mdl.verts[i], mdl.verts[i+1], mdl.verts[i+2], mdl.verts[i+3], mdl.verts[i+4],
+		      mdl.verts[i+5], mdl.verts[i+6], mdl.verts[i+7], mdl.verts[i+8]);
 }
