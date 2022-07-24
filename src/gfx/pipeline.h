@@ -12,7 +12,7 @@ struct Pipeline {
 	VkDescriptorSet       dset;
 	VkDescriptorSetLayout dsetlay;
 
-	UBO ubo;
+	UBO* ubos;
 	/* Caller-defined values */
 	struct {
 		VkVertexInputBindingDescription*   vbinds;
@@ -25,10 +25,11 @@ struct Pipeline {
 	VkShaderModule teshader;
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
-	uint ubosz;
-	uint pushsz;
+	uint     uboc;
+	uintptr* uboszs;
+	uintptr  pushsz;
 	VkShaderStageFlags pushstages;
-}; static_assert(sizeof(struct Pipeline) == 136, "struct Pipeline");
+}; static_assert(sizeof(struct Pipeline) == 144, "struct Pipeline");
 
 void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);
 void pipeln_free(struct Pipeline* pipeln);

@@ -34,6 +34,12 @@ static VkFramebuffer*   framebufs;
 static VkCommandBuffer* cmdbufs;
 static struct Pipeline  pipeln;
 
+static struct Lighting {
+	float sundir[3];
+	float ambient;
+	float sunpower;
+} lighting; static_assert(sizeof(struct Lighting) == 20, "struct Lighting");
+
 struct Model mdl;
 
 void renderer_init(SDL_Window* win)
@@ -114,11 +120,17 @@ void renderer_init(SDL_Window* win)
 	pipeln.vbinds  = vertbinds;
 	pipeln.vattrc  = ARRAY_LEN(vertattrs);
 	pipeln.vattrs  = vertattrs;
-	pipeln.ubosz   = sizeof(mat4);
+	pipeln.uboc    = 2;
+	pipeln.uboszs  = (uintptr[]){ sizeof(mat4), sizeof(lighting), };
 	pipeln_init(&pipeln, renderpass);
 
 	trivbo = create_vbo(sizeof(triverts), triverts);
 	mdl = create_model(MODEL_PATH "plane");
+
+	memcpy(lighting.sundir, (float[]){ -2.0, 1.0, 10.0 }, sizeof(float[3]));
+	glm_vec3_normalize(lighting.sundir);
+	lighting.ambient  = 0.03;
+	lighting.sunpower = 10.0;
 
 	init_camera();
 	update_vp();
@@ -242,7 +254,9 @@ inline static void update_vp()
 {
 	mat4 vp;
 	get_cam_vp(vp);
-	update_buffer(pipeln.ubo, sizeof(mat4), vp);
+	update_buffer(pipeln.ubos[0], sizeof(mat4), vp);
+
+	update_buffer(pipeln.ubos[1], sizeof(struct Lighting), &lighting);
 }
 
 static void create_framebuffers()
