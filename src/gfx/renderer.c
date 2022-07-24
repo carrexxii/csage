@@ -127,13 +127,12 @@ void renderer_init(SDL_Window* win)
 	trivbo = create_vbo(sizeof(triverts), triverts);
 	mdl = create_model(MODEL_PATH "plane");
 
-	memcpy(lighting.sundir, (float[]){ -2.0, 1.0, 10.0 }, sizeof(float[3]));
+	memcpy(lighting.sundir, (float[]){ -1.0, 0.5, 10.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
 	lighting.ambient  = 0.03;
-	lighting.sunpower = 10.0;
+	lighting.sunpower = 3.0;
 
 	init_camera();
-	update_vp();
 }
 
 void renderer_draw()
@@ -213,6 +212,7 @@ void renderer_free()
  */
 static void record_command(uint imgi)
 {
+	update_vp();
 	VkCommandBuffer cmdbuf = cmdbufs[frame];
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,

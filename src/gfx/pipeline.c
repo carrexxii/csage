@@ -264,6 +264,11 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 	else
 		DEBUG(3, "[VK] Allocated descriptor sets");
 
+	/* !! Uniform buffers must be aligned as follows:
+	 * - a float an alignement of 4
+     * - a vec2 an alignement of 8
+     * - a vec3, vec4, mat4 an alignement of 16
+	 */
 	VkDescriptorBufferInfo dbufis[pipeln->uboc];
 	for (uint i = 0; i < pipeln->uboc; i++)
 		dbufis[i] = (VkDescriptorBufferInfo){

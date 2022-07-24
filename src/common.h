@@ -65,6 +65,25 @@ typedef mtx_t  Mutex;
 typedef cnd_t  Condition;
 typedef tss_t  ThreadLocal;
 
+enum Direction {
+	DIR_NONE      = 0x00,
+	DIR_UP        = 0x01,
+	DIR_DOWN      = 0x02,
+	DIR_RIGHT     = 0x04,
+	DIR_LEFT      = 0x08,
+	DIR_FORWARDS  = 0x10,
+	DIR_BACKWARDS = 0x20,
+};
+
+union Data {
+	char   str[8];
+	int64  s64;
+	uint64 u64;
+	float  flt;
+	double dbl;
+	void*  ptr;
+}; static_assert(sizeof(union Data) == 8, "union Data");
+
 #ifndef _WIN32
 #define MIN(a, b)        ((a) < (b)? (a): (b))
 #define MAX(a, b)        ((a) > (b)? (a): (b))

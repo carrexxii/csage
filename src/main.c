@@ -7,9 +7,15 @@
 #include "config.h"
 #include "gfx/vulkan.h"
 #include "gfx/renderer.h"
+#include "camera.h"
+#include "input.h"
+
+void init_sdl();
+void init_input();
+noreturn void quit_cb(bool kdown);
 
 SDL_Renderer* renderer;
-SDL_Window* window;
+SDL_Window*   window;
 
 int main(int argc, char** argv)
 {
@@ -21,6 +27,21 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
+	init_sdl();
+	init_input();
+	renderer_init(window);
+	
+	while (1) {
+		if (check_input())
+			break;
+		renderer_draw();
+	}
+
+	return 0;
+}
+
+void init_sdl()
+{
 	SDL_version sdlversion;
 	SDL_GetVersion(&sdlversion);
 	DEBUG(1, "[INFO] SDL version: %u.%u.%u", sdlversion.major, sdlversion.minor, sdlversion.patch);
@@ -36,25 +57,43 @@ int main(int argc, char** argv)
 		ERROR("[INIT] Failed to create window (%s)", SDL_GetError());
 	else
 		DEBUG(1, "[INIT] Created window");
-	renderer_init(window);
-	
-	SDL_Event event;
-	while (1) {
-		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
-				case SDL_QUIT:
-					goto quit;
-			}
-		}
-		renderer_draw();
-	}
+}
 
-quit:
+void init_input()
+{
+	register_key((struct InputCallback){
+		.key       = SDLK_ESCAPE,
+		.fn        = quit_cb,
+		.onkeydown = true,
+	});
+	register_key((struct InputCallback){
+		.key       = SDLK_d,
+		.fn        = move_camera_right_cb,
+		.onkeydown = true,
+	});
+	register_key((struct InputCallback){
+		.key       = SDLK_a,
+		.fn        = move_camera_left_cb,
+		.onkeydown = true,
+	});
+	register_key((struct InputCallback){
+		.key       = SDLK_w,
+		.fn        = move_camera_up_cb,
+		.onkeydown = true,
+	});
+	register_key((struct InputCallback){
+		.key       = SDLK_s,
+		.fn        = move_camera_down_cb,
+		.onkeydown = true,
+	});
+}
+
+noreturn void quit_cb(bool kdown)
+{
 	DEBUG(1, TERM_GREEN "|------------------------------|");
 	DEBUG(1, TERM_GREEN "|\tCleaning up...         |");
 	DEBUG(1, TERM_GREEN "|------------------------------|");
 	renderer_free();
 	SDL_Quit();
-
-	return 0;
+	exit(0);
 }

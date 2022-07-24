@@ -1,0 +1,62 @@
+#include "cglm/cglm.h"
+
+#include "config.h"
+#include "camera.h"
+
+mat4 camprojection = GLM_MAT4_IDENTITY_INIT;
+mat4 camview       = GLM_MAT4_IDENTITY_INIT;
+static float camzoom = 10.0;
+static float camfov  = GLM_PI/2.0;
+static vec3 campos;
+static vec3 camdir;
+static float panspeed = 0.05;
+mat4 camvp;
+
+void init_camera()
+{
+	set_perspective(PERSPECTIVE_ORTHOGONAL);
+}
+
+/* TODO: add conditional update of vp with boolean return */
+void get_cam_vp(mat4 out)
+{
+	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
+	// glm_lookat((float[]){ -1.0, -1.0, -1.0 }, (float[]){ 0.0, 0.0, 0.0 }, (float[]){ 0.0, 0.0, 1.0 }, camview);
+	glm_scale_uni(camview, camzoom);
+	glm_translate(camview, campos);
+	// glm_rotate(camview,  GLM_PI/4.0, (vec3){ 0.0, 0.0, 1.0 });
+	// glm_rotate(camview, -GLM_PI/3.0, (vec3){ 1.0, 0.0, 0.0 });
+	glm_rotate(camview,  GLM_PI/4.0, (vec3){ 0.0, 0.0, 1.0 });
+	glm_rotate(camview,  GLM_PI/3.0, (vec3){ 0.5, -0.5, 0.0 });
+	// glm_rotate(camview,  GLM_PI/2.0, (vec3){ 0.0, 0.0, 1.0 });
+	// glm_rotate(camview,  -GLM_PI/4.0, (vec3){ 0.0, 1.0, 0.0 });
+	// glm_translate_x(camview, 0.1);
+	// exit(0);	
+
+	glm_mat4_mul(camprojection, camview, out);
+	// glm_mat4_mul(camview, camprojection, out);
+	// glm_mat4_transpose(out);
+	glm_mat4_print(camview, stderr);
+}
+
+void move_camera(enum Direction dir)
+{
+	vec3 vel = { 0.0, 0.0, 0.0 };
+	switch (dir) {
+		case DIR_UP   : vel[1] =  panspeed; break;
+		case DIR_DOWN : vel[1] = -panspeed; break;
+		case DIR_RIGHT: vel[0] = -panspeed; break;
+		case DIR_LEFT : vel[0] =  panspeed; break;
+		default: ERROR("[INPUT] Invalid direction");
+	}
+	glm_vec3_add(vel, campos, campos);
+}
+
+void set_perspective(enum Perspective p)
+{
+	if (p == PERSPECTIVE_PERSPECTIVE)
+		glm_perspective(camfov, (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1, 100.0, camprojection);
+	else if (p == PERSPECTIVE_ORTHOGONAL)
+		glm_ortho(-WINDOW_WIDTH/20.0, WINDOW_WIDTH/20.0,
+		          -WINDOW_HEIGHT/20.0, WINDOW_HEIGHT/20.0, 0.1, 100.0, camprojection);
+}
