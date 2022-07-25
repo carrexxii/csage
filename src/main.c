@@ -9,6 +9,7 @@
 #include "gfx/renderer.h"
 #include "camera.h"
 #include "input.h"
+#include "entities/entity.h"
 
 void init_sdl();
 void init_input();
@@ -37,6 +38,10 @@ int main(int argc, char** argv)
 	init_sdl();
 	init_input();
 	renderer_init(window);
+	init_entities();
+
+	Entity e1 = add_entity();
+	add_component(e1, COMPONENT_MODEL, (union Data){ .ptr = MODEL_PATH "plane" });
 	
 	while (1) {
 		if (check_input())

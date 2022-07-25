@@ -1,13 +1,16 @@
 #ifndef ARRAYLIST_H
 #define ARRAYLIST_H
 
-#define ARRAYLIST_ARRAY_SIZE 1*1024
+#define ARRLST_ARRAY_SIZE              1*1024
+#define ARRLST_DATA_START(_lst, _node) ((byte*)((_node)->data + (_lst).itemc*sizeof(uint16)))
+#define ARRLST_START(_lst)             ARRLST_DATA_START((_lst), (_lst).head)
+#define ARRLST_NEXT(_lst, _item)       (_item)++//do { (byte*)(_item) += (_lst)->itemsz } while(0);
 
 /* Nodes are laid out with data as: [indices][data] */
 struct ArrayListNode {
 	struct ArrayListNode* next;
 	uint16 emptyc;
-	byte  data[];
+	byte   data[];
 }; static_assert(sizeof(struct ArrayListNode) == 16, "struct ArrayListNode");
 
 struct ArrayList {

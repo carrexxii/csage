@@ -48,7 +48,6 @@ struct Model create_model(char* const path)
 		}
 	}
 	fclose(file);
-	print_model(mdl);
 
 	mdl.vbo = create_vbo(mdl.vertc*SIZEOF_VERTEX, mdl.verts);
 

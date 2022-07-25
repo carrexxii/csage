@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include "cglm/cglm.h"
 
+#include "util/arraylist.h"
 #include "config.h"
 #include "vulkan.h"
 #include "buffers.h"
@@ -40,7 +41,7 @@ static struct Lighting {
 	float sunpower;
 } lighting; static_assert(sizeof(struct Lighting) == 20, "struct Lighting");
 
-struct Model mdl;
+struct ArrayList* renderermdls;
 
 void renderer_init(SDL_Window* win)
 {
@@ -123,9 +124,6 @@ void renderer_init(SDL_Window* win)
 	pipeln.uboc    = 2;
 	pipeln.uboszs  = (uintptr[]){ sizeof(mat4), sizeof(lighting), };
 	pipeln_init(&pipeln, renderpass);
-
-	trivbo = create_vbo(sizeof(triverts), triverts);
-	mdl = create_model(MODEL_PATH "plane");
 
 	memcpy(lighting.sundir, (float[]){ -1.0, 0.5, 10.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
@@ -241,8 +239,14 @@ static void record_command(uint imgi)
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.lay, 0, 1, &pipeln.dset, 0, NULL);
-	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdl.vbo.buf, (VkDeviceSize[]) { 0 });
-	vkCmdDraw(cmdbuf, mdl.vertc, 1, 0, 0);
+
+	struct Model* mdl = (struct Model*)ARRLST_START(*renderermdls);
+	while (mdl) {
+		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdl->vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmdbuf, mdl->vertc, 1, 0, 0);
+		ARRLST_NEXT(lst, mdl);
+		mdl = NULL;
+	}
 
 	vkCmdEndRenderPass(cmdbuf);
 	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)

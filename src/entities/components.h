@@ -1,0 +1,9 @@
+#ifndef ENTITIES_COMPONENTS_H
+#define ENTITIES_COMPONENTS_H
+
+enum Component {
+	COMPONENT_NONE  = 0x00,
+	COMPONENT_MODEL = 0x01,
+};
+
+#endif

@@ -1,7 +1,5 @@
 #include "arraylist.h"
 
-#define DATA_START(_lst, _node) ((byte*)((_node)->data + (_lst).itemc*sizeof(uint16)))
-
 inline static intptr binary_search_ids(uint16 idc, uint16* ids, uint16 key);
 
 /* TODO: remove unused allocated data
@@ -11,9 +9,9 @@ inline static intptr binary_search_ids(uint16 idc, uint16* ids, uint16 key);
 struct ArrayList create_arrlst(uint16 itemsz)
 {
 	struct ArrayList lst = {
-		.nodesz = sizeof(struct ArrayListNode) + ARRAYLIST_ARRAY_SIZE,
+		.nodesz = sizeof(struct ArrayListNode) + ARRLST_ARRAY_SIZE,
 		.itemsz = itemsz,
-		.itemc  = (uint16)(ARRAYLIST_ARRAY_SIZE/(sizeof(uint16) + itemsz)),
+		.itemc  = (uint16)(ARRLST_ARRAY_SIZE/(sizeof(uint16) + itemsz)),
 	};
 	lst.head = scalloc(lst.nodesz, 1);
 	lst.head->emptyc = lst.itemc;
@@ -44,7 +42,7 @@ void* arrlst_add(struct ArrayList lst, uint16 id, void* newdata)
 			ERROR("[UTIL] Replacing item with duplicate id (%u)", id);
 	}
 
-	byte* data = DATA_START(lst, node) + i*lst.itemsz;
+	byte* data = ARRLST_DATA_START(lst, node) + i*lst.itemsz;
 	ids[i] = id;
 	memcpy(data, newdata, lst.itemsz);
 	node->emptyc--;
@@ -95,7 +93,7 @@ void* arrlst_get(struct ArrayList const lst, uint16 id)
 			else
 				return NULL;
 		} else {
-			return DATA_START(lst, node) + i*lst.itemsz;
+			return ARRLST_DATA_START(lst, node) + i*lst.itemsz;
 		}
 	}
 }
@@ -126,7 +124,7 @@ void* arrlst_delete(struct ArrayList lst, uint16 id)
 			}
 		} else {
 			*(((uint16*)node->data) + i) = 0;
-			return DATA_START(lst, node) + i*lst.itemsz;
+			return ARRLST_DATA_START(lst, node) + i*lst.itemsz;
 		}
 	}
 }

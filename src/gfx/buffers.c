@@ -54,8 +54,6 @@ void create_buffer(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFl
 	};
 	if (vkCreateBuffer(gpu, &bufi, alloccb, buf) != VK_SUCCESS)
 		ERROR("\tFailed to create buffer");
-	else
-		DEBUG(3, "\tCreated buffer");
 
 	VkMemoryRequirements memreq;
 	vkGetBufferMemoryRequirements(gpu, *buf, &memreq);
@@ -64,16 +62,8 @@ void create_buffer(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFl
 		.allocationSize  = memreq.size,
 		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, propfs),
 	};
-	if (vkAllocateMemory(gpu, &alloci, alloccb, mem) != VK_SUCCESS) {
+	if (vkAllocateMemory(gpu, &alloci, alloccb, mem) != VK_SUCCESS)
 		ERROR("\tFailed to allocate memory for buffer");
-	} else {
-#if DEBUG_LEVEL > 0
-		float x = memreq.size / 1024.0 > 1024.0 ? memreq.size / 1024.0 / 1024.0
-		                                        : memreq.size / 1024.0;
-		char* bufsz = memreq.size / 1024.0 > 1024.0 ? "MB" : "kB";
-		DEBUG(3, "\tAllocated %lu B (%.2f %s) for buffer", memreq.size, x, bufsz);
-#endif
-	}
 
 	vkBindBufferMemory(gpu, *buf, *mem, 0);
 }

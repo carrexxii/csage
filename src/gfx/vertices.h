@@ -32,13 +32,4 @@ static VkVertexInputAttributeDescription vertattrs[] = {
 	  .offset   = sizeof(float[6]), },
 };
 
-static VBO trivbo;
-static uint32 trivertc = 3;
-static float triverts[] = {
-/*    x     y    z    r    g    b   */
-	 0.0, -0.5, 0.0, 0.0, 1.0, 0.0,
-	 0.5,  0.5, 0.0, 0.0, 0.0, 1.0,
-	-0.5,  0.5, 0.0, 1.0, 0.0, 0.0,
-};
-
 #endif
