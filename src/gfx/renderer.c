@@ -240,8 +240,7 @@ static void record_command(uint imgi)
 	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	                        pipeln.lay, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.lay, 0, 1, &pipeln.dset, 0, NULL);
 	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdl.vbo.buf, (VkDeviceSize[]) { 0 });
 	vkCmdDraw(cmdbuf, mdl.vertc, 1, 0, 0);
 

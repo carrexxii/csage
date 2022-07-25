@@ -9,7 +9,8 @@ static float camzoom = 10.0;
 static float camfov  = GLM_PI/2.0;
 static vec3 campos;
 static vec3 camdir;
-static float panspeed = 0.05;
+static float panspeed  = 0.15;
+static float zoomspeed = 0.5;
 mat4 camvp;
 
 void init_camera()
@@ -24,19 +25,10 @@ void get_cam_vp(mat4 out)
 	// glm_lookat((float[]){ -1.0, -1.0, -1.0 }, (float[]){ 0.0, 0.0, 0.0 }, (float[]){ 0.0, 0.0, 1.0 }, camview);
 	glm_scale_uni(camview, camzoom);
 	glm_translate(camview, campos);
-	// glm_rotate(camview,  GLM_PI/4.0, (vec3){ 0.0, 0.0, 1.0 });
-	// glm_rotate(camview, -GLM_PI/3.0, (vec3){ 1.0, 0.0, 0.0 });
 	glm_rotate(camview,  GLM_PI/4.0, (vec3){ 0.0, 0.0, 1.0 });
 	glm_rotate(camview,  GLM_PI/3.0, (vec3){ 0.5, -0.5, 0.0 });
-	// glm_rotate(camview,  GLM_PI/2.0, (vec3){ 0.0, 0.0, 1.0 });
-	// glm_rotate(camview,  -GLM_PI/4.0, (vec3){ 0.0, 1.0, 0.0 });
-	// glm_translate_x(camview, 0.1);
-	// exit(0);	
 
 	glm_mat4_mul(camprojection, camview, out);
-	// glm_mat4_mul(camview, camprojection, out);
-	// glm_mat4_transpose(out);
-	glm_mat4_print(camview, stderr);
 }
 
 void move_camera(enum Direction dir)
@@ -47,6 +39,8 @@ void move_camera(enum Direction dir)
 		case DIR_DOWN : vel[1] = -panspeed; break;
 		case DIR_RIGHT: vel[0] = -panspeed; break;
 		case DIR_LEFT : vel[0] =  panspeed; break;
+		case DIR_FORWARDS : camzoom += zoomspeed; return;
+		case DIR_BACKWARDS: camzoom -= zoomspeed; return;
 		default: ERROR("[INPUT] Invalid direction");
 	}
 	glm_vec3_add(vel, campos, campos);
