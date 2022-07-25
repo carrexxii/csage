@@ -75,6 +75,10 @@ void* arrlst_get(struct ArrayList const lst, uint16 id)
 	uint16* ids;
 	byte*   data;
 
+	/* Skip full blocks that the id shouldn't be in */
+	while (node->next && ((uint16*)node->data)[lst.itemc - 1] < id)
+		node = node->next;
+
 	/* Binary search for id in this block */
 	uint l, u, k, i; /* lower, upper, key, index */
 search_block:
@@ -85,13 +89,13 @@ search_block:
 	while (l <= u) {
 		i = (l + u) / 2;
 		k = ids[i];
-		DEBUG(1, "\t-> %u, %u, %u -> %u (%u)", l, u, i, k, id);
+		// DEBUG(1, "\t-> %u, %u, %u -> %u (%u)", l, u, i, k, id);
 		if (k == id)
 			return data + i*lst.itemsz;
 		else if (k > id)
-			l = i + 1;
-		else
 			u = i - 1;
+		else
+			l = i + 1;
 	}
 
 	if (node->next) {
@@ -134,12 +138,29 @@ void test_arraylist()
 	char  string[64] = "Hello, World!";
 
 	struct ArrayList lst;
-	lst = create_arrlst(64); 
-		DEBUG(1, "%u empty items, adding string \"Hello, World!\"...", lst.head->emptyc);
-		arrlst_add(lst, 1, string);
-		DEBUG(1, "%u empty items after adding", lst.head->emptyc);
-		print_arrlst(lst);
-		DEBUG(1, "Item with id 1 is: %s", (char*)arrlst_get(lst, 1));
+	lst = create_arrlst(sizeof(string)); 
+	DEBUG(1, "%u empty items, adding string \"Hello, World!\"...", lst.head->emptyc);
+	arrlst_add(lst, 1, string);
+	DEBUG(1, "%u empty items after adding", lst.head->emptyc);
+	print_arrlst(lst);
+	DEBUG(1, "Item with id 1 is: %s", (char*)arrlst_get(lst, 1));
+
+	srand(number);
+	lst = create_arrlst(sizeof(number));
+	DEBUG(1, "%u empty items, adding 200 random numbers...", lst.head->emptyc);
+	uint k[200];
+	for (uint i = 1; i < 201; i++) {
+		k[i-1] = rand() % 100;
+		arrlst_add(lst, i, k + i - 1);
+	}
+	DEBUG(1, "%u empty items after adding and %u in next block", lst.head->emptyc, lst.head->next->emptyc);
+	print_arrlst(lst);
+	DEBUG(1, "Item with id 1   is: %u (should be: %u)", *(uint*)arrlst_get(lst, 1), k[0]);
+	DEBUG(1, "Item with id 65  is: %u (should be: %u)", *(uint*)arrlst_get(lst, 65), k[64]);
+	DEBUG(1, "Item with id 47  is: %u (should be: %u)", *(uint*)arrlst_get(lst, 47), k[46]);
+	DEBUG(1, "Item with id 132 is: %u (should be: %u)", *(uint*)arrlst_get(lst, 132), k[131]);
+	DEBUG(1, "Item with id 250 is: %p (should be: NULL)", (void*)arrlst_get(lst, 250));
+
 	free_arrlst(lst);
 }
 
