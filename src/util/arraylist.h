@@ -19,7 +19,7 @@ struct ArrayList {
 
 struct ArrayList create_arrlst(uint16 itemsz);
 void* arrlst_add(struct ArrayList lst, uint16 id, void* newdata);
-void  arrlst_delete(struct ArrayList lst, uint16 id);
+void* arrlst_delete(struct ArrayList lst, uint16 id);
 void* arrlst_get(struct ArrayList lst, uint16 id);
 struct ArrayListNode* add_arrlst_node(struct ArrayList lst, struct ArrayListNode* node);
 void print_arrlst(struct ArrayList lst);

@@ -2,6 +2,8 @@
 
 #define DATA_START(_lst, _node) ((byte*)((_node)->data + (_lst).itemc*sizeof(uint16)))
 
+inline static intptr binary_search_ids(uint16 idc, uint16* ids, uint16 key);
+
 /* TODO: remove unused allocated data
          add option to specify amount of data allocated
          remove itemc duplication
@@ -76,34 +78,57 @@ void* arrlst_get(struct ArrayList const lst, uint16 id)
 	byte*   data;
 
 	/* Skip full blocks that the id shouldn't be in */
-	while (node->next && ((uint16*)node->data)[lst.itemc - 1] < id)
-		node = node->next;
-
-	/* Binary search for id in this block */
-	uint l, u, k, i; /* lower, upper, key, index */
-search_block:
-	ids  = (uint16*)node->data;
-	data = DATA_START(lst, node);
-	l = 0;
-	u = lst.itemc - node->emptyc - 1;
-	while (l <= u) {
-		i = (l + u) / 2;
-		k = ids[i];
-		// DEBUG(1, "\t-> %u, %u, %u -> %u (%u)", l, u, i, k, id);
-		if (k == id)
-			return data + i*lst.itemsz;
-		else if (k > id)
-			u = i - 1;
+	uint16 lastitem;
+	while (lastitem = ((uint16*)node->data)[lst.itemc - 1]) {
+		if (node->next && lastitem < id)
+			node = node->next;
 		else
-			l = i + 1;
+			break;
 	}
 
-	if (node->next) {
-		node = node->next;
-		goto search_block;
+	intptr i = -1;
+	while (1) {
+		i = binary_search_ids(lst.itemc - node->emptyc, (uint16*)node->data, id);
+		if (i == -1) {
+			if (node->next)
+				node = node->next;
+			else
+				return NULL;
+		} else {
+			return DATA_START(lst, node) + i*lst.itemsz;
+		}
+	}
+}
+
+/* Remove the item from the ArrayList and return a pointer to its data */
+void* arrlst_delete(struct ArrayList lst, uint16 id)
+{
+	struct ArrayListNode* node = lst.head;
+
+	/* Skip full blocks that the id shouldn't be in */
+	uint16 lastitem;
+	while (lastitem = ((uint16*)node->data)[lst.itemc - 1]) {
+		if (node->next && lastitem < id)
+			node = node->next;
+		else
+			break;
 	}
 
-	return NULL;
+	intptr i = -1;
+	while (1) {
+		i = binary_search_ids(lst.itemc - node->emptyc, (uint16*)node->data, id);
+		if (i == -1) {
+			if (node->next) {
+				node = node->next;
+			} else {
+				ERROR("[UTIL] Could not find item %hu to delete", id);
+				return NULL;
+			}
+		} else {
+			*(((uint16*)node->data) + i) = 0;
+			return DATA_START(lst, node) + i*lst.itemsz;
+		}
+	}
 }
 
 void print_arrlst(struct ArrayList lst)
@@ -126,9 +151,17 @@ print_node:
 
 void free_arrlst(struct ArrayList lst)
 {
+	struct ArrayListNode* node = lst.head;
+	struct ArrayListNode* nextnode;
+	while (node->next) {
+		nextnode = node->next;
+		free(node);
+		node = nextnode;
+	}
+	free(node);
 
+	DEBUG(3, "[UTIL] Freed ArrayList (item count: %hu; item size: %hu)", lst.itemc, lst.itemsz);
 }
-
 
 void test_arraylist()
 {
@@ -144,23 +177,48 @@ void test_arraylist()
 	DEBUG(1, "%u empty items after adding", lst.head->emptyc);
 	print_arrlst(lst);
 	DEBUG(1, "Item with id 1 is: %s", (char*)arrlst_get(lst, 1));
+	free_arrlst(lst);
 
-	srand(number);
 	lst = create_arrlst(sizeof(number));
 	DEBUG(1, "%u empty items, adding 200 random numbers...", lst.head->emptyc);
 	uint k[200];
+	srand(number);
 	for (uint i = 1; i < 201; i++) {
 		k[i-1] = rand() % 100;
 		arrlst_add(lst, i, k + i - 1);
 	}
 	DEBUG(1, "%u empty items after adding and %u in next block", lst.head->emptyc, lst.head->next->emptyc);
 	print_arrlst(lst);
-	DEBUG(1, "Item with id 1   is: %u (should be: %u)", *(uint*)arrlst_get(lst, 1), k[0]);
-	DEBUG(1, "Item with id 65  is: %u (should be: %u)", *(uint*)arrlst_get(lst, 65), k[64]);
-	DEBUG(1, "Item with id 47  is: %u (should be: %u)", *(uint*)arrlst_get(lst, 47), k[46]);
-	DEBUG(1, "Item with id 132 is: %u (should be: %u)", *(uint*)arrlst_get(lst, 132), k[131]);
-	DEBUG(1, "Item with id 250 is: %p (should be: NULL)", (void*)arrlst_get(lst, 250));
+	DEBUG(1, "\tItem with id 1   is: %u (should be: %u)", *(uint*)arrlst_get(lst, 1), k[0]);
+	DEBUG(1, "\tItem with id 65  is: %u (should be: %u)", *(uint*)arrlst_get(lst, 65), k[64]);
+	DEBUG(1, "\tItem with id 47  is: %u (should be: %u)", *(uint*)arrlst_get(lst, 47), k[46]);
+	DEBUG(1, "\tItem with id 132 is: %u (should be: %u)", *(uint*)arrlst_get(lst, 132), k[131]);
+	DEBUG(1, "\tItem with id 250 is: %p (should be: NULL)", (void*)arrlst_get(lst, 250));
 
+	DEBUG(1, "Removing items at: 4, 64, 17 and 121...");
+	DEBUG(1, "\tRemoved %u (should be %u)", *(uint*)arrlst_delete(lst, 4), k[3]);
+	DEBUG(1, "\tRemoved %u (should be %u)", *(uint*)arrlst_delete(lst, 64), k[63]);
+	DEBUG(1, "\tRemoved %u (should be %u)", *(uint*)arrlst_delete(lst, 17), k[16]);
+	DEBUG(1, "\tRemoved %u (should be %u)", *(uint*)arrlst_delete(lst, 121), k[120]);
+	print_arrlst(lst);
 	free_arrlst(lst);
 }
 
+inline static intptr binary_search_ids(uint16 idc, uint16* ids, uint16 key)
+{
+	uint l, u, k, i; /* lower, upper, key, index */
+	l = 0;
+	u = idc - 1;
+	while (l <= u) {
+		i = (l + u) / 2;
+		k = ids[i];
+		if (k == key)
+			return i;
+		else if (k > key)
+			u = i - 1;
+		else
+			l = i + 1;
+	}
+
+	return -1;
+}
