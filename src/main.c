@@ -22,6 +22,13 @@ int main(int argc, char** argv)
 	for (int i = 0; i < argc; i++)
 		printf("%s\n", argv[i]);
 
+#ifdef RUN_TESTS
+	DEBUG(1, TERM_GREEN "---------------------\n--- Running Tests ---\n---------------------" TERM_NORMAL);
+	test_arraylist();
+
+	return 0;
+#endif
+
 	uint32 vkversion;
 	vkEnumerateInstanceVersion(&vkversion);
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),

@@ -13,13 +13,11 @@ LIBDIR    = ./lib
 COMPILE_WITH = -DDEBUG_LEVEL=3
 BUILD_WITH   =
 
-WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 \
-           -Wrestrict -Wstrict-aliasing -Wsuggest-attribute=noreturn -Wno-parentheses               \
-           -Wno-missing-braces -Wno-missing-field-initializers -Wno-unused-parameter                \
-           -Wno-ignored-qualifiers
-CFLAGS   = -std=c11 -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb \
-           -pipe $(WARNINGS) -I$(SRCDIR) -isystem $(LIBDIR)/include -ftabstop=4      \
-           -include $(SRCDIR)/common.h $(COMPILE_WITH)
+WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict \
+           -Wstrict-aliasing -Wsuggest-attribute=noreturn -Wno-parentheses -Wno-missing-braces                 \
+           -Wno-missing-field-initializers -Wno-unused-parameter -Wno-ignored-qualifiers
+CFLAGS   = -std=c11 -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pipe $(WARNINGS) -I$(SRCDIR) \
+           -isystem $(LIBDIR)/include -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH)
 LUAFLAGS = -O0
 
 LFLAGS   = -Wall -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan
@@ -88,6 +86,11 @@ game: all
 # 	                       package.path = package.path ..      \
 # 	                                      \";$(GAMEDIR)/?.lua\" \
 # 	                       dofile(\"$(GAMEDIR)/game.lua\")"
+
+.PHONY: test
+test: COMPILE_WITH += -D RUN_TESTS
+test: game
+	@echo "Tests complete"
 
 .PHONY: clean
 clean:

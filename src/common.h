@@ -111,6 +111,7 @@ union Data {
 #define DEBUG_COLOUR(str) (fprintf(stderr,                                     \
 	                               !strncmp((str), "[INIT]", 6)? TERM_BLUE   : \
 	                               !strncmp((str), "[RES]" , 5)? TERM_GREEN  : \
+	                               !strncmp((str), "[UTIL]", 6)? TERM_GREEN  : \
 	                               !strncmp((str), "[INFO]", 6)? TERM_YELLOW : \
 	                               !strncmp((str), "[ENT]" , 5)? TERM_BLUE   : \
 	                               !strncmp((str), "[THR]" , 5)? TERM_YELLOW : \

@@ -1,67 +1,59 @@
 #include "arraylist.h"
 
-#define ID(_d)       ((uint16*)(_d))
-#define DATA(_d)     ((_d) + sizeof(uint16))
-#define NEXT(_l, _d) do { (_d) += (_l).itemsz + sizeof(uint16); } while(0)
+#define DATA_START(_lst, _node) ((byte*)((_node)->data + (_lst).itemc*sizeof(uint16)))
 
 /* TODO: remove unused allocated data
          add option to specify amount of data allocated
          remove itemc duplication
 */
-struct ArrayList arrlst_create(uint16 itemsz)
+struct ArrayList create_arrlst(uint16 itemsz)
 {
 	struct ArrayList lst = {
 		.nodesz = sizeof(struct ArrayListNode) + ARRAYLIST_ARRAY_SIZE,
 		.itemsz = itemsz,
 		.itemc  = (uint16)(ARRAYLIST_ARRAY_SIZE/(sizeof(uint16) + itemsz)),
 	};
-	lst.head = calloc(lst.nodesz, 1);
+	lst.head = scalloc(lst.nodesz, 1);
 	lst.head->emptyc = lst.itemc;
-    if (ARRAYLIST_ARRAY_SIZE/(sizeof(uint16) + itemsz >= UINT16_MAX))
-		ERROR("[UTIL] Arraylist should not have more than 2^15 elements, has %lu",
-		      ARRAYLIST_ARRAY_SIZE/(sizeof(uint16) + itemsz));
-    
-    return lst;
+
+	DEBUG(3, "[UTIL] Created ArrayList with item size %hu (%hu items per block)", lst.itemsz, lst.itemc);	
+	return lst;
 }
 
-/* TODO: add error for adding with id 0 */
-void* arrlst_add(struct ArrayList lst, uint32 id, void* newdata)
+/* TODO:
+ * - add error for adding with id 0
+ */
+void* arrlst_add(struct ArrayList lst, uint16 id, void* newdata)
 {
 	struct ArrayListNode* node = lst.head;
 	while (node->emptyc == 0) {
-next_node: /* this is in case the node found can't be used while keeping items in order */
 		if (node->next)
 			node = node->next;
 		else
-			node = arrlst_add_node(lst, node);
+			node = add_arrlst_node(lst, node);
 	}
-	
-	/* check to see if we can insert in this node whilst keeping it ordered */
-	uint32 itemid;
-	uint8* data = node->data;
-	bool foundspot = false;
-	for (uint i = 0; i < lst.itemc; i++) {
-		itemid = *ID(data);
-		if (itemid == id) {
-			ERROR("[UTIL] Attempt to add item with duplicate id (%u)", id);
-		} else if (!itemid) {
-			foundspot = true;
-			break;
-		}
-		NEXT(lst, data);
-	}
-	/* Couldn't insert in order here */
-	if (!foundspot)
-		goto next_node;
 
-	*(ID(data)) = id;
-	memcpy(DATA(data), newdata, lst.itemsz);
+	uint16* ids = (uint16*)node->data;
+	uint i;
+	for (i = 0; i < lst.itemc; i++) {
+		if (!ids[i])
+			break;
+		else if (id == ids[i])
+			ERROR("[UTIL] Replacing item with duplicate id (%u)", id);
+	}
+
+	byte* data = DATA_START(lst, node) + i*lst.itemsz;
+	ids[i] = id;
+	memcpy(data, newdata, lst.itemsz);
 	node->emptyc--;
 	
-	return DATA(data);
+	return data;
 }
 
-struct ArrayListNode* arrlst_add_node(struct ArrayList lst, struct ArrayListNode* node)
+/* Add a node to the ArrayList. If `node` is not NULL, then the new node will be added there. Otherwise, it will be at
+ * the end of the list
+ */
+struct ArrayListNode* add_arrlst_node(struct ArrayList lst, struct ArrayListNode* node)
 {
 	/* If no node was provided, find the last one */
 	if (!node) {
@@ -76,42 +68,78 @@ struct ArrayListNode* arrlst_add_node(struct ArrayList lst, struct ArrayListNode
 	return node->next;
 }
 
-void arrlst_print(struct ArrayList lst)
+/* Returns a pointer to the data with index `id` */
+void* arrlst_get(struct ArrayList const lst, uint16 id)
 {
-    uint nodec = 0;
-	uint8* data;
 	struct ArrayListNode* node = lst.head;
-print_node:
-	data = node->data;
-	printf("[%u] ", nodec++);
-	for (uint i = 0; i < lst.itemc; i++) {
-		printf("%hu ", *ID(data));
-		NEXT(lst, data);
+	uint16* ids;
+	byte*   data;
+
+	/* Binary search for id in this block */
+	uint l, u, k, i; /* lower, upper, key, index */
+search_block:
+	ids  = (uint16*)node->data;
+	data = DATA_START(lst, node);
+	l = 0;
+	u = lst.itemc - node->emptyc - 1;
+	while (l <= u) {
+		i = (l + u) / 2;
+		k = ids[i];
+		DEBUG(1, "\t-> %u, %u, %u -> %u (%u)", l, u, i, k, id);
+		if (k == id)
+			return data + i*lst.itemsz;
+		else if (k > id)
+			l = i + 1;
+		else
+			u = i - 1;
 	}
+
 	if (node->next) {
 		node = node->next;
-		printf("\n");
-		goto print_node;
+		goto search_block;
 	}
+
+	return NULL;
 }
 
-void arrlst_print_data(struct ArrayList lst, const char* fmt)
+void print_arrlst(struct ArrayList lst)
 {
-    uint nodec = 0;
-	uint8* data;
+	uint16* ids;
+	uint nodec = 0;
 	struct ArrayListNode* node = lst.head;
 print_node:
-	data = node->data;
-	printf("Array %u\n", nodec++);
-	for (uint i = 0; i < lst.itemc; i++) {
-		printf("\t[%hu] ", *ID(data));
-		printf(fmt, *DATA(data));
-		printf("\n");
-		NEXT(lst, data);
-	}
+	ids = (uint16*)node->data;
+	fprintf(stderr, "[%u] ", nodec++);
+	for (uint i = 0; i < lst.itemc; i++)
+		fprintf(stderr, "%hu ", ids[i]);
 	if (node->next) {
 		node = node->next;
+		fprintf(stderr, "\n");
 		goto print_node;
 	}
+	fprintf(stderr, "\n");
+}
+
+void free_arrlst(struct ArrayList lst)
+{
+
+}
+
+
+void test_arraylist()
+{
+	DEBUG(1, TERM_MAGENTA "---> Testing ArrayList");
+	float array[16];
+	int   number = 777;
+	char  string[64] = "Hello, World!";
+
+	struct ArrayList lst;
+	lst = create_arrlst(64); 
+		DEBUG(1, "%u empty items, adding string \"Hello, World!\"...", lst.head->emptyc);
+		arrlst_add(lst, 1, string);
+		DEBUG(1, "%u empty items after adding", lst.head->emptyc);
+		print_arrlst(lst);
+		DEBUG(1, "Item with id 1 is: %s", (char*)arrlst_get(lst, 1));
+	free_arrlst(lst);
 }
 
