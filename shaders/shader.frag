@@ -6,7 +6,7 @@ layout(location = 2) in vec3 Fnormal;
 
 layout(location = 0) out vec4 screen_colour;
 
-layout(binding = 1) uniform UniformBufferObject {
+layout(binding = 2) uniform UniformBufferObject {
     vec3  sundir;
     float ambient;
     float sunpower;
@@ -15,6 +15,6 @@ layout(binding = 1) uniform UniformBufferObject {
 void main()
 {
     vec3 diffuse  = vec3(max(dot(Fnormal, lighting.sundir), 0.0) * lighting.sunpower);
-    screen_colour = vec4(vec3(0.5, 0.0, 0.0) * (lighting.ambient + diffuse), 1.0);
+    screen_colour = vec4(Frgb * (lighting.ambient + diffuse), 1.0);
     // screen_colour = vec4(abs(Fnormal) * (lighting.ambient + diffuse), 1.0);
 }

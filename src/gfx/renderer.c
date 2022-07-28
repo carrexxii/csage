@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.h>
 #include "cglm/cglm.h"
 
-#include "util/arraylist.h"
+#include "util/iarray.h"
 #include "config.h"
 #include "vulkan.h"
 #include "buffers.h"
@@ -10,13 +10,13 @@
 #include "image.h"
 #include "pipeline.h"
 #include "swapchain.h"
-#include "model.h"
+#include "entities/model.h"
 #include "vertices.h"
 #include "camera.h"
 #include "renderer.h"
 
 static void record_command(uint imgi);
-inline static void update_vp();
+inline static void update_buffers();
 static void create_framebuffers();
 static void create_command_buffers();
 static void create_sync_objects();
@@ -41,9 +41,10 @@ static struct Lighting {
 	float sunpower;
 } lighting; static_assert(sizeof(struct Lighting) == 20, "struct Lighting");
 
-struct ArrayList* renderermdls;
+static struct IArray* models;
+static SBO mdlsbuf;
 
-void renderer_init(SDL_Window* win)
+void renderer_init(SDL_Window* win, struct IArray* mdls)
 {
 	vulkan_init(win);
 	swapchain_init(surface, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -115,6 +116,10 @@ void renderer_init(SDL_Window* win)
 	create_command_buffers();
 	create_sync_objects();
 
+	mdlsbuf = create_sbo(sizeof(mat4)*RENDERER_MAX_OBJECTS);
+	float* asd = scalloc(RENDERER_MAX_OBJECTS, sizeof(float[16]));
+	update_buffer(mdlsbuf, RENDERER_MAX_OBJECTS*sizeof(float[16]), asd);
+
 	pipeln.vshader = vulkan_new_shader(SHADER_DIR "shader.vert");
 	pipeln.fshader = vulkan_new_shader(SHADER_DIR "shader.frag");
 	pipeln.vbindc  = 1;
@@ -122,7 +127,9 @@ void renderer_init(SDL_Window* win)
 	pipeln.vattrc  = ARRAY_LEN(vertattrs);
 	pipeln.vattrs  = vertattrs;
 	pipeln.uboc    = 2;
-	pipeln.uboszs  = (uintptr[]){ sizeof(mat4), sizeof(lighting), };
+	pipeln.uboszs  = (uintptr[]){ sizeof(mat4), sizeof(lighting) };
+	pipeln.sbo     = mdlsbuf;
+	pipeln.sbosz   = RENDERER_MAX_OBJECTS;
 	pipeln_init(&pipeln, renderpass);
 
 	memcpy(lighting.sundir, (float[]){ -1.0, 0.5, 10.0 }, sizeof(float[3]));
@@ -131,6 +138,7 @@ void renderer_init(SDL_Window* win)
 	lighting.sunpower = 3.0;
 
 	init_camera();
+	models = mdls;
 }
 
 void renderer_draw()
@@ -210,7 +218,7 @@ void renderer_free()
  */
 static void record_command(uint imgi)
 {
-	update_vp();
+	update_buffers();
 	VkCommandBuffer cmdbuf = cmdbufs[frame];
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -238,14 +246,13 @@ static void record_command(uint imgi)
 	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.lay, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 
-	struct Model* mdl = (struct Model*)ARRLST_START(*renderermdls);
-	while (mdl) {
+	struct Model* mdl;
+	for (uint i = 0; i < models->itemc; i++) {
+		mdl = (struct Model*)(models->data + i);
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdl->vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, mdl->vertc, 1, 0, 0);
-		ARRLST_NEXT(lst, mdl);
-		mdl = NULL;
 	}
 
 	vkCmdEndRenderPass(cmdbuf);
@@ -253,12 +260,23 @@ static void record_command(uint imgi)
 		ERROR("[VK] Failed to record comand buffer");
 }
 
-inline static void update_vp()
+inline static void update_buffers()
 {
+	// struct Model* mdls = (struct Model*)ARRLST_START(renderermdls);
+	// void* mem;
+	// vkMapMemory(gpu, pipeln.sbo.mem, 0, pipeln.sbosz, 0, &mem);
+	// for (uint i = 0; mdls; i++) {
+	// 	memcpy((byte*)mem + i*renderermdls.nodesz, mdls, renderermdls.nodesz);
+	// 	ARRLST_NEXT_NODE(mdls);
+	// 	// memcpy((byte*)mem + i*sizeof(mat4), mdl->mat, sizeof(mdl->mat));
+	// 	// D;
+	// 	// ARRLST_NEXT(renderermdls, mdl);
+	// }
+	// vkUnmapMemory(gpu, pipeln.sbo.mem);
+
 	mat4 vp;
 	get_cam_vp(vp);
 	update_buffer(pipeln.ubos[0], sizeof(mat4), vp);
-
 	update_buffer(pipeln.ubos[1], sizeof(struct Lighting), &lighting);
 }
 

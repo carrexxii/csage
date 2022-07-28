@@ -1,6 +1,6 @@
 #include "util/file.h"
-#include "buffers.h"
-#include "vertices.h"
+#include "gfx/buffers.h"
+#include "gfx/vertices.h"
 #include "model.h"
 
 #define LINE_BUFFER_SIZE 256
@@ -48,6 +48,7 @@ struct Model create_model(char* const path)
 		}
 	}
 	fclose(file);
+	// print_model(mdl);
 
 	mdl.vbo = create_vbo(mdl.vertc*SIZEOF_VERTEX, mdl.verts);
 

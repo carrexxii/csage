@@ -1,21 +1,16 @@
-#include "util/arraylist.h"
-#include "gfx/model.h"
-#include "gfx/renderer.h" /* To set the renderer's `renderermdls` pointer */
+#include "util/iarray.h"
+#include "model.h"
 #include "components.h"
 #include "entity.h"
 
 uint64 entityc;
 uint64 entities[MAX_ENTITIES];
-
-static struct EntityComponents {
-	struct ArrayList models;
-} components;
+struct EntityComponents components;
 
 void init_entities()
 {
-	components.models = create_arrlst(sizeof(struct Model));
-
-	renderermdls = &components.models;
+	components.mdls   = create_iarr(sizeof(struct Model), 0);
+	components.lights = create_iarr(sizeof(struct Light), 0);
 
 	DEBUG(1, "[ENT] Initialized entities");
 }
@@ -27,17 +22,14 @@ Entity add_entity()
 	return *e = entityc++ + 1;
 }
 
-void add_component(Entity e, enum Component c, union Data data)
+void add_component(Entity e, enum Component c, void* data)
 {
-	struct Model mdl;
 	switch (c) {
 		case COMPONENT_NONE:
 			ERROR("[ENT] Trying to add COMPONENT_NONE");
 			break;
-		case COMPONENT_MODEL:
-			mdl = create_model((char*)data.ptr);
-			arrlst_add(components.models, e, &mdl);
-			break;
+		case COMPONENT_MODEL: iarr_append(&components.mdls  , e, (struct Model*)data); break;
+		case COMPONENT_LIGHT: iarr_append(&components.lights, e, (struct Light*)data); break;
 		default:
 			ERROR("[ENT] Unhandled component: %u", c);
 	}

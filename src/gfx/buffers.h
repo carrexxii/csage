@@ -20,13 +20,13 @@ void create_buffer(VkDeviceSize sz, VkBufferUsageFlags use, VkMemoryPropertyFlag
 VBO _create_vbo(VkDeviceSize s, void* verts, const char* file, int line, const char* fn);
 IBO _create_ibo(VkDeviceSize s, void* inds, const char* file, int line, const char* fn);
 UBO _create_ubo(VkDeviceSize s, const char* file, int line, const char* fn);
-SBO _create_sbo(VkDeviceSize s, void* mem, const char* file, int line, const char* fn);
+SBO _create_sbo(VkDeviceSize s, const char* file, int line, const char* fn);
 uint find_memory_index(uint type, uint prop);
 
 #define create_vbo(s, v) _create_vbo((s), (v), __FILE__, __LINE__, __func__)
 #define create_ibo(s, i) _create_ibo((s), (i), __FILE__, __LINE__, __func__)
 #define create_ubo(s)    _create_ubo((s),      __FILE__, __LINE__, __func__)
-#define create_sbo(s, m) _create_sbo((s), (m), __FILE__, __LINE__, __func__)
+#define create_sbo(s)    _create_sbo((s),      __FILE__, __LINE__, __func__)
 
 void update_buffer(struct Buffer buf, VkDeviceSize sz, void* data);
 static inline void update_vbo(VBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }

@@ -8,7 +8,7 @@ layout(location = 0) out vec3 Fxyz;
 layout(location = 1) out vec3 Frgb;
 layout(location = 2) out vec3 Fnormal;
 
-layout(binding = 0) uniform UniformBufferObject {
+layout(binding = 1) uniform UniformBufferObject {
     mat4 vp;
 } cam;
 

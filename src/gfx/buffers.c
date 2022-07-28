@@ -40,8 +40,8 @@ void end_command_buffer(VkCommandBuffer buf, VkFence fence)
 	vkFreeCommandBuffers(gpu, cmdpool, 1, &buf);
 }
 
-void create_buffer(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags propfs,
-                   VkBuffer* buf, VkDeviceMemory* mem)
+void create_buffer(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags propfs, VkBuffer* buf,
+                   VkDeviceMemory* mem)
 {
 	VkBufferCreateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -75,11 +75,7 @@ VBO _create_vbo(VkDeviceSize sz, void* verts, char const* file, int line, char c
 	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
 	                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
-
-	void* data;
-	vkMapMemory(gpu, tmpbuf.mem, 0, sz, 0, &data);
-	memcpy(data, verts, sz);
-	vkUnmapMemory(gpu, tmpbuf.mem);
+	update_buffer(tmpbuf, sz, verts);
 
 	VBO buf;
 	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -97,11 +93,7 @@ IBO _create_ibo(VkDeviceSize sz, void* inds, char const* file, int line, char co
 	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
-
-	void* data;
-	vkMapMemory(gpu, tmpbuf.mem, 0, sz, 0, &data);
-	memcpy(data, inds, sz);
-	vkUnmapMemory(gpu, tmpbuf.mem);
+	update_buffer(tmpbuf, sz, inds);
 
 	IBO buf;
 	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -123,24 +115,12 @@ UBO _create_ubo(VkDeviceSize sz, char const* file, int line, char const* fn)
 	return buf;
 }
 
-SBO _create_sbo(VkDeviceSize sz, void* mem, char const* file, int line, char const* fn)
+SBO _create_sbo(VkDeviceSize sz, char const* file, int line, char const* fn)
 {
 	DEBUG(3, "[VK] Creating storage buffer in \"%s:%d:%s\"", file, line, fn);
-	struct Buffer tmpbuf;
-	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-	              &tmpbuf.buf, &tmpbuf.mem);
-
-	void* data;
-	vkMapMemory(gpu, tmpbuf.mem, 0, sz, 0, &data);
-	memcpy(data, mem, sz);
-	vkUnmapMemory(gpu, tmpbuf.mem);
-
 	SBO buf;
 	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-	              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
-	copy_buffer(buf.buf, tmpbuf.buf, sz);
-	free_buffer(tmpbuf);
+	              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
 
 	return buf;
 }
