@@ -14,7 +14,7 @@ struct IArray {
 	uint16  itemsz;
 	bool    sorted;
 	uint16* inds;
-	byte*   data;
+	void*   data;
 }; static_assert(sizeof(struct IArray) == 24, "struct IArray");
 
 struct IArray create_iarr(uint16 itemsz, uint16 sz);

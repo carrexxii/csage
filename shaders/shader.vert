@@ -1,4 +1,4 @@
-#version 450
+#version 460
 
 layout(location = 0) in vec3 Vxyz;
 layout(location = 1) in vec3 Vrgb;
@@ -8,13 +8,21 @@ layout(location = 0) out vec3 Fxyz;
 layout(location = 1) out vec3 Frgb;
 layout(location = 2) out vec3 Fnormal;
 
+struct ObjectData {
+    mat4 mat;
+};
+layout(std140, binding = 0) readonly buffer ObjectBuffer {
+    ObjectData objs[];
+} mdls;
+
 layout(binding = 1) uniform UniformBufferObject {
     mat4 vp;
 } cam;
 
 void main()
 {
-    gl_Position = cam.vp * vec4(Vxyz, 1.0);
+    mat4 mdl = mdls.objs[gl_BaseInstance].mat;
+    gl_Position = mdl * cam.vp * vec4(Vxyz, 1.0);
     Fxyz    = Vxyz;
     Frgb    = Vrgb;
     Fnormal = Vnormal;

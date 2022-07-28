@@ -44,6 +44,8 @@ int main(int argc, char** argv)
 
 	Entity e1 = add_entity();
 	struct Model mdl1 = create_model(MODEL_PATH "plane");
+	glm_mat4_identity(mdl1.mat);
+	glm_translate_x(mdl1.mat, 0.5);
 	add_component(e1, COMPONENT_MODEL, &mdl1);
 
 	// Entity e2 = add_entity();

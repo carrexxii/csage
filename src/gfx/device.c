@@ -64,8 +64,12 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 			.queueCount       = 1,
 		};
 
-	VkPhysicalDeviceFeatures devfeatures = {
-		// .geometryShader = 1,
+	VkPhysicalDeviceFeatures devfeatures[] = {
+		{ .geometryShader = 0, }
+	};
+	VkPhysicalDeviceShaderDrawParametersFeatures shaderfeatures[] = {
+		{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+		  .shaderDrawParameters = 1, },
 	};
 
 	const uint  extc   = 1;
@@ -75,7 +79,8 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 		.flags = 0,
 		.queueCreateInfoCount    = devqic,
 		.pQueueCreateInfos       = devqis,
-		.pEnabledFeatures        = &devfeatures,
+		.pEnabledFeatures        = devfeatures,
+		.pNext                   = shaderfeatures,
 		.enabledLayerCount       = VK_LAYERC,
 		.ppEnabledLayerNames     = VK_LAYERS,
 		.enabledExtensionCount   = extc,

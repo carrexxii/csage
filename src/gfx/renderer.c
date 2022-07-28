@@ -248,11 +248,10 @@ static void record_command(uint imgi)
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 
-	struct Model* mdl;
+	struct Model* mdls = models->data;
 	for (uint i = 0; i < models->itemc; i++) {
-		mdl = (struct Model*)(models->data + i);
-		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdl->vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdDraw(cmdbuf, mdl->vertc, 1, 0, 0);
+		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmdbuf, mdls[i].vertc, 1, 0, 0);
 	}
 
 	vkCmdEndRenderPass(cmdbuf);
@@ -262,17 +261,12 @@ static void record_command(uint imgi)
 
 inline static void update_buffers()
 {
-	// struct Model* mdls = (struct Model*)ARRLST_START(renderermdls);
-	// void* mem;
-	// vkMapMemory(gpu, pipeln.sbo.mem, 0, pipeln.sbosz, 0, &mem);
-	// for (uint i = 0; mdls; i++) {
-	// 	memcpy((byte*)mem + i*renderermdls.nodesz, mdls, renderermdls.nodesz);
-	// 	ARRLST_NEXT_NODE(mdls);
-	// 	// memcpy((byte*)mem + i*sizeof(mat4), mdl->mat, sizeof(mdl->mat));
-	// 	// D;
-	// 	// ARRLST_NEXT(renderermdls, mdl);
-	// }
-	// vkUnmapMemory(gpu, pipeln.sbo.mem);
+	void* mem;
+	uintptr memsz = models->itemc*models->itemsz;
+	struct Model* mdls = (struct Model*)models->data;
+	vkMapMemory(gpu, pipeln.sbo.mem, 0, memsz, 0, &mem);
+	memcpy(mem, mdls, memsz);
+	vkUnmapMemory(gpu, pipeln.sbo.mem);
 
 	mat4 vp;
 	get_cam_vp(vp);

@@ -21,7 +21,7 @@ inline void resize_iarr(struct IArray* arr, uint16 sz)
 {
 	arr->inds = srealloc(arr->inds, sz*(sizeof(uint16) + arr->itemsz));
 	arr->sz   = sz;
-	arr->data = (byte*)(arr->inds + sz);
+	arr->data = arr->inds + sz;
 }
 
 void iarr_append(struct IArray* arr, uint16 i, void* data)
@@ -30,7 +30,7 @@ void iarr_append(struct IArray* arr, uint16 i, void* data)
 		resize_iarr(arr, arr->sz*IARRAY_SIZE_MULTIPLIER);
 
 	arr->inds[arr->itemc] = i;
-	memcpy(arr->data + arr->itemc, data, arr->itemsz);
+	memcpy((byte*)arr->data + arr->itemc, data, arr->itemsz);
 	if (arr->itemc && i < arr->inds[arr->itemc - 1])
 		arr->sorted = false;
 	arr->itemc++;
@@ -45,7 +45,7 @@ void* iarr_get(struct IArray arr, uint16 i)
 		arri = linear_search(arr.itemc, arr.inds, i);
 
 	if (arri >= 0)
-		return arr.data + arri;
+		return (byte*)arr.data + arri*arr.itemsz;
 	else
 		return NULL;
 }
