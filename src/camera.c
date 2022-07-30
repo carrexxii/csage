@@ -5,8 +5,8 @@
 
 mat4 camprojection = GLM_MAT4_IDENTITY_INIT;
 mat4 camview       = GLM_MAT4_IDENTITY_INIT;
-static float camzoom = 10.0;
-static float camfov  = GLM_PI/2.0;
+static float camzoom = 1.0;
+static float camfov  = GLM_PI/3.0;
 static vec3 campos;
 static vec3 camdir;
 static float panspeed  = 0.15;
@@ -15,19 +15,20 @@ mat4 camvp;
 
 void init_camera()
 {
-	set_perspective(PERSPECTIVE_ORTHOGONAL);
+	set_perspective(PERSPECTIVE_PERSPECTIVE);
 }
 
 /* TODO: add conditional update of vp with boolean return */
 void get_cam_vp(mat4 out)
 {
 	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
+	glm_lookat((vec3){0.0, 0.0, 10.0}, (vec3){0.0, 0.0, 0.0}, (vec3){0.0, 1.0, 0.0}, camview);
 	glm_scale_uni(camview, camzoom);
 	glm_translate(camview, campos);
-	glm_rotate(camview,  GLM_PI/4.0, (vec3){ 0.0, 0.0, 1.0 });
-	glm_rotate(camview,  GLM_PI/3.0, (vec3){ 0.5, -0.5, 0.0 });
+	glm_rotate(camview, GLM_PI/4.0, (vec3){ 0.0,  0.0, 1.0 });
+	glm_rotate(camview, GLM_PI/3.0, (vec3){ 0.5, -0.5, 0.0 });
 
-	glm_mat4_mul(camprojection, camview, out);
+	glm_mul(camprojection, camview, out);
 }
 
 void move_camera(enum Direction dir)
@@ -48,8 +49,8 @@ void move_camera(enum Direction dir)
 void set_perspective(enum Perspective p)
 {
 	if (p == PERSPECTIVE_PERSPECTIVE)
-		glm_perspective(camfov, (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1, 100.0, camprojection);
+		glm_perspective(camfov, 16.0/9.0, 0.1, 100.0, camprojection);
 	else if (p == PERSPECTIVE_ORTHOGONAL)
-		glm_ortho(-WINDOW_WIDTH/20.0, WINDOW_WIDTH/20.0,
-		          -WINDOW_HEIGHT/20.0, WINDOW_HEIGHT/20.0, 0.1, 100.0, camprojection);
+		glm_ortho(-16.0, 16.0,
+		          -9.0, 9.0, 0.1, 100.0, camprojection);
 }

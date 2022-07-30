@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 	add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, -10.0, 0.1 });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
-	"---------------------------------------", SDL_GetTicks64());
+	"-------------------------------------", SDL_GetTicks64());
 	double dt, newtime, oldtime = 0.0, accum = 0.0;
 	while (!check_input()) {
 		newtime = SDL_GetTicks64();

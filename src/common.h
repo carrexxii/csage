@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -26,8 +28,6 @@
 #elif defined _WIN32
 	#include <io.h>
 #endif
-
-#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #define DEBUG_MALLOC_MIN 64
 
