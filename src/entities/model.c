@@ -52,7 +52,7 @@ struct Model create_model(char* const path)
 
 	mdl.vbo = create_vbo(mdl.vertc*SIZEOF_VERTEX, mdl.verts);
 
-	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles)", path, mdl.vertc/3);
+	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles, %hhu materials)", path, mdl.vertc/3, mdl.materialc);
 	return mdl;
 }
 

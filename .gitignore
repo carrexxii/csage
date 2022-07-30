@@ -1,3 +1,4 @@
+.cache/
 data/
 lib/
 obj/
@@ -5,4 +6,5 @@ acv/
 shaders/spirv
 
 csage
+compile_commands.json
 *.sublime-*

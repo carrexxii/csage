@@ -22,7 +22,6 @@ void init_camera()
 void get_cam_vp(mat4 out)
 {
 	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
-	// glm_lookat((float[]){ -1.0, -1.0, -1.0 }, (float[]){ 0.0, 0.0, 0.0 }, (float[]){ 0.0, 0.0, 1.0 }, camview);
 	glm_scale_uni(camview, camzoom);
 	glm_translate(camview, campos);
 	glm_rotate(camview,  GLM_PI/4.0, (vec3){ 0.0, 0.0, 1.0 });

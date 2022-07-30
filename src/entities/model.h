@@ -10,13 +10,12 @@ struct Material {
 }; static_assert(sizeof(struct Material) == 12, "struct Material");
 
 struct Model {
-	mat4 mat;
-	VBO  vbo;
+	VBO    vbo;
 	float* verts;
 	struct Material* materials;
 	uint16 vertc;
 	uint8  materialc;
-}; static_assert(sizeof(struct Model) == 128, "struct Model");
+}; static_assert(sizeof(struct Model) == 40, "struct Model");
 
 struct Model create_model(char* const path);
 

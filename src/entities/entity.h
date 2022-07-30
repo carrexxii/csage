@@ -8,13 +8,17 @@
 
 typedef uint64 Entity;
 
+void   init_entities();
+Entity create_entity();
+void   add_component(Entity e, enum Component c, void* data);
+
 extern struct EntityComponents {
 	struct IArray mdls;
+	struct IArray mats;
 	struct IArray lights;
 } components;
 
-void init_entities();
-Entity add_entity();
-void add_component(Entity e, enum Component c, void* data);
+extern uint64 entityc;
+extern uint64 entities[];
 
 #endif

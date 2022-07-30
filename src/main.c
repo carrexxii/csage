@@ -12,6 +12,7 @@
 #include "entities/entity.h"
 
 #include "entities/model.h"
+#include "entities/systems.h"
 
 void init_sdl();
 void init_input();
@@ -40,24 +41,28 @@ int main(int argc, char** argv)
 	init_entities();
 	init_sdl();
 	init_input();
-	renderer_init(window, &components.mdls);
+	renderer_init(window, &components.mdls.itemc, components.mdls.data, &components.mats.itemc, components.mats.data);
 
-	Entity e1 = add_entity();
-	struct Model mdl1 = create_model(MODEL_PATH "plane");
-	glm_mat4_identity(mdl1.mat);
-	glm_translate_x(mdl1.mat, 0.5);
-	add_component(e1, COMPONENT_MODEL, &mdl1);
+	Entity e1 = create_entity();
+	add_component(e1, COMPONENT_MODEL, MODEL_PATH "plane");
+	set_entity_pos(e1, (vec3){ 0.5, 0.0, 0.0 });
 
-	// Entity e2 = add_entity();
-	// struct Model mdl2 = create_model(MODEL_PATH "sphere");
-	// glm_translate(mdl2.mat, (float[]){ 1.0, 0.0, 0.0 });
-	// add_component(e2, COMPONENT_MODEL, &mdl2);
+	Entity e2 = create_entity();
+	add_component(e2, COMPONENT_MODEL, MODEL_PATH "plane");
+	set_entity_pos(e2, (vec3){ -0.5, 0.0, 0.0 });
+
+	Entity e3 = create_entity();
+	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
 	// struct Light light = {
 	// 	.pos       = { 1.0, 0.0, 0.0 },
 	// 	.intensity = 5.0,
 	// };
 	// add_component(e2, COMPONENT_LIGHT, &light);
 	
+	// DEBUG(1, "%lu, %lu, %lu", e1, e2, e3);
+	// print_iarr(components.mats);
+	// DEBUG(1, "itemsz: %hu", components.mats.itemsz);
+
 	while (1) {
 		if (check_input())
 			break;

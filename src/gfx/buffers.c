@@ -135,7 +135,6 @@ void update_buffer(struct Buffer buf, VkDeviceSize sz, void* data)
 
 void free_buffer(struct Buffer buf)
 {
-	DEBUG(3, "[VK] Destroying buffer");
 	vkDestroyBuffer(gpu, buf.buf, alloccb);
 	vkFreeMemory(gpu, buf.mem, alloccb);
 }
