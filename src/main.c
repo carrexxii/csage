@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 
 	Entity e3 = create_entity();
 	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
-	add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, -10.0, 0.1 });
+	add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, 0.0, 0.01 });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	"-------------------------------------", SDL_GetTicks64());

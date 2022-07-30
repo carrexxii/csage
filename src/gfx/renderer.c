@@ -137,10 +137,10 @@ void renderer_init(SDL_Window* win)
 	pipeln.sbosz   = RENDERER_MAX_OBJECTS*sizeof(float[16]);
 	pipeln_init(&pipeln, renderpass);
 
-	memcpy(lighting.sundir, (float[]){ -1.0, 0.25, 5.0 }, sizeof(float[3]));
+	memcpy(lighting.sundir, (float[]){ -10.0, 0.0, 10.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
 	lighting.ambient  = 0.01;
-	lighting.sunpower = 0.5;
+	lighting.sunpower = 1.0;
 }
 
 void renderer_draw()
