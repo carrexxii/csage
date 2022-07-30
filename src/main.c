@@ -33,12 +33,13 @@ int main(int argc, char** argv)
 	return 0;
 #endif
 
+	init_sdl();
+
 	uint32 vkversion;
 	vkEnumerateInstanceVersion(&vkversion);
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
-	init_sdl();
 	init_input();
 	renderer_init(window);
 	init_camera();
@@ -56,9 +57,17 @@ int main(int argc, char** argv)
 	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
 	add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, -10.0, 0.1 });
 
-	while (1) {
-		if (check_input())
-			break;
+	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
+	"---------------------------------------", SDL_GetTicks64());
+	double dt, newtime, oldtime = 0.0, accum = 0.0;
+	while (!check_input()) {
+		newtime = SDL_GetTicks64();
+		dt      = newtime - oldtime;
+		oldtime = newtime;
+		accum  += dt;
+		while (accum >= FRAME_DT) {
+			accum -= FRAME_DT;
+		}
 		renderer_draw();
 	}
 
@@ -97,9 +106,9 @@ void init_input()
 
 noreturn void quit_cb(bool kdown)
 {
-	DEBUG(1, TERM_GREEN "|------------------------------|");
-	DEBUG(1, TERM_GREEN "|\tCleaning up...         |");
-	DEBUG(1, TERM_GREEN "|------------------------------|");
+	DEBUG(1, "|------------------------------|");
+	DEBUG(1, "|\tCleaning up...         |");
+	DEBUG(1, "|------------------------------|");
 	renderer_free();
 	SDL_Quit();
 	exit(0);
