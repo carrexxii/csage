@@ -11,7 +11,7 @@
 #include "image.h"
 #include "pipeline.h"
 #include "swapchain.h"
-#include "entities/model.h"
+#include "model.h"
 #include "vertices.h"
 #include "camera.h"
 #include "renderer.h"
@@ -37,24 +37,22 @@ static VkCommandBuffer* cmdbufs;
 static struct Pipeline  pipeln;
 
 static struct Lighting {
-	float sundir[3];
-	float ambient;
-	float sunpower;
-} lighting; static_assert(sizeof(struct Lighting) == 20, "struct Lighting");
+	vec3   sundir;
+	float  ambient;
+	float  sunpower;
+	uint16 lightc;
+	vec4   lights[RENDERER_MAX_LIGHTS];
+} lighting;
 
-uint16* modelc;
-uint16* matrixc;
-static struct Model* models;
-static float* matrices;
+uint16* renmdlc;
+uint16* renlightc;
+mat4*   renmats;
+vec4*   renlights;
+struct Model* renmdls;
 static SBO matbuf;
 
-void renderer_init(SDL_Window* win, uint16* mdlc, struct Model* mdls, uint16* matc, float* mats)
+void renderer_init(SDL_Window* win)
 {
-	modelc   = mdlc;
-	matrixc  = matc;
-	models   = mdls;
-	matrices = mats;
-
 	vulkan_init(win);
 	swapchain_init(surface, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -134,7 +132,7 @@ void renderer_init(SDL_Window* win, uint16* mdlc, struct Model* mdls, uint16* ma
 	pipeln.vattrc  = ARRAY_LEN(vertattrs);
 	pipeln.vattrs  = vertattrs;
 	pipeln.uboc    = 2;
-	pipeln.uboszs  = (uintptr[]){ sizeof(float[16]), sizeof(lighting) };
+	pipeln.uboszs  = (uintptr[]){ sizeof(float[16]), sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(vec4) };
 	pipeln.sbo     = matbuf;
 	pipeln.sbosz   = RENDERER_MAX_OBJECTS*sizeof(float[16]);
 	pipeln_init(&pipeln, renderpass);
@@ -143,8 +141,6 @@ void renderer_init(SDL_Window* win, uint16* mdlc, struct Model* mdls, uint16* ma
 	glm_vec3_normalize(lighting.sundir);
 	lighting.ambient  = 0.03;
 	lighting.sunpower = 1.0;
-
-	init_camera();
 }
 
 void renderer_draw()
@@ -188,6 +184,21 @@ void renderer_draw()
 		ERROR("[VK] Failed to present queue");
 
 	frame = (frame + 1) % FRAMES_IN_FLIGHT;
+}
+
+void renderer_add_light(vec4 light)
+{
+	if (lighting.lightc >= RENDERER_MAX_LIGHTS)
+		ERROR("[GFX] Maximum number of lights reached");
+	memcpy(lighting.lights[lighting.lightc++], light, sizeof(vec4));
+	DEBUG(3, "[GFX] Added light [%.4f %.4f %.4f] :: %.4f", light[0], light[1], light[2], light[3]);
+}
+
+void renderer_set_lights(uint16 lightc, vec4* lights)
+{
+	if (lightc > RENDERER_MAX_LIGHTS)
+		ERROR("[GFX] %hu exceeds the maximum number of lights (%d)", lightc, RENDERER_MAX_LIGHTS);
+	memcpy(lighting.lights, lights, lightc*sizeof(vec4));
 }
 
 void renderer_free()
@@ -254,14 +265,9 @@ static void record_command(uint imgi)
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 
-	struct Model* mdl = models;
-	for (uint i = 0; i < *modelc; i++) {
-		// DEBUG(1, "[%u]", *modelc);
-		// DEBUG(1, "vertc: %hu", mdl->vertc);
-		// DEBUG(1, "materialc: %hu", mdl->materialc);
-		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &mdl->vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdDraw(cmdbuf, mdl->vertc, 1, 0, i);
-		mdl++;
+	for (uint i = 0; i < *renmdlc; i++) {
+		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
 	}
 
 	vkCmdEndRenderPass(cmdbuf);
@@ -271,14 +277,16 @@ static void record_command(uint imgi)
 
 inline static void update_buffers()
 {
-	void* mem;
-	vkMapMemory(gpu, pipeln.sbo.mem, 0, VK_WHOLE_SIZE, 0, &mem);
-	memcpy(mem, matrices, (*modelc)*sizeof(float[16]));
+	void*   mem;
+	uintptr memsz = (*renmdlc)*sizeof(float[16]);
+	vkMapMemory(gpu, pipeln.sbo.mem, 0, memsz, 0, &mem);
+	memcpy(mem, renmats, memsz);
 	vkUnmapMemory(gpu, pipeln.sbo.mem);
 
 	mat4 vp;
 	get_cam_vp(vp);
 	update_buffer(pipeln.ubos[0], sizeof(mat4), vp);
+
 	update_buffer(pipeln.ubos[1], sizeof(struct Lighting), &lighting);
 }
 

@@ -1,8 +1,10 @@
-#include "util/iarray.h"
-#include "model.h"
-#include "components.h"
-#include "entity.h"
 #include <cglm/mat4.h>
+
+#include "util/iarray.h"
+#include "gfx/model.h"
+#include "components.h"
+#include "gfx/renderer.h"
+#include "entity.h"
 
 uint64 entityc;
 uint64 entities[MAX_ENTITIES];
@@ -10,9 +12,13 @@ struct EntityComponents components;
 
 void init_entities()
 {
-	components.mdls   = create_iarr(sizeof(struct Model), 0);
-	components.mats   = create_iarr(sizeof(mat4), 0);
-	components.lights = create_iarr(sizeof(struct Light), 0);
+	components.mdls   = create_iarr(sizeof(struct Model), 10);
+	components.mats   = create_iarr(sizeof(mat4), 10);
+	components.lights = create_iarr(sizeof(vec4), 5);
+
+	renmdlc = &components.mdls.itemc;
+	renmdls = components.mdls.data;
+	renmats = components.mats.data;
 
 	DEBUG(1, "[ENT] Initialized entities");
 }
@@ -26,6 +32,7 @@ Entity create_entity()
 void add_component(Entity e, enum Component c, void* data)
 {
 	struct Model mdl;
+	vec4* light;
 	switch (c) {
 		case COMPONENT_NONE:
 			ERROR("[ENT] Trying to add COMPONENT_NONE");
@@ -36,7 +43,8 @@ void add_component(Entity e, enum Component c, void* data)
 			iarr_append(&components.mats, e, GLM_MAT4_IDENTITY);
 			break;
 		case COMPONENT_LIGHT:
-			iarr_append(&components.lights, e, (struct Light*)data);
+			light = iarr_append(&components.lights, e, data);
+			renderer_add_light(*light);
 			break;
 		default:
 			ERROR("[ENT] Unhandled component: %u", c);

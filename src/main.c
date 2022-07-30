@@ -11,7 +11,7 @@
 #include "input.h"
 #include "entities/entity.h"
 
-#include "entities/model.h"
+#include "gfx/model.h"
 #include "entities/systems.h"
 
 void init_sdl();
@@ -38,10 +38,11 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
-	init_entities();
 	init_sdl();
 	init_input();
-	renderer_init(window, &components.mdls.itemc, components.mdls.data, &components.mats.itemc, components.mats.data);
+	renderer_init(window);
+	init_camera();
+	init_entities();
 
 	Entity e1 = create_entity();
 	add_component(e1, COMPONENT_MODEL, MODEL_PATH "plane");
@@ -53,15 +54,7 @@ int main(int argc, char** argv)
 
 	Entity e3 = create_entity();
 	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
-	// struct Light light = {
-	// 	.pos       = { 1.0, 0.0, 0.0 },
-	// 	.intensity = 5.0,
-	// };
-	// add_component(e2, COMPONENT_LIGHT, &light);
-	
-	// DEBUG(1, "%lu, %lu, %lu", e1, e2, e3);
-	// print_iarr(components.mats);
-	// DEBUG(1, "itemsz: %hu", components.mats.itemsz);
+	add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, -10.0, 0.1 });
 
 	while (1) {
 		if (check_input())

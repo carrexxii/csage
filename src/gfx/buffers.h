@@ -29,10 +29,6 @@ uint find_memory_index(uint type, uint prop);
 #define create_sbo(s)    _create_sbo((s),      __FILE__, __LINE__, __func__)
 
 void update_buffer(struct Buffer buf, VkDeviceSize sz, void* data);
-static inline void update_vbo(VBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
-static inline void update_ibo(IBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
-static inline void update_ubo(UBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
-static inline void update_sbo(SBO buf, VkDeviceSize sz, void* data) { update_buffer(buf, sz, data); }
 
 void free_buffer(struct Buffer buf);
 static inline void free_vbo(VBO buf) { free_buffer(buf); }
