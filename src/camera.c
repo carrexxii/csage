@@ -25,8 +25,6 @@ void init_camera()
 /* TODO: add conditional update of vp with boolean return */
 void get_cam_vp(mat4 out)
 {
-	set_perspective(PERSPECTIVE_PERSPECTIVE);
-
 	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
 	glm_lookat(campos, lookpos, (vec3){ 0.0, 0.0, -1.0 }, camview);
 

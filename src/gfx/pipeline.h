@@ -3,7 +3,13 @@
 
 #include <vulkan/vulkan.h>
 
-#include "buffers.h"  /* UBO */
+#include "buffers.h"
+
+/* !! Uniform buffers must be aligned as follows:
+ * - float            -> alignment of 4
+ * - vec2             -> alignment of 8
+ * - vec3, vec4, mat4 -> alignment of 16
+ */
 
 struct Pipeline {
 	VkPipeline            pipeln;
@@ -16,20 +22,19 @@ struct Pipeline {
 	SBO  sbo;
 	/* Caller-defined values */
 	struct {
-		VkVertexInputBindingDescription*   vbinds;
-		VkVertexInputAttributeDescription* vattrs;
-		uint vbindc;
-		uint vattrc;
+		uint vertbindc;
+		uint vertattrc;
+		VkVertexInputBindingDescription*   vertbinds;
+		VkVertexInputAttributeDescription* vertattrs;
 	};
 	VkShaderModule  vshader;
 	VkShaderModule tcshader;
 	VkShaderModule teshader;
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
-	uint     uboc;
-	uintptr* uboszs;
-	uintptr  sbosz;
-	uintptr  pushsz;
+	uint    uboc;
+	uintptr sbosz;
+	uintptr pushsz;
 	VkShaderStageFlags pushstages;
 }; static_assert(sizeof(struct Pipeline) == 168, "struct Pipeline");
 

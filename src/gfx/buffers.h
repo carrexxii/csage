@@ -4,9 +4,10 @@
 #include <vulkan/vulkan.h>
 
 struct Buffer {
-	VkBuffer buf;
+	VkBuffer       buf;
 	VkDeviceMemory mem;
-}; static_assert(sizeof(struct Buffer) == 16, "struct Buffer");
+	uintptr        sz;
+}; static_assert(sizeof(struct Buffer) == 24, "struct Buffer");
 typedef struct Buffer VBO;
 typedef struct Buffer IBO;
 typedef struct Buffer UBO;

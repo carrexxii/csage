@@ -84,6 +84,13 @@ union Data {
 	void*  ptr;
 }; static_assert(sizeof(union Data) == 8, "union Data");
 
+struct Dim {
+	uint w, h, d;
+}; static_assert(sizeof(struct Dim) == 12, "struct Dim");
+inline static uint volume_of(struct Dim dim) {
+	return dim.w * dim.h * dim.d;
+}
+
 #ifndef _WIN32
 #define MIN(a, b)        ((a) < (b)? (a): (b))
 #define MAX(a, b)        ((a) > (b)? (a): (b))

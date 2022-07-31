@@ -14,8 +14,8 @@ COMPILE_WITH = -DDEBUG_LEVEL=3
 BUILD_WITH   =
 
 WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict \
-           -Wstrict-aliasing -Wsuggest-attribute=noreturn -Wno-parentheses -Wno-missing-braces                 \
-           -Wno-missing-field-initializers -Wno-unused-parameter -Wno-ignored-qualifiers
+           -Wstrict-aliasing -Wno-parentheses -Wno-missing-braces -Wno-missing-field-initializers              \
+           -Wno-unused-parameter -Wno-ignored-qualifiers -Wno-unused-variable -Wno-unused-function
 CFLAGS   = -std=c11 -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pipe $(WARNINGS) -I$(SRCDIR) \
            -isystem $(LIBDIR)/include -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH)
 LUAFLAGS = -O0
@@ -25,8 +25,9 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(OBJDIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED
 
-SRC  := $(wildcard $(SRCDIR)/util/*.c)   \
-        $(wildcard $(SRCDIR)/gfx/*.c)     \
+SRC  := $(wildcard $(SRCDIR)/util/*.c)  \
+        $(wildcard $(SRCDIR)/gfx/*.c)    \
+        $(wildcard $(SRCDIR)/map/*.c)     \
         $(wildcard $(SRCDIR)/entities/*.c) \
         $(wildcard $(SRCDIR)/*.c)
 OBJ  := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)

@@ -2,19 +2,21 @@
 #define GFX_VERTICES_H
 
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "buffers.h"
 
-#define SIZEOF_VERTEX sizeof(float[9])
+#define SIZEOF_MDL_VERT sizeof(float[9])
+#define SIZEOF_VXL_VERT sizeof(uint16[3])
 
-static VkVertexInputBindingDescription vertbinds[] = {
+/* Models */
+static VkVertexInputBindingDescription mdlvertbinds[] = {
 	/* xyzrgbnnn */
 	{ .binding   = 0,
-	  .stride    = SIZEOF_VERTEX,
+	  .stride    = SIZEOF_MDL_VERT,
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
 };
-
-static VkVertexInputAttributeDescription vertattrs[] = {
+static VkVertexInputAttributeDescription mdlvertattrs[] = {
 	/* xyz */
 	{ .binding  = 0,
 	  .location = 0,
@@ -30,6 +32,20 @@ static VkVertexInputAttributeDescription vertattrs[] = {
 	  .location = 2,
 	  .format   = VK_FORMAT_R32G32B32_SFLOAT,
 	  .offset   = sizeof(float[6]), },
+};
+
+/* Voxels */
+static VkVertexInputBindingDescription vxlvertbinds[] = {
+	{ .binding   = 0,
+	  .stride    = SIZEOF_VXL_VERT,
+	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
+};
+static VkVertexInputAttributeDescription vxlvertattrs[] = {
+	/* xyz */
+	{ .binding  = 0,
+	  .location = 0,
+	  .format   = VK_FORMAT_R16G16B16_UINT,
+	  .offset   = 0, },
 };
 
 #endif

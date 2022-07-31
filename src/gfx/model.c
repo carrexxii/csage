@@ -14,7 +14,7 @@ struct Model create_model(char* const path)
 	FILE* file = file_open(path, "rb");
 	char line[LINE_BUFFER_SIZE];
 
-	char   name[64];
+	char   name[65];
 	uint8  index = 0;
 	float* vert  = NULL;
 	float  rgb[3];
@@ -22,7 +22,7 @@ struct Model create_model(char* const path)
 	while (fgets(line, LINE_BUFFER_SIZE, file)) {
 		/* File header */
 		if (sscanf(line, "Vertices: %hu; Materials: %hhu", &mdl.vertc, &mdl.materialc) >= 2) {
-			mdl.verts     = scalloc(mdl.vertc, SIZEOF_VERTEX);
+			mdl.verts     = scalloc(mdl.vertc, SIZEOF_MDL_VERT);
 			mdl.materials = scalloc(mdl.materialc, sizeof(struct Material));
 			vert      = mdl.verts;
 			materials = mdl.materials;
@@ -50,7 +50,7 @@ struct Model create_model(char* const path)
 	fclose(file);
 	// print_model(mdl);
 
-	mdl.vbo = create_vbo(mdl.vertc*SIZEOF_VERTEX, mdl.verts);
+	mdl.vbo = create_vbo(mdl.vertc*SIZEOF_MDL_VERT, mdl.verts);
 
 	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles, %hhu materials)", path, mdl.vertc/3, mdl.materialc);
 	return mdl;

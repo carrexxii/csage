@@ -15,7 +15,7 @@ struct Model {
 	struct Material* materials;
 	uint16 vertc;
 	uint8  materialc;
-}; static_assert(sizeof(struct Model) == 40, "struct Model");
+}; static_assert(sizeof(struct Model) == 48, "struct Model");
 
 struct Model create_model(char* const path);
 

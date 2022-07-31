@@ -34,7 +34,8 @@ static struct {
 static VkRenderPass     renderpass;
 static VkFramebuffer*   framebufs;
 static VkCommandBuffer* cmdbufs;
-static struct Pipeline  pipeln;
+static struct Pipeline  mdlpipeln;
+static struct Pipeline  vxlpipeln;
 
 static struct Lighting {
 	vec3   sundir;
@@ -123,19 +124,34 @@ void renderer_init(SDL_Window* win)
 	create_command_buffers();
 	create_sync_objects();
 
-	matbuf = create_sbo(sizeof(float[16])*RENDERER_MAX_OBJECTS);
+	matbuf = create_sbo(RENDERER_MAX_OBJECTS * sizeof(float[16]));
 
-	pipeln.vshader = vulkan_new_shader(SHADER_DIR "shader.vert");
-	pipeln.fshader = vulkan_new_shader(SHADER_DIR "shader.frag");
-	pipeln.vbindc  = 1;
-	pipeln.vbinds  = vertbinds;
-	pipeln.vattrc  = ARRAY_LEN(vertattrs);
-	pipeln.vattrs  = vertattrs;
-	pipeln.uboc    = 2;
-	pipeln.uboszs  = (uintptr[]){ sizeof(float[16]), sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(vec4) };
-	pipeln.sbo     = matbuf;
-	pipeln.sbosz   = RENDERER_MAX_OBJECTS*sizeof(float[16]);
-	pipeln_init(&pipeln, renderpass);
+	mdlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "model.vert");
+	mdlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "model.frag");
+	mdlpipeln.vertbindc = 1;
+	mdlpipeln.vertbinds = mdlvertbinds;
+	mdlpipeln.vertattrc = ARRAY_LEN(mdlvertattrs);
+	mdlpipeln.vertattrs = mdlvertattrs;
+	mdlpipeln.uboc      = 2;
+	mdlpipeln.ubos      = scalloc(2, sizeof(UBO));
+	mdlpipeln.ubos[0]   = create_ubo(sizeof(float[16]));
+	mdlpipeln.ubos[1]   = create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
+	mdlpipeln.sbo       = matbuf;
+	mdlpipeln.sbosz     = RENDERER_MAX_OBJECTS * sizeof(float[16]);
+	pipeln_init(&mdlpipeln, renderpass);
+
+	// vxlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "voxel.vert");
+	// vxlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "voxel.frag");
+	// vxlpipeln.vertbindc = 1;
+	// vxlpipeln.vertbinds = vxlvertbinds;
+	// vxlpipeln.vertattrc = ARRAY_LEN(vxlvertattrs);
+	// vxlpipeln.vertattrs = vxlvertattrs;
+	// vxlpipeln.uboc      = 2;
+	// vxlpipeln.ubos      = scalloc(2, sizeof(UBO));
+	// vxlpipeln.ubos[0]   = create_ubo(sizeof(float[16]));
+	// vxlpipeln.ubos[1]   = create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
+	// vxlpipeln.sbosz     = 0;
+	// pipeln_init(&vxlpipeln, renderpass);
 
 	memcpy(lighting.sundir, (float[]){ -10.0, 0.0, 10.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
@@ -219,7 +235,7 @@ void renderer_free()
 	for (uint i = 0; i < swapchainimgc; i++)
 		vkDestroyFramebuffer(gpu, framebufs[i], alloccb);
 
-	pipeln_free(&pipeln);
+	pipeln_free(&mdlpipeln);
 
 	DEBUG(3, "[VK] Destroying render pass...");
 	vkDestroyRenderPass(gpu, renderpass, alloccb);
@@ -262,8 +278,8 @@ static void record_command(uint imgi)
 
 	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
+	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.layout, 0, 1, &mdlpipeln.dset, 0, NULL);
 
 	for (uint i = 0; i < *renmdlc; i++) {
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
@@ -279,15 +295,15 @@ inline static void update_buffers()
 {
 	void*   mem;
 	uintptr memsz = (*renmdlc)*sizeof(float[16]);
-	vkMapMemory(gpu, pipeln.sbo.mem, 0, memsz, 0, &mem);
+	vkMapMemory(gpu, mdlpipeln.sbo.mem, 0, memsz, 0, &mem);
 	memcpy(mem, renmats, memsz);
-	vkUnmapMemory(gpu, pipeln.sbo.mem);
+	vkUnmapMemory(gpu, mdlpipeln.sbo.mem);
 
 	mat4 vp;
 	get_cam_vp(vp);
-	update_buffer(pipeln.ubos[0], sizeof(mat4), vp);
+	update_buffer(mdlpipeln.ubos[0], sizeof(mat4), vp);
 
-	update_buffer(pipeln.ubos[1], sizeof(struct Lighting), &lighting);
+	update_buffer(mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
 }
 
 static void create_framebuffers()
