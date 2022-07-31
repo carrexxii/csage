@@ -122,6 +122,7 @@ inline static uint volume_of(struct Dim dim) {
 	                               !strncmp((str), "[INFO]", 6)? TERM_YELLOW : \
 	                               !strncmp((str), "[ENT]" , 5)? TERM_BLUE   : \
 	                               !strncmp((str), "[THR]" , 5)? TERM_YELLOW : \
+	                               !strncmp((str), "[MAP]" , 5)? TERM_YELLOW : \
 	                               !strncmp((str), "[GFX]" , 5)? TERM_MAGENTA: \
 	                               !strncmp((str), "[VK]"  , 4)? TERM_CYAN   : \
 	                               !strncmp((str), "[MEM]" , 5)? TERM_MAGENTA: \

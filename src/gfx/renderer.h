@@ -16,8 +16,10 @@ void renderer_add_light(vec4 light);
 void renderer_set_lights(uint16 lightc, vec4* lights);
 void renderer_free();
 
-extern uint16* renmdlc;
-extern mat4*   renmats;
+extern mat4* renmats;
+extern uint16*       renmdlc;
 extern struct Model* renmdls;
+extern uint16*       renvxlmdlc;
+extern struct Model* renvxlmdls; 
 
 #endif

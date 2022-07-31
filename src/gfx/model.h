@@ -12,7 +12,7 @@ struct Material {
 struct Model {
 	VBO    vbo;
 	float* verts;
-	struct Material* materials;
+	struct Material* materials; /* TODO: These don't need to be stored after mesh is loaded */
 	uint16 vertc;
 	uint8  materialc;
 }; static_assert(sizeof(struct Model) == 48, "struct Model");

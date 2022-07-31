@@ -45,11 +45,13 @@ static struct Lighting {
 	vec4   lights[RENDERER_MAX_LIGHTS];
 } lighting;
 
-uint16* renmdlc;
-uint16* renlightc;
-mat4*   renmats;
-vec4*   renlights;
+mat4* renmats;
+uint16*       renmdlc;
 struct Model* renmdls;
+uint16*       renvxlmdlc;
+struct Model* renvxlmdls;
+uint16* renlightc;
+vec4*   renlights;
 static SBO matbuf;
 
 void renderer_init(SDL_Window* win)
@@ -140,18 +142,18 @@ void renderer_init(SDL_Window* win)
 	mdlpipeln.sbosz     = RENDERER_MAX_OBJECTS * sizeof(float[16]);
 	pipeln_init(&mdlpipeln, renderpass);
 
-	// vxlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "voxel.vert");
-	// vxlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "voxel.frag");
-	// vxlpipeln.vertbindc = 1;
-	// vxlpipeln.vertbinds = vxlvertbinds;
-	// vxlpipeln.vertattrc = ARRAY_LEN(vxlvertattrs);
-	// vxlpipeln.vertattrs = vxlvertattrs;
-	// vxlpipeln.uboc      = 2;
-	// vxlpipeln.ubos      = scalloc(2, sizeof(UBO));
-	// vxlpipeln.ubos[0]   = create_ubo(sizeof(float[16]));
-	// vxlpipeln.ubos[1]   = create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
-	// vxlpipeln.sbosz     = 0;
-	// pipeln_init(&vxlpipeln, renderpass);
+	vxlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "voxel.vert");
+	vxlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "voxel.frag");
+	vxlpipeln.vertbindc = 1;
+	vxlpipeln.vertbinds = vxlvertbinds;
+	vxlpipeln.vertattrc = ARRAY_LEN(vxlvertattrs);
+	vxlpipeln.vertattrs = vxlvertattrs;
+	vxlpipeln.uboc      = 2;
+	vxlpipeln.ubos      = scalloc(2, sizeof(UBO));
+	vxlpipeln.ubos[0]   = mdlpipeln.ubos[0];//create_ubo(sizeof(float[16]));
+	vxlpipeln.ubos[1]   = mdlpipeln.ubos[1];;//create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
+	vxlpipeln.sbosz     = 0;
+	pipeln_init(&vxlpipeln, renderpass);
 
 	memcpy(lighting.sundir, (float[]){ -10.0, 0.0, 10.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
@@ -278,9 +280,15 @@ static void record_command(uint imgi)
 
 	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
+	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.pipeln);
+	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
+	for (uint i = 0; i < *renvxlmdlc; i++) {
+		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renvxlmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmdbuf, renvxlmdls[i].vertc, 1, 0, i);
+	}
+
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.layout, 0, 1, &mdlpipeln.dset, 0, NULL);
-
 	for (uint i = 0; i < *renmdlc; i++) {
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
