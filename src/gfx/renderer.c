@@ -155,10 +155,10 @@ void renderer_init(SDL_Window* win)
 	vxlpipeln.sbosz     = 0;
 	pipeln_init(&vxlpipeln, renderpass);
 
-	memcpy(lighting.sundir, (float[]){ -10.0, 0.0, 10.0 }, sizeof(float[3]));
+	memcpy(lighting.sundir, (float[]){ -10.0, -10.0, 0.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
-	lighting.ambient  = 0.01;
-	lighting.sunpower = 1.0;
+	lighting.ambient  = 0.03;
+	lighting.sunpower = 0.3;
 }
 
 void renderer_draw()

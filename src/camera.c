@@ -3,11 +3,12 @@
 #include "config.h"
 #include "camera.h"
 #include <cglm/mat4.h>
+#include <cglm/types.h>
 #include <cglm/vec3.h>
 
 mat4 camprojection = GLM_MAT4_IDENTITY_INIT;
 mat4 camview       = GLM_MAT4_IDENTITY_INIT;
-static float camzoom = 1.0;
+static float camzoom = -1.0;
 static float camfov  = GLM_PI/3.0;
 static vec3 campos;
 static vec3 lookpos;
@@ -17,8 +18,8 @@ mat4 camvp;
 
 void init_camera()
 {
-	set_perspective(PERSPECTIVE_PERSPECTIVE);
-	glm_vec3_copy((vec3){ 10.0, 10.0, 10.0 }, campos);
+	set_perspective(PERSPECTIVE_ORTHOGONAL);
+	glm_vec3_copy((vec3){ 0.0, 0.0, 0.0 }, campos);
 	glm_vec3_copy((vec3){ 0.0, 0.0, 0.0 }, lookpos);
 }
 
@@ -26,7 +27,10 @@ void init_camera()
 void get_cam_vp(mat4 out)
 {
 	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
-	glm_lookat(campos, lookpos, (vec3){ 0.0, 0.0, -1.0 }, camview);
+	glm_translate(camview, campos);
+	glm_rotate(camview, -GLM_PI*0.75, (vec3){ 0.0      , 0.0       , 1.0 });
+	glm_rotate(camview,  GLM_PI/3.0 , (vec3){ GLM_SQRT2, -GLM_SQRT2, 0.0 });
+	glm_scale_uni(camview, camzoom);
 
 	glm_mul(camprojection, camview, out);
 }
@@ -52,7 +56,7 @@ void set_perspective(enum Perspective p)
 	if (p == PERSPECTIVE_PERSPECTIVE)
 		glm_perspective(camfov, 16.0/9.0, 0.1, 1000.0, camprojection);
 	else if (p == PERSPECTIVE_ORTHOGONAL)
-		glm_ortho(-16.0, 16.0, -9.0, 9.0, 0.1, 1000.0, camprojection);
+		glm_ortho(-16.0, 16.0, 9.0, -9.0, 0.1, 1000.0, camprojection);
 	else
 		ERROR("Unknown perspective %u", p);
 }

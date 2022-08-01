@@ -17,5 +17,5 @@ void main()
     // diffuse += vec3(max(dot(Fnormal, vec3(lighting.lights[0])), 0.0) * lighting.lights[0].w);
     // screen_colour = vec4(Frgb * (lighting.ambient + diffuse), 1.0);
     // screen_colour = vec4(abs(Fnormal) * (lighting.ambient + diffuse), 1.0);
-    screen_colour = vec4(1.0, 0.0, 0.0, 1.0);
+    screen_colour = vec4(Fxyz, 1.0);
 }

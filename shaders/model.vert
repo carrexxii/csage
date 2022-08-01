@@ -9,21 +9,24 @@ layout(location = 1) out vec3 Frgb;
 layout(location = 2) out vec3 Fnormal;
 
 struct ObjectData {
-    mat4 mat;
+	mat4 mat;
 };
 layout(std140, binding = 0) readonly buffer ObjectBuffer {
-    ObjectData objs[];
+	ObjectData objs[];
 } mdls;
 
 layout(binding = 1) uniform UniformBufferObject {
-    mat4 vp;
+	mat4 vp;
 } cam;
 
 void main()
 {
-    mat4 mdl = mdls.objs[gl_BaseInstance].mat;
-    gl_Position = mdl * cam.vp * vec4(Vxyz, 1.0);
-    Fxyz    = Vxyz;
-    Frgb    = Vrgb;
-    Fnormal = Vnormal;
+	mat4 mdl = mdls.objs[gl_BaseInstance].mat;
+	gl_Position = mdl * cam.vp * vec4(Vxyz, 1.0);
+	Fxyz    = Vxyz;
+	Frgb    = Vrgb;
+	Fnormal = Vnormal;
+
+	/* glm (OpenGL) -> Vulkan depth */
+	gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
 }

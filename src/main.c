@@ -46,18 +46,18 @@ int main(int argc, char** argv)
 	init_camera();
 	init_entities();
 
-	// Entity e1 = create_entity();
-	// add_component(e1, COMPONENT_MODEL, MODEL_PATH "plane");
-	// set_entity_pos(e1, (vec3){ 0.5, 0.0, 0.0 });
+	Entity e1 = create_entity();
+	add_component(e1, COMPONENT_MODEL, MODEL_PATH "plane");
+	set_entity_pos(e1, (vec3){ 0.5, 0.0, 0.0 });
 
 	// Entity e2 = create_entity();
 	// add_component(e2, COMPONENT_MODEL, MODEL_PATH "plane");
 	// set_entity_pos(e2, (vec3){ -0.5, 0.0, 0.0 });
 
-	Entity e3 = create_entity();
-	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
-	set_entity_pos(e3, (vec3){ -0.7, -0.5, 0.0 });
-	add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, 0.0, 0.01 });
+	// Entity e3 = create_entity();
+	// add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
+	// set_entity_pos(e3, (vec3){ -0.7, -0.5, 0.0 });
+	// add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, 0.0, 0.01 });
 
 	struct Map* map = create_map(MAPTYPE_FILLED, (struct Dim){ .w=1, .h=1, .d=1 },
 	                                             (struct Dim){ .w=1, .h=1, .d=1 });

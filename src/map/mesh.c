@@ -33,31 +33,31 @@ struct Model* generate_meshes(struct Map* map)
 				continue;
 			vertc += VERTS_PER_VXL;
 			/* Left */
-			*verts++ = VERT(x, y    , z + 1);
 			*verts++ = VERT(x, y    , z    );
+			*verts++ = VERT(x, y    , z + 1);
 			*verts++ = VERT(x, y + 1, z    );
 
-			*verts++ = VERT(x, y    , z + 1);
 			*verts++ = VERT(x, y + 1, z    );
+			*verts++ = VERT(x, y    , z + 1);
 			*verts++ = VERT(x, y + 1, z + 1);
 
-			/* Top */
-			*verts++ = VERT(x    , y + 1, z);
-			*verts++ = VERT(x    , y    , z);
-			*verts++ = VERT(x + 1, y    , z);
-
-			*verts++ = VERT(x    , y + 1, z);
-			*verts++ = VERT(x + 1, y    , z);
-			*verts++ = VERT(x + 1, y + 1, z);
-
 			/* Right */
-			*verts++ = VERT(x    , y + 1, z + 1);
-			*verts++ = VERT(x    , y + 1, z    );
-			*verts++ = VERT(x + 1, y + 1, z    );
+			*verts++ = VERT(x    , y, z    );
+			*verts++ = VERT(x + 1, y, z    );
+			*verts++ = VERT(x    , y, z + 1);
 
-			*verts++ = VERT(x    , y + 1, z + 1);
-			*verts++ = VERT(x + 1, y + 1, z    );
-			*verts++ = VERT(x + 1, y + 1, z + 1);
+			*verts++ = VERT(x + 1, y, z    );
+			*verts++ = VERT(x + 1, y, z + 1);
+			*verts++ = VERT(x    , y, z + 1);
+
+			/* Top */
+			*verts++ = VERT(x    , y    , z);
+			*verts++ = VERT(x    , y + 1, z);
+			*verts++ = VERT(x + 1, y    , z);
+
+			*verts++ = VERT(x + 1, y    , z);
+			*verts++ = VERT(x    , y + 1, z);
+			*verts++ = VERT(x + 1, y + 1, z);
 		}
 		block += volume_of(map->blockdim);
 		meshes[i].vertc = vertc;
