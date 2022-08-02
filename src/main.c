@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 	// add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, 0.0, 0.01 });
 
 	struct Map* map = create_map(MAPTYPE_FILLED, (struct Dim){ .w=1, .h=1, .d=1 },
-	                                             (struct Dim){ .w=1, .h=1, .d=1 });
+	                                             (struct Dim){ .w=16, .h=16, .d=4 });
 	renvxlmdlc = &map->meshc;
 	renvxlmdls = map->meshes;
 

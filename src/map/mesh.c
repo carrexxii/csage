@@ -15,7 +15,7 @@ struct Model* generate_meshes(struct Map* map)
 	uint blockcellc = volume_of(map->blockdim);
 
 	struct Model*  meshes    = scalloc(blockc, sizeof(struct Model));
-	struct Vertex* verts     = scalloc(blockc * blockcellc * VERTS_PER_VXL * SIZEOF_VXL_VERT, 1);
+	struct Vertex* verts     = scalloc(blockc * blockcellc * VERTS_PER_VXL, SIZEOF_VXL_VERT);
 	struct Vertex* vertstart = verts;
 
 	uint8 x = 0;
@@ -24,7 +24,7 @@ struct Model* generate_meshes(struct Map* map)
 	uint vertc;
 	struct MapCell* cell;
 	struct MapCell* block = map->data;
-	for (uint i = 0; i < blockcellc; i++) {
+	for (uint i = 0; i < blockc; i++) {
 		cell  = block;
 		vertc = 0;
 		meshes[i].verts = (float*)verts;
@@ -58,6 +58,12 @@ struct Model* generate_meshes(struct Map* map)
 			*verts++ = VERT(x + 1, y    , z);
 			*verts++ = VERT(x    , y + 1, z);
 			*verts++ = VERT(x + 1, y + 1, z);
+
+			x++;
+			if (x == map->blockdim.w) y++;
+			if (y == map->blockdim.h) z++;
+			y %= map->blockdim.h;
+			x %= map->blockdim.w;
 		}
 		block += volume_of(map->blockdim);
 		meshes[i].vertc = vertc;
