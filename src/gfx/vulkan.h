@@ -8,7 +8,7 @@
 #include "pipeline.h"
 #include "buffers.h"
 
-#define VULKAN_API_VERSION  VK_MAKE_VERSION(1, 2, 0)
+#define VULKAN_API_VERSION  VK_MAKE_VERSION(1, 3, 0)
 #define APPLICATION_NAME    "CSage testing"
 #define APPLICATION_VERSION VK_MAKE_VERSION(0, 0, 1)
 #define ENGINE_NAME         "CSage"

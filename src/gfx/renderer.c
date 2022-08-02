@@ -143,6 +143,7 @@ void renderer_init(SDL_Window* win)
 	pipeln_init(&mdlpipeln, renderpass);
 
 	vxlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "voxel.vert");
+	vxlpipeln.gshader   = vulkan_new_shader(SHADER_DIR "voxel.geom");
 	vxlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "voxel.frag");
 	vxlpipeln.vertbindc = 1;
 	vxlpipeln.vertbinds = vxlvertbinds;
@@ -150,8 +151,8 @@ void renderer_init(SDL_Window* win)
 	vxlpipeln.vertattrs = vxlvertattrs;
 	vxlpipeln.uboc      = 2;
 	vxlpipeln.ubos      = scalloc(2, sizeof(UBO));
-	vxlpipeln.ubos[0]   = mdlpipeln.ubos[0];//create_ubo(sizeof(float[16]));
-	vxlpipeln.ubos[1]   = mdlpipeln.ubos[1];;//create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
+	vxlpipeln.ubos[0]   = mdlpipeln.ubos[0];
+	vxlpipeln.ubos[1]   = mdlpipeln.ubos[1];
 	vxlpipeln.sbosz     = 0;
 	pipeln_init(&vxlpipeln, renderpass);
 
@@ -285,6 +286,7 @@ static void record_command(uint imgi)
 	for (uint i = 0; i < *renvxlmdlc; i++) {
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renvxlmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, renvxlmdls[i].vertc, 1, 0, i);
+		// vkCmdDrawIndexed(cmdbuf, renvxls[i].indc, 1, 0, 0, 0);
 	}
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);

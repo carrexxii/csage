@@ -65,7 +65,7 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 		};
 
 	VkPhysicalDeviceFeatures devfeatures[] = {
-		{ .geometryShader = 0, }
+		{ .geometryShader = 1, }
 	};
 	VkPhysicalDeviceShaderDrawParametersFeatures shaderfeatures[] = {
 		{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
