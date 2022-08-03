@@ -19,7 +19,9 @@ void renderer_free();
 extern mat4* renmats;
 extern uint16*       renmdlc;
 extern struct Model* renmdls;
-extern uint16*       renvxlmdlc;
-extern struct Model* renvxlmdls; 
+extern uint* renvxlvertc;
+extern VBO*  renvxlverts;
+extern uint16* renvxlindc;
+extern IBO*    renvxlinds;
 
 #endif

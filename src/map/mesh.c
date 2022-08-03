@@ -2,76 +2,82 @@
 #include "gfx/vertices.h"
 #include "map.h"
 
-#define VERTS_PER_VXL (3*6)
-#define VERT(_x, _y, _z) ((struct Vertex){ .x = (float)(_x), .y = (float)(_y), .z = (float)(_z) })
-
 struct Vertex {
-	float x, y, z;
-}; static_assert(sizeof(struct Vertex) == 12, "struct Vertex");
+	uint8 x, y, z, _;
+}; static_assert(sizeof(struct Vertex) == 4, "struct Vertex");
 
-struct Model* generate_meshes(struct Map* map)
+void generate_meshes(struct Map* map)
 {
-	uint blockc     = volume_of(map->dim);
-	uint blockcellc = volume_of(map->blockdim);
+	uint cellc = volume_of(map->dim);
 
-	struct Model*  mesh      = scalloc(1, sizeof(struct Model));
-	struct Vertex* verts     = scalloc(blockcellc * VERTS_PER_VXL, SIZEOF_VXL_VERT);
+	/* Vertices */
+	uint vertc = volume_of((struct Dim){ .w = map->dim.w + 1, .h = map->dim.h + 1, .d = map->dim.d + 1, });
+	struct Vertex* verts     = scalloc(vertc, SIZEOF_VXL_VERT);
 	struct Vertex* vertstart = verts;
+	for (uint z = 0; z < map->dim.d + 1; z++)
+		for (uint y = 0; y < map->dim.h + 1; y++)
+			for (uint x = 0; x < map->dim.w + 1; x++)
+				*verts++ = (struct Vertex){ .x = x, .y = y, .z = z };
 
-	uint8 x = 0;
-	uint8 y = 0;
-	uint8 z = 0;
-	uint vertc;
-	struct MapCell* cell;
-	struct MapCell* block = map->data;
-	for (uint i = 0; i < blockc; i++) {
-		cell  = block;
-		vertc = 0;
-		mesh[i].verts = (float*)verts;
-		for (uint vxl = 0; vxl < blockcellc; vxl++) {
-			vertc += VERTS_PER_VXL;
-			/* Left */
-			*verts++ = VERT(x, y    , z    );
-			*verts++ = VERT(x, y    , z + 1);
-			*verts++ = VERT(x, y + 1, z    );
+	/* Indices */
+	uint   indc     = 0;
+	uint8* inds     = scalloc(cellc, sizeof(uint8[18])); /* 18 vertices per voxel */
+	uint8* indstart = inds;
+	uint rowc   =  map->dim.h + 1;               /* # of cells per row     */
+	uint layerc = (map->dim.h + 1) * (map->dim.d + 1); /* # of cells per z-level */
+	for (uint z = 0; z < map->dim.d; z++) {
+		for (uint y = 0; y < map->dim.h; y++) {
+			for (uint x = 0; x < map->dim.w; x++) {
+				// if (!map->data[i].data)
+					// continue;
+				/* 2--3   2
+				 * | /  / |
+				 * 1   1--3
+				 */
+				/* Top */
+				*inds++ = x     + (y + 1)*rowc + z*layerc;
+				*inds++ = x + 1 +       y*rowc + z*layerc;
+				*inds++ = x     +       y*rowc + z*layerc;
 
-			*verts++ = VERT(x, y + 1, z    );
-			*verts++ = VERT(x, y    , z + 1);
-			*verts++ = VERT(x, y + 1, z + 1);
+				*inds++ = x     + (y + 1)*rowc + z*layerc;
+				*inds++ = x + 1 + (y + 1)*rowc + z*layerc;
+				*inds++ = x + 1 +       y*rowc + z*layerc;
 
-			/* Right */
-			*verts++ = VERT(x    , y, z    );
-			*verts++ = VERT(x + 1, y, z    );
-			*verts++ = VERT(x    , y, z + 1);
+				/* Left */
+				*inds++ = x + (y + 1)*rowc + (z + 1)*layerc;
+				*inds++ = x + (y + 1)*rowc +       z*layerc;
+				*inds++ = x +       y*rowc + (z + 1)*layerc;
 
-			*verts++ = VERT(x + 1, y, z    );
-			*verts++ = VERT(x + 1, y, z + 1);
-			*verts++ = VERT(x    , y, z + 1);
+				*inds++ = x +       y*rowc +       z*layerc;
+				*inds++ = x +       y*rowc + (z + 1)*layerc;
+				*inds++ = x + (y + 1)*rowc +       z*layerc;
 
-			/* Top */
-			*verts++ = VERT(x    , y    , z);
-			*verts++ = VERT(x    , y + 1, z);
-			*verts++ = VERT(x + 1, y    , z);
+				/* Right */
+				*inds++ = x     + y*rowc + (z + 1)*layerc;
+				*inds++ = x     + y*rowc +       z*layerc;
+				*inds++ = x + 1 + y*rowc +       z*layerc;
 
-			*verts++ = VERT(x + 1, y    , z);
-			*verts++ = VERT(x    , y + 1, z);
-			*verts++ = VERT(x + 1, y + 1, z);
+				*inds++ = x     + y*rowc + (z + 1)*layerc;
+				*inds++ = x + 1 + y*rowc +       z*layerc;
+				*inds++ = x + 1 + y*rowc + (z + 1)*layerc;
+				// for (uint k = 0; k < 12; k++) inds++;
 
-			x++;
-			if (x == map->blockdim.w) y++;
-			if (y == map->blockdim.h) z++;
-			y %= map->blockdim.h;
-			x %= map->blockdim.w;
+				indc += 18;
+			}
 		}
-		block += volume_of(map->blockdim);
-		mesh[i].vertc = vertc;
 	}
 
-	map->meshc = blockc;
-	for (uint i = 0; i < blockc; i++)
-		mesh[i].vbo = create_vbo(mesh[i].vertc * SIZEOF_VXL_VERT, mesh[i].verts);
+	for (uint v = 0; v < vertc; v++)
+		DEBUG(1, "[v%u] %u %u %u", v, vertstart[v].x, vertstart[v].y, vertstart[v].z);
+	DEBUG(1, "   ");
+	for (uint v = 0; v < indc; v += 3)
+		DEBUG(1, "[t%u] %u %u %u", v/3, indstart[v], indstart[v+1], indstart[v+2]);
+	map->verts = create_vbo(vertc*SIZEOF_VXL_VERT, vertstart);
+	map->inds  = create_ibo(indc*sizeof(uint8), indstart);
+	map->indc  = indc;
 
 	free(vertstart);
-	DEBUG(3, "[MAP] Generated mesh for map with %u meshes (%u vertices)", blockc, blockcellc*VERTS_PER_VXL);
-	return mesh;
+	free(indstart);
+	DEBUG(3, "[MAP] Generated mesh for map with %u cells (%u vertices)", cellc, indc);
+	// exit(0);
 }

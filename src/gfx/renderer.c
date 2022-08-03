@@ -48,8 +48,10 @@ static struct Lighting {
 mat4* renmats;
 uint16*       renmdlc;
 struct Model* renmdls;
-uint16*       renvxlmdlc;
-struct Model* renvxlmdls;
+uint* renvxlvertc;
+VBO*  renvxlverts;
+uint16* renvxlindc;
+IBO*    renvxlinds;
 uint16* renlightc;
 vec4*   renlights;
 static SBO matbuf;
@@ -283,11 +285,11 @@ static void record_command(uint imgi)
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
-	for (uint i = 0; i < *renvxlmdlc; i++) {
-		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renvxlmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdDraw(cmdbuf, renvxlmdls[i].vertc, 1, 0, i);
-		// vkCmdDrawIndexed(cmdbuf, renvxls[i].indc, 1, 0, 0, 0);
-	}
+	// for (uint i = 0; i < *renvxlmdlc; i++) {
+		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renvxlverts->buf, (VkDeviceSize[]) { 0 });
+		vkCmdBindIndexBuffer(cmdbuf, renvxlinds->buf, 0, VK_INDEX_TYPE_UINT8_EXT);
+		vkCmdDrawIndexed(cmdbuf, *renvxlindc, 1, 0, 0, 0);
+	// }
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.layout, 0, 1, &mdlpipeln.dset, 0, NULL);

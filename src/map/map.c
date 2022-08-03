@@ -1,11 +1,10 @@
 #include "map.h"
 
-struct Map* create_map(enum MapType type, struct Dim dim, struct Dim blockdim)
+struct Map* create_map(enum MapType type, struct Dim dim)
 {
-	uintptr blockc  = volume_of(dim)*volume_of(blockdim);
-	struct Map* map = scalloc(sizeof(struct Map) + blockc, sizeof(struct MapCell));
-	map->dim      = dim;
-	map->blockdim = blockdim;
+	uint blockc = volume_of(dim);
+	struct Map* map = scalloc(sizeof(struct Map) + blockc*sizeof(struct MapCell), 1);
+	map->dim = dim;
 
 	switch (type) {
 		case MAPTYPE_NONE:
@@ -19,9 +18,8 @@ struct Map* create_map(enum MapType type, struct Dim dim, struct Dim blockdim)
 		default:
 			ERROR("[MAP] Invalid map type %d", type);
 	}
-	map->meshes = generate_meshes(map);
+	generate_meshes(map);
 
-	DEBUG(1, "[MAP] Created map: %ux%ux%u blocks each of %ux%ux%u (%lu total)", dim.w, dim.h, dim.d, 
-	      blockdim.w, blockdim.h, blockdim.d, blockc);
+	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%u total)", dim.w, dim.h, dim.d, blockc);
 	return map;
 }

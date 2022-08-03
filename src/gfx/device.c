@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "vulkan.h"
 #include "swapchain.h"
@@ -67,9 +68,14 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 	VkPhysicalDeviceFeatures devfeatures[] = {
 		{ .geometryShader = 1, }
 	};
-	VkPhysicalDeviceShaderDrawParametersFeatures shaderfeatures[] = {
-		{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-		  .shaderDrawParameters = 1, },
+	VkPhysicalDeviceIndexTypeUint8FeaturesEXT uint8inds = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
+		.indexTypeUint8 = 1,
+	};
+	VkPhysicalDeviceShaderDrawParametersFeatures shaderfeatures = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+		.shaderDrawParameters = 1,
+		.pNext = &uint8inds,
 	};
 
 	const uint  extc   = 1;
@@ -80,7 +86,7 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 		.queueCreateInfoCount    = devqic,
 		.pQueueCreateInfos       = devqis,
 		.pEnabledFeatures        = devfeatures,
-		.pNext                   = shaderfeatures,
+		.pNext                   = &shaderfeatures,
 		.enabledLayerCount       = VK_LAYERC,
 		.ppEnabledLayerNames     = VK_LAYERS,
 		.enabledExtensionCount   = extc,

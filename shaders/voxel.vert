@@ -1,6 +1,6 @@
 #version 460
 
-layout(location = 0) in vec3 Vxyz;
+layout(location = 0) in uvec3 Vxyz;
 
 layout(location = 0) out vec3 Gxyz;
 

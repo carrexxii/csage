@@ -4,6 +4,10 @@
 #include "gfx/buffers.h"
 #include "gfx/model.h"
 
+#define MAP_BLOCK_WIDTH  8
+#define MAP_BLOCK_HEIGHT 8
+#define MAP_BLOCK_DEPTH  8
+
 enum MapType {
 	MAPTYPE_NONE,
 	MAPTYPE_FILLED,
@@ -27,14 +31,14 @@ struct MapCell {
 
 struct Map {
 	struct Dim dim;
-	struct Dim blockdim;
-	uint16 meshc;
-	struct Model* meshes;
+	uint16 indc;
+	IBO    inds;
+	VBO    verts;
 	struct MapCell data[];
-}; static_assert(sizeof(struct Map) == 40, "struct Map");
+}; static_assert(sizeof(struct Map) == 64, "struct Map");
 
-struct Map* create_map(enum MapType type, struct Dim dim, struct Dim blockdim);
+struct Map* create_map(enum MapType type, struct Dim dim);
 
-struct Model* generate_meshes(struct Map* map);
+void generate_meshes(struct Map* map);
 
 #endif
