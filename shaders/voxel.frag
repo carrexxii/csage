@@ -5,7 +5,7 @@ layout(location = 1) in vec3 Fnormal;
 
 layout(location = 0) out vec4 screen_colour;
 
-layout(binding = 1) uniform UniformBufferObject {
+layout(binding = 2) uniform UniformBufferObject {
     vec3  sundir;
     float ambient;
     float sunpower;

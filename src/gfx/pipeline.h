@@ -18,8 +18,6 @@ struct Pipeline {
 	VkDescriptorSet       dset;
 	VkDescriptorSetLayout dsetlayout;
 
-	UBO* ubos;
-	SBO  sbo;
 	/* Caller-defined values */
 	struct {
 		uint vertbindc;
@@ -33,7 +31,9 @@ struct Pipeline {
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
 	uint    uboc;
+	UBO*    ubos;
 	uintptr sbosz;
+	SBO     sbo;
 	uintptr pushsz;
 	VkShaderStageFlags pushstages;
 }; static_assert(sizeof(struct Pipeline) == 168, "struct Pipeline");

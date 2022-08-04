@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include "cglm/cglm.h"
 
+#include "map/map.h"
 #include "util/iarray.h"
 #include "config.h"
 #include "vulkan.h"
@@ -48,13 +49,10 @@ static struct Lighting {
 mat4* renmats;
 uint16*       renmdlc;
 struct Model* renmdls;
-uint* renvxlvertc;
-VBO*  renvxlverts;
-uint16* renvxlindc;
-IBO*    renvxlinds;
 uint16* renlightc;
 vec4*   renlights;
 static SBO matbuf;
+static SBO mapbuf;
 
 void renderer_init(SDL_Window* win)
 {
@@ -129,6 +127,7 @@ void renderer_init(SDL_Window* win)
 	create_sync_objects();
 
 	matbuf = create_sbo(RENDERER_MAX_OBJECTS * sizeof(float[16]));
+	mapbuf = create_sbo(sizeof(struct MapDrawData));
 
 	mdlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "model.vert");
 	mdlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "model.frag");
@@ -155,7 +154,8 @@ void renderer_init(SDL_Window* win)
 	vxlpipeln.ubos      = scalloc(2, sizeof(UBO));
 	vxlpipeln.ubos[0]   = mdlpipeln.ubos[0];
 	vxlpipeln.ubos[1]   = mdlpipeln.ubos[1];
-	vxlpipeln.sbosz     = 0;
+	vxlpipeln.sbo       = mapbuf;
+	vxlpipeln.sbosz     = sizeof(struct MapDrawData);
 	pipeln_init(&vxlpipeln, renderpass);
 
 	memcpy(lighting.sundir, (float[]){ -10.0, -10.0, 0.0 }, sizeof(float[3]));
@@ -285,11 +285,12 @@ static void record_command(uint imgi)
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
-	// for (uint i = 0; i < *renvxlmdlc; i++) {
-		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renvxlverts->buf, (VkDeviceSize[]) { 0 });
-		vkCmdBindIndexBuffer(cmdbuf, renvxlinds->buf, 0, VK_INDEX_TYPE_UINT8_EXT);
-		vkCmdDrawIndexed(cmdbuf, *renvxlindc, 1, 0, 0, 0);
-	// }
+	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &map->verts.buf, (VkDeviceSize[]) { 0 });
+	for (uint i = 0; i < map->indc; i++) {
+		vkCmdBindIndexBuffer(cmdbuf, map->inds[i].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(cmdbuf, map->inds[i].indc, 1, 0, 0, i);
+		// DEBUG(1, "[%u] Drawing %u indices", i, map->inds[i].indc);
+	}
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.layout, 0, 1, &mdlpipeln.dset, 0, NULL);
@@ -306,7 +307,9 @@ static void record_command(uint imgi)
 inline static void update_buffers()
 {
 	void*   mem;
-	uintptr memsz = (*renmdlc)*sizeof(float[16]);
+	uintptr memsz;
+
+	memsz = (*renmdlc)*sizeof(float[16]);
 	vkMapMemory(gpu, mdlpipeln.sbo.mem, 0, memsz, 0, &mem);
 	memcpy(mem, renmats, memsz);
 	vkUnmapMemory(gpu, mdlpipeln.sbo.mem);
@@ -314,8 +317,12 @@ inline static void update_buffers()
 	mat4 vp;
 	get_cam_vp(vp);
 	update_buffer(mdlpipeln.ubos[0], sizeof(mat4), vp);
-
 	update_buffer(mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
+
+	memsz = sizeof(struct MapDrawData);
+	vkMapMemory(gpu, vxlpipeln.sbo.mem, 0, memsz, 0, &mem);
+	memcpy(mem, &mapdd, memsz);
+	vkUnmapMemory(gpu, vxlpipeln.sbo.mem);
 }
 
 static void create_framebuffers()

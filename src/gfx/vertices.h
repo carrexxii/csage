@@ -7,7 +7,7 @@
 #include "buffers.h"
 
 #define SIZEOF_MDL_VERT sizeof(float[9])
-#define SIZEOF_VXL_VERT sizeof(uint8[4])
+#define SIZEOF_VXL_VERT sizeof(uint32)
 
 /* Models */
 static VkVertexInputBindingDescription mdlvertbinds[] = {
@@ -44,7 +44,7 @@ static VkVertexInputAttributeDescription vxlvertattrs[] = {
 	/* xyz */
 	{ .binding  = 0,
 	  .location = 0,
-	  .format   = VK_FORMAT_R8G8B8A8_UINT,
+	  .format   = VK_FORMAT_A2R10G10B10_UINT_PACK32,
 	  .offset   = 0, },
 };
 
