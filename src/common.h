@@ -102,6 +102,7 @@ inline static uint volume_of(struct Dim dim) {
 #define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
 #define CLAMP(a, b, c)   ((a) < (b)? (b): (a) > (c)? (c): (a))
 #define ARRAY_LEN(a)     (sizeof(a)/sizeof(a[0]))
+#define DIV_CEIL(a, b)   (((a) + (b) - 1) / (b))
 
 #define STRING_TF(x) ((x)? "true": "false")
 #define STRING_YN(x) ((x)? "yes" : "no"   )

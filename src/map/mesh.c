@@ -40,9 +40,9 @@ void generate_meshes()
 	uintptr totalindc = 0;
 	uint16* inds = smalloc(MAP_CELLS_PER_BLOCK * MAP_INDICES_PER_VXL * sizeof(uint16));
 	uintptr currblock = 0;
-	for (uint z = 0; z < MAX(map->dim.d / MAP_BLOCK_DEPTH, 1); z++) {
-		for (uint y = 0; y < MAX(map->dim.h / MAP_BLOCK_HEIGHT, 1); y++) {
-			for (uint x = 0; x < MAX(map->dim.w / MAP_BLOCK_WIDTH, 1); x++) {
+	for (uint z = 0; z < MAX((map->dim.d + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
+		for (uint y = 0; y < MAX((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
+			for (uint x = 0; x < MAX((map->dim.w + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
 				indc = generate_block_indices(inds, currblock++);
 				totalindc += indc;
 				map->inds[map->indc  ].ibo = create_ibo(indc*sizeof(uint16), inds);
@@ -54,9 +54,9 @@ void generate_meshes()
 	// for (uint i = 0; i < vertc; i++)
 	// 	DEBUG(1, "[v%u] %u %u %u", i, verts[i].x, verts[i].y, verts[i].z);
 	// DEBUG(1, "   ");
-	for (uint i = 0; i < totalindc; i += 9)
-		DEBUG(1, "[vxl%u] %u -> %u %u %u %u %u %u %u", i/9, inds[i], inds[i+1], inds[i+2], inds[i+3], inds[i+4], inds[i+5],
-		                                                           inds[i+6], inds[i+7]);
+	// for (uint i = 0; i < totalindc; i += 9)
+	// 	DEBUG(1, "[vxl%u] %u -> %u %u %u %u %u %u %u", i/9, inds[i], inds[i+1], inds[i+2], inds[i+3], inds[i+4], inds[i+5],
+	// 	                                                           inds[i+6], inds[i+7]);
 
 	free(inds);
 	DEBUG(3, "[MAP] Generated mesh for map with %u cells (%lu vertices in %u blocks)", cellc, totalindc, blockc);
@@ -65,6 +65,11 @@ void generate_meshes()
 
 static uint generate_block_indices(uint16* inds, uintptr start)
 {
+	uint blockx = (start % DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH))  * MAP_BLOCK_WIDTH;
+	uint blocky = (start / DIV_CEIL(map->dim.w, MAP_BLOCK_HEIGHT)) * MAP_BLOCK_HEIGHT;
+	uint blockz = 0;
+	DEBUG(1, "start %lu: %u %u %u", start, blockx, blocky, blockz);
+
 	uint indc   = 0;
 	uint rowc   =  MAP_BLOCK_WIDTH + 1;                           /* # of cells per row     */
 	uint layerc = (MAP_BLOCK_WIDTH + 1) * (MAP_BLOCK_HEIGHT + 1); /* # of cells per z-level */
@@ -73,8 +78,8 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 	for (uint z = 0; z < MAP_BLOCK_DEPTH; z++) {
 		for (uint y = 0; y < MAP_BLOCK_HEIGHT; y++) {
 			for (uint x = 0; x < MAP_BLOCK_WIDTH; x++) {
-				// DEBUG(1, "Cell %u: %u", indc/MAP_INDICES_PER_VXL, cells[indc/MAP_INDICES_PER_VXL].data);
-				if (x >= map->dim.w || y >= map->dim.h || z >= map->dim.d)
+				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
+				if (blockx + x >= map->dim.w || blocky + y >= map->dim.h || blockz + z >= map->dim.d)
 					continue;
 				// if (!map->data[indc/MAP_INDICES_PER_VXL].data)
 					// continue;
