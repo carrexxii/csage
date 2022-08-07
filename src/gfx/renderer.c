@@ -51,12 +51,13 @@ uint16*       renmdlc;
 struct Model* renmdls;
 uint16* renlightc;
 vec4*   renlights;
+static uint ubobufc;
+static UBO ubobufs[8];
 static SBO matbuf;
 static SBO mapbuf;
 
-void renderer_init(SDL_Window* win)
+void renderer_init()
 {
-	vulkan_init(win);
 	swapchain_init(surface, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	VkAttachmentDescription colourdesc = {
@@ -128,36 +129,38 @@ void renderer_init(SDL_Window* win)
 
 	matbuf = create_sbo(RENDERER_MAX_OBJECTS * sizeof(float[16]));
 	mapbuf = create_sbo(sizeof(struct MapDrawData));
+	ubobufs[ubobufc++] = create_ubo(sizeof(float[16]));
+	ubobufs[ubobufc++] = create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
 
-	mdlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "model.vert");
-	mdlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "model.frag");
+	mdlpipeln.vshader   = create_shader(SHADER_DIR "model.vert");
+	mdlpipeln.fshader   = create_shader(SHADER_DIR "model.frag");
 	mdlpipeln.vertbindc = 1;
 	mdlpipeln.vertbinds = mdlvertbinds;
 	mdlpipeln.vertattrc = ARRAY_LEN(mdlvertattrs);
 	mdlpipeln.vertattrs = mdlvertattrs;
 	mdlpipeln.uboc      = 2;
 	mdlpipeln.ubos      = scalloc(2, sizeof(UBO));
-	mdlpipeln.ubos[0]   = create_ubo(sizeof(float[16]));
-	mdlpipeln.ubos[1]   = create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
-	mdlpipeln.sbo       = matbuf;
+	mdlpipeln.ubos[0]   = &ubobufs[0];
+	mdlpipeln.ubos[1]   = &ubobufs[1];
+	mdlpipeln.sbo       = &matbuf;
 	mdlpipeln.sbosz     = RENDERER_MAX_OBJECTS * sizeof(float[16]);
-	pipeln_init(&mdlpipeln, renderpass);
+	init_pipeln(&mdlpipeln, renderpass);
 
 	vxlpipeln.topology  = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
-	vxlpipeln.vshader   = vulkan_new_shader(SHADER_DIR "voxel.vert");
-	vxlpipeln.gshader   = vulkan_new_shader(SHADER_DIR "voxel.geom");
-	vxlpipeln.fshader   = vulkan_new_shader(SHADER_DIR "voxel.frag");
+	vxlpipeln.vshader   = create_shader(SHADER_DIR "voxel.vert");
+	vxlpipeln.gshader   = create_shader(SHADER_DIR "voxel.geom");
+	vxlpipeln.fshader   = create_shader(SHADER_DIR "voxel.frag");
 	vxlpipeln.vertbindc = 1;
 	vxlpipeln.vertbinds = vxlvertbinds;
 	vxlpipeln.vertattrc = ARRAY_LEN(vxlvertattrs);
 	vxlpipeln.vertattrs = vxlvertattrs;
 	vxlpipeln.uboc      = 2;
 	vxlpipeln.ubos      = scalloc(2, sizeof(UBO));
-	vxlpipeln.ubos[0]   = mdlpipeln.ubos[0];
-	vxlpipeln.ubos[1]   = mdlpipeln.ubos[1];
-	vxlpipeln.sbo       = mapbuf;
+	vxlpipeln.ubos[0]   = &ubobufs[0];
+	vxlpipeln.ubos[1]   = &ubobufs[1];
+	vxlpipeln.sbo       = &mapbuf;
 	vxlpipeln.sbosz     = sizeof(struct MapDrawData);
-	pipeln_init(&vxlpipeln, renderpass);
+	init_pipeln(&vxlpipeln, renderpass);
 
 	memcpy(lighting.sundir, (float[]){ -10.0, -10.0, 0.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
@@ -241,12 +244,13 @@ void renderer_free()
 	for (uint i = 0; i < swapchainimgc; i++)
 		vkDestroyFramebuffer(gpu, framebufs[i], alloccb);
 
-	pipeln_free(&mdlpipeln);
+	while (ubobufc--)
+		free_ubo(&ubobufs[ubobufc]);
+	free_pipeln(&mdlpipeln);
+	free_pipeln(&vxlpipeln);
 
 	DEBUG(3, "[VK] Destroying render pass...");
 	vkDestroyRenderPass(gpu, renderpass, alloccb);
-
-	vulkan_free();
 
 	free(framebufs);
 	free(cmdbufs);
@@ -311,19 +315,19 @@ inline static void update_buffers()
 	uintptr memsz;
 
 	memsz = (*renmdlc)*sizeof(float[16]);
-	vkMapMemory(gpu, mdlpipeln.sbo.mem, 0, memsz, 0, &mem);
+	vkMapMemory(gpu, mdlpipeln.sbo->mem, 0, memsz, 0, &mem);
 	memcpy(mem, renmats, memsz);
-	vkUnmapMemory(gpu, mdlpipeln.sbo.mem);
+	vkUnmapMemory(gpu, mdlpipeln.sbo->mem);
 
 	mat4 vp;
 	get_cam_vp(vp);
-	update_buffer(mdlpipeln.ubos[0], sizeof(mat4), vp);
-	update_buffer(mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
+	update_buffer(*mdlpipeln.ubos[0], sizeof(mat4), vp);
+	update_buffer(*mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
 
 	memsz = sizeof(struct MapDrawData);
-	vkMapMemory(gpu, vxlpipeln.sbo.mem, 0, memsz, 0, &mem);
+	vkMapMemory(gpu, vxlpipeln.sbo->mem, 0, memsz, 0, &mem);
 	memcpy(mem, &mapdd, memsz);
-	vkUnmapMemory(gpu, vxlpipeln.sbo.mem);
+	vkUnmapMemory(gpu, vxlpipeln.sbo->mem);
 }
 
 static void create_framebuffers()

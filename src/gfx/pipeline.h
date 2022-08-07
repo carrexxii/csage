@@ -32,14 +32,14 @@ struct Pipeline {
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
 	uint    uboc;
-	UBO*    ubos;
+	UBO**   ubos;
 	uintptr sbosz;
-	SBO     sbo;
+	SBO*    sbo;
 	uintptr pushsz;
 	VkShaderStageFlags pushstages;
-}; static_assert(sizeof(struct Pipeline) == 176, "struct Pipeline");
+}; static_assert(sizeof(struct Pipeline) == 160, "struct Pipeline");
 
-void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);
-void pipeln_free(struct Pipeline* pipeln);
+void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass);
+void free_pipeln(struct Pipeline* pipeln);
 
 #endif

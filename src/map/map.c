@@ -41,6 +41,15 @@ void init_map(enum MapType type, struct Dim dim)
 	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%u total)", dim.w, dim.h, dim.d, cellc);
 }
 
+void free_map()
+{
+	DEBUG(1, "[MAP] Freeing map...");
+	free_buffer(&map->verts);
+	for (uint i = 0; i < map->indc; i++)
+		free_buffer(&map->inds[i].ibo);
+	free(map);
+}
+
 static void print_map()
 {
 	fprintf(stderr, "Map (%ux%ux%u):\n", map->dim.w, map->dim.h, map->dim.d);

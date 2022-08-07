@@ -89,3 +89,12 @@ void print_iarr(struct IArray arr)
 	}
 	fprintf(stderr, "\n");
 }
+
+void free_iarr(struct IArray* arr, void (*cb)(void*))
+{
+	if (cb)
+		for (uint i = 0; i < arr->itemc; i++)
+			if (arr->inds[i])
+				cb((byte*)arr->data + i*arr->itemsz);
+	free(arr->inds);
+}

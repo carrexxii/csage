@@ -81,7 +81,7 @@ VBO _create_vbo(VkDeviceSize sz, void* verts, char const* file, int line, char c
 	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 	              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
 	copy_buffer(buf.buf, tmpbuf.buf, sz);
-	free_buffer(tmpbuf);
+	free_buffer(&tmpbuf);
 
 	return buf;
 }
@@ -99,7 +99,7 @@ IBO _create_ibo(VkDeviceSize sz, void* inds, char const* file, int line, char co
 	create_buffer(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 	              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
 	copy_buffer(buf.buf, tmpbuf.buf, sz);
-	free_buffer(tmpbuf);
+	free_buffer(&tmpbuf);
 
 	return buf;
 }
@@ -133,10 +133,11 @@ void update_buffer(struct Buffer buf, VkDeviceSize sz, void* data)
 	vkUnmapMemory(gpu, buf.mem);
 }
 
-void free_buffer(struct Buffer buf)
+void free_buffer(struct Buffer* buf)
 {
-	vkDestroyBuffer(gpu, buf.buf, alloccb);
-	vkFreeMemory(gpu, buf.mem, alloccb);
+	vkDestroyBuffer(gpu, buf->buf, alloccb);
+	vkFreeMemory(gpu, buf->mem, alloccb);
+	buf->sz = 0;
 }
 
 static void copy_buffer(VkBuffer dst, VkBuffer src, VkDeviceSize sz)

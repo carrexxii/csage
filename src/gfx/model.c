@@ -67,3 +67,9 @@ static void print_model(struct Model mdl)
 		      mdl.verts[i], mdl.verts[i+1], mdl.verts[i+2], mdl.verts[i+3], mdl.verts[i+4],
 		      mdl.verts[i+5], mdl.verts[i+6], mdl.verts[i+7], mdl.verts[i+8]);
 }
+
+void free_model(struct Model* mdl)
+{
+	free(mdl->verts);
+	free_buffer(&mdl->vbo);
+}

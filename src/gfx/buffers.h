@@ -31,10 +31,10 @@ uint find_memory_index(uint type, uint prop);
 
 void update_buffer(struct Buffer buf, VkDeviceSize sz, void* data);
 
-void free_buffer(struct Buffer buf);
-static inline void free_vbo(VBO buf) { free_buffer(buf); }
-static inline void free_ibo(IBO buf) { free_buffer(buf); }
-static inline void free_ubo(UBO buf) { free_buffer(buf); }
-static inline void free_sbo(SBO buf) { free_buffer(buf); }
+void free_buffer(struct Buffer* buf);
+static inline void free_vbo(VBO* buf) { free_buffer(buf); }
+static inline void free_ibo(IBO* buf) { free_buffer(buf); }
+static inline void free_ubo(UBO* buf) { free_buffer(buf); }
+static inline void free_sbo(SBO* buf) { free_buffer(buf); }
 
 #endif

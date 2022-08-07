@@ -10,7 +10,7 @@
 #define RENDERER_MAX_LIGHTS  8
 #define FRAMES_IN_FLIGHT     2
 
-void renderer_init(SDL_Window* win);
+void renderer_init();
 void renderer_draw();
 void renderer_add_light(vec4 light);
 void renderer_set_lights(uint16 lightc, vec4* lights);

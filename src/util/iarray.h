@@ -22,5 +22,6 @@ void  resize_iarr(struct IArray* arr, uint16 itemc);
 void* iarr_append(struct IArray* arr, uint16 i, void* data);
 void* iarr_get(struct IArray arr, uint16 i);
 void  print_iarr(struct IArray arr);
+void  free_iarr(struct IArray* arr, void (*cb)(void*));
 
 #endif

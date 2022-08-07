@@ -51,3 +51,11 @@ void add_component(Entity e, enum Component c, void* data)
 	}
 	entities[e] |= c;
 }
+
+void free_entities()
+{
+	DEBUG(1, "[ENT] Freeing entities...");
+	free_iarr(&components.mdls  , (void (*)(void*))free_model);
+	free_iarr(&components.mats  , NULL);
+	free_iarr(&components.lights, NULL);
+}

@@ -42,7 +42,8 @@ int main(int argc, char** argv)
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
 	init_input();
-	renderer_init(window);
+	init_vulkan(window);
+	renderer_init();
 	init_camera();
 	init_entities();
 
@@ -114,6 +115,9 @@ noreturn void quit_cb(bool kdown)
 	DEBUG(1, "|\tCleaning up...         |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
+	free_map();
+	free_entities();
+	free_vulkan();
 	SDL_Quit();
 	exit(0);
 }

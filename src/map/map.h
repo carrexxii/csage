@@ -52,7 +52,7 @@ struct MapDrawData {
 };
 
 void init_map(enum MapType type, struct Dim dim);
-
+void free_map();
 void generate_meshes();
 
 extern struct Map* map;

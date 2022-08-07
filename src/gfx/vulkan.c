@@ -26,7 +26,7 @@ debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type, uint6
     return VK_FALSE;
 }
 
-void vulkan_init(SDL_Window* win)
+void init_vulkan(SDL_Window* win)
 {
     DEBUG(1, "[INIT] Initializing Vulkan...");
     VkApplicationInfo appi = {
@@ -107,7 +107,7 @@ void vulkan_init(SDL_Window* win)
     device_init_logical(instance, surface);
 }
 
-VkShaderModule vulkan_new_shader(const char* restrict path)
+VkShaderModule create_shader(const char* restrict path)
 {
     VkShaderModule module;
     char* code = file_load(path);
@@ -127,7 +127,7 @@ VkShaderModule vulkan_new_shader(const char* restrict path)
     return module;
 }
 
-void vulkan_free()
+void free_vulkan()
 {
 #if DEBUG_LEVEL > 0
     VK_GET_EXT(dbgfn, vkDestroyDebugReportCallbackEXT);

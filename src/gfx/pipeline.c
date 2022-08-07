@@ -19,7 +19,7 @@ inline static void update_img_dset(VkWriteDescriptorSet* dwriteset, VkDescriptor
                                    VkDescriptorImageInfo* dimgi, uintptr binding);
 static void update_dsets(struct Pipeline* pipeln);
 
-void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
+void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 {
 	VkPipelineShaderStageCreateInfo stagesci[5];
 	int stagec = init_shaders(pipeln, stagesci);
@@ -149,25 +149,26 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 		DEBUG(3, "[VK] Pipeline created");
 }
 
-void pipeln_free(struct Pipeline* pipeln)
+void free_pipeln(struct Pipeline* pipeln)
 {
 	DEBUG(3, "[VK] Destroying pipeline (%p)...", (void*)pipeln);
 	vkDestroyPipeline(gpu, pipeln->pipeln, alloccb);
 	vkDestroyPipelineLayout(gpu, pipeln->layout, alloccb);
 	vkDestroyDescriptorPool(gpu, pipeln->dpool, alloccb);
 
-	DEBUG(3, "[VK] Destroying shader modules...");
 	if (pipeln->vshader)  vkDestroyShaderModule(gpu, pipeln->vshader , alloccb);
 	if (pipeln->tcshader) vkDestroyShaderModule(gpu, pipeln->tcshader, alloccb);
 	if (pipeln->teshader) vkDestroyShaderModule(gpu, pipeln->teshader, alloccb);
 	if (pipeln->gshader)  vkDestroyShaderModule(gpu, pipeln->gshader , alloccb);
 	if (pipeln->fshader)  vkDestroyShaderModule(gpu, pipeln->fshader , alloccb);
 
-	DEBUG(3, "[VK] Destroying descriptor set...");
 	vkDestroyDescriptorSetLayout(gpu, pipeln->dsetlayout, alloccb);
 
 	for (uint i = 0; i < pipeln->uboc; i++)
-		free_ubo(pipeln->ubos[i]);
+		if (pipeln->ubos[i]->sz)
+			free_ubo(pipeln->ubos[i]);
+	if (pipeln->sbo->sz)
+		free_sbo(pipeln->sbo);
 }
 
 static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo* stagecis)
@@ -312,7 +313,7 @@ static void update_dsets(struct Pipeline* pipeln)
 	/* Storage buffers */
 	if (pipeln->sbosz > 0) {
 		dbufis[dwritesetc] = (VkDescriptorBufferInfo){
-			.buffer = pipeln->sbo.buf,
+			.buffer = pipeln->sbo->buf,
 			.offset = 0,
 			.range  = pipeln->sbosz,
 		};
@@ -324,9 +325,9 @@ static void update_dsets(struct Pipeline* pipeln)
 	/* Uniform buffers */
 	for (uint i = 0; i < pipeln->uboc; i++) {
 		dbufis[dwritesetc] = (VkDescriptorBufferInfo){
-			.buffer = pipeln->ubos[i].buf,
+			.buffer = pipeln->ubos[i]->buf,
 			.offset = 0,
-			.range  = pipeln->ubos[i].sz,
+			.range  = pipeln->ubos[i]->sz,
 		};
 		update_buf_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 
 		                &dbufis[dwritesetc], dwritesetc);

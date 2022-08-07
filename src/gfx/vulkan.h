@@ -139,9 +139,9 @@
      (x) == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR                        ? "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR"                        : \
      "Unknown")
          
-void vulkan_init(SDL_Window* window);
-VkShaderModule vulkan_new_shader(const char* restrict file);
-void vulkan_free();
+void           init_vulkan(SDL_Window* window);
+VkShaderModule create_shader(const char* restrict file);
+void           free_vulkan();
 
 extern VkAllocationCallbacks* alloccb;
 extern VkInstance   instance;
