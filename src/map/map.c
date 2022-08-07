@@ -27,10 +27,15 @@ void init_map(enum MapType type, struct Dim dim)
 	print_map();
 	generate_meshes(map);
 
-	mapdd.blockstride = (struct Dim){
-		.w = MAP_BLOCK_WIDTH  * sizeof(uint16),
-		.h = MAP_BLOCK_HEIGHT * sizeof(uint16),
-		.d = MAP_BLOCK_DEPTH  * sizeof(uint16),
+	mapdd.dim = (struct Dim4){
+		.w = (dim.w + MAP_BLOCK_WIDTH  - 1) / MAP_BLOCK_WIDTH,
+		.h = (dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT,
+		.d = (dim.d + MAP_BLOCK_DEPTH  - 1) / MAP_BLOCK_DEPTH,
+	};
+	mapdd.stride = (struct Dim4){
+		.w = MAP_BLOCK_WIDTH,
+		.h = MAP_BLOCK_HEIGHT,
+		.d = MAP_BLOCK_DEPTH,
 	};
 
 	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%u total)", dim.w, dim.h, dim.d, cellc);

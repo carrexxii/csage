@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	set_entity_pos(e3, (vec3){ -0.7, -0.5, 0.0 });
 	// add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, 0.0, 0.01 });
 
-	init_map(MAPTYPE_FILLED, (struct Dim){ .w=4, .h=4, .d=1, });
+	init_map(MAPTYPE_FILLED, (struct Dim){ .w=16, .h=16, .d=1, });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());

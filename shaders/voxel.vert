@@ -5,7 +5,8 @@ layout(location = 0) in uvec4 Vxyza;
 layout(location = 0) out vec3 Gxyz;
 
 struct MapData {
-	uvec3 blockstride;
+	uvec3 dim;
+	uvec3 stride;
 	// vec3 materials[255];
 };
 layout(std140, binding = 0) readonly buffer ObjectBuffer {
@@ -16,11 +17,14 @@ layout(binding = 1) uniform UniformBufferObject {
 	mat4 vp;
 } cam;
 
+vec4 xyza;
+
 void main()
 {
-	// gl_Position += gl_InstanceIndex * vec4(1.0, 0.0, 0.0, 0.0);//vec4(map.data.blockstride, 0.0);
-	// vec4 xyza = Vxyza + gl_InstanceIndex*vec4(8.0, 0.0, 0.0, 1.0);//vec4(map.data.blockstride, 0.0);
-	gl_Position = cam.vp * Vxyza;
+	xyza = vec4(Vxyza);
+	xyza.x += 1.1*float(gl_InstanceIndex % map.data.dim.x * map.data.stride.x);
+	xyza.y += 1.1*float(gl_InstanceIndex / map.data.dim.x * map.data.stride.y);
+	gl_Position = cam.vp * xyza;
 	Gxyz = vec3(Vxyza);
 
 	/* glm (OpenGL) -> Vulkan depth */

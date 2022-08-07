@@ -87,6 +87,10 @@ union Data {
 struct Dim {
 	uint w, h, d;
 }; static_assert(sizeof(struct Dim) == 12, "struct Dim");
+struct Dim4 { /* For shader alignment */
+	uint w, h, d, a;
+}; static_assert(sizeof(struct Dim4) == 16, "struct Dim4");
+#define DIM4(_d) (struct Dim4){ (_d).w, (_d).h, (_d).d, 0.0 }
 inline static uint volume_of(struct Dim dim) {
 	return dim.w * dim.h * dim.d;
 }

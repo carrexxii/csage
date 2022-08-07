@@ -46,7 +46,8 @@ struct Map {
 }; static_assert(sizeof(struct Map) == 48, "struct Map");
 
 struct MapDrawData {
-	struct Dim blockstride;
+	struct Dim4 dim;
+	struct Dim4 stride;
 	// struct Material materials[UINT8_MAX];
 };
 

@@ -287,11 +287,11 @@ static void record_command(uint imgi)
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
 	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &map->verts.buf, (VkDeviceSize[]) { 0 });
-	// for (uint i = 0; i < map->indc; i++) {
-		vkCmdBindIndexBuffer(cmdbuf, map->inds[0].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(cmdbuf, map->inds[0].indc, 1, 0, 0, 0);
+	for (uint i = 0; i < map->indc; i++) {
+		vkCmdBindIndexBuffer(cmdbuf, map->inds[i].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(cmdbuf, map->inds[i].indc, 1, 0, 0, i);
 		// DEBUG(1, "[%u] Drawing %u indices", i, map->inds[i].indc);
-	// }
+	}
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.layout, 0, 1, &mdlpipeln.dset, 0, NULL);
