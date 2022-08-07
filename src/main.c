@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	set_entity_pos(e3, (vec3){ -0.7, -0.5, 0.0 });
 	// add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, 0.0, 0.01 });
 
-	init_map(MAPTYPE_FILLED, (struct Dim){ .w=8, .h=4, .d=1, });
+	init_map(MAPTYPE_FILLED, (struct Dim){ .w=4, .h=4, .d=1, });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
@@ -110,9 +110,9 @@ void init_input()
 
 noreturn void quit_cb(bool kdown)
 {
-	DEBUG(1, "|------------------------------|");
+	DEBUG(1, "/------------------------------\\");
 	DEBUG(1, "|\tCleaning up...         |");
-	DEBUG(1, "|------------------------------|");
+	DEBUG(1, "\\------------------------------/");
 	renderer_free();
 	SDL_Quit();
 	exit(0);

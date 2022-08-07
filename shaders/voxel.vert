@@ -18,7 +18,8 @@ layout(binding = 1) uniform UniformBufferObject {
 
 void main()
 {
-	gl_Position += gl_InstanceIndex * vec4(0.0, 0.0, 1.0, 0.0);//vec4(map.data.blockstride, 0.0);
+	// gl_Position += gl_InstanceIndex * vec4(1.0, 0.0, 0.0, 0.0);//vec4(map.data.blockstride, 0.0);
+	// vec4 xyza = Vxyza + gl_InstanceIndex*vec4(8.0, 0.0, 0.0, 1.0);//vec4(map.data.blockstride, 0.0);
 	gl_Position = cam.vp * Vxyza;
 	Gxyz = vec3(Vxyza);
 

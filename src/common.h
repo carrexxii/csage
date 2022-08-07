@@ -148,17 +148,17 @@ inline static uint volume_of(struct Dim dim) {
 				fprintf(stderr, "\n" TERM_NORMAL);                       \
 			}                                                             \
 		} while (0)
-#define DEBUG_VALUE(x) do {                                            \
-			fprintf(stderr, _Generic((x),                              \
-			         char: "%c\n",              signed char: "%hhd\n", \
-			        _Bool: "%d\n",            unsigned char: "%hhu\n", \
-			    short int: "%hd\n",      unsigned short int: "%hu\n",  \
-			          int: "%d\n",             unsigned int: "%u\n",   \
-			     long int: "%ld\n",       unsigned long int: "%lu\n",  \
-			long long int: "%lld\n", unsigned long long int: "%llu\n", \
-			        float: "%g\n",                   double: "%g\n",   \
-			  long double: "%lg\n",                   char*: "%s\n",   \
-			  default: "<unknown or pointer type>%p\n"), (void*)x);    \
+#define DEBUG_VALUE(x) do {                                                            \
+			fprintf(stderr, _Generic((x),                                               \
+			         char: "Char: %c\n",                   signed char: "SChar: %hhd\n", \
+			        _Bool: "Bool: %d\n",                 unsigned char: "UChar: %hhu\n",  \
+			    short int: "Short: %hd\n",          unsigned short int: "UShort: %hu\n",   \
+			          int: "Int: %d\n",                   unsigned int: "UInt: %u\n",       \
+			     long int: "Long: %ld\n",            unsigned long int: "ULong: %lu\n",      \
+			long long int: "Long Long: %lld\n", unsigned long long int: "ULong Long: %llu\n", \
+			        float: "Float: %g\n",                       double: "Double: %g\n",        \
+			  long double: "Long Double: %lg\n",                 char*: "Char*: %s\n",          \
+			  default: "<unknown or pointer type>%p\n"), (void*)(x));                            \
 		} while (0)
 #define ERROR(...) do {                                   \
 			fprintf(stderr, TERM_RED);                     \

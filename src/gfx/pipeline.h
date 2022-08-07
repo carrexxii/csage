@@ -19,6 +19,7 @@ struct Pipeline {
 	VkDescriptorSetLayout dsetlayout;
 
 	/* Caller-defined values */
+	VkPrimitiveTopology topology;
 	struct {
 		uint vertbindc;
 		uint vertattrc;
@@ -36,7 +37,7 @@ struct Pipeline {
 	SBO     sbo;
 	uintptr pushsz;
 	VkShaderStageFlags pushstages;
-}; static_assert(sizeof(struct Pipeline) == 168, "struct Pipeline");
+}; static_assert(sizeof(struct Pipeline) == 176, "struct Pipeline");
 
 void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);
 void pipeln_free(struct Pipeline* pipeln);
