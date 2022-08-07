@@ -24,13 +24,13 @@ void init_map(enum MapType type, struct Dim dim)
 		default:
 			ERROR("[MAP] Invalid map type %d", type);
 	}
-	print_map();
+	// print_map();
 	generate_meshes(map);
 
 	mapdd.dim = (struct Dim4){
-		.w = (dim.w + MAP_BLOCK_WIDTH  - 1) / MAP_BLOCK_WIDTH,
-		.h = (dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT,
-		.d = (dim.d + MAP_BLOCK_DEPTH  - 1) / MAP_BLOCK_DEPTH,
+		.w = DIV_CEIL(dim.w, MAP_BLOCK_WIDTH),
+		.h = DIV_CEIL(dim.h, MAP_BLOCK_HEIGHT),
+		.d = DIV_CEIL(dim.d, MAP_BLOCK_DEPTH),
 	};
 	mapdd.stride = (struct Dim4){
 		.w = MAP_BLOCK_WIDTH,

@@ -41,10 +41,10 @@ void move_camera(enum Direction dir)
 	switch (dir) {
 		case DIR_UP   : vel[1] = -panspeed; break;
 		case DIR_DOWN : vel[1] =  panspeed; break;
-		case DIR_RIGHT: vel[0] =  panspeed; break;
-		case DIR_LEFT : vel[0] = -panspeed; break;
-		case DIR_FORWARDS : glm_vec3_scale(campos, 1.0 - zoomspeed, campos); return;
-		case DIR_BACKWARDS: glm_vec3_scale(campos, 1.0 + zoomspeed, campos); return;
+		case DIR_RIGHT: vel[0] = -panspeed; break;
+		case DIR_LEFT : vel[0] =  panspeed; break;
+		case DIR_FORWARDS : camzoom -= zoomspeed; return;
+		case DIR_BACKWARDS: camzoom += zoomspeed; return;
 		default: ERROR("[INPUT] Invalid direction");
 	}
 	glm_vec3_add(vel, campos , campos);

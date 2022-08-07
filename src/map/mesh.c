@@ -16,9 +16,9 @@ static struct Vertex verts[(MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLO
 void generate_meshes()
 {
 	uint cellc  = volume_of(map->dim);
-	uint blockc = ((map->dim.w + MAP_BLOCK_WIDTH  - 1) / MAP_BLOCK_WIDTH ) * 
-	              ((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT) * 
-	              ((map->dim.d + MAP_BLOCK_DEPTH  - 1) / MAP_BLOCK_DEPTH );
+	uint blockc = DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)  *
+	              DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT) * 
+	              DIV_CEIL(map->dim.h, MAP_BLOCK_DEPTH);
 	DEBUG(1, "blockdim: %ux%ux%u", ((map->dim.w + MAP_BLOCK_WIDTH  - 1) / MAP_BLOCK_WIDTH ),
 	      ((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT),
 	      ((map->dim.d + MAP_BLOCK_DEPTH  - 1) / MAP_BLOCK_DEPTH ));
@@ -44,6 +44,7 @@ void generate_meshes()
 		for (uint y = 0; y < MAX((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
 			for (uint x = 0; x < MAX((map->dim.w + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
 				indc = generate_block_indices(inds, currblock++);
+				// if (!indc) continue;
 				totalindc += indc;
 				map->inds[map->indc  ].ibo = create_ibo(indc*sizeof(uint16), inds);
 				map->inds[map->indc++].indc = indc;
@@ -65,10 +66,10 @@ void generate_meshes()
 
 static uint generate_block_indices(uint16* inds, uintptr start)
 {
-	uint blockx = (start % DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH))  * MAP_BLOCK_WIDTH;
-	uint blocky = (start / DIV_CEIL(map->dim.w, MAP_BLOCK_HEIGHT)) * MAP_BLOCK_HEIGHT;
-	uint blockz = 0;
-	DEBUG(1, "start %lu: %u %u %u", start, blockx, blocky, blockz);
+	uint blockx = (start % DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)) * MAP_BLOCK_WIDTH;
+	uint blocky = (start / DIV_CEIL(map->dim.w, MAP_BLOCK_HEIGHT) * MAP_BLOCK_HEIGHT) % (map->dim.h + (map->dim.h % 2));
+	uint blockz = (start / (DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)*DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT))) * MAP_BLOCK_DEPTH;
+	// DEBUG(1, "start %lu: %u %u %u", start, blockx, blocky, blockz);
 
 	uint indc   = 0;
 	uint rowc   =  MAP_BLOCK_WIDTH + 1;                           /* # of cells per row     */
@@ -81,8 +82,6 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
 				if (blockx + x >= map->dim.w || blocky + y >= map->dim.h || blockz + z >= map->dim.d)
 					continue;
-				// if (!map->data[indc/MAP_INDICES_PER_VXL].data)
-					// continue;
 				indc += MAP_INDICES_PER_VXL;
 				vx = x % MAP_BLOCK_WIDTH;
 				vy = y % MAP_BLOCK_HEIGHT;

@@ -4,9 +4,9 @@
 #include "gfx/buffers.h"
 #include "gfx/model.h"
 
-#define MAP_BLOCK_WIDTH  4
-#define MAP_BLOCK_HEIGHT 4
-#define MAP_BLOCK_DEPTH  1
+#define MAP_BLOCK_WIDTH  16
+#define MAP_BLOCK_HEIGHT 16
+#define MAP_BLOCK_DEPTH  8
 #define MAP_CELLS_PER_BLOCK (MAP_BLOCK_WIDTH*MAP_BLOCK_HEIGHT*MAP_BLOCK_DEPTH)
 #define MAP_INDICES_PER_VXL 9
 #define MAP_VERTEX_COUNT ((MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLOCK_DEPTH + 1))
