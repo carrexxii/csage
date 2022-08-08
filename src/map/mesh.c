@@ -18,27 +18,28 @@ void generate_meshes()
 	uint cellc  = volume_of(map->dim);
 	uint blockc = DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)  *
 	              DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT) * 
-	              DIV_CEIL(map->dim.h, MAP_BLOCK_DEPTH);
-	DEBUG(1, "blockdim: %ux%ux%u", ((map->dim.w + MAP_BLOCK_WIDTH  - 1) / MAP_BLOCK_WIDTH ),
-	      ((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT),
-	      ((map->dim.d + MAP_BLOCK_DEPTH  - 1) / MAP_BLOCK_DEPTH ));
-	DEBUG(1, "blockc: %u | cellc: %u", blockc, cellc);
+	              DIV_CEIL(map->dim.d, MAP_BLOCK_DEPTH);
+	// DEBUG(1, "blockdim: %ux%ux%u", ((map->dim.w + MAP_BLOCK_WIDTH  - 1) / MAP_BLOCK_WIDTH ),
+	//       ((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT),
+	//       ((map->dim.d + MAP_BLOCK_DEPTH  - 1) / MAP_BLOCK_DEPTH ));
+	// DEBUG(1, "blockc: %u (%ux%ux%u) | cellc: %u", blockc,DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH),
+	//       DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT), DIV_CEIL(map->dim.d, MAP_BLOCK_DEPTH), cellc);
 
 	map->inds = scalloc(blockc, sizeof(struct MapBlockIndices));
 
 	/* Vertices */
 	uint vertc = (MAP_BLOCK_DEPTH + 1) * (MAP_BLOCK_HEIGHT + 1) * (MAP_BLOCK_WIDTH + 1);
 	struct Vertex* v = verts;
-	for (uint z = 0; z <= MAP_BLOCK_DEPTH; z++)
-		for (uint y = 0; y <= MAP_BLOCK_HEIGHT; y++)
-			for (uint x = 0; x <= MAP_BLOCK_WIDTH; x++)
+	for (uint z = 0; z < MAP_BLOCK_DEPTH + 1; z++)
+		for (uint y = 0; y < MAP_BLOCK_HEIGHT + 1; y++)
+			for (uint x = 0; x < MAP_BLOCK_WIDTH + 1; x++)
 				*v++ = (struct Vertex){ .x = x, .y = y, .z = z, .a = 1 };
 	map->verts = create_vbo(vertc*sizeof(struct Vertex), verts);
 
 	/* Indices */
 	uintptr indc      = 0;
 	uintptr totalindc = 0;
-	uint16* inds = smalloc(MAP_CELLS_PER_BLOCK * MAP_INDICES_PER_VXL * sizeof(uint16));
+	uint16* inds      = smalloc(MAP_CELLS_PER_BLOCK * MAP_INDICES_PER_VXL * sizeof(uint16));
 	uintptr currblock = 0;
 	for (uint z = 0; z < MAX((map->dim.d + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
 		for (uint y = 0; y < MAX((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {

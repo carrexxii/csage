@@ -47,9 +47,9 @@ int main(int argc, char** argv)
 	init_camera();
 	init_entities();
 
-	// Entity e1 = create_entity();
-	// add_component(e1, COMPONENT_MODEL, MODEL_PATH "plane");
-	// set_entity_pos(e1, (vec3){ 0.5, 0.0, 0.0 });
+	Entity e1 = create_entity();
+	add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
+	set_entity_pos(e1, (vec3){ 5.0, 5.0, 0.0 });
 
 	// Entity e2 = create_entity();
 	// add_component(e2, COMPONENT_MODEL, MODEL_PATH "plane");
@@ -57,10 +57,10 @@ int main(int argc, char** argv)
 
 	Entity e3 = create_entity();
 	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
-	set_entity_pos(e3, (vec3){ -0.7, -0.5, 0.0 });
-	// add_component(e3, COMPONENT_LIGHT, (vec4){ 10.0, 0.0, 0.0, 0.01 });
+	set_entity_pos(e3, (vec3){ -2.0, -20.0, 0.0 });
+	add_component(e3, COMPONENT_LIGHT, (vec4){ -2.0, -20.0, 0.0, 0.01 });
 
-	init_map(MAPTYPE_FILLED, (struct Dim){ .w=32, .h=32, .d=32, });
+	init_map(MAPTYPE_FILLED, (struct Dim){ .w=256, .h=256, .d=64, });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
