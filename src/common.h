@@ -95,12 +95,16 @@ inline static uint volume_of(struct Dim dim) {
 	return dim.w * dim.h * dim.d;
 }
 
+struct Rect {
+	float x, y, w, h;
+}; static_assert(sizeof(struct Rect) == 16, "struct Rect");
+
 #ifndef _WIN32
 #define MIN(a, b)        ((a) < (b)? (a): (b))
 #define MAX(a, b)        ((a) > (b)? (a): (b))
 #endif
 #define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
-#define CLAMP(a, b, c)   ((a) < (b)? (b): (a) > (c)? (c): (a))
+#define CLAMP(a, b, c)   ((a) = (a) < (b)? (b): (a) > (c)? (c): (a))
 #define ARRAY_LEN(a)     (sizeof(a)/sizeof(a[0]))
 #define DIV_CEIL(a, b)   (((a) + (b) - 1) / (b))
 

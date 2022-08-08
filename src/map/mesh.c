@@ -15,18 +15,6 @@ static struct Vertex verts[(MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLO
 
 void generate_meshes()
 {
-	uint cellc  = volume_of(map->dim);
-	uint blockc = DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)  *
-	              DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT) * 
-	              DIV_CEIL(map->dim.d, MAP_BLOCK_DEPTH);
-	// DEBUG(1, "blockdim: %ux%ux%u", ((map->dim.w + MAP_BLOCK_WIDTH  - 1) / MAP_BLOCK_WIDTH ),
-	//       ((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT),
-	//       ((map->dim.d + MAP_BLOCK_DEPTH  - 1) / MAP_BLOCK_DEPTH ));
-	// DEBUG(1, "blockc: %u (%ux%ux%u) | cellc: %u", blockc,DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH),
-	//       DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT), DIV_CEIL(map->dim.d, MAP_BLOCK_DEPTH), cellc);
-
-	map->inds = scalloc(blockc, sizeof(struct MapBlockIndices));
-
 	/* Vertices */
 	uint vertc = (MAP_BLOCK_DEPTH + 1) * (MAP_BLOCK_HEIGHT + 1) * (MAP_BLOCK_WIDTH + 1);
 	struct Vertex* v = verts;
@@ -61,15 +49,15 @@ void generate_meshes()
 	// 	                                                           inds[i+6], inds[i+7]);
 
 	free(inds);
-	DEBUG(3, "[MAP] Generated mesh for map with %u cells (%lu vertices in %u blocks)", cellc, totalindc, blockc);
+	DEBUG(3, "[MAP] Generated mesh for map with %lu cells (%lu vertices in %lu blocks)", mapcellc, totalindc, mapblockc);
 	// exit(0);
 } 
 
 static uint generate_block_indices(uint16* inds, uintptr start)
 {
-	uint blockx = (start % DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)) * MAP_BLOCK_WIDTH;
-	uint blocky = (start / DIV_CEIL(map->dim.w, MAP_BLOCK_HEIGHT) * MAP_BLOCK_HEIGHT) % (map->dim.h + (map->dim.h % 2));
-	uint blockz = (start / (DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)*DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT))) * MAP_BLOCK_DEPTH;
+	uint blockx = get_block_x(start);
+	uint blocky = get_block_y(start);
+	uint blockz = get_block_z(start);
 	// DEBUG(1, "start %lu: %u %u %u", start, blockx, blocky, blockz);
 
 	uint indc   = 0;

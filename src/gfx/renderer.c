@@ -292,6 +292,10 @@ static void record_command(uint imgi)
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
 	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &map->verts.buf, (VkDeviceSize[]) { 0 });
 	for (uint i = 0; i < map->indc; i++) {
+		if (!map->inds[i].visible) {
+			// DEBUG(1, "[%u] Skipping...", i);
+			continue;
+		}
 		vkCmdBindIndexBuffer(cmdbuf, map->inds[i].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed(cmdbuf, map->inds[i].indc, 1, 0, 0, i);
 		// DEBUG(1, "[%u] Drawing %u indices", i, map->inds[i].indc);

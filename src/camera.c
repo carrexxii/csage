@@ -8,55 +8,53 @@
 
 mat4 camprojection = GLM_MAT4_IDENTITY_INIT;
 mat4 camview       = GLM_MAT4_IDENTITY_INIT;
-static float camzoom = -1.0;
-static float camfov  = GLM_PI/3.0;
-static vec3 campos;
-static vec3 lookpos;
-static float panspeed  = 0.15;
-static float zoomspeed = 0.1;
+struct Rect camrect;
+static float zoom      = 100.0;
+static float panspeed  = 0.2;
+static float zoomspeed = 3.0;
+static float minzoom   = 2.0;
+static float maxzoom   = 150.0;
 mat4 camvp;
 
-void init_camera()
+void init_cam()
 {
-	set_perspective(PERSPECTIVE_ORTHOGONAL);
-	glm_vec3_copy((vec3){ 0.0, 0.0, 0.0 }, campos);
-	glm_vec3_copy((vec3){ 0.0, 0.0, 0.0 }, lookpos);
+	set_cam_perspective();
+	camrect = (struct Rect){ 0 };
 }
 
-/* TODO: add conditional update of vp with boolean return */
+/* TODO: add conditional update of vp with boolean return + rename */
 void get_cam_vp(mat4 out)
 {
+	set_cam_perspective();
+
 	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
-	glm_translate(camview, campos);
+	glm_translate(camview, (vec3){ camrect.x, camrect.y, 0.0 });
 	glm_rotate(camview, -GLM_PI*0.75, (vec3){ 0.0      , 0.0       , 1.0 });
 	glm_rotate(camview,  GLM_PI/3.0 , (vec3){ GLM_SQRT2, -GLM_SQRT2, 0.0 });
-	glm_scale_uni(camview, camzoom);
+	glm_scale_uni(camview, -1.0);
 
 	glm_mul(camprojection, camview, out);
 }
 
 void move_camera(enum Direction dir)
 {
-	vec3 vel = { 0.0, 0.0, 0.0 };
+	vec3 vel = { 0 };
 	switch (dir) {
-		case DIR_UP   : vel[1] = -panspeed; break;
-		case DIR_DOWN : vel[1] =  panspeed; break;
-		case DIR_RIGHT: vel[0] = -panspeed; break;
-		case DIR_LEFT : vel[0] =  panspeed; break;
-		case DIR_FORWARDS : camzoom -= zoomspeed; return;
-		case DIR_BACKWARDS: camzoom += zoomspeed; return;
+		case DIR_UP   : vel[1] = -panspeed * (1.0/zoom * maxzoom); break;
+		case DIR_DOWN : vel[1] =  panspeed * (1.0/zoom * maxzoom); break;
+		case DIR_RIGHT: vel[0] = -panspeed * (1.0/zoom * maxzoom); break;
+		case DIR_LEFT : vel[0] =  panspeed * (1.0/zoom * maxzoom); break;
+		case DIR_FORWARDS : zoom += zoomspeed; CLAMP(zoom, minzoom, maxzoom); return;
+		case DIR_BACKWARDS: zoom -= zoomspeed; CLAMP(zoom, minzoom, maxzoom); return;
 		default: ERROR("[INPUT] Invalid direction");
 	}
-	glm_vec3_add(vel, campos , campos);
-	glm_vec3_add(vel, lookpos, lookpos);
+	camrect.x += vel[0];
+	camrect.y += vel[1];
 }
 
-void set_perspective(enum Perspective p)
+void set_cam_perspective()
 {
-	if (p == PERSPECTIVE_PERSPECTIVE)
-		glm_perspective(camfov, 16.0/9.0, 0.1, 1000.0, camprojection);
-	else if (p == PERSPECTIVE_ORTHOGONAL)
-		glm_ortho(-16.0, 16.0, 9.0, -9.0, 0.1, 1000.0, camprojection);
-	else
-		ERROR("Unknown perspective %u", p);
+	camrect.w = 2.0 * 1600.0/zoom;
+	camrect.h = 2.0 *  900.0/zoom;
+	glm_ortho(-camrect.w/2.0, camrect.w/2.0, camrect.h/2.0, -camrect.h/2.0, 0.1, 100.0, camprojection);
 }

@@ -3,17 +3,13 @@
 
 #include "cglm/cglm.h"
 
-enum Perspective {
-	PERSPECTIVE_PERSPECTIVE,
-	PERSPECTIVE_ORTHOGONAL,
-};
-
 extern mat4 camprojection;
 extern mat4 camview;
+extern struct Rect camrect;
 
-void init_camera();
+void init_cam();
 void get_cam_vp(mat4 out);
-void set_perspective(enum Perspective p);
+void set_cam_perspective();
 
 void move_camera(enum Direction dir);
 inline static void move_camera_up_cb   (bool kdown) { move_camera(DIR_UP       ); }

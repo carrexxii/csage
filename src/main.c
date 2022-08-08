@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 	init_input();
 	init_vulkan(window);
 	renderer_init();
-	init_camera();
+	init_cam();
 	init_entities();
 
 	Entity e1 = create_entity();
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 	set_entity_pos(e3, (vec3){ -2.0, -20.0, 0.0 });
 	add_component(e3, COMPONENT_LIGHT, (vec4){ -2.0, -20.0, 0.0, 0.01 });
 
-	init_map(MAPTYPE_FILLED, (struct Dim){ .w=256, .h=256, .d=64, });
+	init_map(MAPTYPE_FILLED, (struct Dim){ .w=64, .h=64, .d=64, });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
