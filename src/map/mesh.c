@@ -32,11 +32,13 @@ void generate_meshes()
 	for (uint z = 0; z < MAX((map->dim.d + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
 		for (uint y = 0; y < MAX((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
 			for (uint x = 0; x < MAX((map->dim.w + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
-				indc = generate_block_indices(inds, currblock++);
+				indc = generate_block_indices(inds, currblock);
 				// if (!indc) continue;
 				totalindc += indc;
-				map->inds[map->indc  ].ibo = create_ibo(indc*sizeof(uint16), inds);
-				map->inds[map->indc++].indc = indc;
+				map->inds[map->indc  ].ibo  = create_ibo(indc*sizeof(uint16), inds);
+				map->inds[map->indc  ].indc = indc;
+				map->inds[map->indc++].zlvl = (int)(get_block_z(currblock) / MAP_BLOCK_DEPTH);
+				currblock++;
 			}
 		}
 	}

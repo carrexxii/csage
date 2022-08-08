@@ -1,3 +1,4 @@
+#include "camera.h"
 #include "map.h"
 
 struct Map* map;
@@ -47,6 +48,9 @@ void init_map(enum MapType type, struct Dim dim)
 		.d = MAP_BLOCK_DEPTH,
 	};
 
+	camzlvlmax   = dim.d / MAP_BLOCK_DEPTH;
+	camzlvlscale = MAP_BLOCK_DEPTH;
+
 	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total)", dim.w, dim.h, dim.d, mapcellc);
 }
 
@@ -55,11 +59,10 @@ bool is_block_visible(uint block)
 	uint x = get_block_x(block);
 	uint y = get_block_y(block);
 	uint z = get_block_z(block);
-	DEBUG(1, "%u %u %u", x, y, z);
-	if (x == 0 || y == 0 || z == 0)
+	// DEBUG(1, "%u %u %u", x, y, z);
+	// if (x == 0 || y == 0 || z == 0)
 		return true;
-
-	return false;
+	// return false;
 }
 
 void free_map()

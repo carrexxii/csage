@@ -4,8 +4,8 @@
 #include "gfx/buffers.h"
 #include "gfx/model.h"
 
-#define MAP_BLOCK_WIDTH  64
-#define MAP_BLOCK_HEIGHT 64
+#define MAP_BLOCK_WIDTH  16
+#define MAP_BLOCK_HEIGHT 16
 #define MAP_BLOCK_DEPTH  12
 #define MAP_CELLS_PER_BLOCK (MAP_BLOCK_WIDTH*MAP_BLOCK_HEIGHT*MAP_BLOCK_DEPTH)
 #define MAP_INDICES_PER_VXL 9
@@ -35,6 +35,7 @@ struct MapCell {
 struct MapBlock {
 	IBO    ibo;
 	uint32 indc;
+	int16  zlvl;
 	bool   visible;
 }; static_assert(sizeof(struct MapBlock) == 32, "struct MapBlock");
 

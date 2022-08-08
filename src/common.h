@@ -100,11 +100,11 @@ struct Rect {
 }; static_assert(sizeof(struct Rect) == 16, "struct Rect");
 
 #ifndef _WIN32
-#define MIN(a, b)        ((a) < (b)? (a): (b))
-#define MAX(a, b)        ((a) > (b)? (a): (b))
+#define MIN(a, b) ((a) < (b)? (a): (b))
+#define MAX(a, b) ((a) > (b)? (a): (b))
 #endif
 #define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
-#define CLAMP(a, b, c)   ((a) = (a) < (b)? (b): (a) > (c)? (c): (a))
+#define CLAMP(a, b, c)   do { ((a) = (a) < (b)? (b): (a) > (c)? (c): (a));} while (0)
 #define ARRAY_LEN(a)     (sizeof(a)/sizeof(a[0]))
 #define DIV_CEIL(a, b)   (((a) + (b) - 1) / (b))
 

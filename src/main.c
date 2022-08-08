@@ -101,12 +101,14 @@ void init_sdl()
 void init_input()
 {
 	register_key((struct InputCallback){ .key = SDLK_ESCAPE, .fn = quit_cb, .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_d, .fn = move_camera_right_cb, .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_a, .fn = move_camera_left_cb , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_w, .fn = move_camera_up_cb   , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_s, .fn = move_camera_down_cb , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_q, .fn = zoom_camera_in_cb   , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_e, .fn = zoom_camera_out_cb  , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_d, .fn = move_cam_right_cb, .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_a, .fn = move_cam_left_cb , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_w, .fn = move_cam_up_cb   , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_s, .fn = move_cam_down_cb , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_q, .fn = zoom_cam_in_cb   , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_e, .fn = zoom_cam_out_cb  , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_o, .fn = cam_zlvl_up_cb   , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_p, .fn = cam_zlvl_down_cb , .onkeydown = true });
 }
 
 noreturn void quit_cb(bool kdown)
