@@ -54,7 +54,7 @@ $(OBJ): $(OBJDIR)/%.o: $(SRCDIR)/%.c
 
 -include $(DEP)
 $(DEP): $(SRC)
-	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< -MM -MT $(@:.dep=.o) > $@
+	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(DEPFLAGS) $(@:.dep=.o) > $@
 
 all: $(BIN)
 
