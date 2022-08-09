@@ -31,6 +31,8 @@ void init_map(enum MapType type, struct Dim dim)
 				map->data[i].data = i % 2 - i/map->dim.h % 2;
 			break;
 		case MAPTYPE_RANDOM:
+			for (uint i = 0; i < mapcellc; i++)
+				map->data[i].data = random_int(0, 1);
 			break;
 		default:
 			ERROR("[MAP] Invalid map type %d", type);
@@ -57,7 +59,7 @@ void init_map(enum MapType type, struct Dim dim)
 	if (dim.d < MAP_BLOCK_DEPTH)
 		camzlvlmax = 0;
 	else
-		camzlvlmax = dim.d/MAP_BLOCK_DEPTH - 1;
+		camzlvlmax = DIV_CEIL(dim.d, MAP_BLOCK_DEPTH) - 1;
 	camzlvlscale = MAP_BLOCK_DEPTH;
 
 	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total) (%u skipped blocks)", dim.w, dim.h, dim.d, mapcellc, skipc);

@@ -165,7 +165,7 @@ void renderer_init()
 	memcpy(lighting.sundir, (float[]){ 0.0, 100.0, -50.0 }, sizeof(float[3]));
 	glm_vec3_normalize(lighting.sundir);
 	lighting.ambient  = 0.03;
-	lighting.sunpower = 1.0;
+	lighting.sunpower = 10.0;
 }
 
 void renderer_draw()

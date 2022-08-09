@@ -208,4 +208,16 @@ void* _smalloc(uintptr s, char const* file, int line, char const* fn);
 void* _scalloc(uintptr n, uintptr s, char const* file, int line, char const* fn);
 void* _srealloc(void* restrict mem, uintptr n, char const* file, int line, char const* fn);
 
+/* [min, max] */
+inline static int random_int(int min, int max)
+{
+    int num;
+    int div = RAND_MAX / (max + 1);
+    do {
+        num = rand() / div;
+    } while (!BETWEEN(num, min, max));
+
+    return num;
+}
+
 #endif
