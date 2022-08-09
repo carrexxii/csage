@@ -60,7 +60,7 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 	uint blockx = get_block_x(start);
 	uint blocky = get_block_y(start);
 	uint blockz = get_block_z(start);
-	// DEBUG(1, "start %lu: %u %u %u", start, blockx, blocky, blockz);
+	// DEBUG(1, "Meshing %lu: %u %u %u", start, blockx, blocky, blockz);
 
 	uint indc   = 0;
 	uint rowc   =  MAP_BLOCK_WIDTH + 1;                           /* # of cells per row     */
@@ -72,6 +72,8 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 			for (uint x = 0; x < MAP_BLOCK_WIDTH; x++) {
 				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
 				if (blockx + x >= map->dim.w || blocky + y >= map->dim.h || blockz + z >= map->dim.d)
+					continue;
+				if (!is_cell_visible(get_block_index(blockx + x, blocky + y, blockz + z)))
 					continue;
 				indc += MAP_INDICES_PER_VXL;
 				vx = x % MAP_BLOCK_WIDTH;
