@@ -34,6 +34,7 @@ int main(int argc, char** argv)
 	return 0;
 #endif
 
+
 	init_sdl();
 
 	uint32 vkversion;
@@ -47,6 +48,8 @@ int main(int argc, char** argv)
 	init_cam();
 	init_entities();
 
+	srand(SDL_GetTicks64());
+
 	// Entity e1 = create_entity();
 	// add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
 	// set_entity_pos(e1, (vec3){ 5.0, 5.0, 0.0 });
@@ -57,10 +60,10 @@ int main(int argc, char** argv)
 
 	Entity e3 = create_entity();
 	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
-	set_entity_pos(e3, (vec3){ -2.0, -20.0, 0.0 });
-	add_component(e3, COMPONENT_LIGHT, (vec4){ -2.0, -20.0, 0.0, 0.01 });
+	set_entity_pos(e3, (vec3){ 0.0, -20.0, 5.0 });
+	add_component(e3, COMPONENT_LIGHT, (vec4){ -2.0, -20.0, 0.0, 0.07 });
 
-	init_map(MAPTYPE_RANDOM, (struct Dim){ .w=64, .h=64, .d=16, });
+	init_map(MAPTYPE_HOLLOW, (struct Dim){ .w=16, .h=16, .d=12, });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());

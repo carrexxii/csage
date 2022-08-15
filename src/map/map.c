@@ -6,8 +6,6 @@ struct MapDrawData mapdd;
 uintptr mapcellc;
 uintptr mapblockc;
 
-static uint skipc;
-
 void init_map(enum MapType type, struct Dim dim)
 {
 	mapcellc  = volume_of(dim);
@@ -19,6 +17,7 @@ void init_map(enum MapType type, struct Dim dim)
 	map = scalloc(sizeof(struct Map) + mapcellc*sizeof(struct MapCell), 1);
 	map->inds = scalloc(mapblockc, sizeof(struct MapBlock));
 	map->dim  = dim;
+	uint x, y, z;
 	switch (type) {
 		case MAPTYPE_NONE:
 			ERROR("[MAP] Block type should not be none");
@@ -34,14 +33,22 @@ void init_map(enum MapType type, struct Dim dim)
 			for (uint i = 0; i < mapcellc; i++)
 				map->data[i].data = random_int(0, 1);
 			break;
+		case MAPTYPE_HOLLOW:
+			for (uint i = 0; i < mapcellc; i++) {
+				x = get_cell_x(i);
+				y = get_cell_y(i);
+				z = get_cell_z(i);
+				map->data[i].data = (uint)((x == 0 && y == 0) || (x == dim.w - 1 && y == dim.h - 1) ||
+				                           (x == dim.w - 1) || (y == dim.h - 1) ||
+				                           (z == dim.d - 1) || (z == 0 && (x == 0 || y == 0)));
+			}
+			break;
 		default:
 			ERROR("[MAP] Invalid map type %d", type);
 	}
 	
-	for (uint i = 0; i < mapblockc; i++) {
+	for (uint i = 0; i < mapblockc; i++)
 		map->inds[i].visible = is_block_visible(i);
-		// DEBUG(1, "\t%s", STRING_TF(map->inds[i].visible));
-	}
 
 	generate_meshes(map);
 
@@ -62,44 +69,50 @@ void init_map(enum MapType type, struct Dim dim)
 		camzlvlmax = DIV_CEIL(dim.d, MAP_BLOCK_DEPTH) - 1;
 	camzlvlscale = MAP_BLOCK_DEPTH;
 
-	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total) (%u skipped blocks)", dim.w, dim.h, dim.d, mapcellc, skipc);
+	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total)", dim.w, dim.h, dim.d, mapcellc);
 }
 
 bool is_block_visible(uint block)
 {
-	uint x = get_block_x(block);
-	uint y = get_block_y(block);
-	uint z = get_block_z(block);
-	// DEBUG(1, "%u %u %u", x, y, z);
-	// if (x == 0 || y == 0 || z == 0)
-		return true;
-	// return false;
+	return true;
 }
 
-bool is_cell_visible(uintptr cell)
+bool is_cell_visible(uint32 cell)
 {
 	if (!map->data[cell].data)
 		return false;
 
 	uint zstride = map->dim.w * map->dim.h;
 	uint ystride = map->dim.h;
-	// DEBUG(1, "stride: z:%u y:%u | cell: %lu", zstride, ystride, cell);
-	// DEBUG(1, "Checking %lu above (%hu)", cell - zstride, map->data[cell - zstride].data);
+	uint32 x = get_cell_x(cell);
+	uint32 y = get_cell_y(cell);
+	uint32 z = get_cell_z(cell);
+	return true;
+
 	/* Check if it at the top of a block */
-	if (!(get_cell_zlvl(cell) % MAP_BLOCK_DEPTH)) {
-		// DEBUG(1, "[%lu] zlvl: %u", cell, get_cell_zlvl(cell));
-		// DEBUG(1, "[%lu] Top block...", cell);
-		skipc++;
+	if (!(z % MAP_BLOCK_DEPTH))
 		return true;
-	}
+
 	/* Edge checks (left edge || right edge */
-	if (!(cell % map->dim.w) || cell % (map->dim.w*map->dim.h) < map->dim.w) {
-		// DEBUG(1, "[%lu] Edge found...", cell);
-		skipc++;
+	if (!(cell % map->dim.w) || cell % (map->dim.w*map->dim.h) < map->dim.w)
 		return true;
+
+	/* Diagonal check */
+	uint diag1     = cell;
+	uint diag2     = cell - 1 - zstride;
+	uint diag3     = cell - ystride - zstride;
+	bool isblocked = false;
+	while (diag3 >= zstride + ystride + 1) {
+		diag1 -= zstride + ystride + 1;
+		diag2 -= zstride + ystride + 1;
+		diag3 -= zstride + ystride + 1;
+		if (map->data[diag1].data && map->data[diag2].data && map->data[diag3].data) {
+			isblocked = true;
+			break;
+		}
 	}
-	// DEBUG(1, "[%lu] x", cell);
-	return false;
+
+	return !isblocked;
 }
 
 void free_map()
@@ -117,9 +130,8 @@ void print_map()
 	for (uint z = 0; z < map->dim.d; z++) {
 		for (uint y = 0; y < map->dim.h; y++) {
 			fprintf(stderr, "[%u] ", y);
-			for (uint x = 0; x < map->dim.w; x++) {
+			for (uint x = 0; x < map->dim.w; x++)
 				fprintf(stderr, "%2hu ", map->data[z*MAP_BLOCK_HEIGHT*MAP_BLOCK_DEPTH + y*MAP_BLOCK_WIDTH + x].data);
-			}
 			fprintf(stderr, "\n");
 		}
 		fprintf(stderr, " - - - - - - - - - - - - - - - -\n");

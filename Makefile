@@ -20,7 +20,7 @@ CFLAGS   = -std=c11 -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pip
            -isystem $(LIBDIR)/include -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH)
 LUAFLAGS = -O0
 
-LFLAGS   = -Wall -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan
+LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan
 DEPFLAGS = -MT $@ -MMD -MP -MF $(OBJDIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED
@@ -52,9 +52,9 @@ $(OBJ): $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@$(POSTCOMPILE)
 	@echo "Compiled "$<" successfully"
 
--include $(DEP)
+-include $(SRC:.c=.dep)
 $(DEP): $(SRC)
-	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(DEPFLAGS) $(@:.dep=.o) > $@
+	@$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -c $< $(DEPFLAGS) $(@:.dep=.o) > $@
 
 all: $(BIN)
 
