@@ -11,6 +11,7 @@ typedef uint64 Entity;
 void   init_entities();
 Entity create_entity();
 void   add_component(Entity e, enum Component c, void* data);
+void   update_entities(double dt);
 void   free_entities();
 
 extern struct EntityComponents {

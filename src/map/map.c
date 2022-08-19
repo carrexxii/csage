@@ -64,10 +64,10 @@ void init_map(enum MapType type, struct Dim dim)
 	};
 
 	if (dim.d < MAP_BLOCK_DEPTH)
-		camzlvlmax = 0;
+		camZlvlMax = 0;
 	else
-		camzlvlmax = DIV_CEIL(dim.d, MAP_BLOCK_DEPTH) - 1;
-	camzlvlscale = MAP_BLOCK_DEPTH;
+		camZlvlMax = DIV_CEIL(dim.d, MAP_BLOCK_DEPTH) - 1;
+	camZlvlScale = MAP_BLOCK_DEPTH;
 
 	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total)", dim.w, dim.h, dim.d, mapcellc);
 }

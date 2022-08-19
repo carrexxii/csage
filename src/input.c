@@ -18,7 +18,7 @@ bool check_input()
 					if (cbs[i].key == event.key.keysym.sym)
 						if ((event.type == SDL_KEYDOWN && cbs[i].onkeydown) ||
 						    (event.type == SDL_KEYUP   && cbs[i].onkeyup))
-							cbs[i].fn(event.type == SDL_KEYUP);
+							cbs[i].fn(event.type == SDL_KEYDOWN);
 				break;
 		}
 	}

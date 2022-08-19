@@ -34,7 +34,7 @@ void add_taskmgr_task(void (*fn)())
 {
 	if (taskc < MAX_TASKS) {
 		tasks[taskc++].fn = fn;
-		DEBUG(3, "[THR] Added new task %u", taskc);
+		DEBUG(3, "[THR] Added new task (%u)", taskc);
 	} else {
 		ERROR("[THR] Task list is already full");
 	}

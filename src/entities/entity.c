@@ -52,6 +52,11 @@ void add_component(Entity e, enum Component c, void* data)
 	entities[e] |= c;
 }
 
+void update_entities(double dt)
+{
+
+}
+
 void free_entities()
 {
 	DEBUG(1, "[ENT] Freeing entities...");

@@ -2,27 +2,25 @@
 
 #include "config.h"
 #include "camera.h"
-#include <cglm/mat4.h>
-#include <cglm/types.h>
-#include <cglm/vec3.h>
 
-mat4 camprojection = GLM_MAT4_IDENTITY_INIT;
-mat4 camview       = GLM_MAT4_IDENTITY_INIT;
-struct Rect camrect;
-int camzlvl;
-int camzlvlmax   = 8;
-int camzlvlscale = 8;
-static float zoom      = 100.0;
-static float panspeed  = 0.2;
-static float zoomspeed = 3.0;
-static float minzoom   = 2.0;
-static float maxzoom   = 150.0;
-mat4 camvp;
+mat4 camProj = GLM_MAT4_IDENTITY_INIT;
+mat4 camView = GLM_MAT4_IDENTITY_INIT;
+struct Rect    camRect;
+enum Direction camDir;
+int camZlvl;
+int camZlvlMax   = 8;
+int camZlvlScale = 8;
+static float camZoom      = 100.0;
+static float panSpeed  = 0.2;
+static float zoomSpeed = 3.0;
+static float minZoom   = 2.0;
+static float maxZoom   = 150.0;
+mat4 camVP;
 
 void init_cam()
 {
 	set_cam_perspective();
-	camrect = (struct Rect){ 0 };
+	camRect = (struct Rect){ 0 };
 }
 
 /* TODO: add conditional update of vp with boolean return + rename */
@@ -30,34 +28,29 @@ void get_cam_vp(mat4 out)
 {
 	set_cam_perspective();
 
-	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
-	glm_translate(camview, (vec3){ -camrect.x, -camrect.y + (float)(camzlvl*camzlvlscale - camzlvlscale), 0.0 });
-	glm_rotate(camview, -GLM_PI*0.75, (vec3){ 0.0      , 0.0       , 1.0 });
-	glm_rotate(camview,  GLM_PI/3.0 , (vec3){ GLM_SQRT2, -GLM_SQRT2, 0.0 });
-	glm_scale_uni(camview, -1.0);
+	glm_mat4_copy(GLM_MAT4_IDENTITY, camView);
+	glm_translate(camView, (vec3){ -camRect.x, -camRect.y + (float)(camZlvl*camZlvlScale - camZlvlScale), 0.0 });
+	glm_rotate(camView, -GLM_PI*0.75, (vec3){ 0.0      , 0.0       , 1.0 });
+	glm_rotate(camView,  GLM_PI/3.0 , (vec3){ GLM_SQRT2, -GLM_SQRT2, 0.0 });
+	glm_scale_uni(camView, -1.0);
 
-	glm_mul(camprojection, camview, out);
-}
-
-void move_cam(enum Direction dir)
-{
-	vec3 vel = { 0 };
-	switch (dir) {
-		case DIR_UP   : vel[1] =  panspeed * (1.0/zoom * maxzoom); break;
-		case DIR_DOWN : vel[1] = -panspeed * (1.0/zoom * maxzoom); break;
-		case DIR_RIGHT: vel[0] =  panspeed * (1.0/zoom * maxzoom); break;
-		case DIR_LEFT : vel[0] = -panspeed * (1.0/zoom * maxzoom); break;
-		case DIR_FORWARDS : zoom += zoomspeed; CLAMP(zoom, minzoom, maxzoom); return;
-		case DIR_BACKWARDS: zoom -= zoomspeed; CLAMP(zoom, minzoom, maxzoom); return;
-		default: ERROR("[INPUT] Invalid direction");
-	}
-	camrect.x += vel[0];
-	camrect.y += vel[1];
+	glm_mul(camProj, camView, out);
 }
 
 void set_cam_perspective()
 {
-	camrect.w = 2.0 * 1600.0/zoom;
-	camrect.h = 2.0 *  900.0/zoom;
-	glm_ortho(-camrect.w/2.0, camrect.w/2.0, camrect.h/2.0, -camrect.h/2.0, 0.1, 1000.0, camprojection);
+	camRect.w = 2.0 * 1600.0/camZoom;
+	camRect.h = 2.0 *  900.0/camZoom;
+	glm_ortho(-camRect.w/2.0, camRect.w/2.0, camRect.h/2.0, -camRect.h/2.0, 0.1, 1000.0, camProj);
+}
+
+void update_camera()
+{
+	if (camDir & DIR_UP)    camRect.y +=  panSpeed * (1.0/camZoom * maxZoom);
+	if (camDir & DIR_DOWN)  camRect.y += -panSpeed * (1.0/camZoom * maxZoom);
+	if (camDir & DIR_RIGHT) camRect.x +=  panSpeed * (1.0/camZoom * maxZoom);
+	if (camDir & DIR_LEFT)  camRect.x += -panSpeed * (1.0/camZoom * maxZoom);
+	if (camDir & DIR_FORWARDS)  camZoom += zoomSpeed;
+	if (camDir & DIR_BACKWARDS) camZoom -= zoomSpeed;
+	CLAMP(camZoom, minZoom, maxZoom);
 }

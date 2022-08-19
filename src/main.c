@@ -42,7 +42,6 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
-	init_taskmgr();
 	init_input();
 	init_vulkan(window);
 	renderer_init();
@@ -50,6 +49,10 @@ int main(int argc, char** argv)
 	init_entities();
 
 	srand(SDL_GetTicks64());
+
+	init_taskmgr();
+	add_taskmgr_task(update_camera);
+	add_taskmgr_task(update_entities);
 
 	// Entity e1 = create_entity();
 	// add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
@@ -64,7 +67,7 @@ int main(int argc, char** argv)
 	set_entity_pos(e3, (vec3){ 0.0, -20.0, 5.0 });
 	add_component(e3, COMPONENT_LIGHT, (vec4){ -2.0, -20.0, 0.0, 0.07 });
 
-	init_map(MAPTYPE_RANDOM, (struct Dim){ .w=16, .h=16, .d=12, });
+	init_map(MAPTYPE_RANDOM, (struct Dim){ .w=256, .h=256, .d=64, });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
@@ -75,6 +78,7 @@ int main(int argc, char** argv)
 		oldtime = newtime;
 		accum  += dt;
 		while (accum >= FRAME_DT) {
+			while (!reset_taskmgr());
 			accum -= FRAME_DT;
 		}
 		renderer_draw();
@@ -105,14 +109,14 @@ void init_sdl()
 void init_input()
 {
 	register_key((struct InputCallback){ .key = SDLK_ESCAPE, .fn = quit_cb, .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_d, .fn = move_cam_right_cb, .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_a, .fn = move_cam_left_cb , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_w, .fn = move_cam_up_cb   , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_s, .fn = move_cam_down_cb , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_q, .fn = zoom_cam_in_cb   , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_e, .fn = zoom_cam_out_cb  , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_o, .fn = cam_zlvl_up_cb   , .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_p, .fn = cam_zlvl_down_cb , .onkeydown = true });
+	register_key((struct InputCallback){ .key = SDLK_d, .fn = move_cam_right_cb, .onkeydown = true, .onkeyup = true, });
+	register_key((struct InputCallback){ .key = SDLK_a, .fn = move_cam_left_cb , .onkeydown = true, .onkeyup = true, });
+	register_key((struct InputCallback){ .key = SDLK_w, .fn = move_cam_up_cb   , .onkeydown = true, .onkeyup = true, });
+	register_key((struct InputCallback){ .key = SDLK_s, .fn = move_cam_down_cb , .onkeydown = true, .onkeyup = true, });
+	register_key((struct InputCallback){ .key = SDLK_q, .fn = zoom_cam_in_cb   , .onkeydown = true, .onkeyup = true, });
+	register_key((struct InputCallback){ .key = SDLK_e, .fn = zoom_cam_out_cb  , .onkeydown = true, .onkeyup = true, });
+	register_key((struct InputCallback){ .key = SDLK_o, .fn = cam_zlvl_up_cb   , .onkeydown = true, });
+	register_key((struct InputCallback){ .key = SDLK_p, .fn = cam_zlvl_down_cb , .onkeydown = true, });
 }
 
 noreturn void quit_cb(bool kdown)
