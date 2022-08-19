@@ -3,8 +3,8 @@
 #include <vulkan/vulkan.h>
 #include "cglm/cglm.h"
 
-#include "common.h"
 #include "config.h"
+#include "taskmgr.h"
 #include "gfx/vulkan.h"
 #include "gfx/renderer.h"
 #include "camera.h"
@@ -42,6 +42,7 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
+	init_taskmgr();
 	init_input();
 	init_vulkan(window);
 	renderer_init();
@@ -63,7 +64,7 @@ int main(int argc, char** argv)
 	set_entity_pos(e3, (vec3){ 0.0, -20.0, 5.0 });
 	add_component(e3, COMPONENT_LIGHT, (vec4){ -2.0, -20.0, 0.0, 0.07 });
 
-	init_map(MAPTYPE_HOLLOW, (struct Dim){ .w=16, .h=16, .d=12, });
+	init_map(MAPTYPE_RANDOM, (struct Dim){ .w=16, .h=16, .d=12, });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());

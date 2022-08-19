@@ -99,8 +99,8 @@ bool is_cell_visible(uint32 cell)
 
 	/* Diagonal check */
 	uint diag1     = cell;
-	uint diag2     = cell - 1 - zstride;
-	uint diag3     = cell - ystride - zstride;
+	uint diag2     = cell - 1;
+	uint diag3     = cell - ystride;
 	bool isblocked = false;
 	while (diag3 >= zstride + ystride + 1) {
 		diag1 -= zstride + ystride + 1;
