@@ -4,6 +4,7 @@
 #include "gfx/model.h"
 #include "components.h"
 #include "gfx/renderer.h"
+#include "systems.h"
 #include "entity.h"
 
 uint64 entityc;
@@ -15,6 +16,7 @@ void init_entities()
 	components.mdls   = create_iarr(sizeof(struct Model), 10);
 	components.mats   = create_iarr(sizeof(mat4), 10);
 	components.lights = create_iarr(sizeof(vec4), 5);
+	components.bodies = create_iarr(sizeof(struct Body), 10);
 
 	renmdlc = &components.mdls.itemc;
 	renmdls = components.mdls.data;
@@ -46,15 +48,20 @@ void add_component(Entity e, enum Component c, void* data)
 			light = iarr_append(&components.lights, e, data);
 			renderer_add_light(*light);
 			break;
+		case COMPONENT_BODY:
+			iarr_append(&components.bodies, e, data);
+			break;
 		default:
 			ERROR("[ENT] Unhandled component: %u", c);
 	}
 	entities[e] |= c;
 }
 
-void update_entities(double dt)
+void update_entities()
 {
-
+	apply_forces();
+	integrate_bodies();
+	resolve_collisions();
 }
 
 void free_entities()
@@ -63,4 +70,5 @@ void free_entities()
 	free_iarr(&components.mdls  , (void (*)(void*))free_model);
 	free_iarr(&components.mats  , NULL);
 	free_iarr(&components.lights, NULL);
+	free_iarr(&components.bodies, NULL);
 }

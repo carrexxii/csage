@@ -11,13 +11,14 @@ typedef uint64 Entity;
 void   init_entities();
 Entity create_entity();
 void   add_component(Entity e, enum Component c, void* data);
-void   update_entities(double dt);
+void   update_entities();
 void   free_entities();
 
 extern struct EntityComponents {
 	struct IArray mdls;
 	struct IArray mats;
 	struct IArray lights;
+	struct IArray bodies;
 } components;
 
 extern uint64 entityc;

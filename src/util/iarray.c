@@ -11,7 +11,7 @@ struct IArray create_iarr(uint16 itemsz, uint16 sz)
 		.sorted = true,
 	};
 	resize_iarr(&arr, arr.sz);
-	DEBUG(3, "[UTIL] Created IArray with %hu items of %hu size", sz, itemsz);
+	DEBUG(3, "[UTIL] Created IArray with %hu items of %huB (%ukB total)", sz, itemsz, sz*itemsz/1024);
 
 	return arr;
 }

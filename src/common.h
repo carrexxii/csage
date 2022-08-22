@@ -29,6 +29,7 @@
 	#include <io.h>
 #endif
 
+#define dt (1.0/60.0)
 #define DEBUG_MALLOC_MIN 64
 
 #define SHADER_DIR "shaders/spirv/"
@@ -83,6 +84,14 @@ union Data {
 	double dbl;
 	void*  ptr;
 }; static_assert(sizeof(union Data) == 8, "union Data");
+
+typedef union Vec3 {
+	float xyz[3];
+	struct { float x, y, z; };
+	struct { float w, h, d; };
+	struct { float i, j, k; };
+	struct { float u, v, t; };
+} Vec3;
 
 struct Dim {
 	uint w, h, d;
