@@ -78,13 +78,14 @@ int main(int argc, char** argv)
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
-	double delta, newtime, oldtime = 0.0, accum = 0.0;
+	uint64 delta, newtime, oldtime = 0.0, accum = 0.0;
 	while (!check_input()) {
 		newtime = SDL_GetTicks64();
 		delta   = newtime - oldtime;
 		oldtime = newtime;
 		accum  += delta;
 		while (accum >= dt) {
+			// DEBUG_VALUE(delta);
 			while (!reset_taskmgr());
 			accum -= dt;
 		}

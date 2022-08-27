@@ -1,7 +1,7 @@
 #ifndef ENTITIES_COMPONENTS_H
 #define ENTITIES_COMPONENTS_H
 
-#define G                    10.0
+#define G                    UPS(1.0)
 #define DAMPNER              0.01
 #define MAX_FORCES_ON_OBJECT 4
 

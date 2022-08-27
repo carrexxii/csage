@@ -29,7 +29,8 @@
 	#include <io.h>
 #endif
 
-#define dt (1.0/60.0)
+#define dt               (1000u)
+#define UPS(x)           (((double)(x)/1000.0)*(double)dt)
 #define DEBUG_MALLOC_MIN 64
 
 #define SHADER_DIR "shaders/spirv/"
@@ -174,7 +175,7 @@ struct Rect {
 			long long int: "Long Long: %lld\n", unsigned long long int: "ULong Long: %llu\n", \
 			        float: "Float: %g\n",                       double: "Double: %g\n",        \
 			  long double: "Long Double: %lg\n",                 char*: "Char*: %s\n",          \
-			  default: "<unknown or pointer type>%p\n"), (void*)(x));                            \
+			  default: "<unknown or pointer type>%p\n"), (x));                            \
 		} while (0)
 #define ERROR(...) do {                                   \
 			fprintf(stderr, TERM_RED);                     \
