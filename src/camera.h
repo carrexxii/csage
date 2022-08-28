@@ -1,18 +1,16 @@
 #ifndef GFX_CAMERA_H
 #define GFX_CAMERA_H
 
-#include "cglm/cglm.h"
-
 extern mat4 camProj;
 extern mat4 camView;
-extern struct Rect camRect;
+extern struct Rect    camRect;
 extern enum Direction camDir;
 extern int camZlvl;
 extern int camZlvlMax;
 extern int camZlvlScale;
 
 void init_cam();
-void get_cam_vp(mat4 out);
+void get_cam_vp(mat4* out);
 void set_cam_perspective();
 void update_camera();
 

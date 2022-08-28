@@ -27,6 +27,5 @@ void main()
 	Frgb    = Vrgb;
 	Fnormal = Vnormal;
 
-	/* glm (OpenGL) -> Vulkan depth */
 	gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
 }

@@ -19,12 +19,12 @@ enum Shape {
 };
 
 struct Body {
-	union Vec3 dim;
-	union Vec3 pos;
-	union Vec3 vel;
-	union Vec3 maxVel;
-	union Vec3 acc;
-	union Vec3 forces[MAX_FORCES_ON_OBJECT];
+	vec3 dim;
+	vec3 pos;
+	vec3 vel;
+	vec3 maxVel;
+	vec3 acc;
+	vec3 forces[MAX_FORCES_ON_OBJECT];
 	enum Direction dir;
 	uint  forcec;
 	float mass;

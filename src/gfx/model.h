@@ -1,12 +1,10 @@
 #ifndef GFX_MODEL_H
 #define GFX_MODEL_H
 
-#include "cglm/cglm.h"
-
 #include "gfx/buffers.h"
 
 struct Material {
-	float rgb[3];
+	vec3 rgb;
 }; static_assert(sizeof(struct Material) == 12, "struct Material");
 
 struct Model {

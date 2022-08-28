@@ -28,6 +28,5 @@ void main()
 	gl_Position = cam.vp * xyza;
 	Gxyz = vec3(Vxyza);
 
-	/* glm (OpenGL) -> Vulkan depth */
 	gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
 }

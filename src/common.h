@@ -1,8 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -11,6 +9,7 @@
 #include <float.h>
 #include <limits.h>
 #include <stdnoreturn.h>
+#include <stdalign.h>
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -29,8 +28,8 @@
 	#include <io.h>
 #endif
 
-#define dt               (1000u)
-#define UPS(x)           (((double)(x)/1000.0)*(double)dt)
+#define dt               (20u)
+#define UPS(x)           ((x)*((double)dt/1000.0))
 #define DEBUG_MALLOC_MIN 64
 
 #define SHADER_DIR "shaders/spirv/"
@@ -85,27 +84,6 @@ union Data {
 	double dbl;
 	void*  ptr;
 }; static_assert(sizeof(union Data) == 8, "union Data");
-
-typedef union Vec3 {
-	float xyz[3];
-	struct { float x, y, z; };
-	struct { float w, h, d; };
-	struct { float i, j, k; };
-	struct { float u, v, t; };
-} Vec3;
-
-struct Dim {
-	uint w, h, d;
-}; static_assert(sizeof(struct Dim) == 12, "struct Dim");
-struct Dim4 { /* For shader alignment */
-	uint w, h, d, a;
-}; static_assert(sizeof(struct Dim4) == 16, "struct Dim4");
-#define DIM4(_d) (struct Dim4){ (_d).w, (_d).h, (_d).d, 0.0 }
-inline static uint volume_of(struct Dim dim) { return dim.w * dim.h * dim.d; }
-
-struct Rect {
-	float x, y, w, h;
-}; static_assert(sizeof(struct Rect) == 16, "struct Rect");
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
@@ -227,5 +205,7 @@ inline static int random_int(int min, int max)
 
     return num;
 }
+
+#include "maths/maths.h"
 
 #endif

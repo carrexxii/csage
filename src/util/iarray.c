@@ -23,7 +23,7 @@ inline void resize_iarr(struct IArray* arr, uint16 sz)
 	arr->data = arr->inds + sz;
 }
 
-void* iarr_append(struct IArray* arr, uint16 i, void* data)
+void* iarr_append(struct IArray* arr, uint16 i, const void* data)
 {
 	if (arr->itemc >= arr->sz)
 		resize_iarr(arr, arr->sz*IARRAY_SIZE_MULTIPLIER);

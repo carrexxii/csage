@@ -2,7 +2,6 @@
 #define GFX_RENDERER_H
 
 #include <SDL2/SDL.h>
-#include "cglm/cglm.h"
 
 #include "model.h"
 

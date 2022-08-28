@@ -1,12 +1,13 @@
 #ifndef MAP_MAP_H
 #define MAP_MAP_H
 
+#include "maths/maths.h"
 #include "gfx/buffers.h"
 #include "gfx/model.h"
 
-#define MAP_BLOCK_WIDTH  64
-#define MAP_BLOCK_HEIGHT 64
-#define MAP_BLOCK_DEPTH  12
+#define MAP_BLOCK_WIDTH  4
+#define MAP_BLOCK_HEIGHT 4
+#define MAP_BLOCK_DEPTH  4
 #define MAP_CELLS_PER_BLOCK (MAP_BLOCK_WIDTH*MAP_BLOCK_HEIGHT*MAP_BLOCK_DEPTH)
 #define MAP_INDICES_PER_VXL 9
 #define MAP_VERTEX_COUNT ((MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLOCK_DEPTH + 1))
@@ -42,7 +43,7 @@ struct MapBlock {
 }; static_assert(sizeof(struct MapBlock) == 32, "struct MapBlock");
 
 struct Map {
-	struct Dim dim;
+	uvec3  dim;
 	uint32 indc;
 	VBO    verts;
 	struct MapBlock* inds;
@@ -50,12 +51,12 @@ struct Map {
 }; static_assert(sizeof(struct Map) == 48, "struct Map");
 
 struct MapDrawData {
-	struct Dim4 dim;
-	struct Dim4 stride;
+	alignas(vec4) uvec3 dim;
+	alignas(vec4) uvec3 stride;
 	// struct Material materials[UINT8_MAX];
 };
 
-void init_map(enum MapType type, struct Dim dim);
+void init_map(enum MapType type, uvec3 dim);
 bool is_block_visible(uint block);
 bool is_cell_visible(uint32 cell);
 void free_map();

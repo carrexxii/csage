@@ -1,5 +1,3 @@
-#include <cglm/mat4.h>
-
 #include "util/iarray.h"
 #include "gfx/model.h"
 #include "components.h"
@@ -42,7 +40,7 @@ void add_component(Entity e, enum Component c, void* data)
 		case COMPONENT_MODEL:
 			mdl = create_model((char*)data);
 			iarr_append(&components.mdls, e, &mdl);
-			iarr_append(&components.mats, e, GLM_MAT4_IDENTITY);
+			iarr_append(&components.mats, e, &MAT_I4);
 			break;
 		case COMPONENT_LIGHT:
 			light = iarr_append(&components.lights, e, data);

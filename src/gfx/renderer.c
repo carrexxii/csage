@@ -1,7 +1,6 @@
 #include <SDL2/SDL.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
-#include "cglm/cglm.h"
 
 #include "map/map.h"
 #include "util/iarray.h"
@@ -162,8 +161,8 @@ void renderer_init()
 	vxlpipeln.sbosz     = sizeof(struct MapDrawData);
 	init_pipeln(&vxlpipeln, renderpass);
 
-	memcpy(lighting.sundir, (float[]){ 0.0, 100.0, -50.0 }, sizeof(float[3]));
-	glm_vec3_normalize(lighting.sundir);
+	memcpy(lighting.sundir.arr, (float[]){ 0.0, 100.0, -50.0 }, sizeof(float[3]));
+	vec_normalise_ip(&lighting.sundir);
 	lighting.ambient  = 0.03;
 	lighting.sunpower = 10.0;
 }
@@ -215,8 +214,8 @@ void renderer_add_light(vec4 light)
 {
 	if (lighting.lightc >= RENDERER_MAX_LIGHTS)
 		ERROR("[GFX] Maximum number of lights reached");
-	memcpy(lighting.lights[lighting.lightc++], light, sizeof(vec4));
-	DEBUG(3, "[GFX] Added light [%.4f %.4f %.4f] :: %.4f", light[0], light[1], light[2], light[3]);
+	memcpy(lighting.lights[lighting.lightc++].arr, light.arr, sizeof(vec4));
+	DEBUG(3, "[GFX] Added light [%.4f %.4f %.4f] :: %.4f", light.x, light.y, light.z, light.w);
 }
 
 void renderer_set_lights(uint16 lightc, vec4* lights)
@@ -324,8 +323,8 @@ inline static void update_buffers()
 	vkUnmapMemory(gpu, mdlpipeln.sbo->mem);
 
 	mat4 vp;
-	get_cam_vp(vp);
-	update_buffer(*mdlpipeln.ubos[0], sizeof(mat4), vp);
+	get_cam_vp(&vp);
+	update_buffer(*mdlpipeln.ubos[0], sizeof(mat4), vp.arr);
 	update_buffer(*mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
 
 	memsz = sizeof(struct MapDrawData);

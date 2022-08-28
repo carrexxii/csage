@@ -22,12 +22,13 @@ CFLAGS   = -std=c18 -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pip
            -fstack-clash-protection -fstack-protector-strong -pie
 LUAFLAGS = -O0
 
-LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan
+LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan -lcblas
 DEPFLAGS = -MT $@ -MMD -MF $(OBJDIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED
 
-SRC  := $(wildcard $(SRCDIR)/util/*.c)  \
+SRC  := $(wildcard $(SRCDIR)/util/*.c) \
+        $(wildcard $(SRCDIR)/maths/*.c) \
         $(wildcard $(SRCDIR)/gfx/*.c)    \
         $(wildcard $(SRCDIR)/map/*.c)     \
         $(wildcard $(SRCDIR)/entities/*.c) \

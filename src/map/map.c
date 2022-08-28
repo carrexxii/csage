@@ -6,9 +6,9 @@ struct MapDrawData mapdd;
 uintptr mapcellc;
 uintptr mapblockc;
 
-void init_map(enum MapType type, struct Dim dim)
+void init_map(enum MapType type, uvec3 dim)
 {
-	mapcellc  = volume_of(dim);
+	mapcellc  = vec_volume(dim);
 	mapblockc = DIV_CEIL(dim.w, MAP_BLOCK_WIDTH)  *
 	            DIV_CEIL(dim.h, MAP_BLOCK_HEIGHT) * 
 	            DIV_CEIL(dim.d, MAP_BLOCK_DEPTH);
@@ -52,16 +52,8 @@ void init_map(enum MapType type, struct Dim dim)
 
 	generate_meshes(map);
 
-	mapdd.dim = (struct Dim4){
-		.w = DIV_CEIL(dim.w, MAP_BLOCK_WIDTH),
-		.h = DIV_CEIL(dim.h, MAP_BLOCK_HEIGHT),
-		.d = DIV_CEIL(dim.d, MAP_BLOCK_DEPTH),
-	};
-	mapdd.stride = (struct Dim4){
-		.w = MAP_BLOCK_WIDTH,
-		.h = MAP_BLOCK_HEIGHT,
-		.d = MAP_BLOCK_DEPTH,
-	};
+	mapdd.dim = UVEC3(DIV_CEIL(dim.w, MAP_BLOCK_WIDTH), DIV_CEIL(dim.h, MAP_BLOCK_HEIGHT), DIV_CEIL(dim.d, MAP_BLOCK_DEPTH));
+	mapdd.stride = UVEC3(MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
 
 	if (dim.d < MAP_BLOCK_DEPTH)
 		camZlvlMax = 0;
