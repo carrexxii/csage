@@ -317,7 +317,7 @@ inline static void update_buffers()
 	void*   mem;
 	uintptr memsz;
 
-	memsz = (*renmdlc)*sizeof(float[16]);
+	memsz = (*renmdlc)*sizeof(mat4);
 	vkMapMemory(gpu, mdlpipeln.sbo->mem, 0, memsz, 0, &mem);
 	memcpy(mem, renmats, memsz);
 	vkUnmapMemory(gpu, mdlpipeln.sbo->mem);

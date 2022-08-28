@@ -135,6 +135,25 @@ inline static void vec2_normalise_ip(vec2* v) { vec_scale_ip(v, 1.0 / vec_mag(*v
 inline static void vec3_normalise_ip(vec3* v) { vec_scale_ip(v, 1.0 / vec_mag(*v)); }
 inline static void vec4_normalise_ip(vec4* v) { vec_scale_ip(v, 1.0 / vec_mag(*v)); }
 
+#define vec_clamp(v, max) _Generic((v), vec2*: vec2_clamp, \
+                                        vec3*: vec3_clamp, \
+                                        vec4*: vec4_clamp)(v, max)
+inline static void vec2_clamp(vec2* v, float max) {
+    float mag = vec_mag(*v);
+    vec_normalise_ip(v);
+    vec_scale_ip(v, MIN(mag, max));
+}
+inline static void vec3_clamp(vec3* v, float max) {
+    float mag = vec_mag(*v);
+    vec_normalise_ip(v);
+    vec_scale_ip(v, MIN(mag, max));
+}
+inline static void vec4_clamp(vec4* v, float max) {
+    float mag = vec_mag(*v);
+    vec_normalise_ip(v);
+    vec_scale_ip(v, MIN(mag, max));
+}
+
 #define vec_angle(v, u) _Generic((v), vec2: vec2_angle, \
                                       vec3: vec3_angle)(v, u)
 inline static float vec2_angle(vec2 v, vec2 u) { return acos(vec_dot(v, u) / (vec_mag(v)*vec_mag(u))); }

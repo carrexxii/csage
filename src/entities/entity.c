@@ -60,6 +60,13 @@ void update_entities()
 	apply_forces();
 	integrate_bodies();
 	resolve_collisions();
+
+	/* Update the model matrices */
+	mat4* m;
+	for (int i = 0; i < components.mats.itemc; i++) {
+		m = &((mat4*)components.mats.data)[i];
+		mat_set_pos(m, ((struct Body*)components.bodies.data)[i].pos);
+	}
 }
 
 void free_entities()

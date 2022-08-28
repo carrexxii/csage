@@ -54,24 +54,24 @@ int main(int argc, char** argv)
 	add_taskmgr_task(update_camera);
 	add_taskmgr_task(update_entities);
 
-	// Entity e1 = create_entity();
-	// add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
-	// struct Body body = (struct Body){
-	// 	.dim    = VEC3(1.0, 1.0,  1.0),
-	// 	.pos    = VEC3(5.0, 5.0, -5.0),
-	// 	.maxVel = VEC3(1.0, 1.0,  1.0),
-	// 	.mass   = 1.0,
-	// };
-	// add_component(e1, COMPONENT_BODY, &body);
+	Entity e1 = create_entity();
+	add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
+	struct Body body = (struct Body){
+		.dim    = VEC3(1.0, 1.0,  1.0),
+		.pos    = VEC3(5.0, 5.0, -5.0),
+		.maxVel = VEC3(1.0, 1.0,  1.0),
+		.mass   = 1.0,
+	};
+	add_component(e1, COMPONENT_BODY, &body);
 
 	// Entity e2 = create_entity();
 	// add_component(e2, COMPONENT_MODEL, MODEL_PATH "plane");
 	// set_entity_pos(e2, (vec3){ -0.5, 0.0, 0.0 });
 
-	Entity e3 = create_entity();
-	add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
-	set_entity_pos(e3, VEC3(0.0, -20.0, 5.0));
-	add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
+	// Entity e3 = create_entity();
+	// add_component(e3, COMPONENT_MODEL, MODEL_PATH "sphere");
+	// set_entity_pos(e3, VEC3(0.0, -20.0, 5.0));
+	// add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
 
 	init_map(MAPTYPE_FILLED, UVEC3(16, 8, 4));
 

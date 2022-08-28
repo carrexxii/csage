@@ -2,6 +2,8 @@
 #define ENTITIES_COMPONENTS_H
 
 #define G                    UPS(1.0)
+#define MAX_VEL              UPS(1.5)
+#define MAX_ACC              UPS(0.1)
 #define DAMPNER              0.01
 #define MAX_FORCES_ON_OBJECT 4
 
@@ -25,9 +27,8 @@ struct Body {
 	vec3 maxVel;
 	vec3 acc;
 	vec3 forces[MAX_FORCES_ON_OBJECT];
-	enum Direction dir;
 	uint  forcec;
 	float mass;
-}; static_assert(sizeof(struct Body) == 120, "struct Body");
+}; static_assert(sizeof(struct Body) == 116, "struct Body");
 
 #endif
