@@ -5,9 +5,8 @@
 
 #include "entity.h"
 
-void set_entity_pos(Entity e, vec3 pos);
-void apply_forces();
-void integrate_bodies();
-void resolve_collisions();
+void entity_set_pos(Entity e, vec3 pos);
+void physics_integrate();
 
 #endif
+

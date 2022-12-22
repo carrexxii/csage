@@ -28,8 +28,8 @@
 	#include <io.h>
 #endif
 
-#define dt               (20u)
-#define UPS(x)           ((x)*((double)dt/1000.0))
+#define dt_ms            (20u)
+#define dt               (1.0/dt_ms)
 #define DEBUG_MALLOC_MIN 64
 
 #define SHADER_DIR "shaders/spirv/"

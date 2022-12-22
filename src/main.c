@@ -57,10 +57,7 @@ int main(int argc, char** argv)
 	Entity e1 = create_entity();
 	add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
 	struct Body body = (struct Body){
-		.dim    = VEC3(1.0, 1.0,  1.0),
-		.pos    = VEC3(5.0, 5.0, -5.0),
-		.maxVel = VEC3(1.0, 1.0,  1.0),
-		.mass   = 1.0,
+		.pos = VEC3(5.0, 5.0, -5.0),
 	};
 	add_component(e1, COMPONENT_BODY, &body);
 
@@ -73,7 +70,7 @@ int main(int argc, char** argv)
 	// set_entity_pos(e3, VEC3(0.0, -20.0, 5.0));
 	// add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
 
-	init_map(MAPTYPE_FILLED, UVEC3(16, 8, 4));
+	init_map(MAPTYPE_FILLED, UVEC3(16, 16, 4));
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
@@ -83,10 +80,9 @@ int main(int argc, char** argv)
 		delta   = newtime - oldtime;
 		oldtime = newtime;
 		accum  += delta;
-		while (accum >= dt) {
-			// DEBUG_VALUE(delta);
+		while (accum >= dt_ms) {
 			while (!reset_taskmgr());
-			accum -= dt;
+			accum -= dt_ms;
 		}
 		renderer_draw();
 	}

@@ -2,7 +2,7 @@
 #include "components.h"
 #include "systems.h"
 
-void set_entity_pos(Entity e, vec3 pos)
+void entity_set_pos(Entity e, vec3 pos)
 {
 	if (!(entities[e] & COMPONENT_MODEL))
 		ERROR("[ENT] Entity %lu has no model component", e);
@@ -11,41 +11,27 @@ void set_entity_pos(Entity e, vec3 pos)
 	mat_translate(mat, pos);
 }
 
-void apply_forces(Entity e)
+void physics_integrate()
 {
+	vec3 newpos, acc;
 	struct Body* body;
 	for (uint i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
+		acc = VEC3(0.0, 0.0, G);
+		vec_scale_ip(&acc, dt*dt);
 
-		/* Gravity */
-		vec_add_ip(&body->forces[body->forcec], VEC3(0.0, 0.0, G));
-		body->forcec = 1;
-	}
-}
-
-void integrate_bodies()
-{
-	struct Body* body;
-	for (uint i = 0; i < components.bodies.itemc; i++) {
-		body = &((struct Body*)components.bodies.data)[i];
-
-		// /* vel += 0.5 * acc * dt */
-		vec_add_ip(&body->vel, vec_scale(body->acc, 0.5*dt));
-
-		// /* pos += vel * dt */
-		vec_add_ip(&body->pos, vec_scale(body->vel, dt));
-
-		// /* Apply forces */
-		for (uint j = 0; j < body->forcec; j++)
-			vec_add_ip(&body->acc, vec_scale(body->forces[j], body->mass));
-		vec_clamp(&body->acc, MAX_ACC);
-
-		// /* vel += 0.5 * acc * dt */
-		vec_add_ip(&body->vel, vec_scale(body->acc, 0.5*dt));
-		vec_clamp(&body->vel, MAX_VEL);
-
-		vec_print(body->forces[0]);
 		vec_print(body->pos);
-		DEBUG(1, "\n");
+		vec_print(body->prevpos);
+		vec_print(acc);
+		DEBUG(1, "speed -> %f\n", (body->pos.z - body->prevpos.z)/dt);
+
+		// x(t+1) = 2x(t) − x(t−1) + a(t)t^2
+		newpos = vec_scale(body->pos, 2.0);
+		vec_sub_ip(&newpos, body->prevpos);
+		vec_add_ip(&newpos, acc);
+		
+		body->prevpos = body->pos;
+		body->pos     = newpos;
 	}
 }
+

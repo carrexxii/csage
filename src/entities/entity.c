@@ -47,6 +47,7 @@ void add_component(Entity e, enum Component c, void* data)
 			renderer_add_light(*light);
 			break;
 		case COMPONENT_BODY:
+			((struct Body*)data)->prevpos = ((struct Body*)data)->pos;
 			iarr_append(&components.bodies, e, data);
 			break;
 		default:
@@ -57,9 +58,7 @@ void add_component(Entity e, enum Component c, void* data)
 
 void update_entities()
 {
-	apply_forces();
-	integrate_bodies();
-	resolve_collisions();
+	physics_integrate();
 
 	/* Update the model matrices */
 	mat4* m;
