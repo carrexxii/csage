@@ -1,12 +1,21 @@
 #include "map/map.h"
 #include "entity.h"
 
-void resolve_collisions()
+bool collisions_map(struct Body* body)
 {
-	struct Body* body;
-	for (uint i = 0; i < components.bodies.itemc; i++) {
-		body = &((struct Body*)components.bodies.data)[i];
-		body->forcec = 0;
+	uint mapx = (uint)body->pos.x;
+	uint mapy = (uint)body->pos.y;
+	uint mapz = (uint)(body->pos.z + body->dim.z);
+	struct MapCell cellbelow, cellleft, cellright, cellfwd, cellback;
+	/* Map bounds checking */
+	if (body->pos.z < -body->dim.z || body->pos.z > map->dim.h)
+		return false;
 
-	}
+	cellbelow = map->data[map_get_block_index(mapx, mapy, mapz)];
+	if (cellbelow.data)
+		return true;
+
+	/* TODO: other sides */
+
+	return false;
 }

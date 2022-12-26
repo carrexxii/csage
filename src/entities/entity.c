@@ -59,6 +59,7 @@ void add_component(Entity e, enum Component c, void* data)
 void update_entities()
 {
 	physics_integrate();
+	physics_resolve_collisions();
 
 	/* Update the model matrices */
 	mat4* m;

@@ -1,7 +1,7 @@
 #ifndef ENTITIES_COMPONENTS_H
 #define ENTITIES_COMPONENTS_H
 
-#define G 1.0
+#define G 10.0
 
 enum Component {
 	COMPONENT_NONE  = 0x00,
@@ -19,7 +19,7 @@ enum Shape {
 struct Body {
 	vec3 pos;
 	vec3 prevpos;
-	uint forcec;
-}; static_assert(sizeof(struct Body) == 28, "struct Body");
+	vec3 dim;
+}; static_assert(sizeof(struct Body) == 36, "struct Body");
 
 #endif

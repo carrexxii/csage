@@ -20,10 +20,11 @@ void init_map(enum MapType type, uvec3 dim)
 	uint x, y, z;
 	switch (type) {
 		case MAPTYPE_NONE:
-			ERROR("[MAP] Block type should not be none");
+			ERROR("[MAP] Map type should not be none");
 			break;
-		case MAPTYPE_FILLED:
-			memset(map->data, CELLTYPE_GRASS, mapcellc*sizeof(struct MapCell));
+		case MAPTYPE_FILLED: /* Top half is left empty */
+			memset(map->data, CELLTYPE_EMPTY, mapcellc/2*sizeof(struct MapCell));
+			memset(map->data + mapcellc/2, CELLTYPE_GRASS, mapcellc/2*sizeof(struct MapCell));
 			break;
 		case MAPTYPE_ALTERNATING:
 			for (uint i = 0; i < mapcellc; i++)
@@ -35,9 +36,9 @@ void init_map(enum MapType type, uvec3 dim)
 			break;
 		case MAPTYPE_HOLLOW:
 			for (uint i = 0; i < mapcellc; i++) {
-				x = get_cell_x(i);
-				y = get_cell_y(i);
-				z = get_cell_z(i);
+				x = map_get_cell_x(i);
+				y = map_get_cell_y(i);
+				z = map_get_cell_z(i);
 				map->data[i].data = (uint)((x == 0 && y == 0) || (x == dim.w - 1 && y == dim.h - 1) ||
 				                           (x == dim.w - 1) || (y == dim.h - 1) ||
 				                           (z == dim.d - 1) || (z == 0 && (x == 0 || y == 0)));
@@ -76,9 +77,9 @@ bool is_cell_visible(uint32 cell)
 
 	uint zstride = map->dim.w * map->dim.h;
 	uint ystride = map->dim.h;
-	uint32 x = get_cell_x(cell);
-	uint32 y = get_cell_y(cell);
-	uint32 z = get_cell_z(cell);
+	uint32 x = map_get_cell_x(cell);
+	uint32 y = map_get_cell_y(cell);
+	uint32 z = map_get_cell_z(cell);
 	return true;
 
 	/* Check if it at the top of a block */

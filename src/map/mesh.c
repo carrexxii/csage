@@ -37,7 +37,7 @@ void generate_meshes()
 				totalindc += indc;
 				map->inds[map->indc  ].ibo  = create_ibo(indc*sizeof(uint16), inds);
 				map->inds[map->indc  ].indc = indc;
-				map->inds[map->indc++].zlvl = (int)(get_block_z(currblock) / MAP_BLOCK_DEPTH);
+				map->inds[map->indc++].zlvl = (int)(map_get_block_z(currblock) / MAP_BLOCK_DEPTH);
 				currblock++;
 			}
 		}
@@ -57,9 +57,9 @@ void generate_meshes()
 
 static uint generate_block_indices(uint16* inds, uintptr start)
 {
-	uint blockx = get_block_x(start);
-	uint blocky = get_block_y(start);
-	uint blockz = get_block_z(start);
+	uint blockx = map_get_block_x(start);
+	uint blocky = map_get_block_y(start);
+	uint blockz = map_get_block_z(start);
 	// DEBUG(1, "Meshing %lu: %u %u %u", start, blockx, blocky, blockz);
 
 	uint indc   = 0;
@@ -73,7 +73,7 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
 				if (blockx + x >= map->dim.w || blocky + y >= map->dim.h || blockz + z >= map->dim.d)
 					continue;
-				if (!is_cell_visible(get_block_index(blockx + x, blocky + y, blockz + z)))
+				if (!is_cell_visible(map_get_block_index(blockx + x, blocky + y, blockz + z)))
 					continue;
 				indc += MAP_INDICES_PER_VXL;
 				vx = x % MAP_BLOCK_WIDTH;

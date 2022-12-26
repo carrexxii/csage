@@ -17,13 +17,8 @@ void physics_integrate()
 	struct Body* body;
 	for (uint i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
-		acc = VEC3(0.0, 0.0, G);
+		acc  = VEC3(0.0, 0.0, G);
 		vec_scale_ip(&acc, dt*dt);
-
-		vec_print(body->pos);
-		vec_print(body->prevpos);
-		vec_print(acc);
-		DEBUG(1, "speed -> %f\n", (body->pos.z - body->prevpos.z)/dt);
 
 		// x(t+1) = 2x(t) − x(t−1) + a(t)t^2
 		newpos = vec_scale(body->pos, 2.0);
@@ -35,3 +30,13 @@ void physics_integrate()
 	}
 }
 
+void physics_resolve_collisions()
+{
+	struct Body* body;
+	for (uint i = 0; i < components.bodies.itemc; i++) {
+		body = &((struct Body*)components.bodies.data)[i];
+		// CLAMP(body->pos.z, -8.0, 8.0);
+		if (collisions_map(body))
+			body->pos.z = body->prevpos.z;
+	}
+}
