@@ -23,6 +23,6 @@ struct InputCallback {
 
 bool input_check();
 void input_register_key(struct InputCallback cb);
-void input_register_mouse(enum MouseButton btn, void (*fn)(bool));
+void input_register_mouse(enum MouseButton btn, void (*fn)(bool, int, int));
 
 #endif

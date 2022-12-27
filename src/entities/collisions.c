@@ -3,14 +3,14 @@
 
 bool collisions_map(struct Body* body)
 {
-	uint mapx = (uint)body->pos.x;
-	uint mapy = (uint)body->pos.y;
-	uint mapz = (uint)(body->pos.z + body->dim.z);
+	uint mapx = (uint)body->pos[0];
+	uint mapy = (uint)body->pos[1];
+	uint mapz = (uint)(body->pos[2] + body->dim[2]);
 	struct MapCell cellbelow, cellleft, cellright, cellfwd, cellback;
 	/* Map bounds checking */
-	if ((body->pos.z < -body->dim.z || body->pos.z > map->dim.h) ||
-		(body->pos.x < -body->dim.w || body->pos.x > map->dim.w) ||
-		(body->pos.y < -body->dim.h || body->pos.y > map->dim.h))
+	if ((body->pos[0] < -body->dim[0] || body->pos[0] > map->dim[0]) ||
+		(body->pos[1] < -body->dim[1] || body->pos[1] > map->dim[1]) ||
+		(body->pos[2] < -body->dim[2] || body->pos[2] > map->dim[2]))
 		return false;
 
 	cellbelow = map->data[map_get_block_index(mapx, mapy, mapz)];

@@ -5,10 +5,11 @@
 
 static uint keycbc;
 static struct InputCallback keycbs[MAX_INPUT_CALLBACKS];
-static void (*mousecbs[MOUSE_BUTTON_COUNT])(bool);
+static void (*mousecbs[MOUSE_BUTTON_COUNT])(bool, int, int);
 
 bool input_check()
 {
+	void (*fn)(bool, int, int) = NULL;
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -23,14 +24,13 @@ bool input_check()
 							keycbs[i].fn(event.type == SDL_KEYDOWN);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-				void (*fn)(bool);
 				switch (event.button.button) {
 					case SDL_BUTTON_LEFT  : fn = mousecbs[MOUSE_BUTTON_LEFT  ]; break;
 					case SDL_BUTTON_RIGHT : fn = mousecbs[MOUSE_BUTTON_RIGHT ]; break;
 					case SDL_BUTTON_MIDDLE: fn = mousecbs[MOUSE_BUTTON_MIDDLE]; break;
 				}
 				if (fn)
-					fn(event.button.state == SDL_PRESSED);
+					fn(event.button.state == SDL_PRESSED, event.button.x, event.button.y);
 		}
 	}
 	return false;
@@ -43,7 +43,7 @@ void input_register_key(struct InputCallback cb)
 	      STRING_TF(cb.onkeydown), STRING_TF(cb.onkeyup));
 }
 
-void input_register_mouse(enum MouseButton btn, void (*fn)(bool))
+void input_register_mouse(enum MouseButton btn, void (*fn)(bool, int, int))
 {
 	if (btn == MOUSE_BUTTON_NONE || btn >= MOUSE_BUTTON_INVALID)
 		ERROR("[INPUT] %d is not a valid mouse button", btn);

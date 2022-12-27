@@ -8,15 +8,15 @@ uintptr mapblockc;
 
 void map_init(enum MapType type, uvec3 dim)
 {
-	mapcellc  = vec_volume(dim);
-	mapblockc = DIV_CEIL(dim.w, MAP_BLOCK_WIDTH)  *
-	            DIV_CEIL(dim.h, MAP_BLOCK_HEIGHT) * 
-	            DIV_CEIL(dim.d, MAP_BLOCK_DEPTH);
+	mapcellc  = dim[0] * dim[1] * dim[2];
+	mapblockc = DIV_CEIL(dim[0], MAP_BLOCK_WIDTH)  *
+	            DIV_CEIL(dim[1], MAP_BLOCK_HEIGHT) * 
+	            DIV_CEIL(dim[2], MAP_BLOCK_DEPTH);
 	if (map)
 		free(map);
 	map = scalloc(sizeof(struct Map) + mapcellc*sizeof(struct MapCell), 1);
 	map->inds = scalloc(mapblockc, sizeof(struct MapBlock));
-	map->dim  = dim;
+	uvec3_copy(dim, map->dim);
 	uint x, y, z;
 	switch (type) {
 		case MAPTYPE_NONE:
@@ -28,7 +28,7 @@ void map_init(enum MapType type, uvec3 dim)
 			break;
 		case MAPTYPE_ALTERNATING:
 			for (uint i = 0; i < mapcellc; i++)
-				map->data[i].data = i % 2 - i/map->dim.h % 2;
+				map->data[i].data = i % 2 - i/map->dim[1] % 2;
 			break;
 		case MAPTYPE_RANDOM:
 			for (uint i = 0; i < mapcellc; i++)
@@ -39,9 +39,9 @@ void map_init(enum MapType type, uvec3 dim)
 				x = map_get_cell_x(i);
 				y = map_get_cell_y(i);
 				z = map_get_cell_z(i);
-				map->data[i].data = (uint)((x == 0 && y == 0) || (x == dim.w - 1 && y == dim.h - 1) ||
-				                           (x == dim.w - 1) || (y == dim.h - 1) ||
-				                           (z == dim.d - 1) || (z == 0 && (x == 0 || y == 0)));
+				map->data[i].data = (uint)((x == 0 && y == 0) || (x == dim[0] - 1 && y == dim[1] - 1) ||
+				                           (x == dim[0] - 1) || (y == dim[1] - 1) ||
+				                           (z == dim[2] - 1) || (z == 0 && (x == 0 || y == 0)));
 			}
 			break;
 		default:
@@ -53,16 +53,19 @@ void map_init(enum MapType type, uvec3 dim)
 
 	map_generate_meshes(map);
 
-	mapdd.dim = UVEC3(DIV_CEIL(dim.w, MAP_BLOCK_WIDTH), DIV_CEIL(dim.h, MAP_BLOCK_HEIGHT), DIV_CEIL(dim.d, MAP_BLOCK_DEPTH));
-	mapdd.stride = UVEC3(MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
+	uvec3_copy((uvec3){ DIV_CEIL(dim[0], MAP_BLOCK_WIDTH),
+	                    DIV_CEIL(dim[1], MAP_BLOCK_HEIGHT),
+	                    DIV_CEIL(dim[2], MAP_BLOCK_DEPTH) },
+	            mapdd.dim);
+	uvec3_copy((uvec3){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH }, mapdd.stride);
 
-	if (dim.d < MAP_BLOCK_DEPTH)
-		camZlvlMax = 0;
+	if (dim[2] < MAP_BLOCK_DEPTH)
+		camzlvlmax = 0;
 	else
-		camZlvlMax = DIV_CEIL(dim.d, MAP_BLOCK_DEPTH) - 1;
-	camZlvlScale = MAP_BLOCK_DEPTH;
+		camzlvlmax = DIV_CEIL(dim[2], MAP_BLOCK_DEPTH) - 1;
+	camzlvlscale = MAP_BLOCK_DEPTH;
 
-	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total)", dim.w, dim.h, dim.d, mapcellc);
+	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total)", dim[0], dim[1], dim[2], mapcellc);
 }
 
 bool map_is_block_visible(uint block)
@@ -75,8 +78,8 @@ bool map_is_cell_visible(uint32 cell)
 	if (!map->data[cell].data)
 		return false;
 
-	uint zstride = map->dim.w * map->dim.h;
-	uint ystride = map->dim.h;
+	uint zstride = map->dim[0] * map->dim[1];
+	uint ystride = map->dim[1];
 	uint32 x = map_get_cell_x(cell);
 	uint32 y = map_get_cell_y(cell);
 	uint32 z = map_get_cell_z(cell);
@@ -87,7 +90,7 @@ bool map_is_cell_visible(uint32 cell)
 		return true;
 
 	/* Edge checks (left edge || right edge */
-	if (!(cell % map->dim.w) || cell % (map->dim.w*map->dim.h) < map->dim.w)
+	if (!(cell % map->dim[0]) || cell % (map->dim[0]*map->dim[1]) < map->dim[0])
 		return true;
 
 	/* Diagonal check */
@@ -108,9 +111,19 @@ bool map_is_cell_visible(uint32 cell)
 	return !isblocked;
 }
 
-void map_select_cell(bool btndown)
+void map_select_cell(bool btndown, int x, int y)
 {
-	D;
+	vec4 mp = { (float)x, (float)y, 0.0, 1.0 };
+	mat4 vp;
+	// mat4 inv;
+	camera_get_vp(vp);
+
+	DEBUG(1, "Mouse position: %d %d", x, y);
+	// mat_copy(&inv, &vp);
+	// mat_inv(&inv);
+	// mat_mul_v_ip(&mp, &inv);
+	// mat_mul_v_ip(&mp, &vp);
+	// vec_print(mp);
 }
 
 void map_free()
@@ -124,11 +137,11 @@ void map_free()
 
 void map_print()
 {
-	fprintf(stderr, "Map (%ux%ux%u):\n", map->dim.w, map->dim.h, map->dim.d);
-	for (uint z = 0; z < map->dim.d; z++) {
-		for (uint y = 0; y < map->dim.h; y++) {
+	fprintf(stderr, "Map (%ux%ux%u):\n", map->dim[0], map->dim[1], map->dim[2]);
+	for (uint z = 0; z < map->dim[2]; z++) {
+		for (uint y = 0; y < map->dim[1]; y++) {
 			fprintf(stderr, "[%u] ", y);
-			for (uint x = 0; x < map->dim.w; x++)
+			for (uint x = 0; x < map->dim[0]; x++)
 				fprintf(stderr, "%2hu ", map->data[z*MAP_BLOCK_HEIGHT*MAP_BLOCK_DEPTH + y*MAP_BLOCK_WIDTH + x].data);
 			fprintf(stderr, "\n");
 		}

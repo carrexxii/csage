@@ -1,7 +1,6 @@
 #ifndef MAP_MAP_H
 #define MAP_MAP_H
 
-#include "maths/maths.h"
 #include "gfx/buffers.h"
 #include "gfx/model.h"
 
@@ -59,7 +58,7 @@ struct MapDrawData {
 void map_init(enum MapType type, uvec3 dim);
 bool map_is_block_visible(uint block);
 bool map_is_cell_visible(uint32 cell);
-void map_select_cell(bool btndown);
+void map_select_cell(bool btndown, int x, int y);
 void map_free();
 void map_print();
 
@@ -71,21 +70,21 @@ extern uintptr mapcellc;
 extern uintptr mapblockc;
 
 inline static uint32 map_get_block_index(uint32 x, uint32 y, uint32 z) {
-	return x + y*map->dim.w + z*map->dim.w*map->dim.h;
+	return x + y*map->dim[0] + z*map->dim[0]*map->dim[1];
 }
 
 inline static uint32 map_get_block_x(uint32 cell) {
-	return (cell % DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)) * MAP_BLOCK_WIDTH;
+	return (cell % DIV_CEIL(map->dim[0], MAP_BLOCK_WIDTH)) * MAP_BLOCK_WIDTH;
 }
 inline static uint32 map_get_block_y(uint32 cell) {
-	return (cell / DIV_CEIL(map->dim.w, MAP_BLOCK_HEIGHT) * MAP_BLOCK_HEIGHT) % (map->dim.h + map->dim.h % 2);
+	return (cell / DIV_CEIL(map->dim[0], MAP_BLOCK_HEIGHT) * MAP_BLOCK_HEIGHT) % (map->dim[1] + map->dim[1] % 2);
 }
 inline static uint32 map_get_block_z(uint32 cell) {
-	return (cell / (DIV_CEIL(map->dim.w, MAP_BLOCK_WIDTH)*DIV_CEIL(map->dim.h, MAP_BLOCK_HEIGHT))) * MAP_BLOCK_DEPTH;
+	return (cell / (DIV_CEIL(map->dim[0], MAP_BLOCK_WIDTH)*DIV_CEIL(map->dim[1], MAP_BLOCK_HEIGHT))) * MAP_BLOCK_DEPTH;
 }
 
-inline static uint32 map_get_cell_x(uint32 cell) { return cell % map->dim.w;                             }
-inline static uint32 map_get_cell_y(uint32 cell) { return cell % (map->dim.w * map->dim.h) / map->dim.w; }
-inline static uint32 map_get_cell_z(uint32 cell) { return cell / (map->dim.w * map->dim.h);              }
+inline static uint32 map_get_cell_x(uint32 cell) { return cell % map->dim[0];                             }
+inline static uint32 map_get_cell_y(uint32 cell) { return cell % (map->dim[0] * map->dim[1]) / map->dim[0]; }
+inline static uint32 map_get_cell_z(uint32 cell) { return cell / (map->dim[0] * map->dim[1]);              }
 
 #endif

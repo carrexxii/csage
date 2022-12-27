@@ -57,8 +57,8 @@ int main(int argc, char** argv)
 	Entity e1 = entity_new();
 	entity_add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
 	struct Body body = (struct Body){
-		.pos = VEC3(1.0, 1.0, -5.0),
-		.dim = VEC3(0.5, 0.5, 1.0),
+		.pos = { 1.0, 1.0, -5.0 },
+		.dim = { 0.5, 0.5,  1.0 },
 	};
 	entity_add_component(e1, COMPONENT_BODY, &body);
 	// entity_move(e1, VEC3(1.0, 0.0, 0.0));
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	// set_entity_pos(e3, VEC3(0.0, -20.0, 5.0));
 	// add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
 
-	map_init(MAPTYPE_FILLED, UVEC3(8, 8, 8));
+	map_init(MAPTYPE_FILLED, (uvec3){ 8, 8, 8 });
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());

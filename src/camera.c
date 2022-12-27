@@ -1,60 +1,49 @@
 #include "config.h"
 #include "camera.h"
-#include "maths/matrix.h"
 
-mat4 camProj = MAT4_IDENT;
-mat4 camView = MAT4_IDENT;
-struct Rect    camRect;
-enum Direction camDir;
-int camZlvl;
-int camZlvlMax   = 8;
-int camZlvlScale = 8;
-static float camZoom   = 100.0;
-static float panSpeed  = 5.0*dt;
-static float zoomSpeed = 150.0*dt;
-static float minZoom   = 2.0;
-static float maxZoom   = 150.0;
-mat4 camVP;
+mat4 camproj = GLM_MAT4_IDENTITY_INIT;
+mat4 camview = GLM_MAT4_IDENTITY_INIT;
+struct Rect    camrect;
+enum Direction camdir;
+int camzlvl;
+int camzlvlmax   = 8;
+int camzlvlscale = 8;
+static float camzoom   = 100.0;
+static float panspeed  = 5.0 * dt;
+static float zoomspeed = 150.0 * dt;
+static float minzoom   = 2.0;
+static float maxzoom   = 150.0;
 
 void camera_init()
 {
 	camera_set_perspective();
-	camRect = (struct Rect){ 0 };
+	camrect = (struct Rect){ 0 };
 }
 
 /* TODO: add conditional update of vp with boolean return + rename */
-void camera_get_vp(mat4* out)
+void camera_get_vp(mat4 out)
 {
 	camera_set_perspective();
 
-	mat_copy(&camView, &MAT_I4);
+	glm_mat4_copy(GLM_MAT4_IDENTITY, camview);
 
-	mat4 rot = MAT4_IDENT;
-	vec4 q   = QUAT_IDENT;
-	quat_mul_ip(&q, quat_new(1.0, 0.0, 0.0, -PI_4));
-	quat_mul_ip(&q, quat_new(0.0, 0.0, 1.0, -PI_5));
-	quat_to_matrix(q, &rot);
-	mat_mul_ip(&camView, &rot);
-
-	mat_translate(&camView, VEC3(-camRect.x, camRect.y, 0.0));
-
-	mat_mul(out, &camView, &camProj);
+	glm_mat4_mul(camview, camproj, out);
 }
 
 void camera_set_perspective()
 {
-	camRect.w = 2.0 * WINDOW_WIDTH/camZoom;
-	camRect.h = 2.0 * WINDOW_HEIGHT/camZoom;
-	mat_new_ortho(&camProj, camRect.h/2.0, -camRect.h/2.0, camRect.w/2.0, -camRect.w/2.0, 0.1, 1000.0);
+	camrect.w = WINDOW_WIDTH/camzoom;
+	camrect.h = WINDOW_HEIGHT/camzoom;
+	glm_ortho(-camrect.w/2.0, camrect.w/2.0, -camrect.h/2.0, camrect.h/2.0, 0.1, 1000.0, camproj);
 }
 
 void camera_update()
 {
-	if (camDir & DIR_UP)    camRect.y += -panSpeed * (1.0/camZoom * maxZoom);
-	if (camDir & DIR_DOWN)  camRect.y +=  panSpeed * (1.0/camZoom * maxZoom);
-	if (camDir & DIR_RIGHT) camRect.x +=  panSpeed * (1.0/camZoom * maxZoom);
-	if (camDir & DIR_LEFT)  camRect.x += -panSpeed * (1.0/camZoom * maxZoom);
-	if (camDir & DIR_FORWARDS)  camZoom += zoomSpeed;
-	if (camDir & DIR_BACKWARDS) camZoom -= zoomSpeed;
-	CLAMP(camZoom, minZoom, maxZoom);
+	if (camdir & DIR_UP)    camrect.x += -panspeed * (1.0/camzoom * maxzoom);
+	if (camdir & DIR_DOWN)  camrect.x +=  panspeed * (1.0/camzoom * maxzoom);
+	if (camdir & DIR_RIGHT) camrect.y +=  panspeed * (1.0/camzoom * maxzoom);
+	if (camdir & DIR_LEFT)  camrect.y += -panspeed * (1.0/camzoom * maxzoom);
+	if (camdir & DIR_FORWARDS)  camzoom += zoomspeed;
+	if (camdir & DIR_BACKWARDS) camzoom -= zoomspeed;
+	CLAMP(camzoom, minzoom, maxzoom);
 }

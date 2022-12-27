@@ -32,17 +32,17 @@ struct Model create_model(char* const path)
 				ERROR("Not ready for multiple meshes");
 		/* Material header */
 		} else if (sscanf(line, "Material %hhu \"%64[a-zA-Z_]\" [%f %f %f]",
-		                  &index, name, &rgb.r, &rgb.g, &rgb.b) >= 5) {
-			materials[index].rgb.r = rgb.r;
-			materials[index].rgb.g = rgb.g;
-			materials[index].rgb.b = rgb.b;
+		                  &index, name, &rgb[0], &rgb[1], &rgb[2]) >= 5) {
+			materials[index].rgb[0] = rgb[0];
+			materials[index].rgb[1] = rgb[1];
+			materials[index].rgb[2] = rgb[2];
 		/* Mesh vertices */
 		} else {
 			if (sscanf(line, "%f %f %f %f %f %f %hhu", vert    , vert + 1, vert + 2,
 			                                           vert + 6, vert + 7, vert + 8, &index) >= 7) {
-				vert[3] = (float)materials[index].rgb.r;
-				vert[4] = (float)materials[index].rgb.g;
-				vert[5] = (float)materials[index].rgb.b;
+				vert[3] = (float)materials[index].rgb[0];
+				vert[4] = (float)materials[index].rgb[1];
+				vert[5] = (float)materials[index].rgb[2];
 				vert += 9;
 			}
 		}
@@ -60,8 +60,8 @@ static void print_model(struct Model mdl)
 {
 	DEBUG(1, "Model (%u vertices/%u triangles)", mdl.vertc, mdl.vertc/3);
 	for (uint i = 0; i < mdl.materialc; i++)
-		DEBUG(1, "\tMaterial %u: [%3.2f, %3.2f, %3.2f]", i, mdl.materials[i].rgb.r,
-		      mdl.materials[i].rgb.g, mdl.materials[i].rgb.b);
+		DEBUG(1, "\tMaterial %u: [%3.2f, %3.2f, %3.2f]", i, mdl.materials[i].rgb[0],
+		      mdl.materials[i].rgb[1], mdl.materials[i].rgb[2]);
 	for (uint i = 0; i < 9*mdl.vertc; i += 9)
 		DEBUG(1, "\t[%3u] %7.3f, %7.3f, %7.3f [%3.2f, %3.2f, %3.2f] [%5.2f %5.2f %5.2f]", i/9,
 		      mdl.verts[i], mdl.verts[i+1], mdl.verts[i+2], mdl.verts[i+3], mdl.verts[i+4],

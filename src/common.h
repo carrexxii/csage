@@ -28,6 +28,9 @@
 	#include <io.h>
 #endif
 
+#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
+#include "cglm/cglm.h"
+
 #define dt_ms            (20u)
 #define dt               (1.0/dt_ms)
 #define DEBUG_MALLOC_MIN 64
@@ -206,6 +209,6 @@ inline static int random_int(int min, int max)
     return num;
 }
 
-#include "maths/maths.h"
+#include "util/maths.h"
 
 #endif

@@ -29,9 +29,9 @@ void map_generate_meshes()
 	uintptr totalindc = 0;
 	uint16* inds      = smalloc(MAP_CELLS_PER_BLOCK * MAP_INDICES_PER_VXL * sizeof(uint16));
 	uintptr currblock = 0;
-	for (uint z = 0; z < MAX((map->dim.d + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
-		for (uint y = 0; y < MAX((map->dim.h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
-			for (uint x = 0; x < MAX((map->dim.w + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
+	for (uint z = 0; z < MAX((map->dim[2] + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
+		for (uint y = 0; y < MAX((map->dim[1] + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
+			for (uint x = 0; x < MAX((map->dim[0] + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
 				indc = generate_block_indices(inds, currblock);
 				// if (!indc) continue;
 				totalindc += indc;
@@ -71,7 +71,7 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 		for (uint y = 0; y < MAP_BLOCK_HEIGHT; y++) {
 			for (uint x = 0; x < MAP_BLOCK_WIDTH; x++) {
 				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
-				if (blockx + x >= map->dim.w || blocky + y >= map->dim.h || blockz + z >= map->dim.d)
+				if (blockx + x >= map->dim[0] || blocky + y >= map->dim[1] || blockz + z >= map->dim[2])
 					continue;
 				if (!map_is_cell_visible(map_get_block_index(blockx + x, blocky + y, blockz + z)))
 					continue;

@@ -8,7 +8,7 @@ void entity_set_pos(Entity e, vec3 pos)
 		ERROR("[ENT] Entity %lu has no model component", e);
 
 	mat4* mat = iarr_get(components.mats, e);
-	mat_translate(mat, pos);
+	mat4_set_pos(pos, *mat);
 }
 
 void physics_integrate()
@@ -17,18 +17,18 @@ void physics_integrate()
 	struct Body* body;
 	for (uint i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
-		acc  = VEC3(0.0, 0.0, G);
+		glm_vec3_copy((vec3){ 0.0, 0.0, G }, acc);
 		for (uint j = 0; j < body->forcec; j++)
-			vec_add_ip(&acc, body->forces[j]);
-		vec_scale_ip(&acc, dt*dt);
+			glm_vec3_add(acc, body->forces[j], acc);
+		glm_vec3_scale(acc, dt*dt, acc);
 
 		// x(t+1) = 2x(t) − x(t−1) + a(t)t^2
-		newpos = vec_scale(body->pos, 2.0);
-		vec_sub_ip(&newpos, body->prevpos);
-		vec_add_ip(&newpos, acc);
+		glm_vec3_scale(body->pos, 2.0, newpos);
+		glm_vec3_sub(newpos, body->prevpos, newpos);
+		glm_vec3_add(newpos, acc, newpos);
 		
-		body->prevpos = body->pos;
-		body->pos     = newpos;
+		glm_vec3_copy(body->pos, body->prevpos);
+		glm_vec3_copy(newpos, body->pos);
 		body->forcec  = 0;
 	}
 }
@@ -38,8 +38,7 @@ void physics_resolve_collisions()
 	struct Body* body;
 	for (uint i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
-		// CLAMP(body->pos.z, -8.0, 8.0);
 		if (collisions_map(body))
-			body->pos.z = body->prevpos.z;
+			body->pos[2] = body->prevpos[2];
 	}
 }
