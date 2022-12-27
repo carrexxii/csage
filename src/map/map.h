@@ -59,6 +59,7 @@ struct MapDrawData {
 void map_init(enum MapType type, uvec3 dim);
 bool map_is_block_visible(uint block);
 bool map_is_cell_visible(uint32 cell);
+void map_select_cell(bool btndown);
 void map_free();
 void map_print();
 

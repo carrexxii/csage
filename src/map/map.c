@@ -108,6 +108,11 @@ bool map_is_cell_visible(uint32 cell)
 	return !isblocked;
 }
 
+void map_select_cell(bool btndown)
+{
+	D;
+}
+
 void map_free()
 {
 	DEBUG(1, "[MAP] Freeing map...");
