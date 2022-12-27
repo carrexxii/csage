@@ -45,22 +45,23 @@ int main(int argc, char** argv)
 	init_input();
 	init_vulkan(window);
 	renderer_init();
-	init_cam();
-	init_entities();
+	camera_init();
+	entities_init();
 
 	srand(SDL_GetTicks64());
 
-	init_taskmgr();
-	add_taskmgr_task(update_camera);
-	add_taskmgr_task(update_entities);
+	taskmgr_init();
+	taskmgr_add_task(camera_update);
+	taskmgr_add_task(entities_update);
 
-	Entity e1 = create_entity();
-	add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
+	Entity e1 = entity_new();
+	entity_add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
 	struct Body body = (struct Body){
 		.pos = VEC3(1.0, 1.0, -5.0),
 		.dim = VEC3(0.5, 0.5, 1.0),
 	};
-	add_component(e1, COMPONENT_BODY, &body);
+	entity_add_component(e1, COMPONENT_BODY, &body);
+	// entity_move(e1, VEC3(1.0, 0.0, 0.0));
 
 	// Entity e2 = create_entity();
 	// add_component(e2, COMPONENT_MODEL, MODEL_PATH "plane");
@@ -71,18 +72,18 @@ int main(int argc, char** argv)
 	// set_entity_pos(e3, VEC3(0.0, -20.0, 5.0));
 	// add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
 
-	init_map(MAPTYPE_FILLED, UVEC3(8, 8, 8));
+	map_init(MAPTYPE_FILLED, UVEC3(8, 8, 8));
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
 	uint64 delta, newtime, oldtime = 0.0, accum = 0.0;
-	while (!check_input()) {
+	while (!input_check()) {
 		newtime = SDL_GetTicks64();
 		delta   = newtime - oldtime;
 		oldtime = newtime;
 		accum  += delta;
 		while (accum >= dt_ms) {
-			while (!reset_taskmgr());
+			while (!taskmgr_reset());
 			accum -= dt_ms;
 		}
 		renderer_draw();
@@ -112,15 +113,15 @@ void init_sdl()
 
 void init_input()
 {
-	register_key((struct InputCallback){ .key = SDLK_ESCAPE, .fn = quit_cb, .onkeydown = true });
-	register_key((struct InputCallback){ .key = SDLK_d, .fn = move_cam_right_cb, .onkeydown = true, .onkeyup = true, });
-	register_key((struct InputCallback){ .key = SDLK_a, .fn = move_cam_left_cb , .onkeydown = true, .onkeyup = true, });
-	register_key((struct InputCallback){ .key = SDLK_w, .fn = move_cam_up_cb   , .onkeydown = true, .onkeyup = true, });
-	register_key((struct InputCallback){ .key = SDLK_s, .fn = move_cam_down_cb , .onkeydown = true, .onkeyup = true, });
-	register_key((struct InputCallback){ .key = SDLK_q, .fn = zoom_cam_in_cb   , .onkeydown = true, .onkeyup = true, });
-	register_key((struct InputCallback){ .key = SDLK_e, .fn = zoom_cam_out_cb  , .onkeydown = true, .onkeyup = true, });
-	register_key((struct InputCallback){ .key = SDLK_o, .fn = cam_zlvl_up_cb   , .onkeydown = true, });
-	register_key((struct InputCallback){ .key = SDLK_p, .fn = cam_zlvl_down_cb , .onkeydown = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_ESCAPE, .fn = quit_cb, .onkeydown = true });
+	input_register_key((struct InputCallback){ .key = SDLK_d, .fn = camera_move_right_cb, .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_a, .fn = camera_move_left_cb , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_w, .fn = camera_move_up_cb   , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_s, .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
 }
 
 noreturn void quit_cb(bool kdown)
@@ -129,8 +130,8 @@ noreturn void quit_cb(bool kdown)
 	DEBUG(1, "|\tCleaning up...         |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
-	free_map();
-	free_entities();
+	map_free();
+	entities_free();
 	free_vulkan();
 	SDL_Quit();
 	exit(0);

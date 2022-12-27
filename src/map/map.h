@@ -56,13 +56,13 @@ struct MapDrawData {
 	// struct Material materials[UINT8_MAX];
 };
 
-void init_map(enum MapType type, uvec3 dim);
-bool is_block_visible(uint block);
-bool is_cell_visible(uint32 cell);
-void free_map();
-void print_map();
+void map_init(enum MapType type, uvec3 dim);
+bool map_is_block_visible(uint block);
+bool map_is_cell_visible(uint32 cell);
+void map_free();
+void map_print();
 
-void generate_meshes();
+void map_generate_meshes();
 
 extern struct Map* map;
 extern struct MapDrawData mapdd;

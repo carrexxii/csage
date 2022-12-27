@@ -48,9 +48,9 @@ struct Model create_model(char* const path)
 		}
 	}
 	fclose(file);
-	print_model(mdl);
+	// print_model(mdl);
 
-	mdl.vbo = create_vbo(mdl.vertc*SIZEOF_MDL_VERT, mdl.verts);
+	mdl.vbo = vbo_new(mdl.vertc*SIZEOF_MDL_VERT, mdl.verts);
 
 	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles, %hhu materials)", path, mdl.vertc/3, mdl.materialc);
 	return mdl;
@@ -71,5 +71,5 @@ static void print_model(struct Model mdl)
 void free_model(struct Model* mdl)
 {
 	free(mdl->verts);
-	free_buffer(&mdl->vbo);
+	buffer_free(&mdl->vbo);
 }

@@ -5,7 +5,7 @@
 static uint cbc;
 static struct InputCallback cbs[MAX_INPUT_CALLBACKS];
 
-bool check_input()
+bool input_check()
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
@@ -25,7 +25,7 @@ bool check_input()
 	return false;
 }
 
-void register_key(struct InputCallback cb)
+void input_register_key(struct InputCallback cb)
 {
 	cbs[cbc++] = cb;
 	DEBUG(3, "[INPUT] Key %d registered for keydown:%s, keyup:%s", cb.key,

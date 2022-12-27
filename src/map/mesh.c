@@ -13,7 +13,7 @@ static uint generate_block_indices(uint16* inds, uintptr start);
 
 static struct Vertex verts[(MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLOCK_DEPTH + 1)];
 
-void generate_meshes()
+void map_generate_meshes()
 {
 	/* Vertices */
 	uint vertc = (MAP_BLOCK_DEPTH + 1) * (MAP_BLOCK_HEIGHT + 1) * (MAP_BLOCK_WIDTH + 1);
@@ -22,7 +22,7 @@ void generate_meshes()
 		for (uint y = 0; y < MAP_BLOCK_HEIGHT + 1; y++)
 			for (uint x = 0; x < MAP_BLOCK_WIDTH + 1; x++)
 				*v++ = (struct Vertex){ .x = x, .y = y, .z = z, .a = 1 };
-	map->verts = create_vbo(vertc*sizeof(struct Vertex), verts);
+	map->verts = vbo_new(vertc*sizeof(struct Vertex), verts);
 
 	/* Indices */
 	uintptr indc      = 0;
@@ -35,7 +35,7 @@ void generate_meshes()
 				indc = generate_block_indices(inds, currblock);
 				// if (!indc) continue;
 				totalindc += indc;
-				map->inds[map->indc  ].ibo  = create_ibo(indc*sizeof(uint16), inds);
+				map->inds[map->indc  ].ibo  = ibo_new(indc*sizeof(uint16), inds);
 				map->inds[map->indc  ].indc = indc;
 				map->inds[map->indc++].zlvl = (int)(map_get_block_z(currblock) / MAP_BLOCK_DEPTH);
 				currblock++;
@@ -73,7 +73,7 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
 				if (blockx + x >= map->dim.w || blocky + y >= map->dim.h || blockz + z >= map->dim.d)
 					continue;
-				if (!is_cell_visible(map_get_block_index(blockx + x, blocky + y, blockz + z)))
+				if (!map_is_cell_visible(map_get_block_index(blockx + x, blocky + y, blockz + z)))
 					continue;
 				indc += MAP_INDICES_PER_VXL;
 				vx = x % MAP_BLOCK_WIDTH;

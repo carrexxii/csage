@@ -17,7 +17,7 @@
 #include "renderer.h"
 
 static void record_command(uint imgi);
-inline static void update_buffers();
+inline static void buffer_updates();
 static void create_framebuffers();
 static void create_command_buffers();
 static void create_sync_objects();
@@ -126,10 +126,10 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	matbuf = create_sbo(RENDERER_MAX_OBJECTS * sizeof(float[16]));
-	mapbuf = create_sbo(sizeof(struct MapDrawData));
-	ubobufs[ubobufc++] = create_ubo(sizeof(float[16]));
-	ubobufs[ubobufc++] = create_ubo(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
+	matbuf = sbo_new(RENDERER_MAX_OBJECTS * sizeof(float[16]));
+	mapbuf = sbo_new(sizeof(struct MapDrawData));
+	ubobufs[ubobufc++] = ubo_new(sizeof(float[16]));
+	ubobufs[ubobufc++] = ubo_new(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
 
 	mdlpipeln.vshader   = create_shader(SHADER_DIR "model.vert");
 	mdlpipeln.fshader   = create_shader(SHADER_DIR "model.frag");
@@ -244,7 +244,7 @@ void renderer_free()
 		vkDestroyFramebuffer(gpu, framebufs[i], alloccb);
 
 	while (ubobufc--)
-		free_ubo(&ubobufs[ubobufc]);
+		ubo_free(&ubobufs[ubobufc]);
 	free_pipeln(&mdlpipeln);
 	free_pipeln(&vxlpipeln);
 
@@ -260,7 +260,7 @@ void renderer_free()
  */
 static void record_command(uint imgi)
 {
-	update_buffers();
+	buffer_updates();
 	VkCommandBuffer cmdbuf = cmdbufs[frame];
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -312,7 +312,7 @@ static void record_command(uint imgi)
 		ERROR("[VK] Failed to record comand buffer");
 }
 
-inline static void update_buffers()
+inline static void buffer_updates()
 {
 	void*   mem;
 	uintptr memsz;
@@ -323,9 +323,9 @@ inline static void update_buffers()
 	vkUnmapMemory(gpu, mdlpipeln.sbo->mem);
 
 	mat4 vp;
-	get_cam_vp(&vp);
-	update_buffer(*mdlpipeln.ubos[0], sizeof(mat4), vp.arr);
-	update_buffer(*mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
+	camera_get_vp(&vp);
+	buffer_update(*mdlpipeln.ubos[0], sizeof(mat4), vp.arr);
+	buffer_update(*mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
 
 	memsz = sizeof(struct MapDrawData);
 	vkMapMemory(gpu, vxlpipeln.sbo->mem, 0, memsz, 0, &mem);

@@ -166,9 +166,9 @@ void free_pipeln(struct Pipeline* pipeln)
 
 	for (uint i = 0; i < pipeln->uboc; i++)
 		if (pipeln->ubos[i]->sz)
-			free_ubo(pipeln->ubos[i]);
+			ubo_free(pipeln->ubos[i]);
 	if (pipeln->sbo->sz)
-		free_sbo(pipeln->sbo);
+		sbo_free(pipeln->sbo);
 }
 
 static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo* stagecis)

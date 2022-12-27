@@ -6,7 +6,7 @@ struct MapDrawData mapdd;
 uintptr mapcellc;
 uintptr mapblockc;
 
-void init_map(enum MapType type, uvec3 dim)
+void map_init(enum MapType type, uvec3 dim)
 {
 	mapcellc  = vec_volume(dim);
 	mapblockc = DIV_CEIL(dim.w, MAP_BLOCK_WIDTH)  *
@@ -49,9 +49,9 @@ void init_map(enum MapType type, uvec3 dim)
 	}
 	
 	for (uint i = 0; i < mapblockc; i++)
-		map->inds[i].visible = is_block_visible(i);
+		map->inds[i].visible = map_is_block_visible(i);
 
-	generate_meshes(map);
+	map_generate_meshes(map);
 
 	mapdd.dim = UVEC3(DIV_CEIL(dim.w, MAP_BLOCK_WIDTH), DIV_CEIL(dim.h, MAP_BLOCK_HEIGHT), DIV_CEIL(dim.d, MAP_BLOCK_DEPTH));
 	mapdd.stride = UVEC3(MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
@@ -65,12 +65,12 @@ void init_map(enum MapType type, uvec3 dim)
 	DEBUG(1, "[MAP] Created map with size %ux%ux%u (%lu total)", dim.w, dim.h, dim.d, mapcellc);
 }
 
-bool is_block_visible(uint block)
+bool map_is_block_visible(uint block)
 {
 	return true;
 }
 
-bool is_cell_visible(uint32 cell)
+bool map_is_cell_visible(uint32 cell)
 {
 	if (!map->data[cell].data)
 		return false;
@@ -108,16 +108,16 @@ bool is_cell_visible(uint32 cell)
 	return !isblocked;
 }
 
-void free_map()
+void map_free()
 {
 	DEBUG(1, "[MAP] Freeing map...");
-	free_buffer(&map->verts);
+	buffer_free(&map->verts);
 	for (uint i = 0; i < map->indc; i++)
-		free_buffer(&map->inds[i].ibo);
+		buffer_free(&map->inds[i].ibo);
 	free(map);
 }
 
-void print_map()
+void map_print()
 {
 	fprintf(stderr, "Map (%ux%ux%u):\n", map->dim.w, map->dim.h, map->dim.d);
 	for (uint z = 0; z < map->dim.d; z++) {

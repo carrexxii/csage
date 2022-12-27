@@ -9,12 +9,12 @@ uint64 entityc;
 uint64 entities[MAX_ENTITIES];
 struct EntityComponents components;
 
-void init_entities()
+void entities_init()
 {
-	components.mdls   = create_iarr(sizeof(struct Model), 10);
-	components.mats   = create_iarr(sizeof(mat4), 10);
-	components.lights = create_iarr(sizeof(vec4), 5);
-	components.bodies = create_iarr(sizeof(struct Body), 10);
+	components.mdls   = iarr_new(sizeof(struct Model), 10);
+	components.mats   = iarr_new(sizeof(mat4), 10);
+	components.lights = iarr_new(sizeof(vec4), 5);
+	components.bodies = iarr_new(sizeof(struct Body), 10);
 
 	renmdlc = &components.mdls.itemc;
 	renmdls = components.mdls.data;
@@ -23,13 +23,13 @@ void init_entities()
 	DEBUG(1, "[ENT] Initialized entities");
 }
 
-Entity create_entity()
+Entity entity_new()
 {
 	entities[++entityc] = COMPONENT_NONE;
 	return entityc;
 }
 
-void add_component(Entity e, enum Component c, void* data)
+void entity_add_component(Entity e, enum Component c, void* data)
 {
 	struct Model mdl;
 	vec4* light;
@@ -56,7 +56,14 @@ void add_component(Entity e, enum Component c, void* data)
 	entities[e] |= c;
 }
 
-void update_entities()
+void entity_move(Entity e, vec3 dir)
+{
+	struct Body* body = (struct Body*)iarr_get(components.bodies, e);
+	body->forcec = 0;
+	body->forces[body->forcec++] = dir;
+}
+
+void entities_update()
 {
 	physics_integrate();
 	physics_resolve_collisions();
@@ -69,11 +76,11 @@ void update_entities()
 	}
 }
 
-void free_entities()
+void entities_free()
 {
 	DEBUG(1, "[ENT] Freeing entities...");
-	free_iarr(&components.mdls  , (void (*)(void*))free_model);
-	free_iarr(&components.mats  , NULL);
-	free_iarr(&components.lights, NULL);
-	free_iarr(&components.bodies, NULL);
+	iarr_free(&components.mdls  , (void (*)(void*))free_model);
+	iarr_free(&components.mats  , NULL);
+	iarr_free(&components.lights, NULL);
+	iarr_free(&components.bodies, NULL);
 }

@@ -3,6 +3,8 @@
 
 #define G 10.0
 
+#define BODY_MAX_FORCES 4
+
 enum Component {
 	COMPONENT_NONE  = 0x00,
 	COMPONENT_MODEL = 0x01,
@@ -20,6 +22,8 @@ struct Body {
 	vec3 pos;
 	vec3 prevpos;
 	vec3 dim;
-}; static_assert(sizeof(struct Body) == 36, "struct Body");
+	vec3 forces[BODY_MAX_FORCES];
+	uint8 forcec;
+}; static_assert(sizeof(struct Body) == 88, "struct Body");
 
 #endif

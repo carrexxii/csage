@@ -17,9 +17,9 @@ extern VkImageLayout  depthlayout;
 extern VkSampler sampler;
 
 void image_init();
-void image_create(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp);
-VkImageView image_create_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp);
-void image_create_depth_image();
+void image_new(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp);
+VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp);
+void image_new_depth_image();
 void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new);
 void image_free();
 

@@ -31,7 +31,7 @@ void image_init()
 	create_sampler(&sampler);
 }
 
-void image_create(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
+void image_new(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
 {
 	/* IMPROVEMENT: caching */
 	VkImageCreateInfo imgi = {
@@ -76,7 +76,7 @@ void image_create(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
 	imagec++;
 }
 
-VkImageView image_create_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
+VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 {
 	VkImageView imgview;
 	VkImageViewCreateInfo viewi = {
@@ -107,7 +107,7 @@ VkImageView image_create_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 }
 
 /* This will also create the image view and transition the layout */
-void image_create_depth_image()
+void image_new_depth_image()
 {
 	VkImageCreateInfo imgi = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -345,7 +345,7 @@ static void create_depth_buffer()
 		ERROR("[VK] Failed to allocate memory for depth buffer");
 	vkBindImageMemory(gpu, depthimg, depthmem, 0);
 
-	depthimgview = image_create_view(depthimg, depthfmt, VK_IMAGE_ASPECT_DEPTH_BIT);
+	depthimgview = image_new_view(depthimg, depthfmt, VK_IMAGE_ASPECT_DEPTH_BIT);
 	image_transition_layout(depthimg, depthfmt, VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }*/

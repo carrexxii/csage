@@ -17,11 +17,11 @@ struct IArray {
 	void*   data;
 }; static_assert(sizeof(struct IArray) == 24, "struct IArray");
 
-struct IArray create_iarr(uint16 itemsz, uint16 sz);
-void  resize_iarr(struct IArray* arr, uint16 itemc);
+struct IArray iarr_new(uint16 itemsz, uint16 sz);
+void  iarr_resize(struct IArray* arr, uint16 itemc);
 void* iarr_append(struct IArray* arr, uint16 i, const void* data);
 void* iarr_get(struct IArray arr, uint16 i);
-void  print_iarr(struct IArray arr);
-void  free_iarr(struct IArray* arr, void (*cb)(void*));
+void  iarr_print(struct IArray arr);
+void  iarr_free(struct IArray* arr, void (*cb)(void*));
 
 #endif

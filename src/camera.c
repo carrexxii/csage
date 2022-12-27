@@ -16,16 +16,16 @@ static float minZoom   = 2.0;
 static float maxZoom   = 150.0;
 mat4 camVP;
 
-void init_cam()
+void camera_init()
 {
-	set_cam_perspective();
+	camera_set_perspective();
 	camRect = (struct Rect){ 0 };
 }
 
 /* TODO: add conditional update of vp with boolean return + rename */
-void get_cam_vp(mat4* out)
+void camera_get_vp(mat4* out)
 {
-	set_cam_perspective();
+	camera_set_perspective();
 
 	mat_copy(&camView, &MAT_I4);
 
@@ -41,14 +41,14 @@ void get_cam_vp(mat4* out)
 	mat_mul(out, &camView, &camProj);
 }
 
-void set_cam_perspective()
+void camera_set_perspective()
 {
 	camRect.w = 2.0 * WINDOW_WIDTH/camZoom;
 	camRect.h = 2.0 * WINDOW_HEIGHT/camZoom;
 	mat_new_ortho(&camProj, camRect.h/2.0, -camRect.h/2.0, camRect.w/2.0, -camRect.w/2.0, 0.1, 1000.0);
 }
 
-void update_camera()
+void camera_update()
 {
 	if (camDir & DIR_UP)    camRect.y += -panSpeed * (1.0/camZoom * maxZoom);
 	if (camDir & DIR_DOWN)  camRect.y +=  panSpeed * (1.0/camZoom * maxZoom);

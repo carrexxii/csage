@@ -19,7 +19,7 @@ static Thread threads[MAX_THREADS];
 static atomic_uint donec;
 static Mutex       mtxGetTask;
 
-void init_taskmgr()
+void taskmgr_init()
 {
 	mtx_init(&mtxGetTask, mtx_plain);
 	atomic_init(&donec, 0);
@@ -30,7 +30,7 @@ void init_taskmgr()
 	DEBUG(2, "[THR] Initialized %d threads", threadc);
 }
 
-void add_taskmgr_task(void (*fn)())
+void taskmgr_add_task(void (*fn)())
 {
 	if (taskc < MAX_TASKS) {
 		tasks[taskc++].fn = fn;
@@ -40,7 +40,7 @@ void add_taskmgr_task(void (*fn)())
 	}
 }
 
-bool reset_taskmgr()
+bool taskmgr_reset()
 {
 	if (donec >= taskc) {
 		atomic_store(&donec, 0);
@@ -53,7 +53,7 @@ bool reset_taskmgr()
 	return true;
 }
 
-void free_taskmgr()
+void taskmgr_free()
 {
 	for (int i = 0; i < threadc; i++)
 		thrd_detach(threads[i]);

@@ -73,10 +73,10 @@ void swapchain_init(VkSurfaceKHR surf, uint w, uint h)
 	swapchainimgviews = smalloc(swapchainimgc*sizeof(VkImageView));
 	vkGetSwapchainImagesKHR(gpu, swapchain, &swapchainimgc, swapchainimgs);
 	for (uint i = 0; i < swapchainimgc; i++) {
-		swapchainimgviews[i] = image_create_view(swapchainimgs[i], surfacefmt.format, VK_IMAGE_ASPECT_COLOR_BIT);
+		swapchainimgviews[i] = image_new_view(swapchainimgs[i], surfacefmt.format, VK_IMAGE_ASPECT_COLOR_BIT);
 		image_transition_layout(swapchainimgs[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
-	image_create_depth_image();
+	image_new_depth_image();
 }
 
 void swapchain_set(VkPhysicalDevice dev, VkSurfaceKHR surf)

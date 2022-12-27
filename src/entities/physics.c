@@ -18,6 +18,8 @@ void physics_integrate()
 	for (uint i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
 		acc  = VEC3(0.0, 0.0, G);
+		for (uint j = 0; j < body->forcec; j++)
+			vec_add_ip(&acc, body->forces[j]);
 		vec_scale_ip(&acc, dt*dt);
 
 		// x(t+1) = 2x(t) − x(t−1) + a(t)t^2
@@ -27,6 +29,7 @@ void physics_integrate()
 		
 		body->prevpos = body->pos;
 		body->pos     = newpos;
+		body->forcec  = 0;
 	}
 }
 

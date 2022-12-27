@@ -13,4 +13,3 @@ void physics_resolve_collisions();
 bool collisions_map(struct Body* body);
 
 #endif
-

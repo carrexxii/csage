@@ -3,20 +3,20 @@
 inline static intptr linear_search(uint16 indc, uint16* inds, uint16 key);
 inline static intptr bin_search(uint16 indc, uint16* inds, uint16 key);
 
-struct IArray create_iarr(uint16 itemsz, uint16 sz)
+struct IArray iarr_new(uint16 itemsz, uint16 sz)
 {
 	struct IArray arr = {
 		.sz     = sz? sz: DEFAULT_IARRAY_SIZE,
 		.itemsz = itemsz,
 		.sorted = true,
 	};
-	resize_iarr(&arr, arr.sz);
+	iarr_resize(&arr, arr.sz);
 	DEBUG(3, "[UTIL] Created IArray with %hu items of %huB (%ukB total)", sz, itemsz, sz*itemsz/1024);
 
 	return arr;
 }
 
-inline void resize_iarr(struct IArray* arr, uint16 sz)
+inline void iarr_resize(struct IArray* arr, uint16 sz)
 {
 	arr->inds = srealloc(arr->inds, sz*(sizeof(uint16) + arr->itemsz));
 	arr->sz   = sz;
@@ -26,7 +26,7 @@ inline void resize_iarr(struct IArray* arr, uint16 sz)
 void* iarr_append(struct IArray* arr, uint16 i, const void* data)
 {
 	if (arr->itemc >= arr->sz)
-		resize_iarr(arr, arr->sz*IARRAY_SIZE_MULTIPLIER);
+		iarr_resize(arr, arr->sz*IARRAY_SIZE_MULTIPLIER);
 
 	arr->inds[arr->itemc] = i;
 	void* mem = (byte*)arr->data + arr->itemc*arr->itemsz;
@@ -79,7 +79,7 @@ inline static intptr bin_search(uint16 indc, uint16* inds, uint16 key)
 	return -1;
 }
 
-void print_iarr(struct IArray arr)
+void iarr_print(struct IArray arr)
 {
 	fprintf(stderr, "IArray:\n\t");
 	for (uint i = 0; i < arr.itemc; i++) {
@@ -90,7 +90,7 @@ void print_iarr(struct IArray arr)
 	fprintf(stderr, "\n");
 }
 
-void free_iarr(struct IArray* arr, void (*cb)(void*))
+void iarr_free(struct IArray* arr, void (*cb)(void*))
 {
 	if (cb)
 		for (uint i = 0; i < arr->itemc; i++)

@@ -12,7 +12,7 @@ struct InputCallback {
 	bool onkeyup;
 }; static_assert(sizeof(struct InputCallback) == 16, "struct InputCallback");
 
-bool check_input();
-void register_key(struct InputCallback cb);
+bool input_check();
+void input_register_key(struct InputCallback cb);
 
 #endif
