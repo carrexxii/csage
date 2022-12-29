@@ -23,8 +23,8 @@ void map_init(enum MapType type, uvec3 dim)
 			ERROR("[MAP] Map type should not be none");
 			break;
 		case MAPTYPE_FILLED: /* Top half is left empty */
-			memset(map->data, CELLTYPE_EMPTY, mapcellc/2*sizeof(struct MapCell));
-			memset(map->data + mapcellc/2, CELLTYPE_GRASS, mapcellc/2*sizeof(struct MapCell));
+			memset(map->data, CELLTYPE_EMPTY, mapcellc/2.0*sizeof(struct MapCell));
+			memset(map->data + (intptr)(mapcellc/2.0), CELLTYPE_GRASS, DIV_CEIL(mapcellc, 2.0)*sizeof(struct MapCell));
 			break;
 		case MAPTYPE_ALTERNATING:
 			for (uint i = 0; i < mapcellc; i++)
@@ -51,6 +51,7 @@ void map_init(enum MapType type, uvec3 dim)
 	for (uint i = 0; i < mapblockc; i++)
 		map->inds[i].visible = map_is_block_visible(i);
 
+	map_print();
 	map_generate_meshes(map);
 
 	uvec3_copy((uvec3){ DIV_CEIL(dim[0], MAP_BLOCK_WIDTH),

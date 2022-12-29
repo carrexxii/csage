@@ -32,8 +32,8 @@ void map_generate_meshes()
 	for (uint z = 0; z < MAX((map->dim[2] + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
 		for (uint y = 0; y < MAX((map->dim[1] + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
 			for (uint x = 0; x < MAX((map->dim[0] + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
-				indc = generate_block_indices(inds, currblock);
-				// if (!indc) continue;
+				if (!(indc = generate_block_indices(inds, currblock)))
+					continue;
 				totalindc += indc;
 				map->inds[map->indc  ].ibo  = ibo_new(indc*sizeof(uint16), inds);
 				map->inds[map->indc  ].indc = indc;
@@ -71,7 +71,7 @@ static uint generate_block_indices(uint16* inds, uintptr start)
 		for (uint y = 0; y < MAP_BLOCK_HEIGHT; y++) {
 			for (uint x = 0; x < MAP_BLOCK_WIDTH; x++) {
 				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
-				if (blockx + x >= map->dim[0] || blocky + y >= map->dim[1] || blockz + z >= map->dim[2])
+				if (blockx + x >= map->dim[0] || blocky + y >= map->dim[1] || blockz + z >= map->dim[2]) 
 					continue;
 				if (!map_is_cell_visible(map_get_block_index(blockx + x, blocky + y, blockz + z)))
 					continue;

@@ -317,10 +317,12 @@ inline static void buffer_updates()
 	void*   mem;
 	uintptr memsz;
 
-	memsz = (*renmdlc)*sizeof(mat4);
-	vkMapMemory(gpu, mdlpipeln.sbo->mem, 0, memsz, 0, &mem);
-	memcpy(mem, renmats, memsz);
-	vkUnmapMemory(gpu, mdlpipeln.sbo->mem);
+	if (*renmdlc) {
+		memsz = (*renmdlc)*sizeof(mat4);
+		vkMapMemory(gpu, mdlpipeln.sbo->mem, 0, memsz, 0, &mem);
+		memcpy(mem, renmats, memsz);
+		vkUnmapMemory(gpu, mdlpipeln.sbo->mem);
+	}
 
 	mat4 vp;
 	camera_get_vp(vp);

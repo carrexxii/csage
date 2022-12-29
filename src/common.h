@@ -138,6 +138,7 @@ union Data {
 #endif
 
 #if DEBUG_LEVEL > 0
+#define CGLM_DEFINE_PRINTS
 #define D DEBUG(1, "<debug marker>")
 #define DEBUG(_lvl, ...) do {                                        \
 			if (_lvl <= DEBUG_LEVEL && SELECT1(__VA_ARGS__, "")[0]) { \
