@@ -22,7 +22,7 @@ extern struct EntityComponents {
 	struct IArray bodies;
 } components;
 
-extern uint64 entityc;
-extern uint64 entities[];
+extern intptr entityc;
+extern Entity entities[];
 
 #endif

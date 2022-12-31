@@ -194,9 +194,9 @@ long long int: "long long int", unsigned long long int: "unsigned long long int"
 #define srealloc(x, y) realloc(x, y)
 #endif
 
-void* _smalloc(uintptr s, char const* file, int line, char const* fn);
-void* _scalloc(uintptr n, uintptr s, char const* file, int line, char const* fn);
-void* _srealloc(void* restrict mem, uintptr n, char const* file, int line, char const* fn);
+void* _smalloc(uintptr s, const char* file, int line, const char* fn);
+void* _scalloc(uintptr n, uintptr s, const char* file, int line, const char* fn);
+void* _srealloc(void* restrict mem, uintptr n, const char* file, int line, const char* fn);
 
 /* [min, max] */
 inline static int random_int(int min, int max)

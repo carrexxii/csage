@@ -1,7 +1,7 @@
 #include "config.h"
 #include "camera.h"
 
-#define MIN_ZOOM 40.0
+#define MIN_ZOOM 10.0
 #define MAX_ZOOM 250.0
 
 mat4 camproj = GLM_MAT4_IDENTITY_INIT;

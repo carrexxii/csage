@@ -16,7 +16,7 @@ VkCommandPool cmdpool;
 struct QueueFamilyIndices qinds;
 
 static int  rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf);
-static bool supports_extension(VkPhysicalDevice dev, const char* ext);
+static bool supports_extension(VkPhysicalDevice dev, char* ext);
 static void debug_physical(VkPhysicalDevice dev);
 static void set_queue_indices(VkPhysicalDevice dev, VkSurfaceKHR surf);
 
@@ -78,7 +78,7 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 		.pNext = &uint8inds,
 	};
 
-	const uint  extc   = 1;
+	uint extc = 1;
 	const char* exts[] = { "VK_KHR_swapchain" };
 	VkDeviceCreateInfo devi = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -138,7 +138,7 @@ static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)
 	return rating;
 }
 
-static bool supports_extension(VkPhysicalDevice dev, const char* ext)
+static bool supports_extension(VkPhysicalDevice dev, char* ext)
 {
 	uint32 extc;
 	vkEnumerateDeviceExtensionProperties(dev, NULL, &extc, NULL);

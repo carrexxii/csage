@@ -15,10 +15,10 @@ void physics_integrate()
 {
 	vec3 newpos, acc;
 	struct Body* body;
-	for (uint i = 0; i < components.bodies.itemc; i++) {
+	for (int i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
 		glm_vec3_copy((vec3){ 0.0, 0.0, G }, acc);
-		for (uint j = 0; j < body->forcec; j++)
+		for (int j = 0; j < body->forcec; j++)
 			glm_vec3_add(acc, body->forces[j], acc);
 		glm_vec3_scale(acc, dt*dt, acc);
 
@@ -36,7 +36,7 @@ void physics_integrate()
 void physics_resolve_collisions()
 {
 	struct Body* body;
-	for (uint i = 0; i < components.bodies.itemc; i++) {
+	for (int i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
 		if (collisions_map(body))
 			body->pos[2] = body->prevpos[2];

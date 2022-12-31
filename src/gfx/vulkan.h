@@ -140,7 +140,7 @@
      "Unknown")
          
 void           init_vulkan(SDL_Window* window);
-VkShaderModule create_shader(const char* restrict file);
+VkShaderModule create_shader(char* restrict file);
 void           free_vulkan();
 
 extern VkAllocationCallbacks* alloccb;

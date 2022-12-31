@@ -21,8 +21,8 @@ struct Pipeline {
 	/* Caller-defined values */
 	VkPrimitiveTopology topology;
 	struct {
-		uint vertbindc;
-		uint vertattrc;
+		int vertbindc;
+		int vertattrc;
 		VkVertexInputBindingDescription*   vertbinds;
 		VkVertexInputAttributeDescription* vertattrs;
 	};
@@ -31,11 +31,11 @@ struct Pipeline {
 	VkShaderModule teshader;
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
-	uint    uboc;
+	int     uboc;
 	UBO**   ubos;
-	uintptr sbosz;
+	intptr  sbosz;
 	SBO*    sbo;
-	uintptr pushsz;
+	intptr  pushsz;
 	VkShaderStageFlags pushstages;
 }; static_assert(sizeof(struct Pipeline) == 160, "struct Pipeline");
 

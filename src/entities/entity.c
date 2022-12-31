@@ -5,8 +5,8 @@
 #include "systems.h"
 #include "entity.h"
 
-uint64 entityc;
-uint64 entities[MAX_ENTITIES];
+intptr entityc;
+Entity entities[MAX_ENTITIES];
 struct EntityComponents components;
 
 void entities_init()

@@ -23,7 +23,7 @@ void taskmgr_init()
 {
 	mtx_init(&mtxGetTask, mtx_plain);
 	atomic_init(&donec, 0);
-	for (uint i = 1; i < MAX_THREADS; i++)
+	for (int i = 1; i < MAX_THREADS; i++)
 		if (thrd_create(&threads[threadc++], thread_loop, NULL))
 			ERROR("[THR] Failed to create thread %u", i);
 
@@ -44,7 +44,7 @@ bool taskmgr_reset()
 {
 	if (donec >= taskc) {
 		atomic_store(&donec, 0);
-		for (uint i = 0; i < taskc; i++)
+		for (int i = 0; i < taskc; i++)
 			tasks[i].active = false;
 
 		return false;

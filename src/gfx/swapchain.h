@@ -3,7 +3,7 @@
 
 #include "image.h"
 
-void swapchain_init(VkSurfaceKHR surf, uint w, uint h);
+void swapchain_init(VkSurfaceKHR surf, int w, int h);
 void swapchain_set(VkPhysicalDevice dev, VkSurfaceKHR surf);
 void swapchain_free();
 

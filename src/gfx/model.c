@@ -7,7 +7,7 @@
 
 static void print_model(struct Model mdl);
 
-struct Model create_model(char* const path)
+struct Model create_model(char* path)
 {
 	struct Model mdl = { 0 };
 
@@ -59,10 +59,10 @@ struct Model create_model(char* const path)
 static void print_model(struct Model mdl)
 {
 	DEBUG(1, "Model (%u vertices/%u triangles)", mdl.vertc, mdl.vertc/3);
-	for (uint i = 0; i < mdl.materialc; i++)
+	for (int i = 0; i < mdl.materialc; i++)
 		DEBUG(1, "\tMaterial %u: [%3.2f, %3.2f, %3.2f]", i, mdl.materials[i].rgb[0],
 		      mdl.materials[i].rgb[1], mdl.materials[i].rgb[2]);
-	for (uint i = 0; i < 9*mdl.vertc; i += 9)
+	for (int i = 0; i < 9*mdl.vertc; i += 9)
 		DEBUG(1, "\t[%3u] %7.3f, %7.3f, %7.3f [%3.2f, %3.2f, %3.2f] [%5.2f %5.2f %5.2f]", i/9,
 		      mdl.verts[i], mdl.verts[i+1], mdl.verts[i+2], mdl.verts[i+3], mdl.verts[i+4],
 		      mdl.verts[i+5], mdl.verts[i+6], mdl.verts[i+7], mdl.verts[i+8]);

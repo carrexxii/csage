@@ -9,69 +9,59 @@ struct Vertex {
 	uint32 a: 2;
 }; static_assert(sizeof(struct Vertex) == 4, "struct Vertex");
 
-static uint generate_block_indices(uint16* inds, uintptr start);
+static uint generate_block_indices(uint16* inds, intptr start);
 
 static struct Vertex verts[(MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLOCK_DEPTH + 1)];
 
 void map_generate_meshes()
 {
 	/* Vertices */
-	uint vertc = (MAP_BLOCK_DEPTH + 1) * (MAP_BLOCK_HEIGHT + 1) * (MAP_BLOCK_WIDTH + 1);
-	struct Vertex* v = verts;
-	for (uint z = 0; z < MAP_BLOCK_DEPTH + 1; z++)
-		for (uint y = 0; y < MAP_BLOCK_HEIGHT + 1; y++)
-			for (uint x = 0; x < MAP_BLOCK_WIDTH + 1; x++)
+	int vertc = (MAP_BLOCK_DEPTH + 1) * (MAP_BLOCK_HEIGHT + 1) * (MAP_BLOCK_WIDTH + 1);
+	assert(MAP_INDICES_PER_VXL*vertc < UINT16_MAX);
+
+	struct Vertex* v = verts; 
+	for (int z = 0; z < MAP_BLOCK_DEPTH + 1; z++)
+		for (int y = 0; y < MAP_BLOCK_HEIGHT + 1; y++)
+			for (int x = 0; x < MAP_BLOCK_WIDTH + 1; x++)
 				*v++ = (struct Vertex){ .x = x, .y = y, .z = z, .a = 1 };
 	map->verts = vbo_new(vertc*sizeof(struct Vertex), verts);
 
 	/* Indices */
-	uintptr indc      = 0;
-	uintptr totalindc = 0;
+	intptr indc       = 0;
+	intptr totalindc  = 0;
 	uint16* inds      = smalloc(MAP_CELLS_PER_BLOCK * MAP_INDICES_PER_VXL * sizeof(uint16));
-	uintptr currblock = 0;
-	for (uint z = 0; z < MAX((map->dim[2] + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
-		for (uint y = 0; y < MAX((map->dim[1] + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
-			for (uint x = 0; x < MAX((map->dim[0] + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
-				if (!(indc = generate_block_indices(inds, currblock)))
-					continue;
+	intptr currblock  = 0;
+	for (int z = 0; z < MAX((map->d + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
+		for (int y = 0; y < MAX((map->h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
+			for (int x = 0; x < MAX((map->w + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
+				indc = generate_block_indices(inds, currblock);
 				totalindc += indc;
-				map->inds[map->indc  ].ibo  = ibo_new(indc*sizeof(uint16), inds);
-				map->inds[map->indc  ].indc = indc;
-				map->inds[map->indc++].zlvl = (int)(map_get_block_z(currblock) / MAP_BLOCK_DEPTH);
+				map->blocks[currblock].ibo  = ibo_new(indc*sizeof(uint16), inds);
+				map->blocks[currblock].indc = indc;
+				map->blocks[currblock].zlvl = currblock / (map->bw*map->bh);
 				currblock++;
 			}
 		}
 	}
-	// DEBUG(1, "map: indc[0] = %u && ibo = %lu", map->inds[0].indc, (uintptr)map->inds[0].ibo.buf);
-	// for (uint i = 0; i < vertc; i++)
-	// 	DEBUG(1, "[v%u] %u %u %u", i, verts[i].x, verts[i].y, verts[i].z);
-	// DEBUG(1, "   ");
-	// for (uint i = 0; i < totalindc; i += 9)
-	// 	DEBUG(1, "[vxl%u] %u -> %u %u %u %u %u %u %u", i/9, inds[i], inds[i+1], inds[i+2], inds[i+3], inds[i+4], inds[i+5],
-	// 	                                                           inds[i+6], inds[i+7]);
 
 	free(inds);
-	DEBUG(3, "[MAP] Generated mesh for map with %lu cells (%lu vertices in %lu blocks)", mapcellc, totalindc, mapblockc);
-	// exit(0);
+	DEBUG(3, "[MAP] Generated mesh for map with %ld cells (%ld vertices in %d blocks)", mapcellc, totalindc, map->blockc);
 } 
 
-static uint generate_block_indices(uint16* inds, uintptr start)
+static uint generate_block_indices(uint16* inds, intptr start)
 {
-	uint blockx = map_get_block_x(start);
-	uint blocky = map_get_block_y(start);
-	uint blockz = map_get_block_z(start);
-	// DEBUG(1, "Meshing %lu: %u %u %u", start, blockx, blocky, blockz);
+	int blockx = map_get_block_x(start);
+	int blocky = map_get_block_y(start);
+	int blockz = map_get_block_z(start);
 
-	uint indc   = 0;
-	uint rowc   =  MAP_BLOCK_WIDTH + 1;                           /* # of cells per row     */
-	uint layerc = (MAP_BLOCK_WIDTH + 1) * (MAP_BLOCK_HEIGHT + 1); /* # of cells per z-level */
-	uint vx, vy, vz;
-	uintptr a = (uintptr)inds;
-	for (uint z = 0; z < MAP_BLOCK_DEPTH; z++) {
-		for (uint y = 0; y < MAP_BLOCK_HEIGHT; y++) {
-			for (uint x = 0; x < MAP_BLOCK_WIDTH; x++) {
-				// DEBUG(1, "%ux%ux%u", blockx + x, blocky + y, blockz + z);
-				if (blockx + x >= map->dim[0] || blocky + y >= map->dim[1] || blockz + z >= map->dim[2]) 
+	int indc   = 0;
+	int rowc   =  MAP_BLOCK_WIDTH + 1;                           /* # of cells per row     */
+	int layerc = (MAP_BLOCK_WIDTH + 1) * (MAP_BLOCK_HEIGHT + 1); /* # of cells per z-level */
+	int vx, vy, vz;
+	for (int z = 0; z < MAP_BLOCK_DEPTH; z++) {
+		for (int y = 0; y < MAP_BLOCK_HEIGHT; y++) {
+			for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
+				if (blockx + x >= map->w || blocky + y >= map->h || blockz + z >= map->d) 
 					continue;
 				if (!map_is_cell_visible(map_get_block_index(blockx + x, blocky + y, blockz + z)))
 					continue;

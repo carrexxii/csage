@@ -16,13 +16,13 @@
 #include "camera.h"
 #include "renderer.h"
 
-static void record_command(uint imgi);
+static void record_command(int imgi);
 inline static void buffer_updates();
 static void create_framebuffers();
 static void create_command_buffers();
 static void create_sync_objects();
 
-static uint frame;
+static int frame;
 static struct {
 	VkSemaphore renderdone[FRAMES_IN_FLIGHT];
 	VkSemaphore imgavail[FRAMES_IN_FLIGHT];
@@ -38,18 +38,18 @@ static struct Pipeline  mdlpipeln;
 static struct Pipeline  vxlpipeln;
 
 static struct Lighting {
-	vec3   sundir;
-	float  ambient;
-	float  sunpower;
-	uint16 lightc;
-	vec4   lights[RENDERER_MAX_LIGHTS];
+	vec3  sundir;
+	float ambient;
+	float sunpower;
+	int16 lightc;
+	vec4  lights[RENDERER_MAX_LIGHTS];
 } lighting;
 
 mat4* renmats;
-uint16*       renmdlc;
+intptr*       renmdlc;
 struct Model* renmdls;
-uint16* renlightc;
-vec4*   renlights;
+int*  renlightc;
+vec4* renlights;
 static uint ubobufc;
 static UBO ubobufs[8];
 static SBO matbuf;
@@ -218,10 +218,10 @@ void renderer_add_light(vec4 light)
 	DEBUG(3, "[GFX] Added light [%.4f %.4f %.4f] :: %.4f", light[0], light[1], light[2], light[3]);
 }
 
-void renderer_set_lights(uint16 lightc, vec4* lights)
+void renderer_set_lights(int lightc, vec4* lights)
 {
 	if (lightc > RENDERER_MAX_LIGHTS)
-		ERROR("[GFX] %hu exceeds the maximum number of lights (%d)", lightc, RENDERER_MAX_LIGHTS);
+		ERROR("[GFX] %d exceeds the maximum number of lights (%d)", lightc, RENDERER_MAX_LIGHTS);
 	memcpy(lighting.lights, lights, lightc*sizeof(vec4));
 }
 
@@ -258,7 +258,7 @@ void renderer_free()
 /* Records a command for the given image
  *   imgi - index of the framebuffer image to record the command for
  */
-static void record_command(uint imgi)
+static void record_command(int imgi)
 {
 	buffer_updates();
 	VkCommandBuffer cmdbuf = cmdbufs[frame];
@@ -290,19 +290,19 @@ static void record_command(uint imgi)
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
 	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &map->verts.buf, (VkDeviceSize[]) { 0 });
-	for (uint i = 0; i < map->indc; i++) {
-		if (map->inds[i].zlvl != camzlvl || !map->inds[i].visible) {
+	for (int i = 0; i < map->blockc; i++) {
+		if (map->blocks[i].zlvl != camzlvl || !map->blocks[i].visible) {
 			// DEBUG(1, "[%u] Skipping...", i);
 			continue;
 		}
-		vkCmdBindIndexBuffer(cmdbuf, map->inds[i].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(cmdbuf, map->inds[i].indc, 1, 0, 0, i);
-		// DEBUG(1, "[%u] Drawing %u indices", i, map->inds[i].indc);
+		vkCmdBindIndexBuffer(cmdbuf, map->blocks[i].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(cmdbuf, map->blocks[i].indc, 1, 0, 0, i);
+		// DEBUG(1, "[%u] Drawing %u indices", i, map->blocks[i].indc);
 	}
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.layout, 0, 1, &mdlpipeln.dset, 0, NULL);
-	for (uint i = 0; i < *renmdlc; i++) {
+	for (int i = 0; i < *renmdlc; i++) {
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
 	}
@@ -380,7 +380,7 @@ static void create_sync_objects()
 		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT,
 	};
-	for (uint i = 0; i < FRAMES_IN_FLIGHT; i++)
+	for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
 		if (vkCreateSemaphore(gpu, &semai, alloccb, &semas.renderdone[i]) != VK_SUCCESS ||
 			vkCreateSemaphore(gpu, &semai, alloccb, &semas.imgavail[i]) != VK_SUCCESS ||
 			vkCreateFence(gpu, &fencei, alloccb, &fences.frames[i]) != VK_SUCCESS)

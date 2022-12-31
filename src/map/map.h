@@ -4,8 +4,8 @@
 #include "gfx/buffers.h"
 #include "gfx/model.h"
 
-#define MAP_BLOCK_WIDTH  16
-#define MAP_BLOCK_HEIGHT 16
+#define MAP_BLOCK_WIDTH  36
+#define MAP_BLOCK_HEIGHT 36
 #define MAP_BLOCK_DEPTH  4
 #define MAP_CELLS_PER_BLOCK (MAP_BLOCK_WIDTH * MAP_BLOCK_HEIGHT * MAP_BLOCK_DEPTH)
 #define MAP_INDICES_PER_VXL 9
@@ -36,28 +36,29 @@ struct MapCell {
 
 struct MapBlock {
 	IBO    ibo;
-	uint32 indc;
-	int16  zlvl;
+	intptr indc;
+	int    zlvl;
 	bool   visible;
-}; static_assert(sizeof(struct MapBlock) == 32, "struct MapBlock");
+}; static_assert(sizeof(struct MapBlock) == 40, "struct MapBlock");
 
 struct Map {
-	uvec3  dim;
-	uint32 indc;
+	int    w, h, d;    /* dimensions of the map in cells */
+	int    bw, bh, bd; /* dimensions of the map in blocks */
+	int    blockc;
+	struct MapBlock* blocks;
 	VBO    verts;
-	struct MapBlock* inds;
 	struct MapCell data[];
-}; static_assert(sizeof(struct Map) == 48, "struct Map");
+}; static_assert(sizeof(struct Map) == 64, "struct Map");
 
 struct MapDrawData {
-	alignas(vec4) uvec3 dim;
-	alignas(vec4) uvec3 stride;
+	alignas(vec4) ivec3 dim;
+	alignas(vec4) ivec3 stride;
 	// struct Material materials[UINT8_MAX];
 };
 
-void map_init(enum MapType type, uvec3 dim);
-bool map_is_block_visible(uint block);
-bool map_is_cell_visible(uint32 cell);
+void map_init(enum MapType type, int w, int h, int d);
+bool map_is_block_visible(int block);
+bool map_is_cell_visible(int32 cell);
 void map_select_cell(bool btndown, int x, int y);
 void map_free();
 void map_print();
@@ -66,25 +67,14 @@ void map_generate_meshes();
 
 extern struct Map* map;
 extern struct MapDrawData mapdd;
-extern uintptr mapcellc;
-extern uintptr mapblockc;
+extern intptr mapcellc;
 
-inline static uint32 map_get_block_index(uint32 x, uint32 y, uint32 z) {
-	return x + y*map->dim[0] + z*map->dim[0]*map->dim[1];
-}
-
-inline static uint32 map_get_block_x(uint32 cell) {
-	return (cell % DIV_CEIL(map->dim[0], MAP_BLOCK_WIDTH)) * MAP_BLOCK_WIDTH;
-}
-inline static uint32 map_get_block_y(uint32 cell) {
-	return (cell / DIV_CEIL(map->dim[0], MAP_BLOCK_HEIGHT) * MAP_BLOCK_HEIGHT) % (map->dim[1] + map->dim[1] % 2);
-}
-inline static uint32 map_get_block_z(uint32 cell) {
-	return (cell / (DIV_CEIL(map->dim[0], MAP_BLOCK_WIDTH)*DIV_CEIL(map->dim[1], MAP_BLOCK_HEIGHT))) * MAP_BLOCK_DEPTH;
-}
-
-inline static uint32 map_get_cell_x(uint32 cell) { return cell % map->dim[0];                             }
-inline static uint32 map_get_cell_y(uint32 cell) { return cell % (map->dim[0] * map->dim[1]) / map->dim[0]; }
-inline static uint32 map_get_cell_z(uint32 cell) { return cell / (map->dim[0] * map->dim[1]);              }
+inline static int map_get_cell_x(int cell) { return cell % map->w;                     }
+inline static int map_get_cell_y(int cell) { return cell % (map->w * map->h) / map->w; }
+inline static int map_get_cell_z(int cell) { return cell / (map->w * map->h);          }
+inline static int map_get_block_index(int x, int y, int z) { return z*map->w*map->h + y*map->w + x; }
+inline static int map_get_block_x(int cell) { return cell % (map->w*map->h) / MAP_BLOCK_WIDTH % map->bw;                    }
+inline static int map_get_block_y(int cell) { return cell % (map->w*map->h) / (MAP_BLOCK_WIDTH*MAP_BLOCK_HEIGHT) % map->bh; }
+inline static int map_get_block_z(int cell) { return cell / (map->w*map->h*MAP_BLOCK_DEPTH);                                }
 
 #endif

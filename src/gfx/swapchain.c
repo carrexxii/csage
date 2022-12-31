@@ -20,7 +20,7 @@ static void create_command_pool();
 static VkSurfaceFormatKHR choose_surface_format();
 static VkPresentModeKHR choose_present_mode();
 
-void swapchain_init(VkSurfaceKHR surf, uint w, uint h)
+void swapchain_init(VkSurfaceKHR surf, int w, int h)
 {
 	swapchainext = (VkExtent2D){ w, h };
 	surfacefmt   = choose_surface_format();
@@ -33,29 +33,29 @@ void swapchain_init(VkSurfaceKHR surf, uint w, uint h)
 
 	VkSwapchainCreateInfoKHR swapchaini = {
 		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-		.surface = surf,
-		.minImageCount = minimgc,
-		.imageFormat = surfacefmt.format,
-		.imageColorSpace = surfacefmt.colorSpace,
+		.surface          = surf,
+		.minImageCount    = minimgc,
+		.imageFormat      = surfacefmt.format,
+		.imageColorSpace  = surfacefmt.colorSpace,
 		.imageArrayLayers = 1,
-		.imageExtent = swapchainext,
-		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		.preTransform = swapdetails.abilities.currentTransform,
-		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-		.presentMode = presentmd,
-		.oldSwapchain = NULL,
-		.clipped = true,
+		.imageExtent      = swapchainext,
+		.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		.preTransform     = swapdetails.abilities.currentTransform,
+		.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+		.presentMode      = presentmd,
+		.oldSwapchain     = NULL,
+		.clipped          = true,
 	};
 	if (qinds.graphics != qinds.present) {
 		DEBUG(3, "[VK] Using different queues for graphics and presenting");
-		swapchaini.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		swapchaini.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
 		swapchaini.queueFamilyIndexCount = 2;
-		swapchaini.pQueueFamilyIndices = (uint32[]){ qinds.graphics, qinds.present };
+		swapchaini.pQueueFamilyIndices   = (uint32[]){ qinds.graphics, qinds.present };
 	} else {
 		DEBUG(3, "[VK] Using the same queues for graphics and presenting");
-		swapchaini.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		swapchaini.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
 		swapchaini.queueFamilyIndexCount = 0;
-		swapchaini.pQueueFamilyIndices = NULL;
+		swapchaini.pQueueFamilyIndices   = NULL;
 	}
 
 	if (vkCreateSwapchainKHR(gpu, &swapchaini, alloccb, &swapchain) != VK_SUCCESS)
@@ -72,7 +72,7 @@ void swapchain_init(VkSurfaceKHR surf, uint w, uint h)
 	swapchainimgs     = smalloc(swapchainimgc*sizeof(VkImage));
 	swapchainimgviews = smalloc(swapchainimgc*sizeof(VkImageView));
 	vkGetSwapchainImagesKHR(gpu, swapchain, &swapchainimgc, swapchainimgs);
-	for (uint i = 0; i < swapchainimgc; i++) {
+	for (int i = 0; i < (int)swapchainimgc; i++) {
 		swapchainimgviews[i] = image_new_view(swapchainimgs[i], surfacefmt.format, VK_IMAGE_ASPECT_COLOR_BIT);
 		image_transition_layout(swapchainimgs[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
@@ -106,7 +106,7 @@ void swapchain_set(VkPhysicalDevice dev, VkSurfaceKHR surf)
 void swapchain_free()
 {
 	DEBUG(3, "[VK] Destroying swapchain image views...");
-	for (uint i = 0; i < swapchainimgc; i++)
+	for (int i = 0; i < (int)swapchainimgc; i++)
 		vkDestroyImageView(gpu, swapchainimgviews[i], alloccb);
 	DEBUG(3, "[VK] Destroying command pool...");
 	vkDestroyCommandPool(gpu, cmdpool, alloccb);
@@ -146,7 +146,7 @@ static VkSurfaceFormatKHR choose_surface_format()
 			.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
 	};
 	/* TODO: actually find the best available format */
-	for (uint i = 0; i < fmtc; i++)
+	for (int i = 0; i < (int)fmtc; i++)
 		if (fmts[i].format == VK_FORMAT_R8G8B8A8_UNORM &&
 			fmts[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return fmts[i];
@@ -157,7 +157,7 @@ static VkSurfaceFormatKHR choose_surface_format()
 VkPresentModeKHR choose_present_mode()
 {
 	VkPresentModeKHR md = VK_PRESENT_MODE_IMMEDIATE_KHR;
-	for (uint i = 0; i < swapdetails.mdc; i++)
+	for (int i = 0; i < (int)swapdetails.mdc; i++)
 		switch (swapdetails.mds[i]) {
 		case VK_PRESENT_MODE_MAILBOX_KHR:
 			return VK_PRESENT_MODE_MAILBOX_KHR;

@@ -4,7 +4,7 @@
 
 static uintptr malloced = 0;
 
-void* _smalloc(uintptr s, char const* restrict file, int line, char const* restrict fn)
+void* _smalloc(uintptr s, const char* restrict file, int line, const char* restrict fn)
 {
 	void* mem = malloc(s);
 	if (!mem) {
@@ -19,7 +19,7 @@ void* _smalloc(uintptr s, char const* restrict file, int line, char const* restr
 	}
 }
 
-void* _scalloc(uintptr n, uintptr s, char const* restrict file, int line, char const* restrict fn)
+void* _scalloc(uintptr n, uintptr s, const char* restrict file, int line, const char* restrict fn)
 {
 	uintptr b = n*s;
 	void* mem = calloc(n, s);
@@ -35,7 +35,7 @@ void* _scalloc(uintptr n, uintptr s, char const* restrict file, int line, char c
 	}
 }
 
-void* _srealloc(void* mem, uintptr n, char const* restrict file, int line, char const* restrict fn)
+void* _srealloc(void* mem, uintptr n, const char* restrict file, int line, const char* restrict fn)
 {
 	mem = realloc(mem, n);
 	if (!mem) {

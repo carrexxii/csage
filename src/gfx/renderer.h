@@ -12,11 +12,11 @@
 void renderer_init();
 void renderer_draw();
 void renderer_add_light(vec4 light);
-void renderer_set_lights(uint16 lightc, vec4* lights);
+void renderer_set_lights(int lightc, vec4* lights);
 void renderer_free();
 
 extern mat4* renmats;
-extern uint16*       renmdlc;
+extern intptr*       renmdlc;
 extern struct Model* renmdls;
 
 #endif

@@ -3,7 +3,7 @@
 
 #define MAX_IMAGES 64
 
-extern uint32          imagec;
+extern int32           imagec;
 extern VkImage*        images;
 extern VkImageView*    imageviews;
 extern VkDeviceMemory* imagemems;

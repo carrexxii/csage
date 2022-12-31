@@ -3,7 +3,7 @@
 #include "input.h"
 #include <SDL2/SDL_events.h>
 
-static uint keycbc;
+static int keycbc;
 static struct InputCallback keycbs[MAX_INPUT_CALLBACKS];
 static void (*mousecbs[MOUSE_BUTTON_COUNT])(bool, int, int);
 
@@ -17,7 +17,7 @@ bool input_check()
 				return true;
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
-				for (uint i = 0; i < keycbc; i++)
+				for (int i = 0; i < keycbc; i++)
 					if (keycbs[i].key == event.key.keysym.sym)
 						if ((event.type == SDL_KEYDOWN && keycbs[i].onkeydown) ||
 						    (event.type == SDL_KEYUP   && keycbs[i].onkeyup))

@@ -164,7 +164,7 @@ void free_pipeln(struct Pipeline* pipeln)
 
 	vkDestroyDescriptorSetLayout(gpu, pipeln->dsetlayout, alloccb);
 
-	for (uint i = 0; i < pipeln->uboc; i++)
+	for (int i = 0; i < pipeln->uboc; i++)
 		if (pipeln->ubos[i]->sz)
 			ubo_free(pipeln->ubos[i]);
 	if (pipeln->sbo->sz)
@@ -202,7 +202,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 		dsetlayouts[dsetlayoutc] = create_dset_layout(VK_SHADER_STAGE_ALL, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, dsetlayoutc);
 		dsetlayoutc++;
 	}
-	for (uint i = 0; i < pipeln->uboc; i++) {
+	for (int i = 0; i < pipeln->uboc; i++) {
 		dsetlayouts[dsetlayoutc] = create_dset_layout(VK_SHADER_STAGE_ALL, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, dsetlayoutc);
 		dsetlayoutc++;
 	}
@@ -323,7 +323,7 @@ static void update_dsets(struct Pipeline* pipeln)
 	}
 
 	/* Uniform buffers */
-	for (uint i = 0; i < pipeln->uboc; i++) {
+	for (int i = 0; i < pipeln->uboc; i++) {
 		dbufis[dwritesetc] = (VkDescriptorBufferInfo){
 			.buffer = pipeln->ubos[i]->buf,
 			.offset = 0,
@@ -344,7 +344,7 @@ static void update_dsets(struct Pipeline* pipeln)
 	dwritesetc++;
 
 	/* Sampled images */
-	for (uint i = 0; i < imagec; i++) {
+	for (int i = 0; i < imagec; i++) {
 		dimgis[i + 1] = (VkDescriptorImageInfo){
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			.imageView   = imageviews[i],

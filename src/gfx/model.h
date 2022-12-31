@@ -15,7 +15,7 @@ struct Model {
 	uint8  materialc;
 }; static_assert(sizeof(struct Model) == 48, "struct Model");
 
-struct Model create_model(char* const path);
+struct Model create_model(char* path);
 void free_model(struct Model* mdl);
 
 #endif

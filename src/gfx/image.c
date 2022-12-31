@@ -6,7 +6,7 @@
 #include "swapchain.h"
 #include "image.h"
 
-uint32          imagec;
+int32           imagec;
 VkImage*        images;
 VkImageView*    imageviews;
 VkDeviceMemory* imagemems;
@@ -40,8 +40,8 @@ void image_new(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
 		.flags  = 0,
 		.format = fmt,
 		.extent = (VkExtent3D){
-			.width  = (uint32)w,
-			.height = (uint32)h,
+			.width  = w,
+			.height = h,
 			.depth  = 1,
 		},
 		.imageType     = VK_IMAGE_TYPE_2D,
@@ -263,7 +263,7 @@ void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 void image_free()
 {
 	DEBUG(3, "[VK] Destroying image views...");
-	for (uint i = 0; i < imagec; i++) {
+	for (int i = 0; i < imagec; i++) {
 		vkDestroyImageView(gpu, imageviews[i], alloccb);
 		vkDestroyImage(gpu, images[i], alloccb);
 		if (imagemems[i])
@@ -284,21 +284,21 @@ static void create_sampler(VkSampler* samp)
 {
 	VkSamplerCreateInfo spli = {
 		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		.flags = 0,
-		.magFilter = VK_FILTER_NEAREST,
-		.minFilter = VK_FILTER_NEAREST,
-		.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		.mipLodBias = 0.0,
-		.minLod = 0.0,
-		.maxLod = 0.0,
+		.flags            = 0,
+		.magFilter        = VK_FILTER_NEAREST,
+		.minFilter        = VK_FILTER_NEAREST,
+		.addressModeU     = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.addressModeV     = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.addressModeW     = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		.mipmapMode       = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+		.mipLodBias       = 0.0,
+		.minLod           = 0.0,
+		.maxLod           = 0.0,
 		.anisotropyEnable = VK_FALSE,
-		.maxAnisotropy = 1,
-		.compareEnable = VK_FALSE,
-		.compareOp = VK_COMPARE_OP_ALWAYS,
-		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		.maxAnisotropy    = 1,
+		.compareEnable    = VK_FALSE,
+		.compareOp        = VK_COMPARE_OP_ALWAYS,
+		.borderColor      = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
 		.unnormalizedCoordinates = VK_FALSE,
 	};
 	if (vkCreateSampler(gpu, &spli, alloccb, samp) != VK_SUCCESS)

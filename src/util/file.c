@@ -1,6 +1,6 @@
 #include "file.h"
 
-FILE* file_open(const char* restrict path, const char* restrict mode)
+FILE* file_open(char* restrict path, char* restrict mode)
 {
 	FILE* file = fopen(path, mode);
 	fflush(file);
