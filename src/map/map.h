@@ -68,6 +68,7 @@ void map_generate_meshes();
 extern struct Map* map;
 extern struct MapDrawData mapdd;
 extern intptr mapcellc;
+extern vec4 mapplane;
 
 inline static int map_get_cell_x(int cell) { return cell % map->w;                     }
 inline static int map_get_cell_y(int cell) { return cell % (map->w * map->h) / map->w; }

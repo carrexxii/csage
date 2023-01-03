@@ -4,6 +4,8 @@
 #include "gfx/renderer.h"
 #include "systems.h"
 #include "entity.h"
+#include <cglm/affine-pre.h>
+#include <cglm/mat4.h>
 
 intptr entityc;
 Entity entities[MAX_ENTITIES];
@@ -69,10 +71,12 @@ void entities_update()
 	physics_resolve_collisions();
 
 	/* Update the model matrices */
-	mat4* m;
+	mat4 transform;
+	struct Body* body = components.bodies.data;
 	for (int i = 0; i < components.mats.itemc; i++) {
-		m = &((mat4*)components.mats.data)[i];
-		mat4_set_pos(((struct Body*)components.bodies.data)[i].pos, *m);
+		glm_translate_make(transform, body->pos);
+		glm_scale(transform, body->dim);
+		glm_mat4_ucopy(transform, ((mat4*)components.mats.data)[i]);
 	}
 }
 

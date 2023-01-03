@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	// set_entity_pos(e3, VEC3(0.0, -20.0, 5.0));
 	// add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
 
-	map_init(MAPTYPE_FILLED, 128, 128, 64);
+	map_init(MAPTYPE_FILLED, 16, 16, 4);
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());

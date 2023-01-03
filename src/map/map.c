@@ -1,9 +1,12 @@
 #include "camera.h"
 #include "map.h"
+#include "config.h"
+#include "util/maths.h"
 
 struct Map* map;
 struct MapDrawData mapdd;
 intptr mapcellc;
+vec4   mapplane;
 
 void map_init(enum MapType type, int w, int h, int d)
 {
@@ -74,6 +77,9 @@ void map_init(enum MapType type, int w, int h, int d)
 		camzlvlmax = map->bd - 1;
 	camzlvlscale = MAP_BLOCK_DEPTH;
 
+	glm_vec4_copy((vec4){ 0.0, 0.0, -1.0, 0.0 }, mapplane);
+	glm_plane_normalize(mapplane);
+
 	DEBUG(1, "[MAP] Created map with size %dx%dx%d (%lu total) (%dx%dx%d = %d blocks)",
 	      w, h, d, mapcellc, map->bw, map->bh, map->bd, map->blockc);
 }
@@ -123,17 +129,9 @@ bool map_is_cell_visible(int32 cell)
 
 void map_select_cell(bool btndown, int x, int y)
 {
-	vec4 mp = { (float)x, (float)y, 0.0, 1.0 };
-	mat4 vp;
-	// mat4 inv;
-	camera_get_vp(vp);
-
-	DEBUG(1, "Mouse position: %d %d", x, y);
-	// mat_copy(&inv, &vp);
-	// mat_inv(&inv);
-	// mat_mul_v_ip(&mp, &inv);
-	// mat_mul_v_ip(&mp, &vp);
-	// vec_print(mp);
+	vec3 p;
+	camera_unproject((float)x, (float)y, p);
+	glm_vec3_print(p, stderr);
 }
 
 void map_free()

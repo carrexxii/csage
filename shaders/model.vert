@@ -22,7 +22,7 @@ layout(binding = 1) uniform UniformBufferObject {
 void main()
 {
 	mat4 mdl = mdls.objs[gl_BaseInstance].mat;
-	gl_Position = vec4(Vxyz, 1.0) * mdl * cam.vp;
+	gl_Position = cam.vp * mdl * vec4(Vxyz, 1.0);
 	Fxyz    = Vxyz;
 	Frgb    = Vrgb;
 	Fnormal = Vnormal;

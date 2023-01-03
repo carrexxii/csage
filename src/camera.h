@@ -5,12 +5,14 @@ extern mat4 camproj;
 extern mat4 camview;
 extern struct Rect    camrect;
 extern enum Direction camdir;
+extern vec3 campos;
 extern int camzlvl;
 extern int camzlvlmax;
 extern int camzlvlscale;
 
 void camera_init();
 void camera_get_vp(mat4 out);
+void camera_unproject(float x, float y, vec3 out);
 void camera_set_perspective();
 void camera_update();
 

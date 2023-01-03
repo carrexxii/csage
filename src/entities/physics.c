@@ -2,15 +2,6 @@
 #include "components.h"
 #include "systems.h"
 
-void entity_set_pos(Entity e, vec3 pos)
-{
-	if (!(entities[e] & COMPONENT_MODEL))
-		ERROR("[ENT] Entity %lu has no model component", e);
-
-	mat4* mat = iarr_get(components.mats, e);
-	mat4_set_pos(pos, *mat);
-}
-
 void physics_integrate()
 {
 	vec3 newpos, acc;

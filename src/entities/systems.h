@@ -3,8 +3,6 @@
 
 #include "entity.h"
 
-void entity_set_pos(Entity e, vec3 pos);
-
 void physics_integrate();
 void physics_resolve_collisions();
 

@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <cglm/mat4.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
@@ -314,8 +315,8 @@ static void record_command(int imgi)
 
 inline static void buffer_updates()
 {
-	void*   mem;
-	uintptr memsz;
+	void*  mem;
+	intptr memsz;
 
 	if (*renmdlc) {
 		memsz = (*renmdlc)*sizeof(mat4);
