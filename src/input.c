@@ -1,15 +1,15 @@
 #include "SDL2/SDL.h"
 
 #include "input.h"
-#include <SDL2/SDL_events.h>
 
 static int keycbc;
 static struct InputCallback keycbs[MAX_INPUT_CALLBACKS];
-static void (*mousecbs[MOUSE_BUTTON_COUNT])(bool, int, int);
+static void (*mousecbs[MOUSE_EVENT_COUNT])(int, bool, int, int);
 
 bool input_check()
 {
-	void (*fn)(bool, int, int) = NULL;
+	void (*fn)(int, bool, int, int) = NULL;
+	int btn = 0;
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -24,13 +24,19 @@ bool input_check()
 							keycbs[i].fn(event.type == SDL_KEYDOWN);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
 				switch (event.button.button) {
-					case SDL_BUTTON_LEFT  : fn = mousecbs[MOUSE_BUTTON_LEFT  ]; break;
-					case SDL_BUTTON_RIGHT : fn = mousecbs[MOUSE_BUTTON_RIGHT ]; break;
-					case SDL_BUTTON_MIDDLE: fn = mousecbs[MOUSE_BUTTON_MIDDLE]; break;
+					case SDL_BUTTON_LEFT  : fn = mousecbs[MOUSE_LEFT  ]; btn = MOUSE_LEFT  ; break;
+					case SDL_BUTTON_RIGHT : fn = mousecbs[MOUSE_RIGHT ]; btn = MOUSE_RIGHT ; break;
+					case SDL_BUTTON_MIDDLE: fn = mousecbs[MOUSE_MIDDLE]; btn = MOUSE_MIDDLE; break;
 				}
 				if (fn)
-					fn(event.button.state == SDL_PRESSED, event.button.x, event.button.y);
+					fn(btn, event.button.state == SDL_PRESSED, event.button.x, event.button.y);
+				break;
+			case SDL_MOUSEMOTION:
+				fn = mousecbs[MOUSE_DRAG];
+				if (fn)
+					fn(MOUSE_DRAG, false, event.button.x, event.button.y);
 		}
 	}
 	return false;
@@ -43,9 +49,9 @@ void input_register_key(struct InputCallback cb)
 	      STRING_TF(cb.onkeydown), STRING_TF(cb.onkeyup));
 }
 
-void input_register_mouse(enum MouseButton btn, void (*fn)(bool, int, int))
+void input_register_mouse(enum MouseInput btn, void (*fn)(int, bool, int, int))
 {
-	if (btn == MOUSE_BUTTON_NONE || btn >= MOUSE_BUTTON_INVALID)
+	if (btn == MOUSE_NONE || btn >= MOUSE_INVALID)
 		ERROR("[INPUT] %d is not a valid mouse button", btn);
 	else
 		mousecbs[btn] = fn;

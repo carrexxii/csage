@@ -11,6 +11,13 @@ inline static void mat4_set_pos(vec3 v, mat4 a) {
 	a[3][2] = v[2];
 }
 
+inline static void ivec3_copy_vec3(vec3 v, ivec3 u)
+{
+	u[0] = (int)v[0];
+	u[1] = (int)v[1];
+	u[2] = (int)v[2];
+}
+
 inline static void ray_plane_intersection(vec3 p1, vec3 p2, vec4 plane, vec3 out) {
 	vec3 ray;
 	glm_vec3_sub(p2, p1, ray);

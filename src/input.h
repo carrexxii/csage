@@ -4,14 +4,15 @@
 #include <SDL2/SDL.h>
 
 #define MAX_INPUT_CALLBACKS 16
-#define MOUSE_BUTTON_COUNT  3
+#define MOUSE_EVENT_COUNT   MOUSE_INVALID
 
-enum MouseButton {
-	MOUSE_BUTTON_LEFT,
-	MOUSE_BUTTON_RIGHT,
-	MOUSE_BUTTON_MIDDLE,
-	MOUSE_BUTTON_INVALID,
-	MOUSE_BUTTON_NONE,
+enum MouseInput {
+	MOUSE_LEFT,
+	MOUSE_RIGHT,
+	MOUSE_MIDDLE,
+	MOUSE_DRAG,
+	MOUSE_INVALID,
+	MOUSE_NONE,
 };
 
 struct InputCallback {
@@ -23,6 +24,6 @@ struct InputCallback {
 
 bool input_check();
 void input_register_key(struct InputCallback cb);
-void input_register_mouse(enum MouseButton btn, void (*fn)(bool, int, int));
+void input_register_mouse(enum MouseInput btn, void (*fn)(int, bool, int, int));
 
 #endif

@@ -123,7 +123,9 @@ void init_input()
 	input_register_key((struct InputCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
 	input_register_key((struct InputCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
 
-	input_register_mouse(MOUSE_BUTTON_LEFT, map_select_cell);
+	input_register_mouse(MOUSE_LEFT , map_select_cells);
+	input_register_mouse(MOUSE_RIGHT, map_deselect_cells);
+	input_register_mouse(MOUSE_DRAG , map_select_cells);
 }
 
 noreturn void quit_cb(bool kdown)

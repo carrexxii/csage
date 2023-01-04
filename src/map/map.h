@@ -51,16 +51,17 @@ struct Map {
 }; static_assert(sizeof(struct Map) == 64, "struct Map");
 
 struct MapDrawData {
-	alignas(vec4) ivec3 dim;       /* Dimensions of a block */
-	alignas(vec4) ivec3 stride;    /* Dimensions of the map (in blocks) */
-	alignas(vec4) ivec4 selection; /* w-component should indicate if it is active or not */
+	alignas(vec4)    ivec3 dim;          /* Dimensions of a block                  */
+	alignas(vec4)    ivec3 stride;       /* Dimensions of the map (in blocks)      */
+	alignas(vec4[2]) ivec4 selection[2]; /* Top left and bottom right of selection */
 	// struct Material materials[UINT8_MAX];
 };
 
 void map_init(enum MapType type, int w, int h, int d);
 bool map_is_block_visible(int block);
 bool map_is_cell_visible(int32 cell);
-void map_select_cell(bool btndown, int x, int y);
+void map_select_cells(int btn, bool btndown, int x, int y);
+void map_deselect_cells(int btn, bool btndown, int x, int y);
 void map_free();
 void map_print();
 

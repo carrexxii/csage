@@ -7,7 +7,7 @@ layout(location = 0) out vec3 Gxyz;
 struct MapData {
 	ivec3 dim;
 	ivec3 stride;
-	ivec3 selection; // z-component should indicate if it is active or not
+	ivec4 selection[2];
 	// vec3 materials[255];
 };
 layout(std140, binding = 0) readonly buffer ObjectBuffer {
