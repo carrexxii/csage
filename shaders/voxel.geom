@@ -19,15 +19,15 @@ void main() {
 	else /* Left */
 		Fnorm = vec3(-1.0, 0.0, 0.0);
 
-	Fxyz = Gxyz[0];
+	Fxyz = v0;
 	gl_Position = gl_in[0].gl_Position;
 	EmitVertex();
 
-	Fxyz = Gxyz[1];
+	Fxyz = v1;
 	gl_Position = gl_in[1].gl_Position;
 	EmitVertex();
 
-	Fxyz = Gxyz[2];
+	Fxyz = v2;
 	gl_Position = gl_in[2].gl_Position;
 	EmitVertex();
 }

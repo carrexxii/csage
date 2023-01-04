@@ -75,10 +75,10 @@ void init_vulkan(SDL_Window* win)
 	VkInstanceCreateInfo instci = {
 		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		.flags = 0,
-		.pApplicationInfo		= &appi,
+		.pApplicationInfo		 = &appi,
 		.enabledExtensionCount   = extc,
 		.ppEnabledExtensionNames = exts,
-		.enabledLayerCount	   = VK_LAYERC,
+		.enabledLayerCount	     = VK_LAYERC,
 		.ppEnabledLayerNames	 = VK_LAYERS,
 	};
 	if (vkCreateInstance(&instci, alloccb, &instance) != VK_SUCCESS)

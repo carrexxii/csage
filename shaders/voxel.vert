@@ -1,12 +1,13 @@
 #version 460
 
-layout(location = 0) in uvec4 Vxyza;
+layout(location = 0) in ivec4 Vxyza;
 
 layout(location = 0) out vec3 Gxyz;
 
 struct MapData {
-	uvec3 dim;
-	uvec3 stride;
+	ivec3 dim;
+	ivec3 stride;
+	ivec3 selection; // z-component should indicate if it is active or not
 	// vec3 materials[255];
 };
 layout(std140, binding = 0) readonly buffer ObjectBuffer {

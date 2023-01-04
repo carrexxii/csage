@@ -1,7 +1,6 @@
 #include <SDL2/SDL.h>
 #include <cglm/mat4.h>
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include "map/map.h"
 #include "util/iarray.h"

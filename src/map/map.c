@@ -70,6 +70,7 @@ void map_init(enum MapType type, int w, int h, int d)
 
 	glm_ivec3_copy((ivec3){ map->bw, map->bh, map->bh }, mapdd.dim);
 	glm_ivec3_copy((ivec3){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH }, mapdd.stride);
+	glm_ivec4_copy((ivec4){ 0, 0, 0, 0 }, mapdd.selection);
 
 	if (d <= MAP_BLOCK_DEPTH)
 		camzlvlmax = 0;
@@ -131,7 +132,10 @@ void map_select_cell(bool btndown, int x, int y)
 {
 	vec3 p;
 	camera_unproject((float)x, (float)y, p);
-	glm_vec3_print(p, stderr);
+	mapdd.selection[0] = (int)p[0];
+	mapdd.selection[1] = (int)p[1];
+	mapdd.selection[2] = (int)p[2];
+	mapdd.selection[3] = 1;
 }
 
 void map_free()

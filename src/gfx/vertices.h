@@ -2,7 +2,6 @@
 #define GFX_VERTICES_H
 
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include "buffers.h"
 
@@ -44,7 +43,7 @@ static VkVertexInputAttributeDescription vxlvertattrs[] = {
 	/* xyz */
 	{ .binding  = 0,
 	  .location = 0,
-	  .format   = VK_FORMAT_A2R10G10B10_UINT_PACK32,
+	  .format   = VK_FORMAT_A2R10G10B10_SINT_PACK32,
 	  .offset   = 0, },
 };
 

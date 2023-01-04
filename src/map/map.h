@@ -51,8 +51,9 @@ struct Map {
 }; static_assert(sizeof(struct Map) == 64, "struct Map");
 
 struct MapDrawData {
-	alignas(vec4) ivec3 dim;
-	alignas(vec4) ivec3 stride;
+	alignas(vec4) ivec3 dim;       /* Dimensions of a block */
+	alignas(vec4) ivec3 stride;    /* Dimensions of the map (in blocks) */
+	alignas(vec4) ivec4 selection; /* w-component should indicate if it is active or not */
 	// struct Material materials[UINT8_MAX];
 };
 

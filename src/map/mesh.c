@@ -3,10 +3,10 @@
 #include "map.h"
 
 struct Vertex {
-	uint32 z: 10;
-	uint32 y: 10;
-	uint32 x: 10;
-	uint32 a: 2;
+	int32 z: 10;
+	int32 y: 10;
+	int32 x: 10;
+	int32 a: 2;
 }; static_assert(sizeof(struct Vertex) == 4, "struct Vertex");
 
 static uint generate_block_indices(uint16* inds, intptr start);
