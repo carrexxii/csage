@@ -55,10 +55,10 @@ int main(int argc, char** argv)
 	taskmgr_add_task(entities_update);
 
 	Entity e1 = entity_new();
-	entity_add_component(e1, COMPONENT_MODEL, MODEL_PATH "sphere");
+	entity_add_component(e1, COMPONENT_MODEL, MODEL_PATH "test");
 	struct Body body = (struct Body){
-		.pos = { 1.0, 1.0, -5.0 },
-		.dim = { 0.5, 0.5,  1.0 },
+		.pos = { 1.0, 1.0, -10.0 },
+		.dim = { 1.0, 1.0,  1.0 },
 	};
 	entity_add_component(e1, COMPONENT_BODY, &body);
 	// entity_move(e1, VEC3(1.0, 0.0, 0.0));

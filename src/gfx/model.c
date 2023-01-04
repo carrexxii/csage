@@ -31,7 +31,7 @@ struct Model create_model(char* path)
 			if (mdl.verts)
 				ERROR("Not ready for multiple meshes");
 		/* Material header */
-		} else if (sscanf(line, "Material %hhu \"%64[a-zA-Z_]\" [%f %f %f]",
+		} else if (sscanf(line, "M %hhu \"%64[a-zA-Z_]\" [%f %f %f]",
 		                  &index, name, &rgb[0], &rgb[1], &rgb[2]) >= 5) {
 			materials[index].rgb[0] = rgb[0];
 			materials[index].rgb[1] = rgb[1];
