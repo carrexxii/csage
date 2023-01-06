@@ -9,86 +9,100 @@ struct Vertex {
 	int32 a: 2;
 }; static_assert(sizeof(struct Vertex) == 4, "struct Vertex");
 
-static uint generate_block_indices(uint16* inds, intptr start);
+static int generate_block_indices(uint16* inds, int start);
 
-static struct Vertex verts[(MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLOCK_DEPTH + 1)];
+static struct Vertex verts[MAP_VERTEX_COUNT];
 
 void map_generate_meshes()
 {
 	/* Vertices */
-	int vertc = (MAP_BLOCK_DEPTH + 1) * (MAP_BLOCK_HEIGHT + 1) * (MAP_BLOCK_WIDTH + 1);
-	assert(MAP_INDICES_PER_VXL*vertc < UINT16_MAX);
+	int vertc = MAP_VERTEX_COUNT;
+	static_assert(MAP_VERTEX_COUNT < UINT16_MAX);
 
 	struct Vertex* v = verts; 
 	for (int z = 0; z < MAP_BLOCK_DEPTH + 1; z++)
 		for (int y = 0; y < MAP_BLOCK_HEIGHT + 1; y++)
 			for (int x = 0; x < MAP_BLOCK_WIDTH + 1; x++)
 				*v++ = (struct Vertex){ .x = x, .y = y, .z = z, .a = 1 };
-	map->verts = vbo_new(vertc*sizeof(struct Vertex), verts);
+	map.verts = vbo_new(vertc*sizeof(struct Vertex), verts);
 
 	/* Indices */
-	intptr indc       = 0;
-	intptr totalindc  = 0;
-	uint16* inds      = smalloc(MAP_CELLS_PER_BLOCK * MAP_INDICES_PER_VXL * sizeof(uint16));
-	intptr currblock  = 0;
-	for (int z = 0; z < MAX((map->d + MAP_BLOCK_DEPTH - 1) / MAP_BLOCK_DEPTH, 1); z++) {
-		for (int y = 0; y < MAX((map->h + MAP_BLOCK_HEIGHT - 1) / MAP_BLOCK_HEIGHT, 1); y++) {
-			for (int x = 0; x < MAX((map->w + MAP_BLOCK_WIDTH - 1) / MAP_BLOCK_WIDTH, 1); x++) {
-				indc = generate_block_indices(inds, currblock);
-				totalindc += indc;
-				map->blocks[currblock].ibo  = ibo_new(indc*sizeof(uint16), inds);
-				map->blocks[currblock].indc = indc;
-				map->blocks[currblock].zlvl = currblock / (map->bw*map->bh);
+	int totalindc = 0;
+	int blockindc = 0;
+	uint16* inds  = smalloc(MAP_CELLS_PER_BLOCK*MAP_INDICES_PER_VXL*sizeof(uint16));
+	int currblock = 0;
+	for (int z = 0; z < map.bd; z++) {
+		for (int y = 0; y < map.bh; y++) {
+			for (int x = 0; x < map.bw; x++) {
+				if (!(blockindc = generate_block_indices(inds, currblock))) {
+					currblock++;
+					continue;
+				}
+				totalindc += blockindc;
+				map.ibos[currblock]  = ibo_new(blockindc*sizeof(uint16), inds);
+				map.indcs[currblock] = blockindc;
 				currblock++;
 			}
 		}
 	}
 
 	free(inds);
-	DEBUG(3, "[MAP] Generated mesh for map with %ld cells (%ld vertices in %d blocks)", mapcellc, totalindc, map->blockc);
+	DEBUG(3, "[MAP] Generated mesh for map with %d cells (%d vertices in %d blocks)", map.cellc, totalindc, map.blockc);
 } 
 
-static uint generate_block_indices(uint16* inds, intptr start)
+static int generate_block_indices(uint16* inds, int block)
 {
-	int blockx = map_get_block_x(start);
-	int blocky = map_get_block_y(start);
-	int blockz = map_get_block_z(start);
-
-	int indc   = 0;
-	int rowc   =  MAP_BLOCK_WIDTH + 1;                           /* # of cells per row     */
-	int layerc = (MAP_BLOCK_WIDTH + 1) * (MAP_BLOCK_HEIGHT + 1); /* # of cells per z-level */
-	int vx, vy, vz;
+	int globaly = map_get_block_start_y(block);
+	int globalz = map_get_block_start_z(block);
+	int globalx = map_get_block_start_x(block);
+	DEBUG(1, "block (%d) start: %d, %d, %d", block, globalx, globaly, globalz);
+	
+	int indc = 0;
+	int w    =  MAP_BLOCK_WIDTH + 1;
+	int d    = (MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1);
 	for (int z = 0; z < MAP_BLOCK_DEPTH; z++) {
 		for (int y = 0; y < MAP_BLOCK_HEIGHT; y++) {
 			for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
-				if (blockx + x >= map->w || blocky + y >= map->h || blockz + z >= map->d) 
-					continue;
-				if (!map_is_cell_visible(map_get_block_index(blockx + x, blocky + y, blockz + z)))
+				// DEBUG_VALUE(!map_is_cell(globalx + x, globaly + y, globalz + z));
+				if (!map_is_cell(globalx + x, globaly + y, globalz + z) ||
+				    !map_is_visible(globalx + x, globaly + y, globalz + z))
 					continue;
 				indc += MAP_INDICES_PER_VXL;
-				vx = x % MAP_BLOCK_WIDTH;
-				vy = y % MAP_BLOCK_HEIGHT;
-				vz = z % MAP_BLOCK_DEPTH;
 
-				/* Triangle fan
-				 * 5---6---7
-				 * | \ | / |
-				 * 4---1---8   + restart = 9 verts
-				 * | / |
-				 * 3---2
+				/* *---*---*
+				 * |1\2|3/4|
+				 * *---*---*
+				 * |5/6|
+				 * *---*
 				 */
-				*inds++ = vx     +       vy*rowc +       vz*layerc;
-				*inds++ = vx     +       vy*rowc + (vz + 1)*layerc;
-				*inds++ = vx     + (vy + 1)*rowc + (vz + 1)*layerc;
-				*inds++ = vx     + (vy + 1)*rowc +       vz*layerc;
-				*inds++ = vx + 1 + (vy + 1)*rowc +       vz*layerc;
-				*inds++ = vx + 1 +       vy*rowc +       vz*layerc;
-				*inds++ = vx + 1 +       vy*rowc + (vz + 1)*layerc;
-				*inds++ = vx     +       vy*rowc + (vz + 1)*layerc;
-				*inds++ = UINT16_MAX;
+				/* 1 */
+				*inds++ = x     +       y*w + z*d; /* Top-left     */
+				*inds++ = x + 1 + (y + 1)*w + z*d; /* Bottom-right */
+				*inds++ = x     + (y + 1)*w + z*d; /* Bottom-left  */
+				/* 2 */
+				*inds++ = x     +       y*w + z*d; /* Top-left     */
+				*inds++ = x + 1 +       y*w + z*d; /* Top-right    */
+				*inds++ = x + 1 + (y + 1)*w + z*d; /* Bottom-right */
+				/* 3 */
+				*inds++ = x + (y + 1)*w +       z*d; /* Bottom-left  */
+				*inds++ = x +       y*w +       z*d; /* Top-right    */
+				*inds++ = x +       y*w + (z + 1)*d; /* Lower-bottom */
+				/* 4 */
+				*inds++ = x + (y + 1)*w +       z*d; /* Bottom-right */
+				*inds++ = x +       y*w + (z + 1)*d; /* Lower-top    */
+				*inds++ = x + (y + 1)*w + (z + 1)*d; /* Lower-bottom */
+				/* 5 */
+				*inds++ = x     + y*w +       z*d; /* Bottom-left  */
+				*inds++ = x + 1 + y*w +       z*d; /* Bottom-right */
+				*inds++ = x     + y*w + (z + 1)*d; /* Lower-left   */
+				/* 6 */
+				*inds++ = x + 1 + y*w +       z*d; /* Bottom-right */
+				*inds++ = x + 1 + y*w + (z + 1)*d; /* Lower-right  */
+				*inds++ = x     + y*w + (z + 1)*d; /* Lower-left   */
 			}
 		}
 	}
 
 	return indc;
 }
+

@@ -9,7 +9,7 @@ struct MapData {
     ivec3 dim;
     ivec3 stride;
     ivec4 selection[2]; // Top left and bottom right of selection
-    // vec3 materials[255];
+    int   zlvl;
 };
 layout(std140, binding = 0) readonly buffer ObjectBuffer {
     MapData data;
@@ -33,8 +33,8 @@ void main()
     vec3 p1 = vec3(map.data.selection[0]);
     vec3 p2 = vec3(map.data.selection[1]);
     if (Fxyz.z == p1.z && Fxyz.z == p2.z && 
-        Fxyz.x <= max(p1.x, p2.x) + 1.0 && Fxyz.x >= min(p1.x, p2.x) &&
-        Fxyz.y <= max(p1.y, p2.y) + 1.0 && Fxyz.y >= min(p1.y, p2.y)) {
+        Fxyz.x <= int(max(p1.x, p2.x) + map.data.zlvl + 0.5) && Fxyz.x >= int(min(p1.x, p2.x) + map.data.zlvl - 0.5) &&
+        Fxyz.y <= int(max(p1.y, p2.y) + map.data.zlvl + 0.5) && Fxyz.y >= int(min(p1.y, p2.y) + map.data.zlvl - 0.5)) {
         screen_colour.xyz += vec3(0.1, 0.1, 0.1);
     }
 }

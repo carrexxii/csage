@@ -8,7 +8,7 @@ struct MapData {
 	ivec3 dim;
 	ivec3 stride;
 	ivec4 selection[2];
-	// vec3 materials[255];
+	int   zlvl;
 };
 layout(std140, binding = 0) readonly buffer ObjectBuffer {
 	MapData data;
@@ -31,3 +31,4 @@ void main()
 
 	gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
 }
+

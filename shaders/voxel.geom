@@ -31,3 +31,4 @@ void main() {
 	gl_Position = gl_in[2].gl_Position;
 	EmitVertex();
 }
+

@@ -1,14 +1,14 @@
 #ifndef GFX_CAMERA_H
 #define GFX_CAMERA_H
 
+#include "map/map.h"
+
 extern mat4 camproj;
 extern mat4 camview;
 extern struct Rect    camrect;
 extern enum Direction camdir;
 extern vec3 campos;
 extern int camzlvl;
-extern int camzlvlmax;
-extern int camzlvlscale;
 
 void camera_init();
 void camera_get_vp(mat4 out);
@@ -23,7 +23,9 @@ static void camera_move_left_cb (bool kdown) { if (kdown) camdir |= DIR_LEFT;  e
 static void camera_zoom_in_cb   (bool kdown) { if (kdown) camdir |= DIR_FORWARDS;  else camdir &= ~DIR_FORWARDS;  }
 static void camera_zoom_out_cb  (bool kdown) { if (kdown) camdir |= DIR_BACKWARDS; else camdir &= ~DIR_BACKWARDS; }
 
-inline static void camera_zlvl_up_cb  (bool kdown) { camzlvl += 1; CLAMP(camzlvl, 0, camzlvlmax); }
-inline static void camera_zlvl_down_cb(bool kdown) { camzlvl -= 1; CLAMP(camzlvl, 0, camzlvlmax); }
+// TODO: replace with cammaxzlvl
+// inline static void camera_zlvl_up_cb  (bool kdown) { camzlvl += 1; CLAMP(camzlvl, 0, map->d - 1); }
+// inline static void camera_zlvl_down_cb(bool kdown) { camzlvl -= 1; CLAMP(camzlvl, 0, map->d - 1); }
 
 #endif
+

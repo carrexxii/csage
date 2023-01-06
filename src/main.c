@@ -44,12 +44,13 @@ int main(int argc, char** argv)
 
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
+	taskmgr_add_task(map_update);
 	taskmgr_add_task(entities_update);
 
 	Entity e1 = entity_new();
 	entity_add_component(e1, COMPONENT_MODEL, MODEL_PATH "test");
 	struct Body body = (struct Body){
-		.pos = { 1.0, 1.0, -10.0 },
+		.pos = { 3.0, 3.0, -5.0 },
 		.dir = glm_rad(0.0),
 	};
 	entity_add_component(e1, COMPONENT_BODY, &body);
@@ -112,8 +113,8 @@ void init_input()
 	input_register_key((struct InputCallback){ .key = SDLK_s, .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
 	input_register_key((struct InputCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
 	input_register_key((struct InputCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
+	// input_register_key((struct InputCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
+	// input_register_key((struct InputCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
 
 	input_register_mouse(MOUSE_LEFT , map_select_cells);
 	input_register_mouse(MOUSE_RIGHT, map_deselect_cells);

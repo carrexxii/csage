@@ -60,7 +60,7 @@ void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 		.rasterizerDiscardEnable = false,
 		.polygonMode             = VK_POLYGON_MODE_FILL,
 		.lineWidth               = 1.0,
-		.cullMode                = VK_CULL_MODE_BACK_BIT,
+		.cullMode                = VK_CULL_MODE_NONE,
 		.frontFace               = VK_FRONT_FACE_CLOCKWISE,
 		.depthClampEnable        = false,
 		.depthBiasEnable         = false,
@@ -358,3 +358,4 @@ static void update_dsets(struct Pipeline* pipeln)
 	vkUpdateDescriptorSets(gpu, dwritesetc, dwritesets, 0, NULL);
 	DEBUG(3, "[VK] Updated %u descriptor sets", dwritesetc);
 }
+

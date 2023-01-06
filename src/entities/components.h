@@ -1,7 +1,7 @@
 #ifndef ENTITIES_COMPONENTS_H
 #define ENTITIES_COMPONENTS_H
 
-#define G 1.0
+#define G 10.0
 
 #define BODY_MAX_FORCES 4
 

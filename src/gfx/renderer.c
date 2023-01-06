@@ -126,10 +126,10 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	matbuf = sbo_new(RENDERER_MAX_OBJECTS * sizeof(float[16]));
+	matbuf = sbo_new(RENDERER_MAX_OBJECTS*sizeof(mat4));
 	mapbuf = sbo_new(sizeof(struct MapDrawData));
-	ubobufs[ubobufc++] = ubo_new(sizeof(float[16]));
-	ubobufs[ubobufc++] = ubo_new(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(float[4]));
+	ubobufs[ubobufc++] = ubo_new(sizeof(mat4));
+	ubobufs[ubobufc++] = ubo_new(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(vec4));
 
 	mdlpipeln.vshader   = create_shader(SHADER_DIR "model.vert");
 	mdlpipeln.fshader   = create_shader(SHADER_DIR "model.frag");
@@ -142,10 +142,9 @@ void renderer_init()
 	mdlpipeln.ubos[0]   = &ubobufs[0];
 	mdlpipeln.ubos[1]   = &ubobufs[1];
 	mdlpipeln.sbo       = &matbuf;
-	mdlpipeln.sbosz     = RENDERER_MAX_OBJECTS * sizeof(float[16]);
+	mdlpipeln.sbosz     = RENDERER_MAX_OBJECTS*sizeof(mat4);
 	init_pipeln(&mdlpipeln, renderpass);
 
-	vxlpipeln.topology  = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
 	vxlpipeln.vshader   = create_shader(SHADER_DIR "voxel.vert");
 	vxlpipeln.gshader   = create_shader(SHADER_DIR "voxel.geom");
 	vxlpipeln.fshader   = create_shader(SHADER_DIR "voxel.frag");
@@ -289,15 +288,12 @@ static void record_command(int imgi)
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
-	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &map->verts.buf, (VkDeviceSize[]) { 0 });
-	for (int i = 0; i < map->blockc; i++) {
-		if (map->blocks[i].zlvl != camzlvl || !map->blocks[i].visible) {
-			// DEBUG(1, "[%u] Skipping...", i);
+	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &map.verts.buf, (VkDeviceSize[]) { 0 });
+	for (int i = 0; i < map.blockc; i++) {
+		if (!map_is_block_visible(i))
 			continue;
-		}
-		vkCmdBindIndexBuffer(cmdbuf, map->blocks[i].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(cmdbuf, map->blocks[i].indc, 1, 0, 0, i);
-		// DEBUG(1, "[%u] Drawing %u indices", i, map->blocks[i].indc);
+		vkCmdBindIndexBuffer(cmdbuf, map.ibos[i].buf, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(cmdbuf, map.indcs[i], 1, 0, 0, i);
 	}
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
