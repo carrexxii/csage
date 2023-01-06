@@ -2,7 +2,7 @@
 #include "camera.h"
 
 #define MIN_ZOOM 1.0
-#define MAX_ZOOM 250.0
+#define MAX_ZOOM 500.0
 
 mat4 camproj = GLM_MAT4_IDENTITY_INIT;
 mat4 camview = GLM_MAT4_IDENTITY_INIT;
@@ -59,3 +59,4 @@ void camera_update()
 	if (camdir & DIR_BACKWARDS) zoom -= zoomspeed;
 	CLAMP(zoom, MIN_ZOOM, MAX_ZOOM);
 }
+

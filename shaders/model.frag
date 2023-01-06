@@ -20,3 +20,4 @@ void main()
     screen_colour = vec4(Frgb * (lighting.ambient + diffuse), 1.0);
     // screen_colour = vec4(abs(Fnormal) * (lighting.ambient + diffuse), 1.0);
 }
+

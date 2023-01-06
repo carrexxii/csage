@@ -27,14 +27,6 @@ int main(int argc, char** argv)
 	for (int i = 0; i < argc; i++)
 		printf("%s\n", argv[i]);
 
-#ifdef RUN_TESTS
-	DEBUG(1, TERM_GREEN "---------------------\n--- Running Tests ---\n---------------------" TERM_NORMAL);
-	test_arraylist();
-
-	return 0;
-#endif
-
-
 	init_sdl();
 
 	uint32 vkversion;
@@ -58,7 +50,7 @@ int main(int argc, char** argv)
 	entity_add_component(e1, COMPONENT_MODEL, MODEL_PATH "test");
 	struct Body body = (struct Body){
 		.pos = { 1.0, 1.0, -10.0 },
-		.dim = { 1.0, 1.0,  1.0 },
+		.dir = glm_rad(0.0),
 	};
 	entity_add_component(e1, COMPONENT_BODY, &body);
 	// entity_move(e1, VEC3(1.0, 0.0, 0.0));
@@ -72,7 +64,7 @@ int main(int argc, char** argv)
 	// set_entity_pos(e3, VEC3(0.0, -20.0, 5.0));
 	// add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
 
-	map_init(MAPTYPE_FILLED, 16, 16, 4);
+	map_init(MAPTYPE_TEST, 16, 16, 4);
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
@@ -131,7 +123,7 @@ void init_input()
 noreturn void quit_cb(bool kdown)
 {
 	DEBUG(1, "/------------------------------\\");
-	DEBUG(1, "|\tCleaning up...         |");
+	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
 	map_free();
@@ -140,3 +132,4 @@ noreturn void quit_cb(bool kdown)
 	SDL_Quit();
 	exit(0);
 }
+

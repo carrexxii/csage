@@ -37,7 +37,6 @@ def write_file(path):
                 for i in tri.vertices:
                     v = pos @ mesh.vertices[i].undeformed_co.copy()
                     n = tri.normal.copy()
-                    v[2] = -v[2]
                     n[2] = -n[2]
                     file.write("%.4f %.4f %.4f " % v[:])
                     file.write("%.2f %.2f %.2f " % n[:])

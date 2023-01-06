@@ -22,8 +22,10 @@ struct Body {
 	vec3 pos;
 	vec3 prevpos;
 	vec3 dim;
+	float dir;
 	vec3 forces[BODY_MAX_FORCES];
 	uint8 forcec;
-}; static_assert(sizeof(struct Body) == 88, "struct Body");
+}; static_assert(sizeof(struct Body) == 92, "struct Body");
 
 #endif
+

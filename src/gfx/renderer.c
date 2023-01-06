@@ -163,7 +163,7 @@ void renderer_init()
 
 	glm_vec3_copy((vec3){ 0.0, 100.0, -50.0 }, lighting.sundir);
 	glm_vec3_normalize(lighting.sundir);
-	lighting.ambient  = 0.03;
+	lighting.ambient  = 0.1;
 	lighting.sunpower = 2.0;
 }
 
@@ -387,3 +387,4 @@ static void create_sync_objects()
 			ERROR("[VK] Failed to create sync object(s) for frame %d", i);
 	DEBUG(3, "[VK] Created %d sync objects", FRAMES_IN_FLIGHT);
 }
+

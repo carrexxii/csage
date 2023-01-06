@@ -17,6 +17,7 @@ enum MapType {
 	MAPTYPE_ALTERNATING,
 	MAPTYPE_RANDOM,
 	MAPTYPE_HOLLOW,
+	MAPTYPE_TEST,
 };
 
 enum CellType {
@@ -72,12 +73,13 @@ extern struct MapDrawData mapdd;
 extern intptr mapcellc;
 extern vec4 mapplane;
 
-inline static int map_get_cell_x(int cell) { return cell % map->w;                     }
-inline static int map_get_cell_y(int cell) { return cell % (map->w * map->h) / map->w; }
-inline static int map_get_cell_z(int cell) { return cell / (map->w * map->h);          }
+inline static int map_get_cell_x(int cell) { return cell % map->w;                   }
+inline static int map_get_cell_y(int cell) { return cell % (map->w*map->h) / map->w; }
+inline static int map_get_cell_z(int cell) { return cell / (map->w*map->h);          }
 inline static int map_get_block_index(int x, int y, int z) { return z*map->w*map->h + y*map->w + x; }
 inline static int map_get_block_x(int cell) { return cell % (map->w*map->h) / MAP_BLOCK_WIDTH % map->bw;                    }
 inline static int map_get_block_y(int cell) { return cell % (map->w*map->h) / (MAP_BLOCK_WIDTH*MAP_BLOCK_HEIGHT) % map->bh; }
 inline static int map_get_block_z(int cell) { return cell / (map->w*map->h*MAP_BLOCK_DEPTH);                                }
 
 #endif
+

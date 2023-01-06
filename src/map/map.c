@@ -50,6 +50,18 @@ void map_init(enum MapType type, int w, int h, int d)
 				                           (z == d - 1) || (z == 0 && (x == 0 || y == 0)));
 			}
 			break;
+		case MAPTYPE_TEST:
+			memset(map->data, CELLTYPE_GRASS, mapcellc*sizeof(struct MapCell));
+			for (int i = 0; i < mapcellc; i++) {
+				x = map_get_cell_x(i);
+				y = map_get_cell_y(i);
+				z = map_get_cell_z(i);
+				if ((z < map->d/2) || (z == map->d/2 &&
+				    ((x > 0 && x < map->w - 1) && (y > 0 && y < map->h - 1)) &&
+				    ((y != map->h/2) || !(x > 2 && x < map->w - 3))))
+					map->data[i].data = 0;
+			}
+			break;
 		default:
 			ERROR("[MAP] Invalid map type %d", type);
 	}
@@ -59,10 +71,10 @@ void map_init(enum MapType type, int w, int h, int d)
 
 	// DEBUG(1, "x  y  z");
 	// for (int i = 0; i < mapcellc; i++) {
-	// 	DEBUG(1, "[%d] %d, %d, %d", i, map_get_block_x(i), map_get_block_y(i), map_get_block_z(i));
+	// 	DEBUG(1, "[%d] %d, %d, %d", i, map_get_cell_x(i), map_get_cell_y(i), map_get_cell_z(i));
 	// }
 
-	// map_print();
+	map_print();
 	map_generate_meshes(map);
 
 	// DEBUG(1, "Total blocks: %d", map->blockc);
@@ -181,3 +193,4 @@ void map_print()
 		fprintf(stderr, "%2d |- - - - - - - - - - - - - - - -\n", z);
 	}
 }
+

@@ -26,7 +26,7 @@ void main()
 {
     vec3 diffuse = vec3(max(dot(Fnormal, lighting.sundir), 0.0) * lighting.sunpower);
     diffuse += vec3(max(dot(Fnormal, normalize(vec3(lighting.lights[0]))), 0.0) * lighting.lights[0].w);
-    screen_colour = vec4(abs(Fnormal) * (lighting.ambient + diffuse), 1.0);
+    screen_colour = vec4(abs(Fnormal)/3.0 * (lighting.ambient + diffuse), 1.0);
 
     // Selection highlighting
     // There should be a much better way to do this (without branch?)
@@ -38,3 +38,4 @@ void main()
         screen_colour.xyz += vec3(0.1, 0.1, 0.1);
     }
 }
+

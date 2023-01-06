@@ -49,6 +49,7 @@ void entity_add_component(Entity e, enum Component c, void* data)
 			renderer_add_light(*light);
 			break;
 		case COMPONENT_BODY:
+			// TODO: Add fetching dimensions from a model associated with the body
 			glm_vec3_copy(((struct Body*)data)->pos, ((struct Body*)data)->prevpos);
 			iarr_append(&components.bodies, e, data);
 			break;
@@ -75,7 +76,8 @@ void entities_update()
 	struct Body* body = components.bodies.data;
 	for (int i = 0; i < components.mats.itemc; i++) {
 		glm_translate_make(transform, body->pos);
-		glm_scale(transform, body->dim);
+		glm_rotate(transform, glm_rad(180.0), (vec3){ 0.0, 1.0, .0 }); // TODO: do this in the exporter instead
+		glm_rotate(transform, -body->dir, (vec3){ 0.0, 0.0, 1.0 });
 		glm_mat4_ucopy(transform, ((mat4*)components.mats.data)[i]);
 	}
 }
@@ -88,3 +90,4 @@ void entities_free()
 	iarr_free(&components.lights, NULL);
 	iarr_free(&components.bodies, NULL);
 }
+
