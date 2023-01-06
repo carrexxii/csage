@@ -5,7 +5,7 @@ bool collisions_map(struct Body* body)
 {
 	int mapx = body->pos[0];
 	int mapy = body->pos[1];
-	int mapz = body->pos[2] + body->pos[2];
+	int mapz = body->pos[2];
 	struct MapCell cellbelow, cellleft, cellright, cellfwd, cellback;
 	/* Map bounds checking */
 	if ((body->pos[0] < -body->dim[0] || body->pos[0] > map.w) ||

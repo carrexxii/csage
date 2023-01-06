@@ -4,9 +4,9 @@
 #include "gfx/buffers.h"
 #include "gfx/model.h"
 
-#define MAP_BLOCK_WIDTH  36
-#define MAP_BLOCK_HEIGHT 36
-#define MAP_BLOCK_DEPTH  16
+#define MAP_BLOCK_WIDTH  16
+#define MAP_BLOCK_HEIGHT 16
+#define MAP_BLOCK_DEPTH  8
 #define MAP_CELLS_PER_BLOCK (MAP_BLOCK_WIDTH*MAP_BLOCK_HEIGHT*MAP_BLOCK_DEPTH)
 #define MAP_INDICES_PER_VXL 18
 #define MAP_VERTEX_COUNT    ((MAP_BLOCK_WIDTH + 1)*(MAP_BLOCK_HEIGHT + 1)*(MAP_BLOCK_DEPTH + 1))
@@ -66,9 +66,6 @@ void map_generate_meshes();
 extern struct Map map;
 extern struct MapDrawData mapdd;
 
-inline static bool map_is_cell(int x, int y, int z) {
-	return (x >= 0 && x < map.w) && (y >= 0 && y < map.h) && (z >= 0 && z < map.d);
-}
 inline static int map_get_cell(int x, int y, int z) { return z*map.w*map.h + y*map.w + x; }
 inline static int map_get_block_index(int x, int y, int z) { return map_get_cell(x, y, z) / MAP_CELLS_PER_BLOCK; }
 inline static int map_get_block_cell(int x, int y, int z)  { return map_get_cell(x, y, z) % MAP_CELLS_PER_BLOCK; }
@@ -78,6 +75,10 @@ inline static int map_get_cell_block_z(int cell) { return cell / (map.w*map.h); 
 inline static int map_get_block_start_x(int block) { return (block % map.bw)*MAP_BLOCK_WIDTH;                    }
 inline static int map_get_block_start_y(int block) { return (block % (map.bw*map.bh) / map.bw)*MAP_BLOCK_HEIGHT; }
 inline static int map_get_block_start_z(int block) { return (block / (map.bw*map.bh))*MAP_BLOCK_DEPTH;           }
+inline static bool map_is_cell(int x, int y, int z) {
+	return ((x >= 0 && x < map.w) && (y >= 0 && y < map.h) && (z >= 0 && z < map.d) &&
+	        map.blocks[map_get_block_index(x, y, z)][map_get_block_cell(x, y, z)].data);
+}
 
 #endif
 

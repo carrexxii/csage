@@ -50,7 +50,7 @@ void map_init(enum MapType type, int w, int h, int d)
 			ERROR("[MAP] Invalid map type %d", type);
 	}
 
-	map_print();
+	// map_print();
 	map_generate_meshes(map);
 
 	glm_ivec3_copy((ivec3){ map.bw, map.bh, map.bh }, mapdd.dim);

@@ -4,22 +4,19 @@
 #define MIN_ZOOM 1.0
 #define MAX_ZOOM 500.0
 
-mat4 camproj = GLM_MAT4_IDENTITY_INIT;
-mat4 camview = GLM_MAT4_IDENTITY_INIT;
-struct Rect    camrect;
 enum Direction camdir;
-vec3 campos = { 0.0, 0.0, 0.0 };
-int camzlvl;
-int camzlvlmax   = 8;
-int camzlvlscale = 8;
-static float zoom = 150.0;
-static float panspeed  = 5.0 * dt;
+mat4 camproj   = GLM_MAT4_IDENTITY_INIT;
+mat4 camview   = GLM_MAT4_IDENTITY_INIT;
+vec3 campos    = { 0.0, 0.0, 0.0 };
+int camzlvl    = 0;
+int camzlvlmax = 8;
+static float zoom      = 150.0;
+static float panspeed  = 10.0 * dt;
 static float zoomspeed = 50.0 * dt;
 
 void camera_init()
 {
 	camera_set_perspective();
-	camrect = (struct Rect){ 0 };
 }
 
 /* TODO: add conditional update of vp with boolean return + rename */

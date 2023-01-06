@@ -55,7 +55,6 @@ static int generate_block_indices(uint16* inds, int block)
 	int globaly = map_get_block_start_y(block);
 	int globalz = map_get_block_start_z(block);
 	int globalx = map_get_block_start_x(block);
-	DEBUG(1, "block (%d) start: %d, %d, %d", block, globalx, globaly, globalz);
 	
 	int indc = 0;
 	int w    =  MAP_BLOCK_WIDTH + 1;
@@ -63,7 +62,6 @@ static int generate_block_indices(uint16* inds, int block)
 	for (int z = 0; z < MAP_BLOCK_DEPTH; z++) {
 		for (int y = 0; y < MAP_BLOCK_HEIGHT; y++) {
 			for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
-				// DEBUG_VALUE(!map_is_cell(globalx + x, globaly + y, globalz + z));
 				if (!map_is_cell(globalx + x, globaly + y, globalz + z) ||
 				    !map_is_visible(globalx + x, globaly + y, globalz + z))
 					continue;
@@ -76,12 +74,12 @@ static int generate_block_indices(uint16* inds, int block)
 				 * *---*
 				 */
 				/* 1 */
-				*inds++ = x     +       y*w + z*d; /* Top-left     */
 				*inds++ = x + 1 + (y + 1)*w + z*d; /* Bottom-right */
+				*inds++ = x     +       y*w + z*d; /* Top-left     */
 				*inds++ = x     + (y + 1)*w + z*d; /* Bottom-left  */
 				/* 2 */
-				*inds++ = x     +       y*w + z*d; /* Top-left     */
 				*inds++ = x + 1 +       y*w + z*d; /* Top-right    */
+				*inds++ = x     +       y*w + z*d; /* Top-left     */
 				*inds++ = x + 1 + (y + 1)*w + z*d; /* Bottom-right */
 				/* 3 */
 				*inds++ = x + (y + 1)*w +       z*d; /* Bottom-left  */

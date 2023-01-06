@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 	Entity e1 = entity_new();
 	entity_add_component(e1, COMPONENT_MODEL, MODEL_PATH "test");
 	struct Body body = (struct Body){
-		.pos = { 3.0, 3.0, -5.0 },
+		.pos = { 0.5, 0.5, -5.0 },
 		.dir = glm_rad(0.0),
 	};
 	entity_add_component(e1, COMPONENT_BODY, &body);
@@ -66,6 +66,7 @@ int main(int argc, char** argv)
 	// add_component(e3, COMPONENT_LIGHT, VEC4(-2.0, -20.0, 0.0, 0.07).arr);
 
 	map_init(MAPTYPE_TEST, 16, 16, 4);
+	camzlvlmax = map.d;
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
@@ -113,8 +114,8 @@ void init_input()
 	input_register_key((struct InputCallback){ .key = SDLK_s, .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
 	input_register_key((struct InputCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
 	input_register_key((struct InputCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
-	// input_register_key((struct InputCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
-	// input_register_key((struct InputCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
+	input_register_key((struct InputCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
 
 	input_register_mouse(MOUSE_LEFT , map_select_cells);
 	input_register_mouse(MOUSE_RIGHT, map_deselect_cells);

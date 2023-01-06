@@ -2,10 +2,9 @@
 #include "gfx/model.h"
 #include "components.h"
 #include "gfx/renderer.h"
+#include "camera.h"
 #include "systems.h"
 #include "entity.h"
-#include <cglm/affine-pre.h>
-#include <cglm/mat4.h>
 
 intptr entityc;
 Entity entities[MAX_ENTITIES];
@@ -72,11 +71,14 @@ void entities_update()
 	physics_resolve_collisions();
 
 	/* Update the model matrices */
+	vec3 pos;
 	mat4 transform;
 	struct Body* body = components.bodies.data;
 	for (int i = 0; i < components.mats.itemc; i++) {
-		glm_translate_make(transform, body->pos);
-		glm_rotate(transform, glm_rad(180.0), (vec3){ 0.0, 1.0, .0 }); // TODO: do this in the exporter instead
+		glm_vec3_copy(body->pos, pos);
+		pos[2] -= camzlvl; // IMPROVEMENT: Maybe better way to do this?
+		glm_translate_make(transform, pos);
+		glm_rotate(transform, glm_rad(180.0), (vec3){ 0.0, 1.0, 0.0 }); // TODO: do this in the exporter instead
 		glm_rotate(transform, -body->dir, (vec3){ 0.0, 0.0, 1.0 });
 		glm_mat4_ucopy(transform, ((mat4*)components.mats.data)[i]);
 	}
