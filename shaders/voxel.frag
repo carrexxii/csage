@@ -28,8 +28,12 @@ void main()
     diffuse += vec3(max(dot(Fnormal, normalize(vec3(lighting.lights[0]))), 0.0) * lighting.lights[0].w);
     screen_colour = vec4(abs(Fnormal)/3.0 * (lighting.ambient + diffuse), 1.0);
 
-    // Selection highlighting
-    // There should be a much better way to do this (without branch?)
+    /* Shadow for out-of-focus z-levels */
+    screen_colour -= vec4(vec3(max((Fxyz.z-0.5) - map.data.zlvl, 0.0))/20.0, 0.0);
+
+    /* Selection highlighting
+     * There should be a much better way to do this (without branch?)
+     */
     vec3 p1 = vec3(map.data.selection[0]);
     vec3 p2 = vec3(map.data.selection[1]);
     if (Fxyz.z == p1.z && Fxyz.z == p2.z && 
