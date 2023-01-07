@@ -5,6 +5,7 @@
 
 #define MAX_INPUT_CALLBACKS 16
 #define MOUSE_EVENT_COUNT   MOUSE_INVALID
+#define MAX_CALLBACKS_PER_MOUSE_BUTTON 5
 
 enum MouseInput {
 	MOUSE_LEFT,
@@ -15,15 +16,20 @@ enum MouseInput {
 	MOUSE_NONE,
 };
 
-struct InputCallback {
+struct KeyboardCallback {
 	void (*fn)(bool);
 	int  key;
 	bool onkeydown;
 	bool onkeyup;
-}; static_assert(sizeof(struct InputCallback) == 16, "struct InputCallback");
+}; static_assert(sizeof(struct KeyboardCallback) == 16, "struct KeyboardCallback");
 
 bool input_check();
-void input_register_key(struct InputCallback cb);
-void input_register_mouse(enum MouseInput btn, void (*fn)(int, bool, int, int));
+void input_register_key(struct KeyboardCallback cb);
+/* Mouse inputs will keep a list of functions registered for each key.
+ * The functions will be called in order - stopping if one of them returns `true`.
+ * ie - a function returning `false` means that we proceed to the next callback.
+ */
+void input_register_mouse(enum MouseInput btn, bool (*fn)(int, bool, int, int));
 
 #endif
+

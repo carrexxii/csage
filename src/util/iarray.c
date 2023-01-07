@@ -57,7 +57,7 @@ inline static intptr linear_search(intptr indc, uint16* inds, intptr key)
 	for (int i = 0; i < indc; i++)
 		if (inds[i] == key)
 			return i;
-		
+
 	return -1;
 }
 
@@ -97,5 +97,6 @@ void iarr_free(struct IArray* arr, void (*cb)(void*))
 		for (int i = 0; i < arr->itemc; i++)
 			if (arr->inds[i])
 				cb((byte*)arr->data + i*arr->itemsz);
-	free(arr->inds);
+	free(arr->inds); /* This also frees the data */
 }
+

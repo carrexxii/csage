@@ -16,6 +16,7 @@ void entities_init()
 	components.mats   = iarr_new(sizeof(mat4), 10);
 	components.lights = iarr_new(sizeof(vec4), 5);
 	components.bodies = iarr_new(sizeof(struct Body), 10);
+	components.actors = iarr_new(sizeof(struct Actor), 10);
 
 	renmdlc = &components.mdls.itemc;
 	renmdls = components.mdls.data;
@@ -34,6 +35,7 @@ void entity_add_component(Entity e, enum Component c, void* data)
 {
 	struct Model mdl;
 	vec4* light;
+	struct Actor actor;
 	switch (c) {
 		case COMPONENT_NONE:
 			ERROR("[ENT] Trying to add COMPONENT_NONE");
@@ -52,8 +54,14 @@ void entity_add_component(Entity e, enum Component c, void* data)
 			glm_vec3_copy(((struct Body*)data)->pos, ((struct Body*)data)->prevpos);
 			iarr_append(&components.bodies, e, data);
 			break;
+		case COMPONENT_ACTOR:
+			actor = (struct Actor){ 0 };
+			iarr_append(&components.actors, e, &actor);
+			break;
+		case COMPONENT_CONTROLLABLE:
+			break;
 		default:
-			ERROR("[ENT] Unhandled component: %u", c);
+			ERROR("[ENT] Unhandled component add: %u", c);
 	}
 	entities[e] |= c;
 }
@@ -69,6 +77,8 @@ void entities_update()
 {
 	physics_integrate();
 	physics_resolve_collisions();
+
+	actors_update();
 
 	/* Update the model matrices */
 	vec3 pos;
@@ -91,5 +101,6 @@ void entities_free()
 	iarr_free(&components.mats  , NULL);
 	iarr_free(&components.lights, NULL);
 	iarr_free(&components.bodies, NULL);
+	iarr_free(&components.actors, (void (*)(void*))actor_free);
 }
 

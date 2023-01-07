@@ -55,7 +55,7 @@ void map_init(enum MapType type, int w, int h, int d)
 
 	glm_ivec3_copy((ivec3){ map.bw, map.bh, map.bh }, mapdd.dim);
 	glm_ivec3_copy((ivec3){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH }, mapdd.stride);
-	map_deselect_cells(0, false, 0, 0);
+	map_deselect_cells_cb(0, false, 0, 0);
 
 	DEBUG(1, "[MAP] Created map with size %dx%dx%d (%d total) (%dx%dx%d = %d blocks)",
 	      w, h, d, map.cellc, map.bw, map.bh, map.bd, map.blockc);
@@ -109,7 +109,7 @@ bool map_is_visible(int x, int y, int z)
 	// return !isblocked;
 }
 
-void map_select_cells(int btn, bool btndown, int x, int y)
+bool map_select_cells_cb(int btn, bool btndown, int x, int y)
 {
 	static bool mbdown;
 
@@ -131,19 +131,23 @@ void map_select_cells(int btn, bool btndown, int x, int y)
 	}
 	mapdd.selection[0][2] = camzlvl;
 	mapdd.selection[1][2] = camzlvl;
+
+	return true;
 }
 
-void map_deselect_cells(int btn, bool btndown, int x, int y)
+bool map_deselect_cells_cb(int btn, bool btndown, int x, int y)
 {
 	glm_ivec4_copy((ivec4){ -1, -1, -1, 0 }, mapdd.selection[0]);
 	glm_ivec4_copy((ivec4){ -1, -1, -1, 0 }, mapdd.selection[1]);
+
+	return false;
 }
 
 void map_update()
 {
 	/* check if the z-lvl was changed */
 	if (mapdd.zlvl != camzlvl)
-		map_deselect_cells(0, false, 0, 0);
+		map_deselect_cells_cb(0, false, 0, 0);
 	mapdd.zlvl = camzlvl;
 }
 

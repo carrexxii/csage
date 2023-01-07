@@ -8,4 +8,8 @@ void physics_resolve_collisions();
 
 bool collisions_map(struct Body* body);
 
+void actors_update();
+void actor_free(struct Actor* actor);
+
 #endif
+

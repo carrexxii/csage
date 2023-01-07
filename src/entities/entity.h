@@ -20,9 +20,11 @@ extern struct EntityComponents {
 	struct IArray mats;
 	struct IArray lights;
 	struct IArray bodies;
+	struct IArray actors;
 } components;
 
 extern intptr entityc;
 extern Entity entities[];
 
 #endif
+

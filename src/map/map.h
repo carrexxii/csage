@@ -55,8 +55,8 @@ struct MapDrawData {
 void map_init(enum MapType type, int w, int h, int d);
 bool map_is_block_visible(int block);
 bool map_is_visible(int x, int y, int z);
-void map_select_cells(int btn, bool btndown, int x, int y);
-void map_deselect_cells(int btn, bool btndown, int x, int y);
+bool map_select_cells_cb(int btn, bool btndown, int x, int y);
+bool map_deselect_cells_cb(int btn, bool btndown, int x, int y);
 void map_update();
 void map_free();
 void map_print();

@@ -54,6 +54,8 @@ int main(int argc, char** argv)
 		.dir = glm_rad(0.0),
 	};
 	entity_add_component(e1, COMPONENT_BODY, &body);
+	entity_add_component(e1, COMPONENT_ACTOR, NULL);
+	entity_add_component(e1, COMPONENT_CONTROLLABLE, NULL);
 	// entity_move(e1, VEC3(1.0, 0.0, 0.0));
 
 	// Entity e2 = create_entity();
@@ -107,19 +109,19 @@ void init_sdl()
 
 void init_input()
 {
-	input_register_key((struct InputCallback){ .key = SDLK_ESCAPE, .fn = quit_cb, .onkeydown = true });
-	input_register_key((struct InputCallback){ .key = SDLK_d, .fn = camera_move_right_cb, .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_a, .fn = camera_move_left_cb , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_w, .fn = camera_move_up_cb   , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_s, .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
-	input_register_key((struct InputCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_ESCAPE, .fn = quit_cb, .onkeydown = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_d, .fn = camera_move_right_cb, .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_a, .fn = camera_move_left_cb , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_w, .fn = camera_move_up_cb   , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_s, .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
 
-	input_register_mouse(MOUSE_LEFT , map_select_cells);
-	input_register_mouse(MOUSE_RIGHT, map_deselect_cells);
-	input_register_mouse(MOUSE_DRAG , map_select_cells);
+	input_register_mouse(MOUSE_LEFT , map_select_cells_cb);
+	input_register_mouse(MOUSE_RIGHT, map_deselect_cells_cb);
+	input_register_mouse(MOUSE_DRAG , map_select_cells_cb);
 }
 
 noreturn void quit_cb(bool kdown)
