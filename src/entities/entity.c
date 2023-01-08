@@ -6,6 +6,8 @@
 #include "systems.h"
 #include "entity.h"
 
+inline static struct Capsule get_body_capsule(struct Body* body);
+
 intptr entityc;
 Entity entities[MAX_ENTITIES];
 struct EntityComponents components;
@@ -73,16 +75,13 @@ void entity_move(Entity e, vec3 dir)
 	glm_vec3_copy(dir, body->forces[body->forcec++]);
 }
 
-bool entity_select_by_point(vec3 p)
+bool entity_select_by_ray(struct Ray r)
 {
+	vec3 p;
 	struct Body* body = components.bodies.data;
-	for (int i = 0; i < components.bodies.itemc; i++, body++) {
-		float rect[] = { body->pos[0] - body->r, body->pos[1] + body->h/2.0,
-		                 body->pos[0] + body->r, body->pos[1]};
-		glm_vec3_print(p, stderr);
-		glm_vec4_print(rect, stderr);
-		DEBUG(1, "%d", point_in_rect(p, rect));
-	}
+	for (int i = 0; i < components.bodies.itemc; i++, body++)
+		if (ray_capsule_intersection(r, get_body_capsule(body), p))
+			return true;
 	
 	return false;
 }
@@ -95,11 +94,10 @@ void entity_set_body_dimensions(Entity e)
 		DEBUG(1, "[ENT] Entity %ld does not have a Body component", e);
 		return;
 	}
-	if (!mdl) {
+	if (!mdl)
 		DEBUG(1, "[ENT] !!Warning, entity %ld does not have dimensions (no respective model)!!", e);
-	} else {
-		body->r = MIN(mdl->dim[0], mdl->dim[1]);
-	}
+	else
+		glm_vec3_copy(mdl->dim, body->dim);
 }
 
 void entities_update()
@@ -133,3 +131,20 @@ void entities_free()
 	iarr_free(&components.actors, (void (*)(void*))actor_free);
 }
 
+inline static struct Capsule get_body_capsule(struct Body* body)
+{
+	struct Capsule cap = {
+		.r = MAX(body->dim[0], body->dim[1])/2.0,
+	};
+	glm_vec3_add(body->pos, (vec3){ 0.0, 0.0, -camzlvl + cap.r }, cap.p1);
+	glm_vec3_add(body->pos, (vec3){ 0.0, 0.0, -camzlvl + body->dim[2] - cap.r }, cap.p2);
+
+	// glm_vec3_print(body->pos, stderr);
+	// DEBUG(1, "Capsule:");
+	// glm_vec3_print(cap.p1, stderr);
+	// glm_vec3_print(cap.p2, stderr);
+	// DEBUG_VALUE(cap.r);
+	// exit(0);
+
+	return cap;
+}

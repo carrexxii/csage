@@ -26,8 +26,8 @@ void camera_get_vp(mat4 out)
 	camera_set_perspective();
 
 	glm_translate_make(camview, campos);
-	glm_rotate_x(camview,  glm_rad(45.0), camview);
-	glm_rotate_z(camview, -glm_rad(45.0), camview);
+	// glm_rotate_x(camview,  glm_rad(45.0), camview);
+	// glm_rotate_z(camview, -glm_rad(45.0), camview);
 	glm_rotate_x(camview,  glm_rad(180.0), camview);
 
 	glm_mat4_mul(camproj, camview, out);
@@ -66,14 +66,6 @@ bool camera_select_entity_cb(int btn, bool btndown, int x, int y)
 	if (!btndown)
 		return false;
 
-	return false;
-
-	// struct Ray r = camera_get_mouse_ray(x, y);
-	// ray_print(r);
-
-	// vec3 out;
-	// ray_plane_intersection(r, (vec4){ 0.0, 0.0, -1.0, 0.0 }, out);
-	// glm_vec3_print(out, stderr);
-	// DEBUG(1, " - - - - - - - - - - - -");
+	return entity_select_by_ray(camera_get_mouse_ray(x, y));
 }
 

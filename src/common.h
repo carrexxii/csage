@@ -97,6 +97,7 @@ union Data {
 #define CLAMP(a, b, c)   do { ((a) = (a) < (b)? (b): (a) > (c)? (c): (a));} while (0)
 #define ARRAY_LEN(a)     (sizeof(a)/sizeof(a[0]))
 #define DIV_CEIL(a, b)   (((a) + (b) - 1) / (b))
+#define AVERAGE(a, b)    (((a) + (b)) / 2)
 
 #define STRING_TF(x) ((x)? "true": "false")
 #define STRING_YN(x) ((x)? "yes" : "no"   )
