@@ -29,7 +29,7 @@ void physics_resolve_collisions()
 	struct Body* body;
 	for (int i = 0; i < components.bodies.itemc; i++) {
 		body = &((struct Body*)components.bodies.data)[i];
-		if (collisions_map(body))
+		if (collision_map(body))
 			body->pos[2] = body->prevpos[2];
 	}
 }

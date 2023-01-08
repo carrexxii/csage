@@ -1,4 +1,5 @@
 #include "config.h"
+#include "entities/entity.h"
 #include "camera.h"
 
 #define MIN_ZOOM 1.0
@@ -8,7 +9,7 @@ enum Direction camdir;
 mat4 camproj   = GLM_MAT4_IDENTITY_INIT;
 mat4 camview   = GLM_MAT4_IDENTITY_INIT;
 vec3 campos    = { 0.0, 0.0, 0.0 };
-int camzlvl    = 0;
+int camzlvl    = 4;
 int camzlvlmax = 8;
 static float zoom      = 150.0;
 static float panspeed  = 10.0 * dt;
@@ -25,20 +26,23 @@ void camera_get_vp(mat4 out)
 	camera_set_perspective();
 
 	glm_translate_make(camview, campos);
-	glm_rotate_x(camview,  glm_rad(45.0), camview); // camera_unproject() will need to be
-	glm_rotate_z(camview, -glm_rad(45.0), camview); // changed if these angles are changed
+	glm_rotate_x(camview,  glm_rad(45.0), camview);
+	glm_rotate_z(camview, -glm_rad(45.0), camview);
 	glm_rotate_x(camview,  glm_rad(180.0), camview);
-	// glm_scale(camview, (vec3){ zoom, zoom, zoom });
 
 	glm_mat4_mul(camproj, camview, out);
 }
 
-void camera_unproject(float x, float y, vec3 out)
+struct Ray camera_get_mouse_ray(float x, float y)
 {
 	mat4 vp;
 	camera_get_vp(vp);
-	glm_unproject((vec3){ x, y, 0.0 }, vp, (float[]){ 0.0, 0.0, WINDOW_WIDTH, WINDOW_HEIGHT }, out);
-	glm_vec3_add(out, (vec3){ 0.5*(out[0] + out[1]), 0.5*(out[0] + out[1]), -out[2] }, out); // idk, isometric correction
+
+	vec3 p1, p2;
+	glm_unproject((vec3){ x, y, 0.0 }, vp, (float[]){ 0.0, 0.0, WINDOW_WIDTH, WINDOW_HEIGHT }, p1);
+	glm_unproject((vec3){ x, y, 1.0 }, vp, (float[]){ 0.0, 0.0, WINDOW_WIDTH, WINDOW_HEIGHT }, p2);
+
+	return ray_from_points(p1, p2);
 }
 
 void camera_set_perspective()
@@ -55,5 +59,21 @@ void camera_update()
 	if (camdir & DIR_FORWARDS)  zoom += zoomspeed;
 	if (camdir & DIR_BACKWARDS) zoom -= zoomspeed;
 	CLAMP(zoom, MIN_ZOOM, MAX_ZOOM);
+}
+
+bool camera_select_entity_cb(int btn, bool btndown, int x, int y)
+{
+	if (!btndown)
+		return false;
+
+	return false;
+
+	// struct Ray r = camera_get_mouse_ray(x, y);
+	// ray_print(r);
+
+	// vec3 out;
+	// ray_plane_intersection(r, (vec4){ 0.0, 0.0, -1.0, 0.0 }, out);
+	// glm_vec3_print(out, stderr);
+	// DEBUG(1, " - - - - - - - - - - - -");
 }
 

@@ -18,6 +18,7 @@ struct Model create_model(char* path)
 	uint8  index = 0;
 	float* vert  = NULL;
 	vec3   rgb;
+	vec3   dim;
 	struct Material* materials = NULL;
 	while (fgets(line, LINE_BUFFER_SIZE, file)) {
 		/* File header */
@@ -26,10 +27,8 @@ struct Model create_model(char* path)
 			mdl.materials = scalloc(mdl.materialc, sizeof(struct Material));
 			vert      = mdl.verts;
 			materials = mdl.materials;
-		/* Mesh header */
-		} else if (sscanf(line, "Mesh: %64[a-zA-Z_] %hu", name, &mdl.vertc) >= 2) {
-			if (mdl.verts)
-				ERROR("Not ready for multiple meshes");
+		} else if (sscanf(line, "Dimensions: %f %f %f", dim, dim + 1, dim + 2) >= 3) {
+			glm_vec3_copy(dim, mdl.dim);
 		/* Material header */
 		} else if (sscanf(line, "M %hhu \"%64[a-zA-Z_]\" [%f %f %f]",
 		                  &index, name, &rgb[0], &rgb[1], &rgb[2]) >= 5) {
@@ -52,7 +51,8 @@ struct Model create_model(char* path)
 
 	mdl.vbo = vbo_new(mdl.vertc*SIZEOF_MDL_VERT, mdl.verts);
 
-	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles, %hhu materials)", path, mdl.vertc/3, mdl.materialc);
+	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles, %hhu materials) (dim: %.2fx%.2fx%.2f)",
+	      path, mdl.vertc/3, mdl.materialc, mdl.dim[0], mdl.dim[1], mdl.dim[2]);
 	return mdl;
 }
 
@@ -73,3 +73,4 @@ void free_model(struct Model* mdl)
 	free(mdl->verts);
 	buffer_free(&mdl->vbo);
 }
+

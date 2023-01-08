@@ -50,9 +50,9 @@ void entity_add_component(Entity e, enum Component c, void* data)
 			renderer_add_light(*light);
 			break;
 		case COMPONENT_BODY:
-			// TODO: Add fetching dimensions from a model associated with the body
 			glm_vec3_copy(((struct Body*)data)->pos, ((struct Body*)data)->prevpos);
 			iarr_append(&components.bodies, e, data);
+			entity_set_body_dimensions(e);
 			break;
 		case COMPONENT_ACTOR:
 			actor = (struct Actor){ 0 };
@@ -71,6 +71,35 @@ void entity_move(Entity e, vec3 dir)
 	struct Body* body = (struct Body*)iarr_get(components.bodies, e);
 	body->forcec = 0;
 	glm_vec3_copy(dir, body->forces[body->forcec++]);
+}
+
+bool entity_select_by_point(vec3 p)
+{
+	struct Body* body = components.bodies.data;
+	for (int i = 0; i < components.bodies.itemc; i++, body++) {
+		float rect[] = { body->pos[0] - body->r, body->pos[1] + body->h/2.0,
+		                 body->pos[0] + body->r, body->pos[1]};
+		glm_vec3_print(p, stderr);
+		glm_vec4_print(rect, stderr);
+		DEBUG(1, "%d", point_in_rect(p, rect));
+	}
+	
+	return false;
+}
+
+void entity_set_body_dimensions(Entity e)
+{
+	struct Model* mdl = iarr_get(components.mdls, e);
+	struct Body* body = iarr_get(components.bodies, e);
+	if (!body) {
+		DEBUG(1, "[ENT] Entity %ld does not have a Body component", e);
+		return;
+	}
+	if (!mdl) {
+		DEBUG(1, "[ENT] !!Warning, entity %ld does not have dimensions (no respective model)!!", e);
+	} else {
+		body->r = MIN(mdl->dim[0], mdl->dim[1]);
+	}
 }
 
 void entities_update()

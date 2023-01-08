@@ -16,7 +16,7 @@ struct IArray iarr_new(intptr itemsz, intptr sz)
 	return arr;
 }
 
-inline void iarr_resize(struct IArray* arr, intptr sz)
+void iarr_resize(struct IArray* arr, intptr sz)
 {
 	arr->inds = srealloc(arr->inds, sz*(sizeof(uint16) + arr->itemsz));
 	arr->sz   = sz;

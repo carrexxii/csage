@@ -6,7 +6,8 @@
 void physics_integrate();
 void physics_resolve_collisions();
 
-bool collisions_map(struct Body* body);
+bool collision_map(struct Body* body);
+bool collision_ray(struct Body* body, struct Ray ray);
 
 void actors_update();
 void actor_free(struct Actor* actor);

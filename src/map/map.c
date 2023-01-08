@@ -117,7 +117,7 @@ bool map_select_cells_cb(int btn, bool btndown, int x, int y)
 	if (btn == MOUSE_LEFT) {
 		mbdown = btndown;
 		if (btndown) {
-			camera_unproject((float)x, (float)y, p);
+			ray_plane_intersection(camera_get_mouse_ray(x, y), (vec4){ 0.0, 0.0, -1.0, 0.0 }, p);
 			ivec3_copy_vec3(p, mapdd.selection[0]);
 			ivec3_copy_vec3(p, mapdd.selection[1]);
 		}
@@ -125,7 +125,7 @@ bool map_select_cells_cb(int btn, bool btndown, int x, int y)
 		if (!mbdown) {
 			glm_vec3_copy((vec3){ 0, 0, 0 }, p);
 		} else {
-			camera_unproject((float)x, (float)y, p);
+			ray_plane_intersection(camera_get_mouse_ray(x, y), (vec4){ 0.0, 0.0, -1.0, 0.0 }, p);
 			ivec3_copy_vec3(p, mapdd.selection[1]);
 		}
 	}

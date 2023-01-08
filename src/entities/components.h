@@ -6,6 +6,7 @@
 #define G 10.0
 
 #define BODY_MAX_FORCES 4
+#define CAPSULE_RADIUS_PERCENTAGE 0.2
 
 enum Component {
 	COMPONENT_NONE         = 0x00,
@@ -23,13 +24,14 @@ enum Shape {
 };
 
 struct Body {
+	float h;
+	float r;
 	vec3 pos;
 	vec3 prevpos;
-	vec3 dim;
 	float dir;
 	uint8 forcec;
 	vec3  forces[BODY_MAX_FORCES];
-}; static_assert(sizeof(struct Body) == 92, "struct Body");
+}; static_assert(sizeof(struct Body) == 88, "struct Body");
 
 enum ActorState {
 	ACTOR_NONE = 0,

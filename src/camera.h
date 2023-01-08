@@ -11,9 +11,10 @@ extern int camzlvlmax;
 
 void camera_init();
 void camera_get_vp(mat4 out);
-void camera_unproject(float x, float y, vec3 out);
+struct Ray camera_get_mouse_ray(float x, float y);
 void camera_set_perspective();
 void camera_update();
+bool camera_select_entity_cb(int btn, bool btndown, int x, int y);
 
 static void camera_move_up_cb(bool kdown)    { if (kdown) camdir |= DIR_UP;    else camdir &= ~DIR_UP;    }
 static void camera_move_down_cb(bool kdown)  { if (kdown) camdir |= DIR_DOWN;  else camdir &= ~DIR_DOWN;  }

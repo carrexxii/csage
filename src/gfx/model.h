@@ -11,11 +11,13 @@ struct Model {
 	VBO    vbo;
 	float* verts; /* TODO: Remove this? */
 	struct Material* materials; /* TODO: These don't need to be stored after mesh is loaded */
+	vec3   dim;
 	uint16 vertc;
 	uint8  materialc;
-}; static_assert(sizeof(struct Model) == 48, "struct Model");
+}; static_assert(sizeof(struct Model) == 56, "struct Model");
 
 struct Model create_model(char* path);
 void free_model(struct Model* mdl);
 
 #endif
+

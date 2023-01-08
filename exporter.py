@@ -9,8 +9,9 @@ class Material:
         self.colour = colour
 
 def write_file(path):
-    objs   = bpy.data.objects
-    meshes = bpy.data.meshes
+    context = bpy.context
+    objs    = bpy.data.objects
+    meshes  = bpy.data.meshes
     
     materials  = {}
     vert_count = 0
@@ -24,6 +25,7 @@ def write_file(path):
     
     with open(path, "w", encoding="utf-8") as file:
         file.write("Vertices: %d; Materials: %d\n" % (vert_count, len(materials)))
+        file.write("Dimensions: %.2f %.2f %.2f\n" % context.object.dimensions[:])
         for mat in materials:
             file.write("M %d \"%s\" " % (materials[mat].index, mat))
             file.write("[%.2f %.2f %.2f]" % materials[mat].colour)
