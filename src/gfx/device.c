@@ -99,7 +99,7 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 
 	vkGetDeviceQueue(gpu, qinds.present , 0, &presentq);
 	vkGetDeviceQueue(gpu, qinds.graphics, 0, &graphicsq);
-	vkGetDeviceQueue(gpu, qinds.transfer, 0, &transferq);
+	// vkGetDeviceQueue(gpu, qinds.transfer, 0, &transferq);
 }
 
 void device_free()

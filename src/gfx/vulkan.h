@@ -20,10 +20,10 @@
         #define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
                                                  "VK_LAYER_LUNARG_monitor" }
     #else
-        #define VK_LAYERC 3
+        #define VK_LAYERC 2
         #define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
-                                                 "VK_LAYER_LUNARG_monitor",     \
-                                                 "VK_LAYER_RENDERDOC_Capture", }
+                                                 "VK_LAYER_LUNARG_monitor",     }
+                                                 // "VK_LAYER_RENDERDOC_Capture", }
     #endif
 #else
     #define VK_LAYERC 0
