@@ -167,7 +167,7 @@ void free_pipeln(struct Pipeline* pipeln)
 	for (int i = 0; i < pipeln->uboc; i++)
 		if (pipeln->ubos[i]->sz)
 			ubo_free(pipeln->ubos[i]);
-	if (pipeln->sbo->sz)
+	if (pipeln->sbo)
 		sbo_free(pipeln->sbo);
 }
 

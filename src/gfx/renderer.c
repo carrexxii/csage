@@ -2,7 +2,6 @@
 #include <cglm/mat4.h>
 #include <vulkan/vulkan.h>
 
-#include "map/map.h"
 #include "util/iarray.h"
 #include "config.h"
 #include "vulkan.h"
@@ -11,7 +10,6 @@
 #include "image.h"
 #include "pipeline.h"
 #include "swapchain.h"
-#include "model.h"
 #include "vertices.h"
 #include "camera.h"
 #include "renderer.h"
@@ -34,26 +32,14 @@ static struct {
 static VkRenderPass     renderpass;
 static VkFramebuffer*   framebufs;
 static VkCommandBuffer* cmdbufs;
-static struct Pipeline  mdlpipeln;
-static struct Pipeline  vxlpipeln;
-
-static struct Lighting {
-	vec3  sundir;
-	float ambient;
-	float sunpower;
-	int16 lightc;
-	vec4  lights[RENDERER_MAX_LIGHTS];
-} lighting;
+static struct Pipeline  pipeln;
 
 mat4* renmats;
 intptr*       renmdlc;
 struct Model* renmdls;
-int*  renlightc;
-vec4* renlights;
 static uint ubobufc;
 static UBO ubobufs[8];
 static SBO matbuf;
-static SBO mapbuf;
 
 void renderer_init()
 {
@@ -126,44 +112,19 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	matbuf = sbo_new(RENDERER_MAX_OBJECTS*sizeof(mat4));
-	mapbuf = sbo_new(sizeof(struct MapDrawData));
 	ubobufs[ubobufc++] = ubo_new(sizeof(mat4));
-	ubobufs[ubobufc++] = ubo_new(sizeof(lighting) + RENDERER_MAX_LIGHTS*sizeof(vec4));
-
-	mdlpipeln.vshader   = create_shader(SHADER_DIR "model.vert");
-	mdlpipeln.fshader   = create_shader(SHADER_DIR "model.frag");
-	mdlpipeln.vertbindc = 1;
-	mdlpipeln.vertbinds = mdlvertbinds;
-	mdlpipeln.vertattrc = ARRAY_LEN(mdlvertattrs);
-	mdlpipeln.vertattrs = mdlvertattrs;
-	mdlpipeln.uboc      = 2;
-	mdlpipeln.ubos      = scalloc(2, sizeof(UBO));
-	mdlpipeln.ubos[0]   = &ubobufs[0];
-	mdlpipeln.ubos[1]   = &ubobufs[1];
-	mdlpipeln.sbo       = &matbuf;
-	mdlpipeln.sbosz     = RENDERER_MAX_OBJECTS*sizeof(mat4);
-	init_pipeln(&mdlpipeln, renderpass);
-
-	vxlpipeln.vshader   = create_shader(SHADER_DIR "voxel.vert");
-	vxlpipeln.gshader   = create_shader(SHADER_DIR "voxel.geom");
-	vxlpipeln.fshader   = create_shader(SHADER_DIR "voxel.frag");
-	vxlpipeln.vertbindc = 1;
-	vxlpipeln.vertbinds = vxlvertbinds;
-	vxlpipeln.vertattrc = ARRAY_LEN(vxlvertattrs);
-	vxlpipeln.vertattrs = vxlvertattrs;
-	vxlpipeln.uboc      = 2;
-	vxlpipeln.ubos      = scalloc(2, sizeof(UBO));
-	vxlpipeln.ubos[0]   = &ubobufs[0];
-	vxlpipeln.ubos[1]   = &ubobufs[1];
-	vxlpipeln.sbo       = &mapbuf;
-	vxlpipeln.sbosz     = sizeof(struct MapDrawData);
-	init_pipeln(&vxlpipeln, renderpass);
-
-	glm_vec3_copy((vec3){ 0.0, 100.0, -50.0 }, lighting.sundir);
-	glm_vec3_normalize(lighting.sundir);
-	lighting.ambient  = 0.1;
-	lighting.sunpower = 2.0;
+	pipeln.vshader   = create_shader(SHADER_DIR "shader.vert");
+	pipeln.fshader   = create_shader(SHADER_DIR "shader.frag");
+	pipeln.vertbindc = 1;
+	pipeln.vertbinds = mdlvertbinds;
+	pipeln.vertattrc = ARRAY_LEN(mdlvertattrs);
+	pipeln.vertattrs = mdlvertattrs;
+	pipeln.uboc      = 1;
+	pipeln.ubos      = scalloc(1, sizeof(UBO));
+	pipeln.ubos[0]   = &ubobufs[0];
+	pipeln.sbo       = NULL;
+	pipeln.sbosz     = 0;
+	init_pipeln(&pipeln, renderpass);
 }
 
 void renderer_draw()
@@ -209,21 +170,6 @@ void renderer_draw()
 	frame = (frame + 1) % FRAMES_IN_FLIGHT;
 }
 
-void renderer_add_light(vec4 light)
-{
-	if (lighting.lightc >= RENDERER_MAX_LIGHTS)
-		ERROR("[GFX] Maximum number of lights reached");
-	glm_vec4_copy(light, lighting.lights[lighting.lightc++]);
-	DEBUG(3, "[GFX] Added light [%.4f %.4f %.4f] :: %.4f", light[0], light[1], light[2], light[3]);
-}
-
-void renderer_set_lights(int lightc, vec4* lights)
-{
-	if (lightc > RENDERER_MAX_LIGHTS)
-		ERROR("[GFX] %d exceeds the maximum number of lights (%d)", lightc, RENDERER_MAX_LIGHTS);
-	memcpy(lighting.lights, lights, lightc*sizeof(vec4));
-}
-
 void renderer_free()
 {
 	vkDeviceWaitIdle(gpu);
@@ -244,8 +190,7 @@ void renderer_free()
 
 	while (ubobufc--)
 		ubo_free(&ubobufs[ubobufc]);
-	free_pipeln(&mdlpipeln);
-	free_pipeln(&vxlpipeln);
+	free_pipeln(&pipeln);
 
 	DEBUG(3, "[VK] Destroying render pass...");
 	vkDestroyRenderPass(gpu, renderpass, alloccb);
@@ -286,22 +231,12 @@ static void record_command(int imgi)
 
 	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.pipeln);
-	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vxlpipeln.layout, 0, 1, &vxlpipeln.dset, 0, NULL);
-	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &map.verts.buf, (VkDeviceSize[]) { 0 });
-	for (int i = 0; i < map.blockc; i++) {
-		if (!map_is_block_visible(i))
-			continue;
-		vkCmdBindIndexBuffer(cmdbuf, map.ibos[i].buf, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(cmdbuf, map.indcs[i], 1, 0, 0, i);
-	}
-
-	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.pipeln);
-	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mdlpipeln.layout, 0, 1, &mdlpipeln.dset, 0, NULL);
-	for (int i = 0; i < *renmdlc; i++) {
-		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
-	}
+	// vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
+	// vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	// for (int i = 0; i < *renmdlc; i++) {
+	// 	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
+	// 	vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
+	// }
 
 	vkCmdEndRenderPass(cmdbuf);
 	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)
@@ -313,22 +248,16 @@ inline static void buffer_updates()
 	void*  mem;
 	intptr memsz;
 
-	if (*renmdlc) {
-		memsz = (*renmdlc)*sizeof(mat4);
-		vkMapMemory(gpu, mdlpipeln.sbo->mem, 0, memsz, 0, &mem);
-		memcpy(mem, renmats, memsz);
-		vkUnmapMemory(gpu, mdlpipeln.sbo->mem);
-	}
+	// if (*renmdlc) {
+	// 	memsz = (*renmdlc)*sizeof(mat4);
+	// 	vkMapMemory(gpu, pipeln.sbo->mem, 0, memsz, 0, &mem);
+	// 	memcpy(mem, renmats, memsz);
+	// 	vkUnmapMemory(gpu, pipeln.sbo->mem);
+	// }
 
 	mat4 vp;
 	camera_get_vp(vp);
-	buffer_update(*mdlpipeln.ubos[0], sizeof(mat4), vp);
-	buffer_update(*mdlpipeln.ubos[1], sizeof(struct Lighting), &lighting);
-
-	memsz = sizeof(struct MapDrawData);
-	vkMapMemory(gpu, vxlpipeln.sbo->mem, 0, memsz, 0, &mem);
-	memcpy(mem, &mapdd, memsz);
-	vkUnmapMemory(gpu, vxlpipeln.sbo->mem);
+	buffer_update(*pipeln.ubos[0], sizeof(mat4), vp);
 }
 
 static void create_framebuffers()
