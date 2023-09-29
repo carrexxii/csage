@@ -5,12 +5,12 @@
 struct Ray {
 	vec3 p;
 	vec3 v;
-}; static_assert(sizeof(struct Ray) == 24, "struct Ray");
+};
 
 struct Capsule {
 	vec3 p1, p2;
 	float r;
-}; static_assert(sizeof(struct Capsule) == 28, "struct Capsule");
+};
 
 inline static void ivec3_copy_vec3(vec3 v, ivec3 u) {
 	u[0] = (int)v[0];

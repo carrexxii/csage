@@ -231,12 +231,13 @@ static void record_command(int imgi)
 
 	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
-	// vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	// vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
-	// for (int i = 0; i < *renmdlc; i++) {
-	// 	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
-	// 	vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
-	// }
+	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
+	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	for (int i = 0; i < *renmdlc; i++) {
+		// DEBUG(1, "Drawing %d verts (%d)", renmdls[i].vertc, renmdls[i].vbo.buf);
+		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
+	}
 
 	vkCmdEndRenderPass(cmdbuf);
 	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)

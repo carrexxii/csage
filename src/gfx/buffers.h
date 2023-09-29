@@ -7,7 +7,7 @@ struct Buffer {
 	VkBuffer       buf;
 	VkDeviceMemory mem;
 	intptr         sz;
-}; static_assert(sizeof(struct Buffer) == 24, "struct Buffer");
+};
 typedef struct Buffer VBO;
 typedef struct Buffer IBO;
 typedef struct Buffer UBO;

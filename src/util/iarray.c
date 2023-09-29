@@ -99,4 +99,3 @@ void iarr_free(struct IArray* arr, void (*cb)(void*))
 				cb((byte*)arr->data + i*arr->itemsz);
 	free(arr->inds); /* This also frees the data */
 }
-

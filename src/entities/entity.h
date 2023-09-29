@@ -18,11 +18,8 @@ void   entities_update();
 void   entities_free();
 
 extern struct EntityComponents {
-	struct IArray mdls;
 	struct IArray mats;
-	struct IArray lights;
-	struct IArray bodies;
-	struct IArray actors;
+	struct IArray mdls;
 } components;
 
 extern intptr entityc;

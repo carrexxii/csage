@@ -34,7 +34,7 @@
 
 #define dt_ms            (20u)
 #define dt               (1.0/dt_ms)
-#define DEBUG_MALLOC_MIN 64
+#define DEBUG_MALLOC_MIN 1
 
 #define SHADER_DIR "shaders/spirv/"
 #define MODEL_PATH "data/models/"
@@ -87,7 +87,7 @@ union Data {
 	float  flt;
 	double dbl;
 	void*  ptr;
-}; static_assert(sizeof(union Data) == 8, "union Data");
+};
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))

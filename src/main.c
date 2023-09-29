@@ -10,6 +10,7 @@
 #include "input.h"
 #include "entities/entity.h"
 
+#include "gfx/polygon.h"
 #include "entities/components.h"
 #include "entities/systems.h"
 
@@ -43,6 +44,12 @@ int main(int argc, char** argv)
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
 	taskmgr_add_task(entities_update);
+
+	/* ------------------------------------------------------------------------ */
+	Entity e1 = entity_new();
+	struct Model mdl1 = polygon_to_model(polygon_new(4, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0), true);
+	entity_add_component(e1, COMPONENT_MODEL, &mdl1);
+	/* ------------------------------------------------------------------------ */
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());

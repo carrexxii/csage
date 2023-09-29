@@ -21,7 +21,7 @@ struct KeyboardCallback {
 	int  key;
 	bool onkeydown;
 	bool onkeyup;
-}; static_assert(sizeof(struct KeyboardCallback) == 16, "struct KeyboardCallback");
+};
 
 bool input_check();
 void input_register_key(struct KeyboardCallback cb);

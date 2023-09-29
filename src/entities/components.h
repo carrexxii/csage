@@ -2,12 +2,8 @@
 #define ENTITIES_COMPONENTS_H
 
 enum Component {
-	COMPONENT_NONE         = 0x00,
-	COMPONENT_MODEL        = 0x01,
-	COMPONENT_LIGHT        = 0x02,
-	COMPONENT_BODY         = 0x04,
-	COMPONENT_ACTOR        = 0x08,
-	COMPONENT_CONTROLLABLE = 0x10,
+	COMPONENT_NONE  = 0x00,
+	COMPONENT_MODEL = 0x01,
 };
 
 #endif

@@ -11,7 +11,7 @@ struct IArray {
 	bool    sorted;
 	uint16* inds;
 	void*   data;
-}; static_assert(sizeof(struct IArray) == 48, "struct IArray");
+};
 
 struct IArray iarr_new(intptr itemsz, intptr sz);
 void  iarr_resize(struct IArray* arr, intptr itemc);

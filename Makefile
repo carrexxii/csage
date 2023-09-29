@@ -17,7 +17,7 @@ WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else 
            -Wstrict-aliasing -Wno-parentheses -Wno-missing-braces -Wno-missing-field-initializers              \
            -Wno-unused-parameter -Wno-ignored-qualifiers -Wno-unused-variable -Wno-unused-function             \
            -Werror=implicit-function-declaration
-CFLAGS   = -std=c18 -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pipe $(WARNINGS) -I$(SRCDIR) \
+CFLAGS   = -std=c2x -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pipe $(WARNINGS) -I$(SRCDIR) \
            -isystem $(LIBDIR)/include -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH)             \
            -fstack-clash-protection -fstack-protector-strong -pie
 LUAFLAGS = -O0
