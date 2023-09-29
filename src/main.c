@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 
 	/* ------------------------------------------------------------------------ */
 	Entity e1 = entity_new();
-	struct Model mdl1 = polygon_to_model(polygon_new(4, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0), true);
+	struct Model mdl1 = polygon_to_model(polygon_new(6, 0.0, 0.0, 0.2, 0.3, 0.4, 0.3, 0.6, 0.0, 0.4, -0.3, 0.2, -0.3, 0.0, 0.0), true);
 	entity_add_component(e1, COMPONENT_MODEL, &mdl1);
 	/* ------------------------------------------------------------------------ */
 

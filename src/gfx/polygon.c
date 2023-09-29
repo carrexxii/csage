@@ -45,11 +45,9 @@ struct Model polygon_to_model(struct Polygon poly, bool free_poly)
 		*v++ = 1.0;
 		*v++ = 1.0;
 		*v++ = 1.0;
-		DEBUG(1, "%f, %f, %f, %f, %f, %f", poly.verts[0], poly.verts[1], poly.verts[2*i + 2], poly.verts[2*i + 3], poly.verts[2*i + 4], poly.verts[2*i + 5]);
 	}
 	mdl.vbo = vbo_new(memsz, verts);
 
-	polygon_print(poly);
 	if (free_poly)
 		polygon_free(poly);
 	free(verts);
