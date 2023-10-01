@@ -20,6 +20,7 @@ void   entities_free();
 extern struct EntityComponents {
 	struct IArray mats;
 	struct IArray mdls;
+	struct IArray bodies;
 } components;
 
 extern intptr entityc;

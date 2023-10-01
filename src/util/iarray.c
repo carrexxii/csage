@@ -38,6 +38,7 @@ void* iarr_append(struct IArray* arr, intptr i, void* data)
 	return mem;
 }
 
+/* Don't think this works */
 void* iarr_get(struct IArray arr, intptr i)
 {
 	intptr arri;
@@ -45,6 +46,7 @@ void* iarr_get(struct IArray arr, intptr i)
 		arri = bin_search(arr.itemc, arr.inds, i);
 	else
 		arri = linear_search(arr.itemc, arr.inds, i);
+	D;
 
 	if (arri >= 0)
 		return (byte*)arr.data + arri*arr.itemsz;

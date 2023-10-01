@@ -112,7 +112,9 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
+	matbuf = sbo_new(RENDERER_MAX_OBJECTS*sizeof(mat4));
 	ubobufs[ubobufc++] = ubo_new(sizeof(mat4));
+
 	pipeln.vshader   = create_shader(SHADER_DIR "shader.vert");
 	pipeln.fshader   = create_shader(SHADER_DIR "shader.frag");
 	pipeln.vertbindc = 1;
@@ -122,8 +124,8 @@ void renderer_init()
 	pipeln.uboc      = 1;
 	pipeln.ubos      = scalloc(1, sizeof(UBO));
 	pipeln.ubos[0]   = &ubobufs[0];
-	pipeln.sbo       = NULL;
-	pipeln.sbosz     = 0;
+	pipeln.sbo       = &matbuf;
+	pipeln.sbosz     = sizeof(mat4)*RENDERER_MAX_OBJECTS;
 	init_pipeln(&pipeln, renderpass);
 }
 
@@ -249,12 +251,13 @@ inline static void buffer_updates()
 	void*  mem;
 	intptr memsz;
 
-	// if (*renmdlc) {
-	// 	memsz = (*renmdlc)*sizeof(mat4);
-	// 	vkMapMemory(gpu, pipeln.sbo->mem, 0, memsz, 0, &mem);
-	// 	memcpy(mem, renmats, memsz);
-	// 	vkUnmapMemory(gpu, pipeln.sbo->mem);
-	// }
+	if (*renmdlc) {
+		memsz = (*renmdlc)*sizeof(mat4);
+		vkMapMemory(gpu, pipeln.sbo->mem, 0, memsz, 0, &mem);
+		// glm_mat4_print(renmats, stderr);
+		memcpy(mem, renmats, memsz);
+		vkUnmapMemory(gpu, pipeln.sbo->mem);
+	}
 
 	mat4 vp;
 	camera_get_vp(vp);
