@@ -11,9 +11,10 @@ struct EntityComponents components;
 
 void entities_init()
 {
-	components.mats   = iarr_new(sizeof(mat4), 10);
-	components.mdls   = iarr_new(sizeof(struct Model), 10);
-	components.bodies = iarr_new(sizeof(struct Body), 10);
+	components.mats      = iarr_new(sizeof(mat4), 10);
+	components.mdls      = iarr_new(sizeof(struct Model), 10);
+	components.bodies    = iarr_new(sizeof(struct Body), 10);
+	components.thrusters = iarr_new(sizeof(struct Thruster), 10);
 
 	renmats = components.mats.data;
 	renmdls = components.mdls.data;
@@ -28,37 +29,48 @@ Entity entity_new()
 	return entityc;
 }
 
-void entity_add_component(Entity e, enum Component c, void* data)
+void* entity_add_component(Entity e, enum Component c, void* data)
 {
-	if (!e || (intptr)e > entityc)
-		ERROR("[ENT] Invalid entity");
+	void* obj = NULL;
 	switch (c) {
 		case COMPONENT_NONE:
 			ERROR("[ENT] Trying to add COMPONENT_NONE");
 			break;
 		case COMPONENT_MODEL:
 			struct Model mdl = *(struct Model*)data;
-			iarr_append(&components.mdls, e, &mdl);
+			obj = iarr_append(&components.mdls, e, &mdl);
 			break;
 		case COMPONENT_BODY:
-			iarr_append(&components.bodies, e, (struct Body*)data);
+			obj = iarr_append(&components.bodies, e, (struct Body*)data);
+			break;
+		case COMPONENT_THRUSTER:
+			obj = iarr_append(&components.thrusters, e, (struct Thruster*)data);
 			break;
 		default:
 			ERROR("[ENT] Unhandled component add: %u", c);
 	}
 	entities[e] |= c;
+	return obj;
 }
 
 void entities_update()
 {
-	/* Update the model matrices for each entity */
+	struct Thruster* thrusters = components.thrusters.data;
+	for (int i = 0; i < components.thrusters.itemc; i++)
+		if (components.thrusters.inds[i] && thrusters[i].F > FLT_EPSILON)
+			physics_apply_thrust(thrusters[i]);
+
+	struct Body* bodies = components.bodies.data;
+	for (int i = 0; i < components.bodies.itemc; i++)
+		if (components.bodies.inds[i])
+			physics_integrate(bodies + i);
+
+	/* Update the model matrix for each entity */
 	mat4 mat;
-	struct Body body;
-	void* arr;
-	for (int i = 0; i < entityc; i++) {
-		body = ((struct Body*)components.bodies.data)[i];
+	struct Body* body = components.bodies.data;
+	for (int i = 0; i < components.bodies.itemc; body++, i++) {
 		glm_mat4_identity(mat);
-		glm_translate(mat, (vec3){ body.pos[0], body.pos[1], 0.0 });
+		glm_translate(mat, (vec3){ body->s[0], body->s[1], 0.0 });
 		glm_mat4_ucopy(mat, ((mat4*)components.mats.data)[i]);
 	}
 }

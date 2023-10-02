@@ -11,7 +11,7 @@ struct Polygon {
 };
 
 struct Polygon polygon_new(int vertc, ...);
-struct Model polygon_to_model(struct Polygon poly, bool freepoly);
+struct Model polygon_to_model(struct Polygon poly, vec3 colour, bool freepoly);
 void polygon_print(struct Polygon poly);
 void polygon_free(struct Polygon poly);
 

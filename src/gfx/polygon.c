@@ -20,7 +20,7 @@ struct Polygon polygon_new(int vertc, ...)
 	return poly;
 }
 
-struct Model polygon_to_model(struct Polygon poly, bool free_poly)
+struct Model polygon_to_model(struct Polygon poly, vec3 colour, bool free_poly)
 {
 	struct Model mdl;
 	int tric  = poly.vertc - 2;
@@ -32,19 +32,19 @@ struct Model polygon_to_model(struct Polygon poly, bool free_poly)
 	for (int i = 0; i < tric; i++) {
 		*v++ = poly.verts[0];
 		*v++ = poly.verts[1];
-		*v++ = 1.0;
-		*v++ = 1.0;
-		*v++ = 1.0;
+		*v++ = colour[0];
+		*v++ = colour[1];
+		*v++ = colour[2];
 		*v++ = poly.verts[2*i + 2];
 		*v++ = poly.verts[2*i + 3];
-		*v++ = 1.0;
-		*v++ = 1.0;
-		*v++ = 1.0;
+		*v++ = colour[0];
+		*v++ = colour[1];
+		*v++ = colour[2];
 		*v++ = poly.verts[2*i + 4];
 		*v++ = poly.verts[2*i + 5];
-		*v++ = 1.0;
-		*v++ = 1.0;
-		*v++ = 1.0;
+		*v++ = colour[0];
+		*v++ = colour[1];
+		*v++ = colour[2];
 	}
 	mdl.vbo = vbo_new(memsz, verts);
 

@@ -47,16 +47,18 @@ int main(int argc, char** argv)
 
 	/* ------------------------------------------------------------------------ */
 	Entity e1 = entity_new();
-	struct Model mdl1 = polygon_to_model(polygon_new(6, 0.0, 0.0, 0.2, 0.3, 0.4, 0.3, 0.6, 0.0, 0.4, -0.3, 0.2, -0.3, 0.0, 0.0), true);
+	struct Model mdl1 = polygon_to_model(polygon_new(6, 0.0, 0.0, 0.2, 0.3, 0.4, 0.3, 0.6, 0.0, 0.4, -0.3, 0.2, -0.3, 0.0, 0.0), (vec3){ 0.8, 0.2, 0.2 }, true);
 	entity_add_component(e1, COMPONENT_MODEL, &mdl1);
-	struct Body body1 = (struct Body){ .pos = { 5.0, 5.0 }, };
+	struct Body body1 = (struct Body){ .s = { 1.0, 1.0 }, .m = 10.0 };
 	entity_add_component(e1, COMPONENT_BODY, &body1);
 
 	Entity e2 = entity_new();
-	struct Model mdl2 = polygon_to_model(polygon_new(4, 0.0, 0.0, 0.0, 0.2, 0.2, 0.2, 0.2, 0.0, 0.0, 0.0), true);
+	struct Model mdl2 = polygon_to_model(polygon_new(3, -0.2, 0.0, 0.0, 0.7, 0.2, 0.0), (vec3){ 0.5, 0.5, 0.5 }, true);
 	entity_add_component(e2, COMPONENT_MODEL, &mdl2);
-	struct Body body2 = (struct Body){ .pos = { 0.0, 0.0 }, };
-	entity_add_component(e2, COMPONENT_BODY, &body2);
+	struct Body body2 = (struct Body){ .s = { 0.0, 0.0 }, .m = 10.0 };
+	struct Body* bp = entity_add_component(e2, COMPONENT_BODY, &body2);
+	struct Thruster thruster = (struct Thruster){ .parent = bp, .s = { 0.0, 0.0 }, .F = 0.02, .Fmin = 0.0, .Fmax = 10.0 };
+	entity_add_component(e2, COMPONENT_THRUSTER, &thruster);
 	/* ------------------------------------------------------------------------ */
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
