@@ -32,9 +32,11 @@
 #define CGLM_DEFINE_PRINTS
 #include "cglm/cglm.h"
 
-#define dt_ms            (20u)
-#define dt               (1.0/dt_ms)
-#define DEBUG_MALLOC_MIN 1
+#define dt_ms                    (20u)
+#define dt                       (1.0/dt_ms)
+#define DEBUG_MALLOC_MIN         1
+#define BODY_MAX_POLYGONS        16
+#define MAX_VERTICES_PER_POLYGON 32
 
 #define SHADER_DIR "shaders/spirv/"
 #define MODEL_PATH "data/models/"

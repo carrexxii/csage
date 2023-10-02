@@ -70,6 +70,12 @@ void entities_update()
 	struct Body* body = components.bodies.data;
 	for (int i = 0; i < components.bodies.itemc; body++, i++) {
 		glm_mat4_identity(mat);
+		// ********************************************************************
+		     if (body->s[0] >  3.0) body->s[0] = -3.0;
+		else if (body->s[0] < -3.0) body->s[0] =  3.0;
+		else if (body->s[1] >  3.0) body->s[1] = -3.0;
+		else if (body->s[1] < -3.0) body->s[1] =  3.0;
+		// ********************************************************************
 		glm_translate(mat, (vec3){ body->s[0], body->s[1], 0.0 });
 		glm_mat4_ucopy(mat, ((mat4*)components.mats.data)[i]);
 	}
