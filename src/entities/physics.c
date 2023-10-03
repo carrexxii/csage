@@ -1,17 +1,18 @@
 #include "physics.h"
+#include "common.h"
 
-void physics_apply_thrust(struct Thruster thruster)
+void physics_apply_thrust(struct Thruster thruster, struct Body* body)
 {
-	thruster.parent->a[0] = thruster.F*sinf(thruster.θ - thruster.parent->θ)/thruster.parent->m;
-	thruster.parent->a[1] = thruster.F*cosf(thruster.θ - thruster.parent->θ)/thruster.parent->m;
+	body->a[0] = thruster.F*sinf(thruster.θ - body->θ)/body->m;
+	body->a[1] = thruster.F*cosf(thruster.θ - body->θ)/body->m;
 
 	vec2 F, r;
 	float τ;
-	F[0] = thruster.F*cosf(thruster.θ);
-	F[1] = thruster.F*sinf(thruster.θ);
-	glm_vec2_sub(thruster.parent->cm, thruster.s, r);
+	F[0] = thruster.F*sinf(thruster.θ);
+	F[1] = thruster.F*cosf(thruster.θ);
+	glm_vec2_sub(thruster.s, body->cm, r);
 	τ = glm_vec2_cross(r, F);
-	thruster.parent->α = τ/thruster.parent->I;
+	body->α = τ/body->I;
 }
 
 void physics_integrate(struct Body* body)

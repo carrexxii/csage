@@ -130,7 +130,7 @@ inline static float polygon_moment(int vertc, vec2 verts, vec2 cm, float m)
 {
 	float I = 0;
 	float r;
-	for (int i = 0; i < vertc; i++) {
+	for (int i = 0; i < vertc/2; i++) {
 		r = glm_vec2_distance(cm, verts + i);
 		I += r*r;
 	}

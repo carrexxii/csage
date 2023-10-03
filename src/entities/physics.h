@@ -10,10 +10,13 @@ struct Body {
 };
 
 struct Thruster {
-	struct Body* parent;
+	float F, Fmin, Fmax;
 	float θ;
 	vec2 s;
-	float F, Fmin, Fmax;
+	struct Thruster* next;
 };
+
+void physics_apply_thrust(struct Thruster thruster, struct Body* body);
+void physics_integrate(struct Body* body);
 
 #endif

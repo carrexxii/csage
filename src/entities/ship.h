@@ -21,8 +21,6 @@ struct Ship {
 
 void ships_init();
 ShipID ship_new(enum ShipType type);
-void ship_add_body(ShipID ship, enum ShipType type);
-// void ship_add_thruster();
 void ships_update();
 void ships_free();
 
