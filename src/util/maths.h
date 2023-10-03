@@ -126,21 +126,16 @@ inline static bool point_in_rect(vec2 p, vec4 rect) {
 	        (p[1] >= rect[1] && p[1] <= rect[3]));
 }
 
-inline static float polygon_moment(int vertc, vec2 verts, float m)
+inline static float polygon_moment(int vertc, vec2 verts, vec2 cm, float m)
 {
-	float numer = 0.0;
-	for (int i = 0; i < vertc - 1; i++) {
-		numer += glm_vec2_dot(&verts[i], &verts[i]);
-		numer += glm_vec2_dot(&verts[i + 1], &verts[i]);
-		numer += glm_vec2_dot(&verts[i + 1], &verts[i + 1]);
-		numer *= glm_vec2_cross(&verts[i + 1], &verts[i]);
+	float I = 0;
+	float r;
+	for (int i = 0; i < vertc; i++) {
+		r = glm_vec2_distance(cm, verts + i);
+		I += r*r;
 	}
-	
-	float denom = 0.0;
-	for (int i = 0; i < vertc - 1; i++)
-		denom += glm_vec2_cross(&verts[i + 1], &verts[i]);
 
-	return (m/6.0)*(numer/denom);
+	return I*m/12.0;
 }
 
 #endif

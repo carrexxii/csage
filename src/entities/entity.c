@@ -76,6 +76,7 @@ void entities_update()
 		else if (body->s[1] >  3.0) body->s[1] = -3.0;
 		else if (body->s[1] < -3.0) body->s[1] =  3.0;
 		// ********************************************************************
+		glm_rotate(mat, body->θ, (vec3){ 0.0, 0.0, 1.0 });
 		glm_translate(mat, (vec3){ body->s[0], body->s[1], 0.0 });
 		glm_mat4_ucopy(mat, ((mat4*)components.mats.data)[i]);
 	}

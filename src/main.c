@@ -47,13 +47,13 @@ int main(int argc, char** argv)
 
 	/* ------------------------------------------------------------------------ */
 	Entity e1 = entity_new();
-	struct Polygon polys1[] = { polygon_new(6, (float[]){ 0.0, 0.0, 0.2, 0.3, 0.4, 0.3, 0.6, 0.0, 0.4, -0.3, 0.2, -0.3, 0.0, 0.0 }),
-	                            polygon_new(3, (float[]){ -0.2, 0.0, 0.0, 0.7, 0.2, 0.0 }) };
+	struct Polygon polys1[] = { polygon_new(3, (float[]){ -0.2, 0.0, 0.0, 0.7, 0.2, 0.0 }),
+	                            polygon_new(6, (float[]){ 0.0, 0.0, 0.2, 0.3, 0.4, 0.3, 0.6, 0.0, 0.4, -0.3, 0.2, -0.3, 0.0, 0.0 })};
 	struct Body body1 = body_new(1, polys1, (vec2){ 0.0, 0.0 }, 10.0);
 	struct Body* bp1 = entity_add_component(e1, COMPONENT_BODY, &body1);
-	struct Thruster thruster1 = (struct Thruster){ .parent = bp1, .s = { 0.0, 0.0 }, .F = 0.02, .Fmin = 0.0, .Fmax = 10.0 };
+	struct Thruster thruster1 = (struct Thruster){ .parent = bp1, .s = { 0.0, 0.0 }, .F = 0.5, .Fmin = 0.0, .Fmax = 1.0, .θ = GLM_PI_2 };
 	entity_add_component(e1, COMPONENT_THRUSTER, &thruster1);
-	struct Model mdl1 = polygons_to_model(2, polys1, (vec3[]){ { 0.8, 0.2, 0.2 }, { 0.2, 0.2, 0.8 } }, true);
+	struct Model mdl1 = polygons_to_model(1, polys1, (vec3[]){ { 0.8, 0.2, 0.2 }, { 0.2, 0.2, 0.8 } }, true);
 	entity_add_component(e1, COMPONENT_MODEL, &mdl1);
 
 	// Entity e2 = entity_new();

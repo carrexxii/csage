@@ -13,8 +13,9 @@ enum Component {
 struct Body {
 	float θ;
 	float m, I;
+	vec2 cm;
 	vec2 s, v, a;
-	vec2 ω, α;
+	float ω, α;
 };
 
 struct Thruster {
