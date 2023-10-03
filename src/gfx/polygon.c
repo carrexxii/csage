@@ -4,40 +4,25 @@
 #include "vertices.h"
 #include "renderer.h"
 
-inline static float* copy_triangle(float* v, float* origin, float* vertstart, float* colour);
+inline static float* copy_triangle(float* v, float* origin, float* vertstart, vec3 colour);
 
-struct Polygon polygon_new(int vertc, float* verts)
+struct Polygon polygon_new(float* verts, vec3 colour)
 {
-	struct Polygon poly = {
-		.vertc = vertc,
-		.verts = smalloc(vertc*sizeof(float[2])),
-	};
+	struct Polygon poly = { .vertc = 0 };
+	float* v = verts;
+	while (!isnan(*v)) {
+		poly.vertc++;
+		v += 2;
+	}
 
-	memcpy(poly.verts, verts, vertc*sizeof(float[2]));
+	poly.verts = smalloc(poly.vertc*sizeof(vec2)),
+	memcpy(poly.verts, verts, poly.vertc*sizeof(vec2));
+	memcpy(poly.colour, colour, sizeof(vec3));
 
 	return poly;
 }
 
-struct Model polygon_to_model(struct Polygon poly, vec3 colour, bool free_poly)
-{
-	struct Model mdl;
-	int tric  = poly.vertc - 2;
-	mdl.vertc = 3*tric;
-
-	intptr memsz = SIZEOF_VERTEX*3*tric;
-	float* verts = smalloc(memsz);
-	float* v = verts;
-	for (int i = 0; i < tric; i++)
-		v = copy_triangle(v, poly.verts, poly.verts + 2*i, colour);
-	mdl.vbo = vbo_new(memsz, verts);
-
-	if (free_poly)
-		polygon_free(poly);
-	free(verts);
-	return mdl;
-}
-
-struct Model polygons_to_model(int polyc, struct Polygon* polys, vec3* colours, bool free_polys)
+struct Model polygons_to_model(int polyc, struct Polygon* polys, bool free_polys)
 {
 	struct Model mdl = { 0 };
 	intptr memsz = 0;
@@ -50,7 +35,7 @@ struct Model polygons_to_model(int polyc, struct Polygon* polys, vec3* colours, 
 		memsz     += 3*SIZEOF_VERTEX*tric;
 		mdl.vertc += 3*tric;
 		for (int j = 0; j < tric; j++)
-			v = copy_triangle(v, polys[i].verts, polys[i].verts + 2*j, colours[i]);
+			v = copy_triangle(v, polys[i].verts, polys[i].verts + 2*j, polys[i].colour);
 	}
 
 	mdl.vbo = vbo_new(memsz, verts);
@@ -75,7 +60,7 @@ void polygon_free(struct Polygon poly)
 	free(poly.verts);
 }
 
-inline static float* copy_triangle(float* v, float* origin, float* vertstart, float* colour)
+inline static float* copy_triangle(float* v, float* origin, float* vertstart, vec3 colour)
 {
 	// DEBUG(1, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f", origin[0], origin[1], vertstart[2], vertstart[3], vertstart[4], vertstart[5]);
 	*v++ = origin[0];

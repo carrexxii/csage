@@ -8,11 +8,9 @@
 #include "gfx/renderer.h"
 #include "camera.h"
 #include "input.h"
-#include "entities/entity.h"
 
 #include "gfx/polygon.h"
-#include "entities/components.h"
-#include "entities/systems.h"
+#include "entities/ship.h"
 
 void init_sdl();
 void init_input();
@@ -37,32 +35,16 @@ int main(int argc, char** argv)
 	init_vulkan(window);
 	renderer_init();
 	camera_init();
-	entities_init();
+	ships_init();
 
 	srand(SDL_GetTicks64());
 
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
-	taskmgr_add_task(entities_update);
+	taskmgr_add_task(ships_update);
 
 	/* ------------------------------------------------------------------------ */
-	Entity e1 = entity_new();
-	struct Polygon polys1[] = { polygon_new(3, (float[]){ -0.2, 0.0, 0.0, 0.7, 0.2, 0.0 }),
-	                            polygon_new(6, (float[]){ 0.0, 0.0, 0.2, 0.3, 0.4, 0.3, 0.6, 0.0, 0.4, -0.3, 0.2, -0.3, 0.0, 0.0 })};
-	struct Body body1 = body_new(1, polys1, (vec2){ 0.0, 0.0 }, 10.0);
-	struct Body* bp1 = entity_add_component(e1, COMPONENT_BODY, &body1);
-	struct Thruster thruster1 = (struct Thruster){ .parent = bp1, .s = { 0.0, 0.0 }, .F = 0.5, .Fmin = 0.0, .Fmax = 1.0, .θ = GLM_PI_2 };
-	entity_add_component(e1, COMPONENT_THRUSTER, &thruster1);
-	struct Model mdl1 = polygons_to_model(1, polys1, (vec3[]){ { 0.8, 0.2, 0.2 }, { 0.2, 0.2, 0.8 } }, true);
-	entity_add_component(e1, COMPONENT_MODEL, &mdl1);
-
-	// Entity e2 = entity_new();
-	// struct Model mdl2 = polygon_to_model(polygon_new(3, -0.2, 0.0, 0.0, 0.7, 0.2, 0.0), (vec3){ 0.5, 0.5, 0.5 }, true);
-	// entity_add_component(e2, COMPONENT_MODEL, &mdl2);
-	// struct Body body2 = (struct Body){ .s = { 0.0, 0.0 }, .m = 10.0 };
-	// struct Body* bp = entity_add_component(e2, COMPONENT_BODY, &body2);
-	// struct Thruster thruster = (struct Thruster){ .parent = bp, .s = { 0.0, 0.0 }, .F = 0.02, .Fmin = 0.0, .Fmax = 10.0 };
-	// entity_add_component(e2, COMPONENT_THRUSTER, &thruster);
+	ShipID ship1 = ship_new(SHIPTYPE_1);
 	/* ------------------------------------------------------------------------ */
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
@@ -121,7 +103,7 @@ noreturn void quit_cb(bool kdown)
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
-	entities_free();
+	ships_free();
 	free_vulkan();
 	SDL_Quit();
 	exit(0);

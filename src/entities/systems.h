@@ -10,4 +10,6 @@ struct Body body_new(int polyc, struct Polygon* polys, vec2 s, float m);
 void physics_apply_thrust(struct Thruster thruster);
 void physics_integrate(struct Body* body);
 
+// void ship_add_thruster_model(struct Thruster* thruster);
+
 #endif

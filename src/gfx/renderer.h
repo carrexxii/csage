@@ -9,12 +9,13 @@
 #define RENDERER_MAX_OBJECTS 256
 #define FRAMES_IN_FLIGHT     2
 
-void renderer_init();
-void renderer_draw();
-void renderer_free();
+void   renderer_init();
+intptr renderer_add_model(struct Model mdl);
+void   renderer_draw();
+void   renderer_free();
 
-extern mat4* renmats;
-extern intptr* renmdlc;
-extern struct Model* renmdls;
+extern mat4 renmats[RENDERER_MAX_OBJECTS];
+extern intptr renmdlc;
+extern struct Model renmdls[RENDERER_MAX_OBJECTS];
 
 #endif

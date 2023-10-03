@@ -1,5 +1,4 @@
 #include "config.h"
-#include "entities/entity.h"
 #include "camera.h"
 
 mat4 camproj = GLM_MAT4_IDENTITY_INIT;

@@ -34,9 +34,9 @@ static VkFramebuffer*   framebufs;
 static VkCommandBuffer* cmdbufs;
 static struct Pipeline  pipeln;
 
-mat4* renmats;
-intptr*       renmdlc;
-struct Model* renmdls;
+mat4 renmats[RENDERER_MAX_OBJECTS];
+intptr       renmdlc = 0;
+struct Model renmdls[RENDERER_MAX_OBJECTS];
 static uint ubobufc;
 static UBO ubobufs[8];
 static SBO matbuf;
@@ -127,6 +127,13 @@ void renderer_init()
 	pipeln.sbo       = &matbuf;
 	pipeln.sbosz     = sizeof(mat4)*RENDERER_MAX_OBJECTS;
 	init_pipeln(&pipeln, renderpass);
+}
+
+// TODO: Fix removes
+intptr renderer_add_model(struct Model mdl)
+{
+	renmdls[renmdlc] = mdl;
+	return renmdlc++;
 }
 
 void renderer_draw()
@@ -235,8 +242,10 @@ static void record_command(int imgi)
 
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
-	for (int i = 0; i < *renmdlc; i++) {
-		// DEBUG(1, "Drawing %d verts (%d)", renmdls[i].vertc, renmdls[i].vbo.buf);
+	for (int i = 0; i < renmdlc; i++) {
+		if (!renmdls[i].vertc)
+			continue;
+		// DEBUG(1, "Drawing %d verts", renmdls[i].vertc);
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
 	}
@@ -251,10 +260,9 @@ inline static void buffer_updates()
 	void*  mem;
 	intptr memsz;
 
-	if (*renmdlc) {
-		memsz = (*renmdlc)*sizeof(mat4);
+	if (renmdlc) {
+		memsz = renmdlc*sizeof(mat4);
 		vkMapMemory(gpu, pipeln.sbo->mem, 0, memsz, 0, &mem);
-		// glm_mat4_print(renmats, stderr);
 		memcpy(mem, renmats, memsz);
 		vkUnmapMemory(gpu, pipeln.sbo->mem);
 	}
