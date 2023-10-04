@@ -6,6 +6,8 @@ void physics_apply_thrust(struct Thruster* thruster, struct Body* body)
 	// CLAMP(thruster->F, thruster->Fmin, thruster->Fmax); // TODO: do this elsewhere?
 	float Δθ = body->θ - thruster->θ;
 
+	// !!! TODO: take into account ship's position/rotation
+	
 	/* Translation */
 	body->a[0] += thruster->F*sinf(Δθ)/body->m;
 	body->a[1] += thruster->F*cosf(Δθ)/body->m;

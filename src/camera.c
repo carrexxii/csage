@@ -4,7 +4,7 @@
 mat4 camproj = GLM_MAT4_IDENTITY_INIT;
 mat4 camview = GLM_MAT4_IDENTITY_INIT;
 vec3 campos  = { 0.0, 0.0, 0.0 };
-float zoom   = 300.0;
+float zoom   = 100.0;
 enum Direction camdir = 0;
 static float panspeed  = 3.0 * dt;
 static float zoomspeed = 100.0 * dt;

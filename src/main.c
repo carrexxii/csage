@@ -93,10 +93,10 @@ void init_input()
 	input_register_key((struct KeyboardCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
 	input_register_key((struct KeyboardCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
 
-	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = test_o_cb, .onkeydown = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = test_p_cb, .onkeydown = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_k, .fn = test_k_cb, .onkeydown = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_l, .fn = test_l_cb, .onkeydown = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = test_o_cb, .onkeydown = true, .onkeyup = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = test_p_cb, .onkeydown = true, .onkeyup = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_k, .fn = test_k_cb, .onkeydown = true, .onkeyup = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_l, .fn = test_l_cb, .onkeydown = true, .onkeyup = true });
 }
 
 noreturn void quit_cb(bool kdown)

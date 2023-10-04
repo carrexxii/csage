@@ -17,12 +17,12 @@ WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else 
            -Wstrict-aliasing -Wno-parentheses -Wno-missing-braces -Wno-missing-field-initializers              \
            -Wno-unused-parameter -Wno-ignored-qualifiers -Wno-unused-variable -Wno-unused-function             \
            -Werror=implicit-function-declaration
-CFLAGS   = -std=c2x -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pipe $(WARNINGS) -I$(SRCDIR) \
-           -isystem $(LIBDIR)/include -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH)             \
+CFLAGS   = -std=c2x -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pipe $(WARNINGS) -I$(SRCDIR)             \
+           -isystem $(LIBDIR)/include -I/usr/include/freetype2 -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH) \
            -fstack-clash-protection -fstack-protector-strong -pie
 LUAFLAGS = -O0
 
-LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan
+LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan -lfreetype
 DEPFLAGS = -MT $@ -MMD -MF $(OBJDIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED

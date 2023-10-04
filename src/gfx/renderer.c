@@ -12,6 +12,7 @@
 #include "swapchain.h"
 #include "vertices.h"
 #include "camera.h"
+#include "font.h"
 #include "renderer.h"
 
 static void record_command(int imgi);
@@ -127,6 +128,8 @@ void renderer_init()
 	pipeln.sbo       = &matbuf;
 	pipeln.sbosz     = sizeof(mat4)*RENDERER_MAX_OBJECTS;
 	init_pipeln(&pipeln, renderpass);
+
+	font_init();
 }
 
 // TODO: Fix removes

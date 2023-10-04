@@ -38,6 +38,7 @@
 #define BODY_MAX_POLYGONS        16
 #define MAX_VERTICES_PER_POLYGON 32
 
+#define FONT_PATH  "data/font.ttf"
 #define SHADER_DIR "shaders/spirv/"
 #define MODEL_PATH "data/models/"
 
