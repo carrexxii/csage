@@ -11,6 +11,7 @@
 
 #include "gfx/polygon.h"
 #include "ships/ship.h"
+#include "test.h"
 
 void init_sdl();
 void init_input();
@@ -43,9 +44,7 @@ int main(int argc, char** argv)
 	taskmgr_add_task(camera_update);
 	taskmgr_add_task(ships_update);
 
-	/* ------------------------------------------------------------------------ */
-	ShipID ship1 = ship_new(SHIPTYPE_1);
-	/* ------------------------------------------------------------------------ */
+	test_init();
 
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
@@ -93,8 +92,11 @@ void init_input()
 	input_register_key((struct KeyboardCallback){ .key = SDLK_s, .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
 	input_register_key((struct KeyboardCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
 	input_register_key((struct KeyboardCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = camera_zlvl_up_cb   , .onkeydown = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = camera_zlvl_down_cb , .onkeydown = true, });
+
+	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = test_o_cb, .onkeydown = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = test_p_cb, .onkeydown = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_k, .fn = test_k_cb, .onkeydown = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_l, .fn = test_l_cb, .onkeydown = true, });
 }
 
 noreturn void quit_cb(bool kdown)

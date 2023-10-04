@@ -46,7 +46,6 @@ void* iarr_get(struct IArray arr, intptr i)
 		arri = bin_search(arr.itemc, arr.inds, i);
 	else
 		arri = linear_search(arr.itemc, arr.inds, i);
-	D;
 
 	if (arri >= 0)
 		return (byte*)arr.data + arri*arr.itemsz;

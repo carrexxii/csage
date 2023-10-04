@@ -3,6 +3,9 @@
 
 #include "buffers.h"
 
+#define MODEL_VERTEX_ELEMENTS 5   
+#define SIZEOF_MODEL_VERTEX   sizeof(float[MODEL_VERTEX_ELEMENTS])
+
 struct Material {
 	vec3 rgb;
 };

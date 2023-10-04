@@ -6,7 +6,8 @@
 #include "ship.h"
 #include "util/maths.h"
 
-static void centre_of_mass(int vertc, float* verts, vec2 out);
+static void set_verts_from_model(struct Body* body, struct Model mdl);
+static void set_centre_of_mass(struct Ship* ship);
 
 static intptr shipc;
 static struct IArray ships;
@@ -31,15 +32,21 @@ ShipID ship_new(enum ShipType type)
 	renderer_add_model(mdl);
 
 	/* Centre of mass and moment of inertia */
-	centre_of_mass(mdl.vertc, mdl.verts, ship.body.cm);
+	set_verts_from_model(&ship.body, mdl);
+	set_centre_of_mass(&ship);
 	ship.body.I = polygon_moment(mdl.vertc, mdl.verts, ship.body.cm, ship.body.m);
 
 	/* Thrusters */
 	switch (type) {
 		case SHIPTYPE_1:
-			ship.thrusterc = 1;
+			ship.thrusterc = 2;
 			ship.thrusters[0].Fmax = 1.0;
-			ship.thrusters[0].F = 1.0;
+			ship.thrusters[0].s[0] = -0.2;
+			ship.thrusters[0].s[1] = 0.0;
+
+			ship.thrusters[1].Fmax = 1.0;
+			ship.thrusters[1].s[0] = 0.2;
+			ship.thrusters[1].s[1] = 0.0;
 			break;
 		default:
 			ERROR("ERROR");
@@ -51,6 +58,11 @@ ShipID ship_new(enum ShipType type)
 	return shipc;
 }
 
+struct Ship* ship_get(ShipID ship)
+{
+	return iarr_get(ships, ship);
+}
+
 void ships_update()
 {
 	/* Update the model matrix for each ship */
@@ -59,8 +71,7 @@ void ships_update()
 	for (int i = 0; i < shipc; i++) {
 		ship = (struct Ship*)ships.data + i;
 		for (int j = 0; j < ship->thrusterc; j++)
-			if (ship->thrusters[j].F > FLT_EPSILON)
-				physics_apply_thrust(&ship->thrusters[j], &ship->body);
+			physics_apply_thrust(&ship->thrusters[j], &ship->body);
 
 		physics_integrate(&ship->body);
 
@@ -82,14 +93,28 @@ void ships_free()
 	iarr_free(&ships, NULL);
 }
 
-static void centre_of_mass(int vertc, float* verts, vec2 out)
+static void set_verts_from_model(struct Body* body, struct Model mdl)
 {
-	out[0] = 0.0;
-	out[1] = 0.0;
-	for (int i = 0; i < vertc/2; i++) {
-		out[0] += verts[2*i    ];
-		out[1] += verts[2*i + 1];
+	body->vertc = mdl.vertc;
+	body->verts = smalloc(mdl.vertc*sizeof(vec2));
+	for (int i = 0; i < mdl.vertc; i++) {
+		body->verts[2*i    ] = mdl.verts[MODEL_VERTEX_ELEMENTS*i    ];
+		body->verts[2*i + 1] = mdl.verts[MODEL_VERTEX_ELEMENTS*i + 1];
 	}
-	out[0] /= vertc;
-	out[1] /= vertc;
+}
+
+static void set_centre_of_mass(struct Ship* ship)
+{
+	int vertc    = ship->body.vertc;
+	float* verts = ship->body.verts;
+	float* cm    = ship->body.cm;
+
+	cm[0] = 0.0;
+	cm[1] = 0.0;
+	for (int i = 0; i < vertc; i++) {
+		cm[0] += verts[2*i    ];
+		cm[1] += verts[2*i + 1];
+	}
+	cm[0] /= vertc;
+	cm[1] /= vertc;
 }

@@ -23,6 +23,7 @@ struct Ship {
 
 void ships_init();
 ShipID ship_new(enum ShipType type);
+struct Ship* ship_get(ShipID ship); // Temporary
 void ships_update();
 void ships_free();
 
