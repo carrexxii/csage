@@ -15,7 +15,7 @@ struct Thruster {
 	vec2 s;
 };
 
-void physics_apply_thrust(struct Thruster thruster, struct Body* body);
+void physics_apply_thrust(struct Thruster* thruster, struct Body* body);
 void physics_integrate(struct Body* body);
 
 #endif

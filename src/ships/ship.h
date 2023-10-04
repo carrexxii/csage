@@ -17,6 +17,7 @@ struct Ship {
 	enum ShipType type;
 	struct Body body;
 	struct Thruster thrusters[SHIP_MAX_THRUSTERS];
+	int8 thrusterc;
 	intptr mdli;
 };
 
@@ -29,5 +30,11 @@ void ships_free();
 	_t == SHIPTYPE_NONE? "block":   \
 	_t == SHIPTYPE_1   ? "triangle": \
 	"triangle"
+
+static float thrusterdata[][5] = {
+	/*   s     Fmin Fmax   θ  */
+	{ 0.0, 0.0, 0.0, 0.0, 0.0 },
+	{ 0.0, 0.0, 0.0, 1.0, 0.0 },
+};
 
 #endif

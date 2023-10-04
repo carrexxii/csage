@@ -115,8 +115,8 @@ void renderer_init()
 	matbuf = sbo_new(RENDERER_MAX_OBJECTS*sizeof(mat4));
 	ubobufs[ubobufc++] = ubo_new(sizeof(mat4));
 
-	pipeln.vshader   = create_shader(SHADER_DIR "shader.vert");
-	pipeln.fshader   = create_shader(SHADER_DIR "shader.frag");
+	pipeln.vshader   = create_shader(SHADER_DIR "model.vert");
+	pipeln.fshader   = create_shader(SHADER_DIR "model.frag");
 	pipeln.vertbindc = 1;
 	pipeln.vertbinds = mdlvertbinds;
 	pipeln.vertattrc = ARRAY_LEN(mdlvertattrs);

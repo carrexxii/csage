@@ -27,7 +27,7 @@ struct Model model_new(char* path)
 			mdl.materials = scalloc(mdl.materialc, sizeof(struct Material));
 			vert      = mdl.verts;
 			materials = mdl.materials;
-		} else if (sscanf(line, "Dimensions: %f %f", dim, dim + 1) >= 3) {
+		} else if (sscanf(line, "Dimensions: %f %f", dim, dim + 1) >= 2) {
 			glm_vec2_copy(dim, mdl.dim);
 		/* Material header */
 		} else if (sscanf(line, "M %hhu \"%64[a-zA-Z_]\" [%f %f %f]",
