@@ -19,13 +19,11 @@ def write_file(path):
         for mat in obj.material_slots:
             if not mat.name in materials:
                 materials[mat.name] = Material(len(materials), mat.material.diffuse_color[:-1])
-    for mesh in meshes:
-        for poly in mesh.polygons:
-            vert_count += len(poly.vertices)
+        vert_count += len(objs['Ship'].to_mesh().vertices)
     
     with open(path, "w", encoding="utf-8") as file:
         file.write("Vertices: %d; Materials: %d\n" % (vert_count, len(materials)))
-        file.write("Dimensions: %.2f %.2f %.2f\n" % context.object.dimensions[:])
+        file.write("Dimensions: %.2f %.2f\n" % context.object.dimensions[:-1])
         for mat in materials:
             file.write("M %d \"%s\" " % (materials[mat].index, mat))
             file.write("[%.2f %.2f %.2f]" % materials[mat].colour)
@@ -40,8 +38,7 @@ def write_file(path):
                     v = pos @ mesh.vertices[i].undeformed_co.copy()
                     n = tri.normal.copy()
                     n[2] = -n[2]
-                    file.write("%.4f %.4f %.4f " % v[:])
-                    file.write("%.2f %.2f %.2f " % n[:])
+                    file.write("%.4f %.4f " % v[:-1])
                     file.write("%d\n" % (materials[mat_names[tri.material_index]].index))
 
 if __name__ == "__main__":

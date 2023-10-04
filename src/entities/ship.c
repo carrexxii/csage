@@ -4,36 +4,20 @@
 #include "gfx/model.h"
 #include "physics.h"
 #include "ship.h"
-#include <float.h>
 
 static void centre_of_mass(int vertc, float* verts, vec2 out);
 
 static struct Body shipbodies[SHIP_TYPE_COUNT];
 static intptr shipc;
 static struct IArray ships;
-static float shipverts[SHIP_TYPE_COUNT][256] = {
-	/*                                    sx,  sy,   θ, Fmin, Fmax */
-	{ NAN },                                                              /* SHIPTYPE_NONE */
-	{ -0.2, 0.0, 0.0, 0.6, 0.2, 0.0, NAN, 0.0, 0.0, 0.0, 0.0, 1.0, NAN }, /* SHIPTYPE_1    */
-};
 
 void ships_init()
 {
 	shipc = 0;
 	ships = iarr_new(sizeof(struct Ship), 4);
 
-	int vertc = 0;
-	float* v = shipverts[SHIPTYPE_1];
-	while (!isnan(*v)) {
-		vertc++;
-		v++;
-	}
-	float* verts = shipverts[SHIPTYPE_1];
-	shipbodies[SHIPTYPE_1] = (struct Body){
-		.m = 100.0,
-	};
-	centre_of_mass(vertc, verts, shipbodies[SHIPTYPE_1].cm);
-	shipbodies[SHIPTYPE_1].I = polygon_moment(vertc, verts, shipbodies[SHIPTYPE_1].cm, shipbodies[SHIPTYPE_1].m);
+	// centre_of_mass(vertc, verts, shipbodies[SHIPTYPE_1].cm);
+	// shipbodies[SHIPTYPE_1].I = polygon_moment(vertc, verts, shipbodies[SHIPTYPE_1].cm, shipbodies[SHIPTYPE_1].m);
 }
 
 ShipID ship_new(enum ShipType type)
@@ -44,25 +28,26 @@ ShipID ship_new(enum ShipType type)
 	};
 
 	/* Model */
-	struct Model mdl = polygons_to_model(1, (struct Polygon[]){ polygon_new(shipverts[type], (vec3){ COLOUR_RED }) }, false);
+	char buf[256];
+	snprintf(buf, 256, MODEL_PATH "%s", STRING_OF_SHIPTYPE(type));
+	struct Model mdl = model_new(buf);
 	renderer_add_model(mdl);
 
 	/* Thrusters */
-	struct Thruster** ts = &ship.thrusters;
-	int tc = 0;
-	float* tdata;
-	do {
-		*ts = smalloc(sizeof(struct Thruster));
-		tdata = (shipverts[type] + 2*mdl.vertc + 1) + 5*tc;
-		**ts = (struct Thruster) {
-			.s[0] = tdata[0],
-			.s[1] = tdata[1],
-			.θ    = tdata[2],
-			.Fmin = tdata[3],
-			.Fmax = tdata[4],
-		};
-		tc++;
-	} while (!isnan(tdata[5*tc]));
+	// struct Thruster** ts = &ship.thrusters;
+	// int tc = 0;
+	// float* tdata;
+	// do {
+	// 	*ts = smalloc(sizeof(struct Thruster));
+	// 	**ts = (struct Thruster) {
+	// 		.s[0] = tdata[0],
+	// 		.s[1] = tdata[1],
+	// 		.θ    = tdata[2],
+	// 		.Fmin = tdata[3],
+	// 		.Fmax = tdata[4],
+	// 	};
+	// 	tc++;
+	// } while (!isnan(tdata[5*tc]));
 
 	shipc++;
 	iarr_append(&ships, shipc, &ship);
@@ -75,15 +60,15 @@ void ships_update()
 	/* Update the model matrix for each ship */
 	mat4* mat;
 	struct Ship* ship;
-	struct Thruster* thruster;
+	// struct Thruster* thruster;
 	for (int i = 0; i < shipc; i++) {
 		ship = (struct Ship*)ships.data + i;
-		thruster = ship->thrusters;
-		while (thruster) {
-			if (thruster->F > FLT_EPSILON)
-				physics_apply_thrust(*thruster, &ship->body);
-			thruster = thruster->next;
-		}
+		// thruster = ship->thrusters;
+		// while (thruster) {
+		// 	if (thruster->F > FLT_EPSILON)
+		// 		physics_apply_thrust(*thruster, &ship->body);
+		// 	thruster = thruster->next;
+		// }
 
 		physics_integrate(&ship->body);
 
