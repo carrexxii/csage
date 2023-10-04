@@ -10,7 +10,7 @@
 #include "input.h"
 
 #include "gfx/polygon.h"
-#include "entities/ship.h"
+#include "ships/ship.h"
 
 void init_sdl();
 void init_input();

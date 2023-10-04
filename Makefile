@@ -31,7 +31,7 @@ SRC  := $(wildcard $(SRCDIR)/util/*.c) \
         $(wildcard $(SRCDIR)/maths/*.c) \
         $(wildcard $(SRCDIR)/gfx/*.c)    \
         $(wildcard $(SRCDIR)/map/*.c)     \
-        $(wildcard $(SRCDIR)/entities/*.c) \
+        $(wildcard $(SRCDIR)/ships/*.c)    \
         $(wildcard $(SRCDIR)/*.c)
 OBJ  := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 DEP  := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.dep)
