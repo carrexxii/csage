@@ -149,7 +149,7 @@ void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 		DEBUG(3, "[VK] Pipeline created");
 }
 
-void free_pipeln(struct Pipeline* pipeln)
+void pipeln_free(struct Pipeline* pipeln)
 {
 	DEBUG(3, "[VK] Destroying pipeline (%p)...", (void*)pipeln);
 	vkDestroyPipeline(gpu, pipeln->pipeln, alloccb);

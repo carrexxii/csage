@@ -6,7 +6,7 @@
 
 #define SIZEOF_PARTICLE_VERTEX sizeof(float[5])
 
-struct Pipeline particlepipelns[PARTICLE_END];
+struct Pipeline pipelns[PARTICLE_END];
 
 /* -------------------------------------------------------------------- */
 static VkVertexInputBindingDescription streamvertbinds = {
@@ -30,7 +30,7 @@ static VkVertexInputAttributeDescription streamvertattrs[] = {
 
 void particles_init(VkRenderPass renderpass)
 {
-	particlepipelns[PARTICLE_STREAM] = (struct Pipeline){
+	pipelns[PARTICLE_STREAM] = (struct Pipeline){
 		.vshader   = create_shader(SHADER_DIR "stream.vert"),
 		.fshader   = create_shader(SHADER_DIR "stream.frag"),
 		.vertbindc = 1,
@@ -45,7 +45,7 @@ void particles_init(VkRenderPass renderpass)
 	};
 
 	for (int i = 0; i < PARTICLE_END; i++)
-		init_pipeln(particlepipelns + i, renderpass);
+		init_pipeln(pipelns + i, renderpass);
 }
 
 struct ParticlePool particles_new_pool(int vertc, float* verts, uint8 maxparticles, int64 poollife, int64 particlelife)
@@ -59,4 +59,10 @@ struct ParticlePool particles_new_pool(int vertc, float* verts, uint8 maxparticl
 		ppool.particles[i].life = particlelife;
 
 	return ppool;
+}
+
+void particles_free()
+{
+	for (int i = 0; i < PARTICLE_END; i++)
+		pipeln_free(&pipelns[i]);
 }

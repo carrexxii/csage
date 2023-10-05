@@ -40,6 +40,6 @@ struct Pipeline {
 };
 
 void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass);
-void free_pipeln(struct Pipeline* pipeln);
+void pipeln_free(struct Pipeline* pipeln);
 
 #endif

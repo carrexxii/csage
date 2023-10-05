@@ -1,10 +1,13 @@
 #include "ships/ship.h"
+#include "gfx/font.h"
 
 ShipID ship1;
 
 void test_init()
 {
 	ship1 = ship_new(SHIPTYPE_1);
+
+	VBO text = font_render("Hello, World!", 0.0, 0.0, 100.0, 100.0);
 }
 
 void test_o_cb(bool kdown)

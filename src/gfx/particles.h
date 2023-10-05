@@ -32,5 +32,6 @@ extern struct Pipeline particlepipelns[PARTICLE_END];
 
 void particles_init(VkRenderPass renderpass);
 struct ParticlePool particles_new_pool(int vertc, float* verts, uint8 maxparticles, int64 poollife, int64 particlelife);
+void particles_free();
 
 #endif

@@ -129,7 +129,7 @@ void renderer_init()
 	pipeln.sbosz     = sizeof(mat4)*RENDERER_MAX_OBJECTS;
 	init_pipeln(&pipeln, renderpass);
 
-	font_init();
+	font_init(renderpass);
 }
 
 // TODO: Fix removes
@@ -202,7 +202,9 @@ void renderer_free()
 
 	while (ubobufc--)
 		ubo_free(&ubobufs[ubobufc]);
-	free_pipeln(&pipeln);
+	pipeln_free(&pipeln);
+	font_free();
+	particles_free();
 
 	DEBUG(3, "[VK] Destroying render pass...");
 	vkDestroyRenderPass(gpu, renderpass, alloccb);

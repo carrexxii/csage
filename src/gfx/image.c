@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "vulkan.h"
 #include "device.h"
@@ -216,11 +217,12 @@ void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 		},
 	};
 
-	#define NO_LAYOUT_ERROR do {                                                                \
+	#define NO_LAYOUT_ERROR do {                                                               \
 			ERROR("[VK] No layout transition implemented (line: %u). \n\t[old] %s\n\t[new] %s", \
-			__LINE__, STRING_IMAGE_LAYOUT(old), STRING_IMAGE_LAYOUT(new));                      \
+			__LINE__, STRING_IMAGE_LAYOUT(old), STRING_IMAGE_LAYOUT(new));                       \
 		} while (0)
 	VkPipelineStageFlags dst = 0, src = 0;
+	DEBUG_VALUE(STRING_IMAGE_LAYOUT(old));
 	switch (old) {
 		case VK_IMAGE_LAYOUT_UNDEFINED:
 		case VK_IMAGE_LAYOUT_PREINITIALIZED:
@@ -245,6 +247,18 @@ void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 					bar.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 					src = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 					dst = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+					break;
+				default:
+					NO_LAYOUT_ERROR;
+			}
+			break;
+		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+			switch (new) {
+				case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+					bar.srcAccessMask = VK_IMAGE_LAYOUT_UNDEFINED;
+					bar.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+					src = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+					dst = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 					break;
 				default:
 					NO_LAYOUT_ERROR;
@@ -306,46 +320,3 @@ static void create_sampler(VkSampler* samp)
 	else
 		DEBUG(2, "[VK] Created sampler");
 }
-
-/*
-static void create_depth_buffer()
-{
-	depthfmt = VK_FORMAT_D16_UNORM;
-	VkImageCreateInfo imgi = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.imageType = VK_IMAGE_TYPE_2D,
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.format = depthfmt,
-		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.extent = {
-			.width = swapchainext.width,
-			.height = swapchainext.height,
-			.depth = 1,
-		},
-	};
-	if (vkCreateImage(gpu, &imgi, alloccb, &depthimg) != VK_SUCCESS)
-		ERROR("[VK] Failed to create depth image");
-	else
-		DEBUG(3, "[VK] Created depth image");
-
-	VkMemoryRequirements memreq;
-	vkGetImageMemoryRequirements(gpu, depthimg, &memreq);
-	VkMemoryAllocateInfo alloci = {
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize = memreq.size,
-		.memoryTypeIndex = find_mem_index(memreq.memoryTypeBits,
-										  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
-	};
-	if (vkAllocateMemory(gpu, &alloci, alloccb, &depthmem) != VK_SUCCESS)
-		ERROR("[VK] Failed to allocate memory for depth buffer");
-	vkBindImageMemory(gpu, depthimg, depthmem, 0);
-
-	depthimgview = image_new_view(depthimg, depthfmt, VK_IMAGE_ASPECT_DEPTH_BIT);
-	image_transition_layout(depthimg, depthfmt, VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-}*/
