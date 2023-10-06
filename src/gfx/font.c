@@ -12,7 +12,8 @@
 struct Character {
 	uint8 size[2];
 	uint8 bearing[2];
-	uint  advance;
+	uint8 advance;
+	uint  offset; /* In the main texture */
 };
 
 struct TextObject {
@@ -53,8 +54,8 @@ static intptr text_objc;
 
 
 float* verts = (float[24]){
-	0.0, 0.0, 0.0, 0.0,   1.0, 0.0, 1.0, 0.0,   0.0, 1.0, 0.0, 1.0,
-    0.0, 1.0, 0.0, 1.0,   1.0, 0.0, 1.0, 0.0,   1.0, 1.0, 1.0, 1.0,
+	-0.9, 0.0, 0.0, 0.0,   0.9, 0.0, 1.0, 0.0,   -0.9, 0.1, 0.0, 1.0,
+    -0.9, 0.1, 0.0, 1.0,   0.9, 0.0, 1.0, 0.0,    0.9, 0.1, 1.0, 1.0,
 };
 VBO vbo;
 
@@ -69,50 +70,50 @@ void font_init(VkRenderPass renderpass)
 
 	FT_Set_Pixel_Sizes(face, font_size, font_size);
 
-	/* Over-allocate - probably a better way of doing this */
-	// uint32* pxs  = smalloc(sizeof(uint32)*font_size*(128*2*font_size));
-	// uint8* pxs  = smalloc(16*16);
-	uint maxh   = 0;
-	uint totalw = 0;
-	uint tex_x  = 0; /* Current position on the main bitmap */
-	FT_GlyphSlot glyph = face->glyph;
-	// for (int i = 0; i < 128; i++) {
-	// 	if (FT_Load_Char(face, (char)i, FT_LOAD_RENDER))
-	// 		ERROR("[GFX] Error loading glyph \"%c\"", (char)i);
+	/* Calculate the sizes needed for the atlas */
+	uint atlas_w = 0;
+	uint atlas_h = 0;
+	FT_Bitmap bitmap;
+	for (int i = 0; i < 128; i++) {
+		if (FT_Load_Char(face, (char)i, FT_LOAD_NO_BITMAP))
+			ERROR("[GFX] Error loading glyph data \"%c\"", (char)i);
 
-	// 	characters[i] = (struct Character){
-	// 		.size[0]    = glyph->bitmap.width,
-	// 		.size[1]    = glyph->bitmap.rows,
-	// 		.bearing[0] = glyph->bitmap_left,
-	// 		.bearing[1] = glyph->bitmap_top,
-	// 		.advance    = glyph->advance.x,
-	// 	};
-	// 	if (maxh < glyph->bitmap.rows)
-	// 		maxh = glyph->bitmap.rows;
-	// 	totalw += glyph->bitmap.width + (glyph->advance.x >> 6);
+		bitmap = face->glyph->bitmap;
+		if (atlas_h < bitmap.rows)
+			atlas_h = bitmap.rows;
+		atlas_w += face->glyph->advance.x >> 6;
+	}
 
-	// 	/* Copy over the bitmap */
-	// 	for (uint y = 0; y < glyph->bitmap.rows; y++) {
-	// 		for (uint x = 0; x < glyph->bitmap.width; x++) {
-	// 			// DEBUG(1, "%d, %d -> %d - %d [%X]", x, y, y*totalw + x, y*characters[i].size[0] + x, ((uint32*)glyph->bitmap.buffer)[y*characters[i].size[0] + x]);
-	// 			pxs[y*totalw + x + tex_x] = ((uint32*)glyph->bitmap.buffer)[y*glyph->bitmap.width + x];
-	// 		}
-	// 	}
-	// 	tex_x += glyph->bitmap.width;
-	// }
-	// char_texture = texture_new(pxs, totalw, maxh);
-	// char_texture = texture_new_from_image("data/img.jpg");
+	uint8* atlas = scalloc(sizeof(uint8[4]), sizeof(uint8[4])*atlas_w*atlas_h);
+	uint tex_x   = 0; /* Current position on the main bitmap */
+	int atlas_i, bitmap_i;
+	for (int i = 0; i < 128; i++) {
+		if (FT_Load_Char(face, (char)i, FT_LOAD_RENDER))
+			ERROR("[GFX] Error loading glyph bitmap \"%c\"", (char)i);
 
-	FT_Load_Char(face, 'X', FT_LOAD_RENDER);
-	FT_Bitmap bitmap = face->glyph->bitmap;
-	uint8* pxs = scalloc(sizeof(uint8[4]), bitmap.width*bitmap.rows);
-    for (uint y = 0; y < bitmap.rows; y++) {
-        for (uint x = 0; x < bitmap.width; x++) {
-            int index = y*bitmap.width + x;
-        	memset(pxs + 4*index, bitmap.buffer[index], sizeof(uint8[4]));
-        }
-    }
-	char_texture = texture_new(pxs, bitmap.width, bitmap.rows);
+		bitmap = face->glyph->bitmap;
+		characters[i] = (struct Character){
+			.size[0]    = bitmap.width,
+			.size[1]    = bitmap.rows,
+			.bearing[0] = face->glyph->bitmap_left,
+			.bearing[1] = face->glyph->bitmap_top,
+			.advance    = face->glyph->advance.x,
+			.offset     = tex_x,
+		};
+
+		for (uint y = 0; y < bitmap.rows; y++) {
+			for (uint x = 0; x < bitmap.width; x++) {
+				atlas_i  = y*atlas_w + tex_x + x;
+				bitmap_i = y*bitmap.width + x;
+				atlas[4*atlas_i + 0] = bitmap.buffer[bitmap_i];
+				atlas[4*atlas_i + 1] = bitmap.buffer[bitmap_i];
+				atlas[4*atlas_i + 2] = bitmap.buffer[bitmap_i];
+				atlas[4*atlas_i + 3] = bitmap.buffer[bitmap_i];
+			}
+		}
+		tex_x += face->glyph->advance.x >> 6;
+	}
+	char_texture = texture_new(atlas, atlas_w, atlas_h);
 
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);
