@@ -255,6 +255,8 @@ static void record_command(int imgi)
 		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
 	}
 
+	font_record_commands(cmdbuf);
+
 	vkCmdEndRenderPass(cmdbuf);
 	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)
 		ERROR("[VK] Failed to record comand buffer");

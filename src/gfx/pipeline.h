@@ -31,11 +31,13 @@ struct Pipeline {
 	VkShaderModule teshader;
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
-	int     uboc;
-	UBO**   ubos;
-	intptr  sbosz;
-	SBO*    sbo;
-	intptr  pushsz;
+	intptr   uboc;
+	UBO**    ubos;
+	intptr   sbosz;
+	SBO*     sbo;
+	intptr   pushsz;
+	struct Texture* textures;
+	intptr texturec;
 	VkShaderStageFlags pushstages;
 };
 

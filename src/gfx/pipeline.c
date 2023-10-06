@@ -1,11 +1,14 @@
+#include <limits.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
+#include "common.h"
 #include "config.h"
 #include "vulkan.h"
 #include "device.h"
 #include "buffers.h"
 #include "image.h"
+#include "texture.h"
 #include "swapchain.h"
 #include "renderer.h"
 #include "pipeline.h"
@@ -228,7 +231,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 			{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 			  .descriptorCount = 1, },
 			{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			  .descriptorCount = pipeln->uboc, },
+			  .descriptorCount = pipeln->uboc? pipeln->uboc: 1, },
 			{ .type = VK_DESCRIPTOR_TYPE_SAMPLER,
 			  .descriptorCount = 1, },
 			{ .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -305,7 +308,9 @@ inline static void update_img_dset(VkWriteDescriptorSet* dwriteset, VkDescriptor
 
 static void update_dsets(struct Pipeline* pipeln)
 {
-	uint dwritesetc = 0;
+	int sbo_loc, ubo_loc, sampler_loc, images_loc;
+	sbo_loc = ubo_loc = sampler_loc = images_loc = -1;
+	int dwritesetc = 0;
 	VkWriteDescriptorSet   dwritesets[2 + pipeln->uboc + imagec]; /* 2 = storage buffer + sampler */
 	VkDescriptorBufferInfo dbufis[1 + pipeln->uboc];              /* 1 = storage buffer           */
 	VkDescriptorImageInfo  dimgis[1 + imagec];                    /* 1 = sampler                  */
@@ -319,10 +324,13 @@ static void update_dsets(struct Pipeline* pipeln)
 		};
 		update_buf_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		                &dbufis[dwritesetc], dwritesetc);
+		sbo_loc = dwritesetc;
 		dwritesetc++;
 	}
 
 	/* Uniform buffers */
+	if (pipeln->uboc > 0)
+		ubo_loc = dwritesetc;
 	for (int i = 0; i < pipeln->uboc; i++) {
 		dbufis[dwritesetc] = (VkDescriptorBufferInfo){
 			.buffer = pipeln->ubos[i]->buf,
@@ -341,13 +349,16 @@ static void update_dsets(struct Pipeline* pipeln)
 		.sampler     = sampler,
 	};
 	update_img_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_SAMPLER, &dimgis[0], dwritesetc);
+	sampler_loc = dwritesetc;
 	dwritesetc++;
 
 	/* Sampled images */
-	for (int i = 0; i < imagec; i++) {
+	if (pipeln->texturec > 0)
+		images_loc = dwritesetc;
+	for (int i = 0; i < pipeln->texturec; i++) {
 		dimgis[i + 1] = (VkDescriptorImageInfo){
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			.imageView   = imageviews[i],
+			.imageView   = pipeln->textures[i].image_view,
 			.sampler     = NULL,
 		};
 		update_img_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -356,6 +367,7 @@ static void update_dsets(struct Pipeline* pipeln)
 	}
 
 	vkUpdateDescriptorSets(gpu, dwritesetc, dwritesets, 0, NULL);
-	DEBUG(3, "[VK] Updated %u descriptor sets", dwritesetc);
+	DEBUG(3, "[VK] Updated %d descriptor sets (SBO: %d; UBO: %d; Sampler: %d; Images: %d)", dwritesetc,
+	      sbo_loc, ubo_loc, sampler_loc, images_loc);
 }
 

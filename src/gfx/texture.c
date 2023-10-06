@@ -9,23 +9,22 @@
 #include "image.h"
 #include "texture.h"
 
-// static void create_sampler(VkSampler* s);
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h);
 
-struct Texture texture_new(uint8* pxs, int w, int h)
+struct Texture texture_new(uint32* pxs, int w, int h)
 {
 	DEBUG(2, "[VK] Creating new texture (%dx%d)", w, h);
 	struct Texture tex;
 
 	void* data;
 	struct Buffer trans_buffer;
-	VkDeviceSize s = 4*w*h;
-	buffer_new(s, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	VkDeviceSize size = w*h*sizeof(*pxs);
+	buffer_new(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	           &trans_buffer.buf, &trans_buffer.mem);
-	vkMapMemory(gpu, trans_buffer.mem, 0, s, 0, &data);
-	memcpy(data, pxs, s);
+	vkMapMemory(gpu, trans_buffer.mem, 0, size, 0, &data);
+	memcpy(data, pxs, size);
 	vkUnmapMemory(gpu, trans_buffer.mem);
 
 	VkImageCreateInfo imgi = {
@@ -40,7 +39,8 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 		},
 		.imageType             = VK_IMAGE_TYPE_2D,
 		.tiling                = VK_IMAGE_TILING_OPTIMAL,
-		.sharingMode           = VK_SHARING_MODE_EXCLUSIVE,
+
+
 		.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED,
 		.mipLevels             = 1,
 		.arrayLayers           = 1,
@@ -49,26 +49,26 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices   = NULL,
 	};
-	if (vkCreateImage(gpu, &imgi, alloccb, &tex.img) != VK_SUCCESS)
+	if (vkCreateImage(gpu, &imgi, alloccb, &tex.image) != VK_SUCCESS)
 		ERROR("[VK] Failed to create image");
 
 	VkMemoryRequirements memreq;
-	vkGetImageMemoryRequirements(gpu, tex.img, &memreq);
+	vkGetImageMemoryRequirements(gpu, tex.image, &memreq);
 	VkMemoryAllocateInfo alloci = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.allocationSize  = memreq.size,
 		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits,
 		                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
-	if (vkAllocateMemory(gpu, &alloci, alloccb, &tex.mem) != VK_SUCCESS)
+	if (vkAllocateMemory(gpu, &alloci, alloccb, &tex.memory) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate memory for image");
-	vkBindImageMemory(gpu, tex.img, tex.mem, 0);
+	vkBindImageMemory(gpu, tex.image, tex.memory, 0);
 
-	image_transition_layout(tex.img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	buffer_to_image(trans_buffer.buf, tex.img, (uint)w, (uint)h);
-	image_transition_layout(tex.img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	image_transition_layout(tex.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	buffer_to_image(trans_buffer.buf, tex.image, (uint)w, (uint)h);
+	image_transition_layout(tex.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	tex.imgview = image_new_view(tex.img, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+	tex.image_view = image_new_view(tex.image, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	buffer_free(&trans_buffer);
 
@@ -83,7 +83,7 @@ struct Texture texture_new_from_image(const char* path)
 	if (!pxs)
 		ERROR("[RES] Failed to load image \"%s\"", path);
 
-	tex = texture_new(pxs, w, h);
+	tex = texture_new((uint32*)pxs, w, h);
 	stbi_image_free(pxs);
 
 	return tex;
@@ -92,9 +92,9 @@ struct Texture texture_new_from_image(const char* path)
 void texture_free(struct Texture tex)
 {
 	DEBUG(2, "[VK] Destroying texture...");
-	vkDestroyImageView(gpu, tex.imgview, alloccb);
-	vkDestroyImage(gpu, tex.img, alloccb);
-	vkFreeMemory(gpu, tex.mem, alloccb);
+	vkDestroyImageView(gpu, tex.image_view, alloccb);
+	vkDestroyImage(gpu, tex.image, alloccb);
+	vkFreeMemory(gpu, tex.memory, alloccb);
 }
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h)

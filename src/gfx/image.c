@@ -222,7 +222,6 @@ void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 			__LINE__, STRING_IMAGE_LAYOUT(old), STRING_IMAGE_LAYOUT(new));                       \
 		} while (0)
 	VkPipelineStageFlags dst = 0, src = 0;
-	DEBUG_VALUE(STRING_IMAGE_LAYOUT(old));
 	switch (old) {
 		case VK_IMAGE_LAYOUT_UNDEFINED:
 		case VK_IMAGE_LAYOUT_PREINITIALIZED:
@@ -254,6 +253,7 @@ void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 			break;
 		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
 			switch (new) {
+				/* https://stackoverflow.com/questions/67993790/how-do-you-properly-transition-the-image-layout-from-transfer-optimal-to-shader */
 				case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
 					bar.srcAccessMask = VK_IMAGE_LAYOUT_UNDEFINED;
 					bar.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
