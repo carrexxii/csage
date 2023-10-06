@@ -1,6 +1,7 @@
 #include "common.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_GLYPH_H
 #include "vulkan/vulkan.h"
 
 #include "util/varray.h"
@@ -69,37 +70,49 @@ void font_init(VkRenderPass renderpass)
 	FT_Set_Pixel_Sizes(face, font_size, font_size);
 
 	/* Over-allocate - probably a better way of doing this */
-	uint32* pxs  = smalloc(sizeof(uint32)*font_size*(128*2*font_size));
+	// uint32* pxs  = smalloc(sizeof(uint32)*font_size*(128*2*font_size));
+	// uint8* pxs  = smalloc(16*16);
 	uint maxh   = 0;
 	uint totalw = 0;
 	uint tex_x  = 0; /* Current position on the main bitmap */
 	FT_GlyphSlot glyph = face->glyph;
-	for (int i = 0; i < 128; i++) {
-		if (FT_Load_Char(face, (char)i, FT_LOAD_RENDER))
-			ERROR("[GFX] Error loading glyph \"%c\"", (char)i);
+	// for (int i = 0; i < 128; i++) {
+	// 	if (FT_Load_Char(face, (char)i, FT_LOAD_RENDER))
+	// 		ERROR("[GFX] Error loading glyph \"%c\"", (char)i);
 
-		characters[i] = (struct Character){
-			.size[0]    = glyph->bitmap.width,
-			.size[1]    = glyph->bitmap.rows,
-			.bearing[0] = glyph->bitmap_left,
-			.bearing[1] = glyph->bitmap_top,
-			.advance    = glyph->advance.x,
-		};
-		if (maxh < glyph->bitmap.rows)
-			maxh = glyph->bitmap.rows;
-		totalw += glyph->bitmap.width + (glyph->advance.x >> 6);
+	// 	characters[i] = (struct Character){
+	// 		.size[0]    = glyph->bitmap.width,
+	// 		.size[1]    = glyph->bitmap.rows,
+	// 		.bearing[0] = glyph->bitmap_left,
+	// 		.bearing[1] = glyph->bitmap_top,
+	// 		.advance    = glyph->advance.x,
+	// 	};
+	// 	if (maxh < glyph->bitmap.rows)
+	// 		maxh = glyph->bitmap.rows;
+	// 	totalw += glyph->bitmap.width + (glyph->advance.x >> 6);
 
-		/* Copy over the bitmap */
-		for (uint y = 0; y < glyph->bitmap.rows; y++) {
-			for (uint x = 0; x < glyph->bitmap.width; x++) {
-				// DEBUG(1, "%d, %d -> %d - %d [%X]", x, y, y*totalw + x, y*characters[i].size[0] + x, ((uint32*)glyph->bitmap.buffer)[y*characters[i].size[0] + x]);
-				pxs[y*totalw + x + tex_x] = ((uint32*)glyph->bitmap.buffer)[y*glyph->bitmap.width + x];
-			}
-		}
-		tex_x += glyph->bitmap.width;
-	}
+	// 	/* Copy over the bitmap */
+	// 	for (uint y = 0; y < glyph->bitmap.rows; y++) {
+	// 		for (uint x = 0; x < glyph->bitmap.width; x++) {
+	// 			// DEBUG(1, "%d, %d -> %d - %d [%X]", x, y, y*totalw + x, y*characters[i].size[0] + x, ((uint32*)glyph->bitmap.buffer)[y*characters[i].size[0] + x]);
+	// 			pxs[y*totalw + x + tex_x] = ((uint32*)glyph->bitmap.buffer)[y*glyph->bitmap.width + x];
+	// 		}
+	// 	}
+	// 	tex_x += glyph->bitmap.width;
+	// }
 	// char_texture = texture_new(pxs, totalw, maxh);
-	char_texture = texture_new_from_image("data/img.jpg");
+	// char_texture = texture_new_from_image("data/img.jpg");
+
+	FT_Load_Char(face, 'X', FT_LOAD_RENDER);
+	FT_Bitmap bitmap = face->glyph->bitmap;
+	uint8* pxs = scalloc(sizeof(uint8[4]), bitmap.width*bitmap.rows);
+    for (uint y = 0; y < bitmap.rows; y++) {
+        for (uint x = 0; x < bitmap.width; x++) {
+            int index = y*bitmap.width + x;
+        	memset(pxs + 4*index, bitmap.buffer[index], sizeof(uint8[4]));
+        }
+    }
+	char_texture = texture_new(pxs, bitmap.width, bitmap.rows);
 
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);

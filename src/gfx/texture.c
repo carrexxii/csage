@@ -11,14 +11,14 @@
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h);
 
-struct Texture texture_new(uint32* pxs, int w, int h)
+struct Texture texture_new(uint8* pxs, int w, int h)
 {
 	DEBUG(2, "[VK] Creating new texture (%dx%d)", w, h);
 	struct Texture tex;
 
 	void* data;
 	struct Buffer trans_buffer;
-	VkDeviceSize size = w*h*sizeof(*pxs);
+	VkDeviceSize size = 4*w*h;
 	buffer_new(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -39,8 +39,6 @@ struct Texture texture_new(uint32* pxs, int w, int h)
 		},
 		.imageType             = VK_IMAGE_TYPE_2D,
 		.tiling                = VK_IMAGE_TILING_OPTIMAL,
-
-
 		.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED,
 		.mipLevels             = 1,
 		.arrayLayers           = 1,
@@ -83,7 +81,7 @@ struct Texture texture_new_from_image(const char* path)
 	if (!pxs)
 		ERROR("[RES] Failed to load image \"%s\"", path);
 
-	tex = texture_new((uint32*)pxs, w, h);
+	tex = texture_new(pxs, w, h);
 	stbi_image_free(pxs);
 
 	return tex;
