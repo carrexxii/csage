@@ -44,7 +44,7 @@ static SBO matbuf;
 
 void renderer_init()
 {
-	swapchain_init(surface, WINDOW_WIDTH, WINDOW_HEIGHT);
+	swapchain_init(surface, config_window_width, config_window_height);
 
 	VkAttachmentDescription colourdesc = {
 		.format         = surfacefmt.format,
@@ -123,8 +123,7 @@ void renderer_init()
 	pipeln.vertattrc = ARRAY_LEN(mdlvertattrs);
 	pipeln.vertattrs = mdlvertattrs;
 	pipeln.uboc      = 1;
-	pipeln.ubos      = scalloc(1, sizeof(UBO));
-	pipeln.ubos[0]   = &ubobufs[0];
+	pipeln.ubos      = ubobufs;
 	pipeln.sbo       = &matbuf;
 	pipeln.sbosz     = sizeof(mat4)*RENDERER_MAX_OBJECTS;
 	init_pipeln(&pipeln, renderpass);
@@ -250,7 +249,6 @@ static void record_command(int imgi)
 	for (int i = 0; i < renmdlc; i++) {
 		if (!renmdls[i].vertc)
 			continue;
-		// DEBUG(1, "Drawing %d verts", renmdls[i].vertc);
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
 	}
@@ -276,7 +274,7 @@ inline static void buffer_updates()
 
 	mat4 vp;
 	camera_get_vp(vp);
-	buffer_update(*pipeln.ubos[0], sizeof(mat4), vp);
+	buffer_update(pipeln.ubos[0], sizeof(mat4), vp);
 }
 
 static void create_framebuffers()

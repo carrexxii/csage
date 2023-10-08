@@ -7,7 +7,7 @@ void test_init()
 {
 	ship1 = ship_new(SHIPTYPE_1);
 
-	int text = font_render("Hello, World!", 0.0, 0.0, 100.0, 100.0);
+	int text = font_render("_- Hello, World! Testing more words. -_", 50.0, 600.0, 50.0);
 }
 
 void test_o_cb(bool kdown)

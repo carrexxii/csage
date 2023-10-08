@@ -10,7 +10,7 @@
 extern int font_size;
 
 void font_init(VkRenderPass renderpass);
-int  font_render(char* text, float x, float y, float maxw, float maxh);
+int  font_render(char* text, float start_x, float start_y, float w);
 void font_record_commands(VkCommandBuffer cmdbuf);
 void font_free();
 

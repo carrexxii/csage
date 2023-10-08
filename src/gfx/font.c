@@ -1,30 +1,35 @@
 #include "common.h"
+#include "gfx/buffers.h"
+#include <cglm/cam.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #include "vulkan/vulkan.h"
 
+#include "config.h"
 #include "util/varray.h"
 #include "vulkan.h"
 #include "texture.h"
 #include "font.h"
 
 struct Character {
-	uint8 size[2];
-	uint8 bearing[2];
-	uint8 advance;
-	uint  offset; /* In the main texture */
+	int size[2];
+	int bearing[2];
+	int advance;
+	int offset; /* In the main texture */
 };
 
 struct TextObject {
 	VBO  vbo;
+	uint vertc;
 	bool active;
 };
 
 /* -------------------------------------------------------------------- */
 #define SIZEOF_FONT_VERTEX sizeof(float[4])
 
-struct Pipeline pipeln;
+static struct Pipeline pipeln;
+static UBO ubo_buf;
 
 static VkVertexInputBindingDescription fontvertbind = {
 	.binding   = 0,
@@ -43,26 +48,19 @@ static VkVertexInputAttributeDescription fontvertattrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
-int font_size = 16;
+int font_size = 48;
 
 static FT_Library library;
 static FT_Face    face;
 static struct Character characters[128];
-static struct Texture char_texture;
+static struct Texture atlas;
+static float atlas_w;
+static float atlas_h;
 static struct TextObject text_objs[FONT_MAX_TEXT_OBJECTS];
 static intptr text_objc;
 
-
-float* verts = (float[24]){
-	-0.9, 0.0, 0.0, 0.0,   0.9, 0.0, 1.0, 0.0,   -0.9, 0.1, 0.0, 1.0,
-    -0.9, 0.1, 0.0, 1.0,   0.9, 0.0, 1.0, 0.0,    0.9, 0.1, 1.0, 1.0,
-};
-VBO vbo;
-
 void font_init(VkRenderPass renderpass)
 {
-	vbo = vbo_new(sizeof(float[24]), verts);
-
 	if (!library && FT_Init_FreeType(&library))
 		ERROR("[GFX] Failed to initialize FreeType");
 	if (!face && FT_New_Face(library, FONT_PATH, 0, &face))
@@ -71,8 +69,8 @@ void font_init(VkRenderPass renderpass)
 	FT_Set_Pixel_Sizes(face, font_size, font_size);
 
 	/* Calculate the sizes needed for the atlas */
-	uint atlas_w = 0;
-	uint atlas_h = 0;
+	atlas_w = 0;
+	atlas_h = 0;
 	FT_Bitmap bitmap;
 	for (int i = 0; i < 128; i++) {
 		if (FT_Load_Char(face, (char)i, FT_LOAD_NO_BITMAP))
@@ -84,8 +82,8 @@ void font_init(VkRenderPass renderpass)
 		atlas_w += face->glyph->advance.x >> 6;
 	}
 
-	uint8* atlas = scalloc(sizeof(uint8[4]), sizeof(uint8[4])*atlas_w*atlas_h);
-	uint tex_x   = 0; /* Current position on the main bitmap */
+	uint8* atlas_bitmap = scalloc(sizeof(uint8[4]), sizeof(uint8[4])*atlas_w*atlas_h);
+	uint tex_x = 0; /* Current position on the main bitmap */
 	int atlas_i, bitmap_i;
 	for (int i = 0; i < 128; i++) {
 		if (FT_Load_Char(face, (char)i, FT_LOAD_RENDER))
@@ -105,20 +103,21 @@ void font_init(VkRenderPass renderpass)
 			for (uint x = 0; x < bitmap.width; x++) {
 				atlas_i  = y*atlas_w + tex_x + x;
 				bitmap_i = y*bitmap.width + x;
-				atlas[4*atlas_i + 0] = bitmap.buffer[bitmap_i];
-				atlas[4*atlas_i + 1] = bitmap.buffer[bitmap_i];
-				atlas[4*atlas_i + 2] = bitmap.buffer[bitmap_i];
-				atlas[4*atlas_i + 3] = bitmap.buffer[bitmap_i];
+				atlas_bitmap[4*atlas_i + 0] = bitmap.buffer[bitmap_i];
+				atlas_bitmap[4*atlas_i + 1] = bitmap.buffer[bitmap_i];
+				atlas_bitmap[4*atlas_i + 2] = bitmap.buffer[bitmap_i];
+				atlas_bitmap[4*atlas_i + 3] = bitmap.buffer[bitmap_i];
 			}
 		}
 		tex_x += face->glyph->advance.x >> 6;
 	}
-	char_texture = texture_new(atlas, atlas_w, atlas_h);
+	atlas = texture_new(atlas_bitmap, atlas_w, atlas_h);
 
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);
 	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
 
+	ubo_buf = ubo_new(sizeof(mat4));
 	pipeln = (struct Pipeline){
 		.vshader   = create_shader(SHADER_DIR "font.vert"),
 		.fshader   = create_shader(SHADER_DIR "font.frag"),
@@ -127,39 +126,93 @@ void font_init(VkRenderPass renderpass)
 		.vertattrc = 2,
 		.vertattrs = fontvertattrs,
 		.texturec  = 1,
-		.textures  = &char_texture,
+		.textures  = &atlas,
+		.uboc      = 1,
+		.ubos      = &ubo_buf,
 	};
+
 	init_pipeln(&pipeln, renderpass);
+
+	mat4 proj;
+	glm_ortho(0.0, config_window_width, config_window_height, 0.0, 0.0, 1.0, proj);
+	buffer_update(ubo_buf, sizeof(mat4), proj);
 }
 
-int font_render(char* text, float x, float y, float maxw, float maxh)
+int font_render(char* text, float start_x, float start_y, float w)
 {
-	// VBO vbo;
-	// for (char c = *text; c; c = *++text) {
-	// 	DEBUG_VALUE(c);
-	// }
+	int len = strlen(text);
+	float* verts = smalloc(6*sizeof(float[4])*len);
+	float  x = start_x;
+	float  y = config_window_height - start_y;
+	float* v = verts;
+	float offset, size[2];
+	float char_x, char_y;
+	for (char c = *text; c; c = *++text) {
+		offset     = characters[(int)c].offset;
+		size[0]    = characters[(int)c].size[0];
+		size[1]    = characters[(int)c].size[1];
 
-	return 0;
+		char_x = x + characters[(int)c].bearing[0];
+		char_y = y + characters[(int)c].bearing[1] - size[1];
+
+		*v++ = char_x;
+		*v++ = char_y;
+		*v++ = offset/atlas_w;
+		*v++ = size[1]/atlas_h;
+
+		*v++ = char_x + size[0];
+		*v++ = char_y;
+		*v++ = (offset + size[0])/atlas_w;
+		*v++ = size[1]/atlas_h;
+
+		*v++ = char_x;
+		*v++ = char_y + size[1];
+		*v++ = offset/atlas_w;
+		*v++ = 0.0;
+
+		*v++ = char_x;
+		*v++ = char_y + size[1];
+		*v++ = offset/atlas_w;
+		*v++ = 0.0;
+
+		*v++ = char_x + size[0];
+		*v++ = char_y;
+		*v++ = (offset + size[0])/atlas_w;
+		*v++ = size[1]/atlas_h;
+
+		*v++ = char_x + size[0];
+		*v++ = char_y + size[1];
+		*v++ = (offset + size[0])/atlas_w;
+		*v++ = 0.0;
+
+		x += characters[(int)c].advance >> 6;
+	}
+
+	text_objs[text_objc].active = true;
+	text_objs[text_objc].vertc  = 6*len;
+	text_objs[text_objc].vbo = vbo_new(text_objs[text_objc].vertc*sizeof(float[4]), verts);
+
+	free(verts);
+
+	return text_objc++;
 }
 
 void font_record_commands(VkCommandBuffer cmdbuf)
 {
-
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
-	// for (int i = 0; i < text_objc; i++) {
-	// 	if (!text_objs[i].active)
-	// 		continue;
-	// 	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
-	// 	vkCmdDraw(cmdbuf, 6, 1, 0, i);
-	// }
-
-	vkCmdBindVertexBuffers(cmdbuf, 0, 1, &vbo.buf, (VkDeviceSize[]) { 0 });
-	vkCmdDraw(cmdbuf, 6, 1, 0, 0);
+	for (int i = 0; i < text_objc; i++) {
+		if (!text_objs[i].active)
+			continue;
+		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmdbuf, text_objs[i].vertc, 1, 0, i);
+	}
 }
 
 void font_free()
 {
-	texture_free(char_texture);
+	for (int i = 0; i < text_objc; i++)
+		vbo_free(&text_objs[i].vbo);
+	texture_free(atlas);
 	pipeln_free(&pipeln);
 }

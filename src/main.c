@@ -20,6 +20,9 @@ noreturn void quit_cb(bool kdown);
 SDL_Renderer* renderer;
 SDL_Window*   window;
 
+uint config_window_width  = 1280;
+uint config_window_height = 720;
+
 int main(int argc, char** argv)
 {
 	for (int i = 0; i < argc; i++)
@@ -76,7 +79,7 @@ void init_sdl()
 		DEBUG(1, "[INIT] Initialized SDL");
 
 	window = SDL_CreateWindow("CSage", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-	                          WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_VULKAN);
+	                          config_window_width, config_window_height, SDL_WINDOW_VULKAN);
 	if (!window)
 		ERROR("[INIT] Failed to create window (%s)", SDL_GetError());
 	else

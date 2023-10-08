@@ -32,7 +32,7 @@ struct Pipeline {
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
 	intptr   uboc;
-	UBO**    ubos;
+	UBO*     ubos;
 	intptr   sbosz;
 	SBO*     sbo;
 	intptr   pushsz;

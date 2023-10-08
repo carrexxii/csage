@@ -25,7 +25,8 @@ void camera_get_vp(mat4 out)
 
 void camera_set_perspective()
 {
-	glm_ortho(-WINDOW_WIDTH/zoom, WINDOW_WIDTH/zoom, -WINDOW_HEIGHT/zoom, WINDOW_HEIGHT/zoom, 0.0, 100.0, camproj);
+	glm_ortho(-(float)config_window_width/zoom , (float)config_window_width/zoom,
+	          -(float)config_window_height/zoom, (float)config_window_height/zoom, 0.0, 100.0, camproj);
 }
 
 void camera_update()

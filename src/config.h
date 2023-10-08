@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define WINDOW_WIDTH  1280
-#define WINDOW_HEIGHT 720
+extern uint config_window_width;
+extern uint config_window_height;
 
 #endif

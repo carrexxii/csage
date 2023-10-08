@@ -48,7 +48,7 @@ void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 		.maxDepth = 1.0,
 	};
 	VkRect2D scissor = {
-		.offset = {0, 0},
+		.offset = { 0, 0 },
 		.extent = swapchainext,
 	};
 	VkPipelineViewportStateCreateInfo viewportsci = {
@@ -83,11 +83,11 @@ void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 	VkPipelineColorBlendAttachmentState blendattachs = {
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
 						  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-		.blendEnable  = false,
+		.blendEnable  = true,
 		.colorBlendOp = VK_BLEND_OP_ADD,
 		.alphaBlendOp = VK_BLEND_OP_ADD,
-		.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-		.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+		.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+		.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 		.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
 		.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
 	};
@@ -168,8 +168,8 @@ void pipeln_free(struct Pipeline* pipeln)
 	vkDestroyDescriptorSetLayout(gpu, pipeln->dsetlayout, alloccb);
 
 	for (int i = 0; i < pipeln->uboc; i++)
-		if (pipeln->ubos[i]->sz)
-			ubo_free(pipeln->ubos[i]);
+		if (pipeln->ubos[i].sz)
+			ubo_free(&pipeln->ubos[i]);
 	if (pipeln->sbo)
 		sbo_free(pipeln->sbo);
 }
@@ -327,15 +327,15 @@ static void update_dsets(struct Pipeline* pipeln)
 		sbo_loc = dwritesetc;
 		dwritesetc++;
 	}
-
+ 	
 	/* Uniform buffers */
 	if (pipeln->uboc > 0)
 		ubo_loc = dwritesetc;
 	for (int i = 0; i < pipeln->uboc; i++) {
 		dbufis[dwritesetc] = (VkDescriptorBufferInfo){
-			.buffer = pipeln->ubos[i]->buf,
+			.buffer = pipeln->ubos[i].buf,
 			.offset = 0,
-			.range  = pipeln->ubos[i]->sz,
+			.range  = pipeln->ubos[i].sz,
 		};
 		update_buf_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 
 		                &dbufis[dwritesetc], dwritesetc);
@@ -352,6 +352,8 @@ static void update_dsets(struct Pipeline* pipeln)
 	sampler_loc = dwritesetc;
 	dwritesetc++;
 
+	vkUpdateDescriptorSets(gpu, dwritesetc, dwritesets, 0, NULL);
+
 	/* Sampled images */
 	if (pipeln->texturec > 0)
 		images_loc = dwritesetc;
@@ -365,9 +367,9 @@ static void update_dsets(struct Pipeline* pipeln)
 		                &dimgis[i + 1], dwritesetc);
 		dwritesetc++;
 	}
-
-	vkUpdateDescriptorSets(gpu, dwritesetc, dwritesets, 0, NULL);
-	DEBUG(3, "[VK] Updated %d descriptor sets (SBO: %d; UBO: %d; Sampler: %d; Images: %d)", dwritesetc,
+	vkUpdateDescriptorSets(gpu, 1, &dwritesets[dwritesetc-1], 0, NULL);
+	
+	DEBUG(3, "[VK] Updated %d descriptor sets (SBO: %d; UBO: %d; Sampler: %d; Images: %d)", dwritesetc, 
 	      sbo_loc, ubo_loc, sampler_loc, images_loc);
 }
 
