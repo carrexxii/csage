@@ -3,8 +3,7 @@
 
 #include "physics.h"
 
-#define SHIP_TYPE_COUNT    8
-#define SHIP_MAX_THRUSTERS 4
+#define SHIP_TYPE_COUNT 8
 
 typedef intptr ShipID;
 
@@ -16,8 +15,7 @@ enum ShipType {
 struct Ship {
 	enum ShipType type;
 	struct Body body;
-	struct Thruster thrusters[SHIP_MAX_THRUSTERS];
-	int8 thrusterc;
+	struct Thruster thruster;
 	intptr mdli;
 };
 
@@ -31,11 +29,5 @@ void ships_free();
 	_t == SHIPTYPE_NONE? "block":   \
 	_t == SHIPTYPE_1   ? "triangle": \
 	"triangle"
-
-static float thrusterdata[][5] = {
-	/*   s     Fmin Fmax   θ  */
-	{ 0.0, 0.0, 0.0, 0.0, 0.0 },
-	{ 0.0, 0.0, 0.0, 1.0, 0.0 },
-};
 
 #endif

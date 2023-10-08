@@ -12,9 +12,9 @@ struct Body {
 };
 
 struct Thruster {
-	float F, Fmin, Fmax;
-	float θ;
-	vec2 s;
+	vec2  s;
+	float F, F_max;
+	float τ, τ_max;
 };
 
 void physics_apply_thrust(struct Thruster* thruster, struct Body* body);

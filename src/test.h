@@ -10,38 +10,29 @@ void test_init()
 	int text = font_render("_- Hello, World! Testing more words. -_", 50.0, 600.0, 50.0);
 }
 
+void test_i_cb(bool kdown)
+{
+	struct Ship* ship = ship_get(ship1);
+	if (kdown)
+		ship->thruster.τ = ship->thruster.τ_max;
+	else
+		ship->thruster.τ = 0.0;
+}
+
 void test_o_cb(bool kdown)
 {
 	struct Ship* ship = ship_get(ship1);
 	if (kdown)
-		ship->thrusters[0].F = 1.0;
+		ship->thruster.F = ship->thruster.F_max;
 	else
-		ship->thrusters[0].F = 0.0;
+		ship->thruster.F = 0.0;
 }
 
 void test_p_cb(bool kdown)
 {
 	struct Ship* ship = ship_get(ship1);
 	if (kdown)
-		ship->thrusters[1].F = 1.0;
+		ship->thruster.τ = -ship->thruster.τ_max;
 	else
-		ship->thrusters[1].F = 0.0;
-}
-
-void test_k_cb(bool kdown)
-{
-	struct Ship* ship = ship_get(ship1);
-	if (kdown)
-		ship->thrusters[0].F = -1.0;
-	else
-		ship->thrusters[0].F = 0.0;
-}
-
-void test_l_cb(bool kdown)
-{
-	struct Ship* ship = ship_get(ship1);
-	if (kdown)
-		ship->thrusters[1].F = -1.0;
-	else
-		ship->thrusters[1].F = 0.0;
+		ship->thruster.τ = 0.0;
 }

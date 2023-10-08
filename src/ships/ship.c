@@ -22,7 +22,7 @@ ShipID ship_new(enum ShipType type)
 {
 	struct Ship ship = {
 		.type = type,
-		.body = (struct Body){ .m = 100.0 },
+		.body = (struct Body){ .m = 100.0, .θ = GLM_PI_2, },
 	};
 
 	/* Model */
@@ -39,17 +39,13 @@ ShipID ship_new(enum ShipType type)
 	/* Thrusters */
 	switch (type) {
 		case SHIPTYPE_1:
-			ship.thrusterc = 2;
-			ship.thrusters[0].Fmax = 1.0;
-			ship.thrusters[0].s[0] = -0.2;
-			ship.thrusters[0].s[1] = 0.0;
-
-			ship.thrusters[1].Fmax = 1.0;
-			ship.thrusters[1].s[0] = 0.2;
-			ship.thrusters[1].s[1] = 0.0;
+			ship.thruster.s[0]  = 0.0;
+			ship.thruster.s[1]  = 0.0;
+			ship.thruster.F_max = 50.0;
+			ship.thruster.τ_max = 5.0;
 			break;
 		default:
-			ERROR("ERROR");
+			ERROR("No thruster values for ship %d", type);
 	}
 
 	shipc++;
@@ -70,15 +66,16 @@ void ships_update()
 	struct Ship* ship;
 	for (int i = 0; i < shipc; i++) {
 		ship = (struct Ship*)ships.data + i;
-		for (int j = 0; j < ship->thrusterc; j++)
-			physics_apply_thrust(&ship->thrusters[j], &ship->body);
+		physics_apply_thrust(&ship->thruster, &ship->body);
 
 		physics_integrate(&ship->body);
 
 		mat = renmats + ship->mdli;
 		glm_mat4_identity(*mat);
-		glm_rotate(*mat, ship->body.θ, (vec3){ 0.0, 0.0, 1.0 });
 		glm_translate(*mat, (vec3){ ship->body.s[0], ship->body.s[1], 0.0 });
+		glm_translate(*mat, (vec3){ ship->body.cm[0], ship->body.cm[1], 0.0 });
+		glm_rotate(*mat, ship->body.θ - GLM_PI_2, (vec3){ 0.0, 0.0, 1.0 });
+		glm_translate(*mat, (vec3){ -ship->body.cm[0], -ship->body.cm[1], 0.0 });
 	}
 }
 

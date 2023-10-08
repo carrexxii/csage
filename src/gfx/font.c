@@ -48,7 +48,7 @@ static VkVertexInputAttributeDescription fontvertattrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
-int font_size = 48;
+int font_size = 24;
 
 static FT_Library library;
 static FT_Face    face;
