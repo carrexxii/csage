@@ -87,7 +87,7 @@ void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 		.colorBlendOp = VK_BLEND_OP_ADD,
 		.alphaBlendOp = VK_BLEND_OP_ADD,
 		.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-		.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+		.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA,//VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 		.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
 		.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
 	};

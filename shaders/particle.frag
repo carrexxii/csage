@@ -1,8 +1,14 @@
 #version 460
 
+layout(location = 0) in vec2 Fuv;
+
 layout(location = 0) out vec4 screen_colour;
+
+layout (set = 0, binding = 2) uniform sampler   Fsampler;
+layout (set = 0, binding = 3) uniform texture2D Ftexture;
 
 void main()
 {
-    screen_colour = vec4(0.0, 1.0, 0.0, 1.0);
+    vec3 Frgb = vec3(0.3, 0.7, 1.0);
+    screen_colour = texture(sampler2D(Ftexture, Fsampler), Fuv) * vec4(Frgb, 1.0);
 }

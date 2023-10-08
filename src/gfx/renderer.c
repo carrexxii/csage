@@ -245,6 +245,8 @@ static void record_command(int imgi)
 
 	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
+	font_record_commands(cmdbuf);
+
 	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 	for (int i = 0; i < renmdlc; i++) {
@@ -253,8 +255,7 @@ static void record_command(int imgi)
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
 	}
-
-	font_record_commands(cmdbuf);
+	
 	particles_record_commands(cmdbuf);
 
 	vkCmdEndRenderPass(cmdbuf);

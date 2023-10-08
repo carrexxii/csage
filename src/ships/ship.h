@@ -16,6 +16,7 @@ struct Ship {
 	enum ShipType type;
 	struct Body body;
 	struct Thruster thruster;
+	vec2 thruster_pos;
 	intptr mdli;
 };
 

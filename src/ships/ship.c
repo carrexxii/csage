@@ -5,6 +5,8 @@
 #include "physics.h"
 #include "ship.h"
 #include "util/maths.h"
+#include <cglm/vec2.h>
+#include <float.h>
 #include <stdint.h>
 
 static void set_verts_from_model(struct Body* body, struct Model mdl);
@@ -52,8 +54,7 @@ ShipID ship_new(enum ShipType type)
 	shipc++;
 	struct Ship* s = iarr_append(&ships, shipc, &ship);
 
-	ship.thruster.particles = particles_new_pool(INT32_MAX, 3000, 100, s->body.s, s->body.v);
-	particles_enable(ship.thruster.particles);
+	ship.thruster.particles = particles_new_pool(INT32_MAX, 1500, 40, s->thruster_pos, s->body.v, 0.5);
 
 	return shipc;
 }
@@ -65,21 +66,31 @@ struct Ship* ship_get(ShipID ship)
 
 void ships_update()
 {
-	/* Update the model matrix for each ship */
 	mat4* mat;
 	struct Ship* ship;
 	for (int i = 0; i < shipc; i++) {
 		ship = (struct Ship*)ships.data + i;
 		physics_apply_thrust(&ship->thruster, &ship->body);
+		if (fabs(ship->thruster.F) > FLT_EPSILON)
+			particles_enable(ship->thruster.particles);
+		else
+			particles_disable(ship->thruster.particles);
 
 		physics_integrate(&ship->body);
 
+		/* Update the model matrix */
 		mat = renmats + ship->mdli;
 		glm_mat4_identity(*mat);
 		glm_translate(*mat, (vec3){ ship->body.s[0], ship->body.s[1], 0.0 });
 		glm_translate(*mat, (vec3){ ship->body.cm[0], ship->body.cm[1], 0.0 });
 		glm_rotate(*mat, ship->body.θ - GLM_PI_2, (vec3){ 0.0, 0.0, 1.0 });
 		glm_translate(*mat, (vec3){ -ship->body.cm[0], -ship->body.cm[1], 0.0 });
+
+		/* Get the thruster's position */
+		glm_vec2_sub(ship->body.cm, ship->thruster_pos, ship->thruster_pos);
+		glm_vec2_rotate(ship->body.cm, ship->body.θ + GLM_PI_2, ship->thruster_pos);
+		glm_vec2_add(ship->body.cm, ship->thruster_pos, ship->thruster_pos);
+		glm_vec2_add(ship->body.s, ship->thruster_pos, ship->thruster_pos);
 	}
 }
 
