@@ -1,6 +1,8 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
+#include "gfx/particles.h"
+
 struct Body {
 	float* verts;
 	int    vertc;
@@ -15,6 +17,7 @@ struct Thruster {
 	vec2  s;
 	float F, F_max;
 	float τ, τ_max;
+	int   particles;
 };
 
 void physics_apply_thrust(struct Thruster* thruster, struct Body* body);

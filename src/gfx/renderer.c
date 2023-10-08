@@ -129,6 +129,7 @@ void renderer_init()
 	init_pipeln(&pipeln, renderpass);
 
 	font_init(renderpass);
+	particles_init(renderpass);
 }
 
 // TODO: Fix removes
@@ -254,6 +255,7 @@ static void record_command(int imgi)
 	}
 
 	font_record_commands(cmdbuf);
+	particles_record_commands(cmdbuf);
 
 	vkCmdEndRenderPass(cmdbuf);
 	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)

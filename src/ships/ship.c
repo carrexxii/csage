@@ -5,6 +5,7 @@
 #include "physics.h"
 #include "ship.h"
 #include "util/maths.h"
+#include <stdint.h>
 
 static void set_verts_from_model(struct Body* body, struct Model mdl);
 static void set_centre_of_mass(struct Ship* ship);
@@ -49,7 +50,10 @@ ShipID ship_new(enum ShipType type)
 	}
 
 	shipc++;
-	iarr_append(&ships, shipc, &ship);
+	struct Ship* s = iarr_append(&ships, shipc, &ship);
+
+	ship.thruster.particles = particles_new_pool(INT32_MAX, 3000, 100, s->body.s, s->body.v);
+	particles_enable(ship.thruster.particles);
 
 	return shipc;
 }

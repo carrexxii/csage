@@ -1,12 +1,15 @@
 #ifndef GFX_PARTICLES_H
 #define GFX_PARTICLES_H
 
+#include "common.h"
 #include "vulkan/vulkan.h"
 
 #include "pipeline.h"
 #include "buffers.h"
+#include <stdalign.h>
 
-#define MAX_PARTICLES_PER_POOL 255
+#define MAX_PARTICLE_POOLS     256
+#define MAX_PARTICLES_PER_POOL 64
 
 enum ParticleType {
 	PARTICLE_STREAM,
@@ -14,24 +17,29 @@ enum ParticleType {
 };
 
 struct Particle {
-	int64 life;
-	vec2  s, v, a;
-	float θ, ω, α;
-	vec3  colour;
-};
+	vec2  s, v;
+	int32 life;
+	int: 32;
+	int: 32;
+	int: 32;
+}; static_assert(sizeof(struct Particle) == 32);
 
 struct ParticlePool {
-	struct Particle* particles;
-	uint8 particlec;
-	bool  enabled;
-	int64 life;
-	VBO   vbo;
+	bool   enabled;
+	int32  life;
+	int32  particle_life;
+	int32  interval;
+	int32  timer;
+	float* start_pos;
+	float* start_vel;
+	struct Particle particles[MAX_PARTICLES_PER_POOL];
 };
 
-extern struct Pipeline particlepipelns[PARTICLE_END];
-
 void particles_init(VkRenderPass renderpass);
-struct ParticlePool particles_new_pool(int vertc, float* verts, uint8 maxparticles, int64 poollife, int64 particlelife);
+int  particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel);
+void particles_enable(int particle_id);
+void particles_update();
+void particles_record_commands(VkCommandBuffer cmd_buf);
 void particles_free();
 
 #endif

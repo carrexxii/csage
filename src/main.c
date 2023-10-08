@@ -10,6 +10,7 @@
 #include "input.h"
 
 #include "gfx/polygon.h"
+#include "gfx/particles.h"
 #include "ships/ship.h"
 #include "test.h"
 
@@ -46,6 +47,7 @@ int main(int argc, char** argv)
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
 	taskmgr_add_task(ships_update);
+	taskmgr_add_task(particles_update);
 
 	test_init();
 

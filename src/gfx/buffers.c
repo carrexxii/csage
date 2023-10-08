@@ -73,7 +73,7 @@ VBO _vbo_new(VkDeviceSize sz, void* verts, char const* file, int line, char cons
 	DEBUG(3, "[VK] Creating vertex buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	struct Buffer tmpbuf;
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-	                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
 	buffer_update(tmpbuf, sz, verts);
 
@@ -91,13 +91,13 @@ IBO _ibo_new(VkDeviceSize sz, void* inds, char const* file, int line, char const
 	DEBUG(3, "[VK] Creating index buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	struct Buffer tmpbuf;
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
 	buffer_update(tmpbuf, sz, inds);
 
 	IBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-	              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
+	           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
 	copy_buffer(buf.buf, tmpbuf.buf, sz);
 	buffer_free(&tmpbuf);
 
@@ -109,7 +109,7 @@ UBO _ubo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 	DEBUG(3, "[VK] Creating uniform buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	UBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	                                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &buf.buf, &buf.mem);
 
 	return buf;
@@ -120,7 +120,7 @@ SBO _sbo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 	DEBUG(3, "[VK] Creating storage buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	SBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-	              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
+	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
 
 	return buf;
 }
