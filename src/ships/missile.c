@@ -2,6 +2,7 @@
 #include "gfx/particles.h"
 #include "ships/physics.h"
 #include "gfx/renderer.h"
+#include <cglm/vec2.h>
 
 #define MAX_MISSILES 1024
 #define MISSILE_PARTICLE_LIFE     3000
@@ -23,15 +24,16 @@ ID missile_new(enum MissileType type, vec2 start_pos, vec2 start_vel, ShipID own
 	missiles[r] = (struct Missile){
 		.type = type,
 		.body = (struct Body){
-			.s[0] = start_pos[0],
+			.s[0] = start_pos[0] + 2.0,
 			.s[1] = start_pos[1],
 			.v[0] = start_vel[0],
 			.v[1] = start_vel[1],
-			.no_dampen = true,
+			.m = 3.0,
+			.cm = { 0.0, 0.1 },
 		},
 		.model = model,
-		.particles = particles_new_pool(INT32_MAX, MISSILE_PARTICLE_LIFE, MISSILE_PARTICLE_INTERVAL,
-		                                missiles[r].body.s, start_vel, particle_scale),
+		// .particles = particles_new_pool(INT32_MAX, MISSILE_PARTICLE_LIFE, MISSILE_PARTICLE_INTERVAL,
+		                                // missiles[r].body.s, start_vel, particle_scale),
 		.owner = owner,
 	};
 
@@ -57,15 +59,16 @@ void missiles_update()
 		missile = &missiles[i];
 		if (!missile->owner)
 			continue;
-		
+
+		physics_move_to(&missile->body, missile->target, 1.0, 1.0);
 		physics_integrate(&missile->body);
 
 		mat = &renmats[missile->mdli];
 		glm_mat4_identity(*mat);
 		glm_translate(*mat, (vec3){ missile->body.s[0], missile->body.s[1], 0.0 });
-		// glm_translate(*mat, (vec3){ missile->body.cm[0], missile->body.cm[1], 0.0 });
+		glm_translate(*mat, (vec3){ missile->body.cm[0], missile->body.cm[1], 0.0 });
 		glm_rotate(*mat, missile->body.θ - GLM_PI_2, (vec3){ 0.0, 0.0, 1.0 });
-		// glm_translate(*mat, (vec3){ -missile->body.cm[0], -missile->body.cm[1], 0.0 });
+		glm_translate(*mat, (vec3){ -missile->body.cm[0], -missile->body.cm[1], 0.0 });
 	}
 }
 

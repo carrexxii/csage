@@ -103,7 +103,7 @@ void init_input()
 	input_register_key((struct KeyboardCallback){ .key = SDLK_i, .fn = test_i_cb, .onkeydown = true, .onkeyup = true });
 	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = test_o_cb, .onkeydown = true, .onkeyup = true });
 	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = test_p_cb, .onkeydown = true, .onkeyup = true });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_SPACE, .fn = test_fire_cb, .onkeydown = true });
+	input_register_mouse(MOUSE_RIGHT, test_fire_cb);
 }
 
 noreturn void quit_cb(bool kdown)

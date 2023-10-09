@@ -22,6 +22,7 @@ struct Thruster {
 };
 
 void physics_apply_thrust(struct Thruster* thruster, struct Body* body);
+void physics_move_to(struct Body* body, vec2 target, float F_max, float τ_max);
 void physics_integrate(struct Body* body);
 
 #endif

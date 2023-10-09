@@ -1,6 +1,8 @@
 #ifndef GFX_CAMERA_H
 #define GFX_CAMERA_H
 
+#include "config.h"
+
 #define CAMERA_MIN_ZOOM 0.0
 #define CAMERA_MAX_ZOOM 500.0
 
@@ -12,6 +14,7 @@ extern enum Direction camdir;
 
 void camera_init();
 void camera_get_vp(mat4 out);
+void camera_get_point(float x, float y, vec2 out);
 void camera_set_perspective();
 void camera_update();
 
@@ -24,5 +27,6 @@ static void camera_zoom_out_cb(bool kdown)   { if (kdown) camdir |= DIR_BACKWARD
 
 inline static void camera_zlvl_up_cb(bool kdown)   { zoom += 1; CLAMP(zoom, 0, CAMERA_MAX_ZOOM); }
 inline static void camera_zlvl_down_cb(bool kdown) { zoom -= 1; CLAMP(zoom, 0, CAMERA_MIN_ZOOM); }
+
 
 #endif

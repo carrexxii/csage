@@ -1,5 +1,6 @@
 #include "SDL2/SDL.h"
 
+#include "config.h"
 #include "input.h"
 
 static int keycbc;

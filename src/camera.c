@@ -1,3 +1,4 @@
+#include "common.h"
 #include "config.h"
 #include "camera.h"
 
@@ -21,6 +22,18 @@ void camera_get_vp(mat4 out)
 	glm_translate_make(camview, campos);
 
 	glm_mat4_mul(camproj, camview, out);
+}
+
+void camera_get_point(float x, float y, vec2 out)
+{
+	mat4 vp;
+	camera_get_vp(vp);
+
+	vec3 v;
+	glm_unproject((vec3){ x, y, 0.0 }, vp, (float[]){ 0.0, 0.0, config_window_width, config_window_height }, v);
+
+	out[0] =  v[0];
+	out[1] = -v[1];
 }
 
 void camera_set_perspective()

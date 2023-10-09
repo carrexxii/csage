@@ -1,6 +1,8 @@
+#include "config.h"
 #include "ships/missile.h"
 #include "ships/ship.h"
 #include "gfx/font.h"
+#include "camera.h"
 
 ShipID ship1;
 
@@ -38,8 +40,16 @@ void test_p_cb(bool kdown)
 		ship->thruster.τ = 0.0;
 }
 
-void test_fire_cb(bool kdown)
+bool test_fire_cb(int btn, bool mb_down, int x, int y)
 {
+	if (!mb_down)
+		return true;
 	struct Ship* ship = ship_get(ship1);
-	missile_new(MISSILE_TYPE_ONE, ship->body.s, ship->body.v, ship1);
+	ID m = missile_new(MISSILE_TYPE_ONE, ship->body.s, ship->body.v, ship1);
+
+	vec2 t;
+	camera_get_point((float)x, (float)y, t);
+	missile_set_target(m, t);
+
+	return true;
 }
