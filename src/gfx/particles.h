@@ -39,11 +39,12 @@ struct ParticlePool {
 };
 
 void particles_init(VkRenderPass renderpass);
-int  particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel, float scale);
-void particles_enable(int particle_id);
-void particles_disable(int particle_id);
+ID   particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel, float scale);
+void particles_enable(ID particle_id);
+void particles_disable(ID particle_id);
 void particles_update();
 void particles_record_commands(VkCommandBuffer cmd_buf);
 void particles_free();
+void particles_free_pool(ID pool_id);
 
 #endif

@@ -252,10 +252,11 @@ static void record_command(int imgi)
 	for (int i = 0; i < renmdlc; i++) {
 		if (!renmdls[i].vertc)
 			continue;
+		// DEBUG(1, "[%d] Drawing %d vertices", i, renmdls[i].vertc);
 		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
 	}
-	
+
 	particles_record_commands(cmdbuf);
 
 	vkCmdEndRenderPass(cmdbuf);

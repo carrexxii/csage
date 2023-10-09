@@ -3,11 +3,9 @@
 #include "gfx/polygon.h"
 #include "gfx/model.h"
 #include "physics.h"
-#include "ship.h"
 #include "util/maths.h"
-#include <cglm/vec2.h>
-#include <float.h>
-#include <stdint.h>
+#include "missile.h"
+#include "ship.h"
 
 static void set_verts_from_model(struct Body* body, struct Model mdl);
 static void set_centre_of_mass(struct Ship* ship);
@@ -79,7 +77,7 @@ void ships_update()
 		physics_integrate(&ship->body);
 
 		/* Update the model matrix */
-		mat = renmats + ship->mdli;
+		mat = &renmats[ship->mdli];
 		glm_mat4_identity(*mat);
 		glm_translate(*mat, (vec3){ ship->body.s[0], ship->body.s[1], 0.0 });
 		glm_translate(*mat, (vec3){ ship->body.cm[0], ship->body.cm[1], 0.0 });
@@ -96,6 +94,8 @@ void ships_update()
 
 void ships_free()
 {
+	missiles_free();
+
 	intptr mdli;
 	for (int i = 0; i < shipc; i++) {
 		mdli = ((struct Ship*)ships.data)[i].mdli;

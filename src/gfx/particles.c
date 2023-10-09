@@ -68,7 +68,7 @@ void particles_init(VkRenderPass renderpass)
 	vbo_buf = vbo_new(sizeof(verts), verts);
 }
 
-int particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel, float scale)
+ID particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel, float scale)
 {
 	if (particle_life/interval >= MAX_PARTICLES_PER_POOL)
 		ERROR("[GFX] Potentially too many particles");
@@ -84,12 +84,12 @@ int particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, flo
 	return poolc++;
 }
 
-void particles_enable(int particle_id)
+void particles_enable(ID particle_id)
 {
 	pools[particle_id].enabled = true;
 }
 
-void particles_disable(int particle_id)
+void particles_disable(ID particle_id)
 {
 	pools[particle_id].enabled = false;
 }
@@ -156,4 +156,11 @@ void particles_free()
 	texture_free(texture);
 	vbo_free(&vbo_buf);
 	pipeln_free(&pipeln);
+}
+
+void particles_free_pool(ID pool_id)
+{
+	if (pool_id >= MAX_PARTICLE_POOLS)
+		ERROR("[GFX] Invalid particle pool id: %ld", pool_id);
+	pools[pool_id].life = -1;
 }

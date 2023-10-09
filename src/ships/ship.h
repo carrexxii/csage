@@ -5,7 +5,7 @@
 
 #define SHIP_TYPE_COUNT 8
 
-typedef intptr ShipID;
+typedef uint64 ShipID;
 
 enum ShipType {
 	SHIPTYPE_NONE = 0,

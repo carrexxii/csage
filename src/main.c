@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
@@ -48,6 +49,7 @@ int main(int argc, char** argv)
 	taskmgr_add_task(camera_update);
 	taskmgr_add_task(ships_update);
 	taskmgr_add_task(particles_update);
+	taskmgr_add_task(missiles_update);
 
 	test_init();
 
@@ -101,6 +103,7 @@ void init_input()
 	input_register_key((struct KeyboardCallback){ .key = SDLK_i, .fn = test_i_cb, .onkeydown = true, .onkeyup = true });
 	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = test_o_cb, .onkeydown = true, .onkeyup = true });
 	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = test_p_cb, .onkeydown = true, .onkeyup = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_SPACE, .fn = test_fire_cb, .onkeydown = true });
 }
 
 noreturn void quit_cb(bool kdown)

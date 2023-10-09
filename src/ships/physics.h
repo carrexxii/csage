@@ -11,6 +11,7 @@ struct Body {
 	vec2   cm;
 	vec2   s, v, a;
 	float  ω, α;
+	bool   no_dampen;
 };
 
 struct Thruster {

@@ -19,7 +19,7 @@ def write_file(path):
         for mat in obj.material_slots:
             if not mat.name in materials:
                 materials[mat.name] = Material(len(materials), mat.material.diffuse_color[:-1])
-        vert_count += len(objs['Ship'].to_mesh().vertices)
+        vert_count += len(objs['missile'].to_mesh().polygons)*3
     
     with open(path, "w", encoding="utf-8") as file:
         file.write("Vertices: %d; Materials: %d\n" % (vert_count, len(materials)))

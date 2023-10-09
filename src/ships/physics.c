@@ -15,9 +15,11 @@ void physics_apply_thrust(struct Thruster* thruster, struct Body* body)
 
 void physics_integrate(struct Body* body)
 {
-	body->v[0] *= DAMPNER_VALUE;
-	body->v[1] *= DAMPNER_VALUE;
-	body->ω *= DAMPNER_VALUE*DAMPNER_VALUE;
+	if (!body->no_dampen) {
+		body->v[0] *= DAMPNER_VALUE;
+		body->v[1] *= DAMPNER_VALUE;
+		body->ω *= DAMPNER_VALUE*DAMPNER_VALUE;
+	}
 
 	body->v[0] += body->a[0]*dt;
 	body->v[1] += body->a[1]*dt;

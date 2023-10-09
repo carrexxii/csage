@@ -50,7 +50,7 @@ struct Model model_new(char* path)
 	mdl.vbo = vbo_new(mdl.vertc*SIZEOF_VERTEX, mdl.verts);
 
 	DEBUG(3, "[RES] Loaded model \"%s\" (%u triangles, %hhu materials) (dim: %.2fx%.2f)",
-	      path, mdl.vertc/3, mdl.materialc, mdl.dim[0], mdl.dim[1]);
+	      path, mdl.vertc/2, mdl.materialc, mdl.dim[0], mdl.dim[1]);
 	return mdl;
 }
 
