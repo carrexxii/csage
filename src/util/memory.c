@@ -43,7 +43,17 @@ void* _srealloc(void* mem, uintptr n, const char* restrict file, int line, const
 		exit(1);
 	} else {
 		DEBUG(2, "[MEM] Reallocated %luB (%.2fkB) (%.2fkB total) in \"%s:%d:%s\"",
-			n, (double)n/1024.0, (double)malloced/1024.0, file, line, fn);
+		      n, (double)n/1024.0, (double)malloced/1024.0, file, line, fn);
 		return mem;
+	}
+}
+
+void _sfree(void* restrict mem, const char* file, int line, const char* fn)
+{
+	if (!mem) {
+		ERROR("[MEM] Attempt to free NULL pointer in \"%s:%d:%s\"", file, line, fn);
+	} else {
+		free(mem);
+		mem = NULL;
 	}
 }

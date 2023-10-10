@@ -10,7 +10,7 @@ OBJDIR    = ./obj
 SHADERDIR = ./shaders
 LIBDIR    = ./lib
 
-COMPILE_WITH = -DDEBUG_LEVEL=3
+COMPILE_WITH = -DDEBUG_LEVEL=5
 BUILD_WITH   =
 
 WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict \
@@ -31,7 +31,7 @@ SRC  := $(wildcard $(SRCDIR)/util/*.c) \
         $(wildcard $(SRCDIR)/maths/*.c) \
         $(wildcard $(SRCDIR)/gfx/*.c)    \
         $(wildcard $(SRCDIR)/map/*.c)     \
-        $(wildcard $(SRCDIR)/ships/*.c)    \
+        $(wildcard $(SRCDIR)/entities/*.c) \
         $(wildcard $(SRCDIR)/*.c)
 OBJ  := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 DEP  := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.dep)

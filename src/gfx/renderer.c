@@ -2,7 +2,6 @@
 #include <cglm/mat4.h>
 #include <vulkan/vulkan.h>
 
-#include "util/iarray.h"
 #include "config.h"
 #include "vulkan.h"
 #include "buffers.h"
@@ -10,13 +9,11 @@
 #include "image.h"
 #include "pipeline.h"
 #include "swapchain.h"
-#include "vertices.h"
 #include "camera.h"
 #include "font.h"
 #include "renderer.h"
 
-static void record_command(int imgi);
-inline static void buffer_updates();
+static void record_commands(int imgi);
 static void create_framebuffers();
 static void create_command_buffers();
 static void create_sync_objects();
@@ -30,17 +27,10 @@ static struct {
 	VkFence frames[FRAMES_IN_FLIGHT];
 } fences;
 
-static VkRenderPass     renderpass;
-static VkFramebuffer*   framebufs;
-static VkCommandBuffer* cmdbufs;
+static VkRenderPass     render_pass;
+static VkFramebuffer*   frame_bufs;
+static VkCommandBuffer* cmd_bufs;
 static struct Pipeline  pipeln;
-
-mat4 renmats[RENDERER_MAX_OBJECTS];
-intptr       renmdlc = 0;
-struct Model renmdls[RENDERER_MAX_OBJECTS];
-static uint ubobufc;
-static UBO ubobufs[8];
-static SBO matbuf;
 
 void renderer_init()
 {
@@ -104,7 +94,7 @@ void renderer_init()
 		.dependencyCount = 1,
 		.pDependencies   = &subpassdep,
 	};
-	if (vkCreateRenderPass(gpu, &renpassi, alloccb, &renderpass) != VK_SUCCESS)
+	if (vkCreateRenderPass(gpu, &renpassi, alloccb, &render_pass) != VK_SUCCESS)
 		ERROR("[VK] Failed to create render pass");
 	else
 		DEBUG(1, "[VK] Created render pass");
@@ -113,30 +103,9 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	matbuf = sbo_new(RENDERER_MAX_OBJECTS*sizeof(mat4));
-	ubobufs[ubobufc++] = ubo_new(sizeof(mat4));
-
-	pipeln.vshader   = create_shader(SHADER_DIR "model.vert");
-	pipeln.fshader   = create_shader(SHADER_DIR "model.frag");
-	pipeln.vertbindc = 1;
-	pipeln.vertbinds = mdlvertbinds;
-	pipeln.vertattrc = ARRAY_LEN(mdlvertattrs);
-	pipeln.vertattrs = mdlvertattrs;
-	pipeln.uboc      = 1;
-	pipeln.ubos      = ubobufs;
-	pipeln.sbo       = &matbuf;
-	pipeln.sbosz     = sizeof(mat4)*RENDERER_MAX_OBJECTS;
-	init_pipeln(&pipeln, renderpass);
-
-	font_init(renderpass);
-	particles_init(renderpass);
-}
-
-// TODO: Fix removes
-intptr renderer_add_model(struct Model mdl)
-{
-	renmdls[renmdlc] = mdl;
-	return renmdlc++;
+	models_init(render_pass);
+	font_init(render_pass);
+	particles_init(render_pass);
 }
 
 void renderer_draw()
@@ -149,8 +118,8 @@ void renderer_draw()
 	if (vkAcquireNextImageKHR(gpu, swapchain, UINT64_MAX, semas.imgavail[frame], NULL, &imgi) != VK_SUCCESS)
 		ERROR("[VK] Failed to aquire next swapchain image");
 
-	vkResetCommandBuffer(cmdbufs[frame], 0);
-	record_command(imgi);
+	vkResetCommandBuffer(cmd_bufs[frame], 0);
+	record_commands(imgi);
 
 	VkSubmitInfo submiti = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -159,7 +128,7 @@ void renderer_draw()
 		.commandBufferCount   = 1,
 		.pWaitSemaphores      = &semas.imgavail[frame],
 		.pSignalSemaphores    = &semas.renderdone[frame],
-		.pCommandBuffers      = &cmdbufs[frame],
+		.pCommandBuffers      = &cmd_bufs[frame],
 		.pWaitDstStageMask    = (VkPipelineStageFlags[]){
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 		},
@@ -198,28 +167,25 @@ void renderer_free()
 
 	DEBUG(3, "[VK] Destroying frambuffers...");
 	for (uint i = 0; i < swapchainimgc; i++)
-		vkDestroyFramebuffer(gpu, framebufs[i], alloccb);
+		vkDestroyFramebuffer(gpu, frame_bufs[i], alloccb);
 
-	while (ubobufc--)
-		ubo_free(&ubobufs[ubobufc]);
-	pipeln_free(&pipeln);
+	models_free();
 	font_free();
 	particles_free();
 
 	DEBUG(3, "[VK] Destroying render pass...");
-	vkDestroyRenderPass(gpu, renderpass, alloccb);
+	vkDestroyRenderPass(gpu, render_pass, alloccb);
 
-	free(framebufs);
-	free(cmdbufs);
+	free(frame_bufs);
+	free(cmd_bufs);
 }
 
 /* Records a command for the given image
  *   imgi - index of the framebuffer image to record the command for
  */
-static void record_command(int imgi)
+static void record_commands(int imgi)
 {
-	buffer_updates();
-	VkCommandBuffer cmdbuf = cmdbufs[frame];
+	VkCommandBuffer cmdbuf = cmd_bufs[frame];
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -228,10 +194,10 @@ static void record_command(int imgi)
 	if (vkBeginCommandBuffer(cmdbuf, &begini) != VK_SUCCESS)
 		ERROR("[VK] Failed to begin command buffer for image %u", imgi);
 
-	VkRenderPassBeginInfo renderpassi = {
+	VkRenderPassBeginInfo render_passi = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderPass      = renderpass,
-		.framebuffer     = framebufs[imgi],
+		.renderPass      = render_pass,
+		.framebuffer     = frame_bufs[imgi],
 		.clearValueCount = 2,
 		.pClearValues    = (VkClearValue[]){
 			(VkClearValue){ .color = { 0.1, 0.1, 0.28, 1.0 } },
@@ -243,20 +209,10 @@ static void record_command(int imgi)
 		},
 	};
 
-	vkCmdBeginRenderPass(cmdbuf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(cmdbuf, &render_passi, VK_SUBPASS_CONTENTS_INLINE);
 
 	font_record_commands(cmdbuf);
-
-	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
-	for (int i = 0; i < renmdlc; i++) {
-		if (!renmdls[i].vertc)
-			continue;
-		// DEBUG(1, "[%d] Drawing %d vertices", i, renmdls[i].vertc);
-		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &renmdls[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdDraw(cmdbuf, renmdls[i].vertc, 1, 0, i);
-	}
-
+	models_record_commands(cmdbuf);
 	particles_record_commands(cmdbuf);
 
 	vkCmdEndRenderPass(cmdbuf);
@@ -264,37 +220,20 @@ static void record_command(int imgi)
 		ERROR("[VK] Failed to record comand buffer");
 }
 
-inline static void buffer_updates()
-{
-	void*  mem;
-	intptr memsz;
-
-	if (renmdlc) {
-		memsz = renmdlc*sizeof(mat4);
-		vkMapMemory(gpu, pipeln.sbo->mem, 0, memsz, 0, &mem);
-		memcpy(mem, renmats, memsz);
-		vkUnmapMemory(gpu, pipeln.sbo->mem);
-	}
-
-	mat4 vp;
-	camera_get_vp(vp);
-	buffer_update(pipeln.ubos[0], sizeof(mat4), vp);
-}
-
 static void create_framebuffers()
 {
-	framebufs = smalloc(swapchainimgc*sizeof(VkFramebuffer));
+	frame_bufs = smalloc(swapchainimgc*sizeof(VkFramebuffer));
 	for (uint i = 0; i < swapchainimgc; i++) {
 		VkFramebufferCreateInfo framebufi = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-			.renderPass      = renderpass,
+			.renderPass      = render_pass,
 			.attachmentCount = 2,
 			.pAttachments    = (VkImageView[]){ swapchainimgviews[i], depthview },
 			.width           = swapchainext.width,
 			.height          = swapchainext.height,
 			.layers          = 1,
 		};
-		if (vkCreateFramebuffer(gpu, &framebufi, alloccb, &framebufs[i]))
+		if (vkCreateFramebuffer(gpu, &framebufi, alloccb, &frame_bufs[i]))
 			ERROR("[VK] Failed to create framebuffer %u", i);
 		else
 			DEBUG(3, "[VK] Created framebuffer %u", i);
@@ -303,14 +242,14 @@ static void create_framebuffers()
 
 static void create_command_buffers()
 {
-	cmdbufs = smalloc(swapchainimgc*sizeof(VkCommandBuffer));
+	cmd_bufs = smalloc(swapchainimgc*sizeof(VkCommandBuffer));
 	VkCommandBufferAllocateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 		.commandBufferCount = swapchainimgc,
 		.commandPool        = cmdpool,
 	};
-	if (vkAllocateCommandBuffers(gpu, &bufi, cmdbufs))
+	if (vkAllocateCommandBuffers(gpu, &bufi, cmd_bufs))
 		ERROR("[VK] Failed to create command buffers");
 	else
 		DEBUG(3, "[VK] Created command buffers");

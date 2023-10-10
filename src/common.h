@@ -30,7 +30,8 @@
 
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #define CGLM_DEFINE_PRINTS
-#include "cglm/cglm.h"
+#define CGLM_OMIT_NS_FROM_STRUCT_API
+#include "cglm/struct.h"
 
 #define dt_ms                    (20u)
 #define dt                       (1.0/dt_ms)
@@ -75,13 +76,13 @@ typedef cnd_t  Condition;
 typedef tss_t  ThreadLocal;
 
 enum Direction {
-	DIR_NONE      = 0x00,
-	DIR_UP        = 0x01,
-	DIR_DOWN      = 0x02,
-	DIR_RIGHT     = 0x04,
-	DIR_LEFT      = 0x08,
-	DIR_FORWARDS  = 0x10,
-	DIR_BACKWARDS = 0x20,
+	DIRECTION_NONE      = 0x00,
+	DIRECTION_UP        = 0x01,
+	DIRECTION_DOWN      = 0x02,
+	DIRECTION_RIGHT     = 0x04,
+	DIRECTION_LEFT      = 0x08,
+	DIRECTION_FORWARDS  = 0x10,
+	DIRECTION_BACKWARDS = 0x20,
 };
 
 union Data {
@@ -196,18 +197,21 @@ long long int: "long long int", unsigned long long int: "unsigned long long int"
       default: "other"))
 
 #if DEBUG_LEVEL > 0
-#define  smalloc(x)    _smalloc( (x),      __FILE__, __LINE__, __func__)
-#define  scalloc(x, y) _scalloc( (x), (y), __FILE__, __LINE__, __func__)
+#define smalloc(x)     _smalloc( (x),      __FILE__, __LINE__, __func__)
+#define scalloc(x, y)  _scalloc( (x), (y), __FILE__, __LINE__, __func__)
 #define srealloc(x, y) _srealloc((x), (y), __FILE__, __LINE__, __func__)
+#define sfree(x)       _sfree(   (x),      __FILE__, __LINE__, __func__)
 #else
-#define  smalloc(x)    malloc(x)
-#define  scalloc(x, y) calloc(x, y)
+#define smalloc(x)     malloc(x)
+#define scalloc(x, y)  calloc(x, y)
 #define srealloc(x, y) realloc(x, y)
+#define sfree(x)       free(x)
 #endif
 
 void* _smalloc(uintptr s, const char* file, int line, const char* fn);
 void* _scalloc(uintptr n, uintptr s, const char* file, int line, const char* fn);
 void* _srealloc(void* restrict mem, uintptr n, const char* file, int line, const char* fn);
+void  _sfree(void* restrict mem, const char* file, int line, const char* fn);
 
 /* [min, max] */
 inline static int random_int(int min, int max)

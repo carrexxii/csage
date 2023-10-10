@@ -131,7 +131,7 @@ void font_init(VkRenderPass renderpass)
 		.ubos      = &ubo_buf,
 	};
 
-	init_pipeln(&pipeln, renderpass);
+	pipeln_init(&pipeln, renderpass);
 
 	mat4 proj;
 	glm_ortho(0.0, config_window_width, config_window_height, 0.0, 0.0, 1.0, proj);

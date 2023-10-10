@@ -41,7 +41,7 @@ struct Pipeline {
 	VkShaderStageFlags pushstages;
 };
 
-void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass);
+void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);
 void pipeln_free(struct Pipeline* pipeln);
 
 #endif

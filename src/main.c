@@ -9,10 +9,9 @@
 #include "gfx/renderer.h"
 #include "camera.h"
 #include "input.h"
+#include "entities/player.h"
 
-#include "gfx/polygon.h"
 #include "gfx/particles.h"
-#include "ships/ship.h"
 #include "test.h"
 
 void init_sdl();
@@ -41,15 +40,14 @@ int main(int argc, char** argv)
 	init_vulkan(window);
 	renderer_init();
 	camera_init();
-	ships_init();
+	player_init();
 
 	srand(SDL_GetTicks64());
 
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
-	taskmgr_add_task(ships_update);
 	taskmgr_add_task(particles_update);
-	taskmgr_add_task(missiles_update);
+	taskmgr_add_task(player_update);
 
 	test_init();
 
@@ -92,18 +90,18 @@ void init_sdl()
 
 void init_input()
 {
-	input_register_key((struct KeyboardCallback){ .key = SDLK_ESCAPE, .fn = quit_cb, .onkeydown = true });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_d, .fn = camera_move_right_cb, .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_a, .fn = camera_move_left_cb , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_w, .fn = camera_move_up_cb   , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_s, .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_q, .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_e, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_ESCAPE  , .fn = quit_cb, .onkeydown = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_RIGHT   , .fn = camera_move_right_cb, .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_LEFT    , .fn = camera_move_left_cb , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_UP      , .fn = camera_move_up_cb   , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_DOWN    , .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_PAGEUP  , .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_PAGEDOWN, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
 
-	input_register_key((struct KeyboardCallback){ .key = SDLK_i, .fn = test_i_cb, .onkeydown = true, .onkeyup = true });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_o, .fn = test_o_cb, .onkeydown = true, .onkeyup = true });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_p, .fn = test_p_cb, .onkeydown = true, .onkeyup = true });
-	input_register_mouse(MOUSE_RIGHT, test_fire_cb);
+	input_register_key((struct KeyboardCallback){ .key = SDLK_w, .fn = player_move_up_cb   , .onkeydown = true, .onkeyup = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_a, .fn = player_move_left_cb , .onkeydown = true, .onkeyup = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_s, .fn = player_move_down_cb , .onkeydown = true, .onkeyup = true });
+	input_register_key((struct KeyboardCallback){ .key = SDLK_d, .fn = player_move_right_cb, .onkeydown = true, .onkeyup = true });
 }
 
 noreturn void quit_cb(bool kdown)
@@ -112,7 +110,7 @@ noreturn void quit_cb(bool kdown)
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
-	ships_free();
+	player_free();
 	free_vulkan();
 	SDL_Quit();
 	exit(0);

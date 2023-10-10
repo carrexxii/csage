@@ -22,7 +22,7 @@ inline static void update_img_dset(VkWriteDescriptorSet* dwriteset, VkDescriptor
                                    VkDescriptorImageInfo* dimgi, uintptr binding);
 static void update_dsets(struct Pipeline* pipeln);
 
-void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
+void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 {
 	VkPipelineShaderStageCreateInfo stagesci[5];
 	int stagec = init_shaders(pipeln, stagesci);
@@ -63,7 +63,7 @@ void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 		.rasterizerDiscardEnable = false,
 		.polygonMode             = VK_POLYGON_MODE_FILL,
 		.lineWidth               = 1.0,
-		.cullMode                = VK_CULL_MODE_NONE,
+		.cullMode                = VK_CULL_MODE_BACK_BIT,
 		.frontFace               = VK_FRONT_FACE_CLOCKWISE,
 		.depthClampEnable        = false,
 		.depthBiasEnable         = false,
@@ -87,7 +87,7 @@ void init_pipeln(struct Pipeline* pipeln, VkRenderPass renpass)
 		.colorBlendOp = VK_BLEND_OP_ADD,
 		.alphaBlendOp = VK_BLEND_OP_ADD,
 		.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-		.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA,//VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+		.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA,
 		.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
 		.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
 	};

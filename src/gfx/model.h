@@ -1,26 +1,29 @@
 #ifndef GFX_MODEL_H
 #define GFX_MODEL_H
 
+#include "vulkan/vulkan.h"
+
 #include "buffers.h"
 
-#define MODEL_VERTEX_ELEMENTS 5   
-#define SIZEOF_MODEL_VERTEX   sizeof(float[MODEL_VERTEX_ELEMENTS])
-
-struct Material {
-	vec3 rgb;
+struct Mesh {
+	VBO     vbo;
+	IBO     ibo;
+	float*  verts;
+	uint16* inds;
+	int     vertc;
+	uint16  indc;
 };
 
 struct Model {
-	VBO    vbo;
-	float* verts; /* TODO: Remove this? */
-	struct Material* materials; /* TODO: These don't need to be stored after mesh is loaded */
-	vec3   dim;
-	uint16 vertc;
-	uint8  materialc;
+	struct Mesh* meshes;
+	int meshc;
 };
 
-struct Model model_new(char* path);
-void model_free(struct Model* mdl);
-
+void  models_init(VkRenderPass render_pass);
+ID    model_new(char* path, bool keep_verts);
+void  models_record_commands(VkCommandBuffer cmd_buf);
+mat4* model_get_matrix(ID model_id);
+void  model_free(ID model_id);
+void  models_free();
 
 #endif

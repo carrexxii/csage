@@ -59,7 +59,7 @@ void particles_init(VkRenderPass renderpass)
 		.textures   = &texture,
 	};
 
-	init_pipeln(&pipeln, renderpass);
+	pipeln_init(&pipeln, renderpass);
 
 	float verts[] = {
 		-0.5,  0.5, 0.0, 0.0,   0.5, 0.5, 1.0, 0.0,   -0.5, -0.5, 0.0, 1.0,
