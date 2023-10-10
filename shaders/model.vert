@@ -19,8 +19,7 @@ layout(binding = 1) uniform UniformBufferObject {
 
 void main()
 {
-	// Fuv = Vuv;
-	Fuv = Vxyz.yz;
+	Fuv = Vuv;
 	
 	mat4 mdl = mdls.objs[gl_BaseInstance].mat;
 	gl_Position = cam.vp * mdl * vec4(Vxyz, 1.0);

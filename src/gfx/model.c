@@ -109,27 +109,27 @@ ID model_new(char* path, bool keep_verts)
 			assert(prim->type == cgltf_primitive_type_triangles);
 			for (int a = 0; a < (int)prim->attributes_count; a++) {
 				attr = prim->attributes[a].data;
-				if (attr->component_type != cgltf_component_type_r_32f && attr->type != cgltf_type_vec3) {
-					DEBUG(5, "Attribute does not have the correct type/component type");
+				if (attr->component_type != cgltf_component_type_r_32f && attr->type != cgltf_type_vec3)
 					continue;
-				}
+				model->meshes[m].vertc = attr->count;
+				if (!model->meshes[m].verts)
+					model->meshes[m].verts = smalloc(attr->count*SIZEOF_VERTEX);
+				vert = (float*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(float) + attr->offset/sizeof(float);
+				int i = 0;
+				int i_start = 0;
 				switch(prim->attributes[a].type) {
-					case cgltf_attribute_type_position:
-						model->meshes[m].vertc = attr->count;
-						model->meshes[m].verts = smalloc(attr->count*SIZEOF_VERTEX);
-						vert = (float*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(float) + attr->offset/sizeof(float);
-						int i = 0;
-						// DEBUG_VALUE(attr->count);
-						for (int v = 0; v < (int)attr->count; v++) {
-							model->meshes[m].verts[VERTEX_ELEMENT_COUNT*v + 0] = vert[i + 0];
-							model->meshes[m].verts[VERTEX_ELEMENT_COUNT*v + 1] = vert[i + 1];
-							model->meshes[m].verts[VERTEX_ELEMENT_COUNT*v + 2] = vert[i + 2];
-							i += (int)(attr->stride/sizeof(float));
-						}
-						break;
-					case cgltf_attribute_type_normal:
-						break;
+					case cgltf_attribute_type_position: i_start = 0; break;
+					case cgltf_attribute_type_normal  : i_start = 3; break;
+					case cgltf_attribute_type_texcoord: i_start = 6; break;
 					default:
+						continue;
+				}
+				for (int v = 0; v < (int)attr->count; v++) {
+					model->meshes[m].verts[VERTEX_ELEMENT_COUNT*v + i_start + 0] = vert[i + 0];
+					model->meshes[m].verts[VERTEX_ELEMENT_COUNT*v + i_start + 1] = vert[i + 1];
+					if (i_start != 6) /* 6 = UV coordinates */
+						model->meshes[m].verts[VERTEX_ELEMENT_COUNT*v + i_start + 2] = vert[i + 2];
+					i += (int)(attr->stride/sizeof(float));
 				}
 			}
 			if (prim->indices) {
