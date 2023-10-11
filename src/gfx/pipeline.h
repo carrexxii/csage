@@ -39,6 +39,7 @@ struct Pipeline {
 	struct Texture* textures;
 	intptr texturec;
 	VkShaderStageFlags pushstages;
+	bool enable_blending;
 };
 
 void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);

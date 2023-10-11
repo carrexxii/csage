@@ -6,7 +6,7 @@ struct Player player;
 
 void player_init()
 {
-	player.model  = model_new(MODEL_PATH "cube.glb", false);
+	player.model  = model_new(MODEL_PATH "dwarf.glb", false);
 	player.matrix = model_get_matrix(player.model);
 }
 

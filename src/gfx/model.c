@@ -13,6 +13,7 @@
 #include "model.h"
 
 #define MAX_MODELS           16
+#define MAX_MATERIALS        8
 #define VERTEX_ELEMENT_COUNT 8
 #define SIZEOF_VERTEX        sizeof(float[VERTEX_ELEMENT_COUNT])
 #define INDEX_TYPE           uint16
@@ -51,24 +52,27 @@ static struct Pipeline pipeln;
 static mat4 matrices[MAX_MODELS];
 static struct Model models[MAX_MODELS];
 static intptr modelc = 0;
-static UBO ubo_buf;
+static UBO ubo_bufs[2];
 static SBO sbo_buf;
 
 void models_init(VkRenderPass render_pass)
 {
-	sbo_buf = sbo_new(MAX_MODELS*sizeof(mat4));
-	ubo_buf = ubo_new(sizeof(mat4));
+	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
+	ubo_bufs[0] = ubo_new(sizeof(mat4));                          /* Camera matrix */
+	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material)); /* Material data */
 	pipeln = (struct Pipeline){
-		.vshader   = create_shader(SHADER_DIR "model.vert"),
-		.fshader   = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc = 1,
-		.vertbinds = vert_binds,
-		.vertattrc = ARRAY_LEN(vertex_attrs),
-		.vertattrs = vertex_attrs,
-		.uboc      = 1,
-		.ubos      = &ubo_buf,
-		.sbo       = &sbo_buf,
-		.sbosz     = MAX_MODELS*sizeof(mat4),
+		.vshader    = create_shader(SHADER_DIR "model.vert"),
+		.fshader    = create_shader(SHADER_DIR "model.frag"),
+		.vertbindc  = 1,
+		.vertbinds  = vert_binds,
+		.vertattrc  = ARRAY_LEN(vertex_attrs),
+		.vertattrs  = vertex_attrs,
+		.uboc       = 2,
+		.ubos       = ubo_bufs,
+		.sbo        = &sbo_buf,
+		.sbosz      = MAX_MODELS*sizeof(mat4),
+		.pushstages = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.pushsz     = sizeof(int), /* Material index - must be a multiple of 4 */
 	};
 	pipeln_init(&pipeln, render_pass);
 }
@@ -76,7 +80,7 @@ void models_init(VkRenderPass render_pass)
 // TODO: this doesnt work properly for removing elements
 ID model_new(char* path, bool keep_verts)
 {
-	struct Model* model = &models[modelc++];
+	struct Model* model = &models[modelc];
 
 	cgltf_options options = {
 		.type = cgltf_file_type_glb,
@@ -93,6 +97,37 @@ ID model_new(char* path, bool keep_verts)
 	else
 		DEBUG(5, "Loaded buffer data for \"%s\"", path);
 
+	/* *** Material Data *** */
+	model->materialc = data->materials_count;
+	model->materials = scalloc(model->materialc, sizeof(struct Material));
+	if (model->materialc > MAX_MATERIALS)
+		ERROR("[GFX] Model has %d materials. MAX_MATERIALS is set to %d", model->materialc, MAX_MATERIALS);
+
+	cgltf_material*     material;
+	cgltf_image*        img;
+	cgltf_texture_view* texture;
+	for (int m = 0; m < model->materialc; m++) {
+		material = &data->materials[m];
+		if (material->has_pbr_metallic_roughness) {
+			memcpy(model->materials[m].albedo, material->pbr_metallic_roughness.base_color_factor, sizeof(float[4]));
+			model->materials[m].metallic  = material->pbr_metallic_roughness.metallic_factor;
+			model->materials[m].roughness = material->pbr_metallic_roughness.roughness_factor;
+			if (material->pbr_metallic_roughness.metallic_roughness_texture.texture ||
+				material->pbr_metallic_roughness.base_color_texture.texture)
+				DEBUG(5, "[GFX] Metallic texture unaccounted for");
+		}
+		if (material->normal_texture.texture) {
+				DEBUG(5, "[GFX] Normal texture unaccounted for");
+		}
+		if (material->occlusion_texture.texture) {
+				DEBUG(5, "[GFX] Occlusion texture unaccounted for");
+		}
+		if (material->emissive_texture.texture) {
+				DEBUG(5, "[GFX] Emissive texture unaccounted for");
+		}
+	}
+
+	/* *** Mesh Data *** */
 	model->meshc  = data->meshes_count;
 	model->meshes = scalloc(data->meshes_count, sizeof(struct Mesh));
 
@@ -158,9 +193,14 @@ ID model_new(char* path, bool keep_verts)
 				}
 
 			}
+
+			/* Assign materials to their meshes */
+			// TODO: Add a default material for those that dont have one
+			for (int i = 0; i < (int)data->materials_count; i++)
+				if (&data->materials[i] == data->meshes[i].primitives[p].material)
+					model->meshes[i].materiali = i;
 		}
 	}
-	cgltf_free(data);
 
 	int indc = 0;
 	for (int i = 0; i < model->meshc; i++) {
@@ -175,8 +215,9 @@ ID model_new(char* path, bool keep_verts)
 		}
 	}
 
+	cgltf_free(data);
 	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles)", path, model->meshc, indc, indc/3);
-	return (ID)(modelc - 1);
+	return modelc++;
 }
 
 mat4* model_get_matrix(ID model_id)
@@ -188,21 +229,27 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 {
 	mat4 vp;
 	camera_get_vp(vp);
-	buffer_update(pipeln.ubos[0], sizeof(mat4), vp);
+	buffer_update(ubo_bufs[0], sizeof(mat4), vp);
 	
 	void* mem;
-	vkMapMemory(gpu, pipeln.sbo->mem, 0, modelc*sizeof(mat4), 0, &mem);
+	vkMapMemory(gpu, sbo_buf.mem, 0, modelc*sizeof(mat4), 0, &mem);
 	memcpy(mem, matrices, modelc*sizeof(mat4));
-	vkUnmapMemory(gpu, pipeln.sbo->mem);
+	vkUnmapMemory(gpu, sbo_buf.mem);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	struct Model* model;
+	struct Mesh*  mesh;
 	for (int i = 0; i < modelc; i++) {
+		model = &models[i];
+		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
 		for (int m = 0; m < models[i].meshc; m++) {
+			mesh = &model->meshes[m];
 			// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
-			vkCmdBindVertexBuffers(cmd_buf, 0, 1, &models[i].meshes[m].vbo.buf, (VkDeviceSize[]){ 0 });
-			vkCmdBindIndexBuffer(cmd_buf, models[i].meshes[m].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdDrawIndexed(cmd_buf, models[i].meshes[m].indc, 1, 0, 0, 0);
+			vkCmdBindVertexBuffers(cmd_buf, 0, 1, &mesh->vbo.buf, (VkDeviceSize[]){ 0 });
+			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &mesh->materiali);
+			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}
 }

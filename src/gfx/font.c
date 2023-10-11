@@ -129,6 +129,7 @@ void font_init(VkRenderPass renderpass)
 		.textures  = &atlas,
 		.uboc      = 1,
 		.ubos      = &ubo_buf,
+		.enable_blending = true,
 	};
 
 	pipeln_init(&pipeln, renderpass);

@@ -41,7 +41,7 @@ static VkVertexInputAttributeDescription streamvertattrs[] = {
 
 void particles_init(VkRenderPass renderpass)
 {
-	texture = texture_new_from_image("data/star.png");
+	texture = texture_new_from_image(TEXTURE_PATH "star.png");
 	ubos[0] = ubo_new(sizeof(mat4));
 	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
 	pipeln = (struct Pipeline){

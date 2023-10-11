@@ -4,6 +4,7 @@
 #include "vulkan/vulkan.h"
 
 #include "buffers.h"
+#include "texture.h"
 
 struct Mesh {
 	VBO     vbo;
@@ -12,11 +13,22 @@ struct Mesh {
 	uint16* inds;
 	int     vertc;
 	uint16  indc;
+	int     materiali;
+};
+
+/* This must be aligned correctly for the shader */
+struct Material {
+	float albedo[4];
+	float metallic;
+	float roughness;
+	struct Texture* texture;
 };
 
 struct Model {
-	struct Mesh* meshes;
+	struct Mesh*     meshes;
+	struct Material* materials;
 	int meshc;
+	int materialc;
 };
 
 void  models_init(VkRenderPass render_pass);

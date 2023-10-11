@@ -83,7 +83,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 	VkPipelineColorBlendAttachmentState blendattachs = {
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
 						  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-		.blendEnable  = true,
+		.blendEnable  = pipeln->enable_blending,
 		.colorBlendOp = VK_BLEND_OP_ADD,
 		.alphaBlendOp = VK_BLEND_OP_ADD,
 		.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
