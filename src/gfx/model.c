@@ -249,7 +249,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			vkCmdBindVertexBuffers(cmd_buf, 0, 1, &mesh->vbo.buf, (VkDeviceSize[]){ 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &mesh->materiali);
-			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
+			// vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}
 }

@@ -11,6 +11,7 @@
 #include "swapchain.h"
 #include "camera.h"
 #include "font.h"
+#include "map.h"
 #include "renderer.h"
 
 static void record_commands(int imgi);
@@ -106,6 +107,7 @@ void renderer_init()
 	models_init(render_pass);
 	font_init(render_pass);
 	particles_init(render_pass);
+	map_init(render_pass);
 }
 
 void renderer_draw()
@@ -212,6 +214,7 @@ static void record_commands(int imgi)
 	vkCmdBeginRenderPass(cmdbuf, &render_passi, VK_SUBPASS_CONTENTS_INLINE);
 
 	font_record_commands(cmdbuf);
+	map_record_commands(cmdbuf);
 	models_record_commands(cmdbuf);
 	particles_record_commands(cmdbuf);
 

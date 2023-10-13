@@ -21,9 +21,7 @@ void camera_get_vp(mat4 out)
 	camera_set_perspective();
 	glm_translate_make(camview, campos);
 	glm_rotate_x(camview,  glm_rad(45.0) , camview);
-	glm_rotate_z(camview, -glm_rad(45.0) , camview);
-	glm_rotate_y(camview, -glm_rad(180.0), camview);
-	glm_rotate_x(camview,  glm_rad(90.0) , camview);
+	glm_rotate_z(camview, -glm_rad(135.0) , camview);
 
 	glm_mat4_mul(camproj, camview, out);
 }
@@ -41,7 +39,7 @@ vec2s camera_get_point(float x, float y)
 void camera_set_perspective()
 {
 	glm_ortho(-(float)config_window_width/zoom , (float)config_window_width/zoom,
-	          -(float)config_window_height/zoom, (float)config_window_height/zoom, 100.0, -1.0, camproj);
+	          -(float)config_window_height/zoom, (float)config_window_height/zoom, 100.0, -10.0, camproj);
 }
 
 void camera_update()

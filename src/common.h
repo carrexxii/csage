@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <math.h>
+#include <fenv.h>
 
 #if defined __STDC_NO_ATOMICS__ || defined __STDC_NO_THREADS__
 	#error "Both C11 threads and atomics are required"

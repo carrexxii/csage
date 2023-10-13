@@ -72,7 +72,7 @@ shared: $(OBJ)
 .PHONY: spir-v
 spir-v: $(SPV)
 $(SPV): $(SHADERDIR)/spirv/%: $(SHADERDIR)/%
-	@glslc -std=460 --target-env=vulkan1.3 -o $@ $<
+	@glslc -std=460 --target-env=vulkan1.3 -O -o $@ $<
 
 .PHONY: valgrind
 valgrind: BUILD_WITH += valgrind

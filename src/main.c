@@ -110,6 +110,7 @@ noreturn void quit_cb(bool kdown)
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
+	map_free();
 	player_free();
 	free_vulkan();
 	SDL_Quit();
