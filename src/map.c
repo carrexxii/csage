@@ -27,6 +27,7 @@
 
 static void remesh_block(int b);
 static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z2, int axis);
+inline static bool is_visible(int x, int y, int z, int axis);
 
 /* -------------------------------------------------------------------- */
 static VkVertexInputBindingDescription vert_binds[] = {
@@ -167,12 +168,12 @@ static void remesh_block(int b)
 	uint16 current_vxl, next_vxl;
 	int x0 = 0, y0 = 0;
 	for (int z = 0; z < BLOCK_DEPTH; z++) {
-		// /* Tops */
+		/* Tops */
 		for (int y = 0; y < BLOCK_HEIGHT; y++) {
 			for (int x = 0; x < BLOCK_WIDTH; x++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = GET_VOXEL(x, y, z).data))
+				if (!(current_vxl = GET_VOXEL(x, y, z).data) || !is_visible(x, y, z, 2))
 					continue;
 
 				next_vxl = current_vxl;
@@ -188,12 +189,12 @@ static void remesh_block(int b)
 				indc += 6;
 			}
 		}
-		// /* Right sides */
+		/* Right sides */
 		for (int y = 0; y < BLOCK_HEIGHT; y++) {
 			for (int x = 0; x < BLOCK_WIDTH; x++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = GET_VOXEL(x, y, z).data))
+				if (!(current_vxl = GET_VOXEL(x, y, z).data) || !is_visible(x, y, z, 1))
 					continue;
 
 				next_vxl = current_vxl;
@@ -214,7 +215,7 @@ static void remesh_block(int b)
 			for (int y = 0; y < BLOCK_HEIGHT; y++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = GET_VOXEL(x, y, z).data))
+				if (!(current_vxl = GET_VOXEL(x, y, z).data) || !is_visible(x, y, z, 0))
 					continue;
 
 				next_vxl = current_vxl;
@@ -241,7 +242,7 @@ static void remesh_block(int b)
 #define VERTEX_INDEX(x, y, z, axis) ((z)*VERTICES_PER_LAYER + (y)*VERTEX_WIDTH + (x) + axis*VERTICES_PER_BLOCK)
 static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z2, int axis)
 {
-	DEBUG(1, "Meshing: %d, %d, %d to %d, %d, %d", x1, y1, z1, x2, y2, z2);
+	// DEBUG(1, "Meshing: %d, %d, %d to %d, %d, %d", x1, y1, z1, x2, y2, z2);
 	switch (axis) {
 		case 0: /* Left side triangles */
 			*inds++ = VERTEX_INDEX(x2, y2, z1, 0);
@@ -269,5 +270,31 @@ static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z
 			break;
 		default:
 			ERROR("[MAP] Invalid axis value: %d", axis);
+	}
+}
+
+inline static bool is_visible(int x, int y, int z, int axis)
+{
+	if (!GET_VOXEL(x, y, z).data)
+		return false;
+
+	switch (axis) {
+		case 0: /* x-axis */
+			if (x + 1 >= BLOCK_WIDTH)
+				return true;
+			else
+				return GET_VOXEL(x + 1, y, z).data == 0;
+		case 1: /* y-axis */
+			if (y + 1 >= BLOCK_HEIGHT)
+				return true;
+			else
+				return GET_VOXEL(x, y + 1, z).data == 0;
+		case 2: /* z-axis */
+			if (z == 0)
+				return true;
+			else
+				return GET_VOXEL(x, y, z - 1).data == 0;
+		default: // TODO: some sort of ray cast check for diagonals?
+			return true;
 	}
 }
