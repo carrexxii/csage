@@ -61,7 +61,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 	VkPipelineRasterizationStateCreateInfo rasterci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.rasterizerDiscardEnable = false,
-		.polygonMode             = VK_POLYGON_MODE_FILL,
+		.polygonMode             = VK_POLYGON_MODE_LINE,
 		.lineWidth               = 1.0,
 		.cullMode                = VK_CULL_MODE_BACK_BIT,
 		.frontFace               = VK_FRONT_FACE_CLOCKWISE,

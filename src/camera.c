@@ -39,7 +39,7 @@ vec2s camera_get_point(float x, float y)
 void camera_set_perspective()
 {
 	glm_ortho(-(float)config_window_width/zoom , (float)config_window_width/zoom,
-	          -(float)config_window_height/zoom, (float)config_window_height/zoom, 100.0, -10.0, camproj);
+	          -(float)config_window_height/zoom, (float)config_window_height/zoom, 100.0, -100.0, camproj);
 }
 
 void camera_update()

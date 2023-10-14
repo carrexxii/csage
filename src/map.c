@@ -1,3 +1,4 @@
+#include "common.h"
 #include "vulkan/vulkan.h"
 
 #include "gfx/vulkan.h"
@@ -6,9 +7,9 @@
 #include "camera.h"
 #include "map.h"
 
-#define BLOCK_WIDTH          32
+#define BLOCK_WIDTH          8
 #define BLOCK_HEIGHT         BLOCK_WIDTH
-#define BLOCK_DEPTH          16
+#define BLOCK_DEPTH          4
 #define BLOCKS_PER_LAYER     (BLOCK_WIDTH*BLOCK_HEIGHT)
 #define VERTEX_WIDTH         (BLOCK_WIDTH + 1)
 #define VERTEX_HEIGHT        (BLOCK_HEIGHT + 1)
@@ -22,8 +23,10 @@
 #define TRIANGLES_PER_BLOCK  TRIANGLES_PER_VOXEL*VOXELS_PER_BLOCK
 #define VERTEX_ELEMENT_COUNT 6
 #define SIZEOF_VERTEX        sizeof(int8[VERTEX_ELEMENT_COUNT])
+#define GET_VOXEL(x, y, z)   blocks[(z)*BLOCKS_PER_LAYER + (y)*BLOCK_WIDTH + (x)]
 
 static void remesh_block(int b);
+static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z2, int axis);
 
 /* -------------------------------------------------------------------- */
 static VkVertexInputBindingDescription vert_binds[] = {
@@ -50,6 +53,7 @@ static struct Pipeline pipeln;
 static UBO  ubo_buf;
 static VBO  vbo_buf;
 static IBO* ibo_bufs;
+static int* indcs;
 static ivec3s size;
 static struct Voxel* blocks;
 static int blockc;
@@ -72,6 +76,7 @@ void map_init(VkRenderPass render_pass)
 	      BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_DEPTH);
 }
 
+// TODO: need to free old data on subsequent calls
 void map_new(ivec3s dim)
 {
 	int fe_rounding = fegetround();
@@ -84,7 +89,12 @@ void map_new(ivec3s dim)
 	blockc = size.x*size.y*size.z;
 	fesetround(fe_rounding);
 
-	blocks = scalloc(blockc, VOXELS_PER_BLOCK*sizeof(struct Voxel));
+	blocks = smalloc(blockc*VOXELS_PER_BLOCK*sizeof(struct Voxel));
+	for (int z = 0; z < BLOCK_DEPTH; z++)
+		for (int y = 0; y < BLOCK_HEIGHT; y++)
+			for (int x = 0; x < BLOCK_WIDTH; x++)
+				// GET_VOXEL(x, y, z).data = 1;
+				GET_VOXEL(x, y, z).data = x == 0 || x == BLOCK_WIDTH-1 || y == 0 || y == BLOCK_HEIGHT-1? 1: 0;
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
 	intptr vert_size = 3*VERTEX_DEPTH*VERTEX_HEIGHT*VERTEX_WIDTH*VERTEX_ELEMENT_COUNT*sizeof(int8);
@@ -108,6 +118,7 @@ void map_new(ivec3s dim)
 	free(verts);
 
 	ibo_bufs = scalloc(blockc, sizeof(IBO));
+	indcs    = scalloc(blockc, sizeof(*indcs));
 	for (int b = 0; b < blockc; b++)
 		remesh_block(b);
 
@@ -128,7 +139,7 @@ void map_record_commands(VkCommandBuffer cmd_buf)
 	for (int i = 0; i < blockc; i++) {
 		// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
 		vkCmdBindIndexBuffer(cmd_buf, ibo_bufs[i].buf, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(cmd_buf, 3*TRIANGLES_PER_BLOCK, 1, 0, 0, 0);
+		vkCmdDrawIndexed(cmd_buf, indcs[i], 1, 0, 0, 0);
 	}
 }
 
@@ -139,47 +150,124 @@ void map_free()
 		ibo_free(&ibo_bufs[i]);
 
 	free(ibo_bufs);
+	free(indcs);
 	free(blocks);
 
 	pipeln_free(&pipeln);
 }
 
-/* 0 = x-axis; 1 = y-axis; 2 = z-axis */
-#define VERTEX_INDEX(x, y, z, axis) ((z)*VERTICES_PER_LAYER + (y)*VERTEX_WIDTH + (x) + axis*VERTICES_PER_BLOCK)
 static void remesh_block(int b)
 {
 	intptr inds_size = 3*TRIANGLES_PER_BLOCK*sizeof(uint16);
 	int16* inds_data = smalloc(inds_size);
 	int16* inds = inds_data;
+	int indc = 0;
+
+	// TODO: greed over multiple rows as well
+	uint16 current_vxl, next_vxl;
+	int x0 = 0, y0 = 0;
 	for (int z = 0; z < BLOCK_DEPTH; z++) {
+		// /* Tops */
 		for (int y = 0; y < BLOCK_HEIGHT; y++) {
 			for (int x = 0; x < BLOCK_WIDTH; x++) {
-				/* Left side triangles */
-				*inds++ = VERTEX_INDEX(x    , y + 1, z    , 1);
-				*inds++ = VERTEX_INDEX(x    , y + 1, z + 1, 1);
-				*inds++ = VERTEX_INDEX(x + 1, y + 1, z    , 1);
-				*inds++ = VERTEX_INDEX(x + 1, y + 1, z    , 1);
-				*inds++ = VERTEX_INDEX(x    , y + 1, z + 1, 1);
-				*inds++ = VERTEX_INDEX(x + 1, y + 1, z + 1, 1);
+				x0 = x;
+				y0 = y;
+				if (!(current_vxl = GET_VOXEL(x, y, z).data))
+					continue;
 
-				/* Top triangles */
-				*inds++ = VERTEX_INDEX(x    , y    , z, 2);
-				*inds++ = VERTEX_INDEX(x    , y + 1, z, 2);
-				*inds++ = VERTEX_INDEX(x + 1, y    , z, 2);
-				*inds++ = VERTEX_INDEX(x + 1, y    , z, 2);
-				*inds++ = VERTEX_INDEX(x    , y + 1, z, 2);
-				*inds++ = VERTEX_INDEX(x + 1, y + 1, z, 2);
+				next_vxl = current_vxl;
+				while (x < BLOCK_WIDTH) {
+					next_vxl = GET_VOXEL(x, y, z).data;
+					if (next_vxl != current_vxl)
+						break;
+					x++;
+				}
 
-				/* Right side triangles */
-				*inds++ = VERTEX_INDEX(x + 1, y + 1, z    , 0);
-				*inds++ = VERTEX_INDEX(x + 1, y + 1, z + 1, 0);
-				*inds++ = VERTEX_INDEX(x + 1, y    , z    , 0);
-				*inds++ = VERTEX_INDEX(x + 1, y    , z    , 0);
-				*inds++ = VERTEX_INDEX(x + 1, y + 1, z + 1, 0);
-				*inds++ = VERTEX_INDEX(x + 1, y    , z + 1, 0);
+				mesh_quad(inds, x0, y0, z, x, y + 1, z + 1, 2);
+				inds += 6;
+				indc += 6;
+			}
+		}
+		// /* Right sides */
+		for (int y = 0; y < BLOCK_HEIGHT; y++) {
+			for (int x = 0; x < BLOCK_WIDTH; x++) {
+				x0 = x;
+				y0 = y;
+				if (!(current_vxl = GET_VOXEL(x, y, z).data))
+					continue;
+
+				next_vxl = current_vxl;
+				while (x < BLOCK_WIDTH) {
+					next_vxl = GET_VOXEL(x, y, z).data;
+					if (next_vxl != current_vxl)
+						break;
+					x++;
+				}
+
+				mesh_quad(inds, x0, y0, z, x, y + 1, z + 1, 1);
+				inds += 6;
+				indc += 6;
+			}
+		}
+		/* Left sides */
+		for (int x = 0; x < BLOCK_WIDTH; x++) {
+			for (int y = 0; y < BLOCK_HEIGHT; y++) {
+				x0 = x;
+				y0 = y;
+				if (!(current_vxl = GET_VOXEL(x, y, z).data))
+					continue;
+
+				next_vxl = current_vxl;
+				while (y < BLOCK_HEIGHT) {
+					next_vxl = GET_VOXEL(x, y, z).data;
+					if (next_vxl != current_vxl)
+						break;
+					y++;
+				}
+
+				mesh_quad(inds, x0, y0, z, x + 1, y, z + 1, 0);
+				inds += 6;
+				indc += 6;
 			}
 		}
 	}
+
 	ibo_bufs[b] = ibo_new(inds_size, inds_data);
+	indcs[b]    = indc;
 	free(inds_data);
+}
+
+/* 0 = x-axis; 1 = y-axis; 2 = z-axis */
+#define VERTEX_INDEX(x, y, z, axis) ((z)*VERTICES_PER_LAYER + (y)*VERTEX_WIDTH + (x) + axis*VERTICES_PER_BLOCK)
+static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z2, int axis)
+{
+	DEBUG(1, "Meshing: %d, %d, %d to %d, %d, %d", x1, y1, z1, x2, y2, z2);
+	switch (axis) {
+		case 0: /* Left side triangles */
+			*inds++ = VERTEX_INDEX(x2, y2, z1, 0);
+			*inds++ = VERTEX_INDEX(x2, y2, z2, 0);
+			*inds++ = VERTEX_INDEX(x2, y1, z1, 0);
+			*inds++ = VERTEX_INDEX(x2, y1, z1, 0);
+			*inds++ = VERTEX_INDEX(x2, y2, z2, 0);
+			*inds++ = VERTEX_INDEX(x2, y1, z2, 0);
+			break;
+		case 1: /* Right side triangles */
+			*inds++ = VERTEX_INDEX(x1, y2, z1, 1);
+			*inds++ = VERTEX_INDEX(x1, y2, z2, 1);
+			*inds++ = VERTEX_INDEX(x2, y2, z1, 1);
+			*inds++ = VERTEX_INDEX(x2, y2, z1, 1);
+			*inds++ = VERTEX_INDEX(x1, y2, z2, 1);
+			*inds++ = VERTEX_INDEX(x2, y2, z2, 1);
+			break;
+		case 2: /* Top triangles */
+			*inds++ = VERTEX_INDEX(x1, y1, z1, 2);
+			*inds++ = VERTEX_INDEX(x1, y2, z1, 2);
+			*inds++ = VERTEX_INDEX(x2, y1, z1, 2);
+			*inds++ = VERTEX_INDEX(x2, y1, z1, 2);
+			*inds++ = VERTEX_INDEX(x1, y2, z1, 2);
+			*inds++ = VERTEX_INDEX(x2, y2, z1, 2);
+			break;
+		default:
+			ERROR("[MAP] Invalid axis value: %d", axis);
+	}
 }
