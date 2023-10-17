@@ -6,10 +6,11 @@
 #include "gfx/pipeline.h"
 #include "camera.h"
 #include "map.h"
+#include <math.h>
 
-#define BLOCK_WIDTH          8
+#define BLOCK_WIDTH          32
 #define BLOCK_HEIGHT         BLOCK_WIDTH
-#define BLOCK_DEPTH          4
+#define BLOCK_DEPTH          16
 #define BLOCKS_PER_LAYER     (BLOCK_WIDTH*BLOCK_HEIGHT)
 #define VERTEX_WIDTH         (BLOCK_WIDTH + 1)
 #define VERTEX_HEIGHT        (BLOCK_HEIGHT + 1)
@@ -50,18 +51,24 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
+
 static struct Pipeline pipeln;
 static UBO  ubo_buf;
 static VBO  vbo_buf;
 static IBO* ibo_bufs;
 static int* indcs;
-static ivec3s size;
 static struct Voxel* blocks;
 static int blockc;
+struct {
+	mat4   cam_vp;
+	ivec4s map_size;
+	ivec4s block_size;
+} map_data;
 
 void map_init(VkRenderPass render_pass)
 {
-	ubo_buf = ubo_new(sizeof(mat4));
+	map_data.block_size = (ivec4s){ BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_DEPTH };
+	ubo_buf = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "map.vert"),
 		.fshader    = create_shader(SHADER_DIR "map.frag"),
@@ -71,6 +78,8 @@ void map_init(VkRenderPass render_pass)
 		.vertattrs  = vertex_attrs,
 		.uboc       = 1,
 		.ubos       = &ubo_buf,
+		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
+		.pushsz     = sizeof(int), /* Index of the current block being drawn */
 	};
 	pipeln_init(&pipeln, render_pass);
 	DEBUG(4, "[MAP] Map initialized. Block dimensions are set to: %dx%dx%d",
@@ -80,22 +89,19 @@ void map_init(VkRenderPass render_pass)
 // TODO: need to free old data on subsequent calls
 void map_new(ivec3s dim)
 {
-	int fe_rounding = fegetround();
-	fesetround(FE_UPWARD);
-	size = (ivec3s){
-		rintf((float)dim.x/(float)BLOCK_WIDTH),
-		rintf((float)dim.y/(float)BLOCK_HEIGHT),
-		rintf((float)dim.z/(float)BLOCK_DEPTH),
+	map_data.map_size = (ivec4s){
+		ceil((float)dim.x/(float)BLOCK_WIDTH),
+		ceil((float)dim.y/(float)BLOCK_HEIGHT),
+		ceil((float)dim.z/(float)BLOCK_DEPTH),
 	};
-	blockc = size.x*size.y*size.z;
-	fesetround(fe_rounding);
+	blockc = map_data.map_size.x*map_data.map_size.y*map_data.map_size.z;
 
 	blocks = smalloc(blockc*VOXELS_PER_BLOCK*sizeof(struct Voxel));
 	for (int z = 0; z < BLOCK_DEPTH; z++)
 		for (int y = 0; y < BLOCK_HEIGHT; y++)
 			for (int x = 0; x < BLOCK_WIDTH; x++)
-				// GET_VOXEL(x, y, z).data = 1;
-				GET_VOXEL(x, y, z).data = x == 0 || x == BLOCK_WIDTH-1 || y == 0 || y == BLOCK_HEIGHT-1? 1: 0;
+				GET_VOXEL(x, y, z).data = 1;
+				// GET_VOXEL(x, y, z).data = x == 0 || x == BLOCK_WIDTH-1 || y == 0 || y == BLOCK_HEIGHT-1? 1: 0;
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
 	intptr vert_size = 3*VERTEX_DEPTH*VERTEX_HEIGHT*VERTEX_WIDTH*VERTEX_ELEMENT_COUNT*sizeof(int8);
@@ -124,14 +130,13 @@ void map_new(ivec3s dim)
 		remesh_block(b);
 
 	DEBUG(3, "[MAP] Initialized map with dimensions: %dx%dx%d (%d blocks)",
-	      size.x*BLOCK_WIDTH, size.y*BLOCK_HEIGHT, size.z*BLOCK_DEPTH, blockc);
+	      map_data.map_size.x*BLOCK_WIDTH, map_data.map_size.y*BLOCK_HEIGHT, map_data.map_size.z*BLOCK_DEPTH, blockc);
 }
 
 void map_record_commands(VkCommandBuffer cmd_buf)
 {
-	mat4 vp;
-	camera_get_vp(vp);
-	buffer_update(ubo_buf, sizeof(mat4), vp);
+	camera_get_vp(map_data.cam_vp);
+	buffer_update(ubo_buf, sizeof(map_data), &map_data);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
@@ -140,6 +145,7 @@ void map_record_commands(VkCommandBuffer cmd_buf)
 	for (int i = 0; i < blockc; i++) {
 		// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
 		vkCmdBindIndexBuffer(cmd_buf, ibo_bufs[i].buf, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &i);
 		vkCmdDrawIndexed(cmd_buf, indcs[i], 1, 0, 0, 0);
 	}
 }

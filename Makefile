@@ -14,8 +14,8 @@ COMPILE_WITH = -DDEBUG_LEVEL=5
 BUILD_WITH   =
 
 WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict \
-           -Wstrict-aliasing -Wno-parentheses -Wno-missing-braces -Wno-missing-field-initializers              \
-           -Wno-unused-parameter -Wno-ignored-qualifiers -Wno-unused-variable -Wno-unused-function             \
+           -Wstrict-aliasing=3 -Wno-parentheses -Wno-missing-braces -Wno-missing-field-initializers             \
+           -Wno-unused-parameter -Wno-ignored-qualifiers -Wno-unused-variable -Wno-unused-function               \
            -Werror=implicit-function-declaration
 CFLAGS   = -std=c2x -march=native -Og -fstrict-aliasing -g2 -pedantic -ggdb -pipe $(WARNINGS) -I$(SRCDIR)             \
            -isystem $(LIBDIR)/include -I/usr/include/freetype2 -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH) \

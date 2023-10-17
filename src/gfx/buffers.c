@@ -152,6 +152,7 @@ static void copy_buffer(VkBuffer dst, VkBuffer src, VkDeviceSize sz)
 	end_command_buffer(buf, NULL);
 }
 
+// TODO: Move this to a better place (vulkan.h?)
 uint find_memory_index(uint type, uint prop)
 {
 	VkPhysicalDeviceMemoryProperties memprop;

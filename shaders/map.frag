@@ -6,5 +6,5 @@ layout(location = 0) out vec4 rgba;
 
 void main()
 {
-    rgba = vec4(Fnnn, 1.0);
+	rgba = vec4(Fnnn, 1.0);
 }

@@ -2,8 +2,8 @@
 #define ENTITIES_BODY_H
 
 struct Body {
-	vec2s pos;
-	vec2s facing;
+	vec3s pos;
+	vec3s facing;
 };
 
 #endif

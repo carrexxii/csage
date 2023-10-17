@@ -48,8 +48,10 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
+void (*update_model_transforms)(SBO);
+mat4* model_transforms;
+
 static struct Pipeline pipeln;
-static mat4 matrices[MAX_MODELS];
 static struct Model models[MAX_MODELS];
 static intptr modelc = 0;
 static UBO ubo_bufs[2];
@@ -78,9 +80,9 @@ void models_init(VkRenderPass render_pass)
 }
 
 // TODO: this doesnt work properly for removing elements
-ID model_new(char* path, bool keep_verts)
+struct Model* model_new(char* path, bool keep_verts)
 {
-	struct Model* model = &models[modelc];
+	struct Model* model = &models[modelc++];
 
 	cgltf_options options = {
 		.type = cgltf_file_type_glb,
@@ -217,12 +219,7 @@ ID model_new(char* path, bool keep_verts)
 
 	cgltf_free(data);
 	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles)", path, model->meshc, indc, indc/3);
-	return modelc++;
-}
-
-mat4* model_get_matrix(ID model_id)
-{
-	return &matrices[model_id];
+	return model;
 }
 
 void models_record_commands(VkCommandBuffer cmd_buf)
@@ -231,10 +228,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 	camera_get_vp(vp);
 	buffer_update(ubo_bufs[0], sizeof(mat4), vp);
 	
-	void* mem;
-	vkMapMemory(gpu, sbo_buf.mem, 0, modelc*sizeof(mat4), 0, &mem);
-	memcpy(mem, matrices, modelc*sizeof(mat4));
-	vkUnmapMemory(gpu, sbo_buf.mem);
+	update_model_transforms(sbo_buf);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
@@ -249,7 +243,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			vkCmdBindVertexBuffers(cmd_buf, 0, 1, &mesh->vbo.buf, (VkDeviceSize[]){ 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &mesh->materiali);
-			// vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
+			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}
 }

@@ -25,5 +25,4 @@ void main()
 	
 	mat4 mdl = mdls.objs[gl_BaseInstance].mat;
 	gl_Position = cam.vp * mdl * vec4(Vxyz, 1.0);
-	gl_Position.y = -gl_Position.y;
 }

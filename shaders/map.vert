@@ -12,14 +12,23 @@ layout(location = 0) out vec3 Fnnn;
 // 	ObjectData objs[];
 // } mdls;
 
-layout(binding = 0) uniform CameraBuffer {
-	mat4 vp;
-} cam;
+layout(binding = 0) uniform UniformBuffer {
+	mat4  cam_vp;
+	ivec4 map_dim;
+	ivec4 block_dim;
+} ubo;
+
+layout(push_constant) uniform PushConstants {
+	int i;
+} constants;
 
 void main()
 {
 	Fnnn = vec3(Vnnn);
 	
-	gl_Position = cam.vp * vec4(Vxyz, 1.0);
-	gl_Position.y = -gl_Position.y;
+	vec3 block_pos = vec3(mod(constants.i, ubo.map_dim.x) * ubo.block_dim.x,
+	                      mod((constants.i / ubo.map_dim.y), ubo.map_dim.y) * ubo.block_dim.y,
+	                      constants.i / (ubo.map_dim.x*ubo.map_dim.y) * ubo.block_dim.z);
+
+	gl_Position = ubo.cam_vp * vec4(Vxyz + block_pos*1.1, 1.0);
 }

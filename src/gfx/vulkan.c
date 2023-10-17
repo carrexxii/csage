@@ -132,7 +132,7 @@ void free_vulkan()
 #if DEBUG_LEVEL > 0
 	VK_GET_EXT(dbgfn, vkDestroyDebugReportCallbackEXT);
 	if (!dbgfn)
-		ERROR("Failed to find debug extension callback destructor function");
+		ERROR("[VK] Failed to find debug extension callback destructor function");
 	dbgfn(instance, dbgcb, alloccb);
 #endif
 
