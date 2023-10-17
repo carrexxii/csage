@@ -2,6 +2,11 @@
 #include "body.h"
 #include "component.h"
 #include "entity.h"
+#include <cglm/affine-post.h>
+#include <cglm/affine-pre.h>
+#include <cglm/io.h>
+#include <cglm/mat4.h>
+#include <cglm/struct/affine.h>
 
 #define MAX_ENTITIES (UINT16_MAX - 1)
 
@@ -15,8 +20,9 @@ static struct ComponentArray bodies;
 
 void entity_init()
 {
-	transforms = component_new(sizeof(mat4));
+	transforms = component_new(sizeof(mat4s));
 	models     = component_new(sizeof(struct Model*));
+	bodies     = component_new(sizeof(struct Body));
 
 	update_model_transforms = entity_update_transforms;
 }
@@ -25,16 +31,16 @@ Entity entity_new(vec3s pos, char* model_path)
 {
 	Entity e = ++entityc;
 
-	mat4 transform = GLM_MAT4_IDENTITY_INIT;
-	glm_translate(transform, pos.raw);
-	glm_rotate(transform, -GLM_PI_2, (vec3){ 1.0, 0.0, 0.0 });
-	component_add(&transforms, e, transform);
+	component_add(&transforms, e, GLM_MAT4_IDENTITY);
 
 	struct Model* model = model_new(model_path, false);
 	component_add(&models, e, &model);
 
-	struct Body body;
-	body.pos = pos;
+	struct Body body = {
+		.pos     = pos,
+		.facing  = (vec3s){ 1.0, 0.0, 0.0 },
+		.vel     = 0.1,
+	};
 	component_add(&bodies, e, &body);
 
 	return e;
@@ -42,11 +48,22 @@ Entity entity_new(vec3s pos, char* model_path)
 
 void entity_update()
 {
-
+	bodies_update(&bodies);
 }
 
 static void entity_update_transforms(SBO sbo_buf)
 {
+	struct Body* body;
+	mat4* transform;
+	mat4 t;
+	uint16 e;
+	FOREACH_COMPONENT2(bodies, transforms, e, body, transform,
+		glm_translate_make(t, body->pos.raw);
+		glm_rotate_z(t, atan2f(body->facing.y, body->facing.x) - GLM_PI_2, t);
+		glm_rotate_x(t, -GLM_PI_2, t); // TODO: Move the rotation to model loading
+		memcpy(*transform, t, sizeof(mat4));
+	);
+
 	void* mem;
 	buffer_map_memory(sbo_buf, transforms.itemc*sizeof(mat4), &mem);
 	component_copy(&transforms, mem);

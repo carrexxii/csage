@@ -3,8 +3,6 @@
 
 #define KB_PER_BLOCK 16
 #define BLOCK_SIZE   (KB_PER_BLOCK*1024)
-#define FOREACH_BLOCK(arr, b) for (b = arr->blocks; b; b = b->next)
-
 
 inline static void* alloc_new_block(struct ComponentArray* arr);
 
@@ -16,6 +14,7 @@ struct ComponentArray component_new(uint item_size)
 	};
 	alloc_new_block(&arr);
 
+	DEBUG(5, "[ENT] Created new component array (item size: %u; items per block: %u)", item_size, arr.items_per_block);
 	return arr;
 }
 

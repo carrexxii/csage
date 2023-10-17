@@ -45,8 +45,8 @@ void camera_set_perspective()
 
 void camera_update()
 {
-	if (camdir & DIRECTION_RIGHT) campos[0] -= panspeed;
-	if (camdir & DIRECTION_LEFT)  campos[0] += panspeed;
+	if (camdir & DIRECTION_RIGHT) campos[0] += panspeed;
+	if (camdir & DIRECTION_LEFT)  campos[0] -= panspeed;
 	if (camdir & DIRECTION_UP)    campos[1] -= panspeed;
 	if (camdir & DIRECTION_DOWN)  campos[1] += panspeed;
 	if (camdir & DIRECTION_FORWARDS)  zoom += zoomspeed;
