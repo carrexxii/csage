@@ -6,25 +6,18 @@
 #include "gfx/pipeline.h"
 #include "camera.h"
 #include "map.h"
-#include <math.h>
 
-#define BLOCK_WIDTH          32
-#define BLOCK_HEIGHT         BLOCK_WIDTH
-#define BLOCK_DEPTH          16
-#define BLOCKS_PER_LAYER     (BLOCK_WIDTH*BLOCK_HEIGHT)
-#define VERTEX_WIDTH         (BLOCK_WIDTH + 1)
-#define VERTEX_HEIGHT        (BLOCK_HEIGHT + 1)
-#define VERTEX_DEPTH         (BLOCK_DEPTH + 1)
-#define VERTICES_PER_LAYER   (VERTEX_WIDTH*VERTEX_HEIGHT)
-#define VERTICES_PER_BLOCK   VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH
-#define VOXELS_PER_LAYER     BLOCK_WIDTH*BLOCK_HEIGHT
-#define VOXELS_PER_BLOCK     VOXELS_PER_LAYER*BLOCK_DEPTH
 #define TRIANGLES_PER_VOXEL  6
 #define VERTICES_PER_VOXEL   3*TRIANGLES_PER_VOXEL
-#define TRIANGLES_PER_BLOCK  TRIANGLES_PER_VOXEL*VOXELS_PER_BLOCK
+#define TRIANGLES_PER_BLOCK  TRIANGLES_PER_VOXEL*MAP_VOXELS_PER_BLOCK
 #define VERTEX_ELEMENT_COUNT 6
 #define SIZEOF_VERTEX        sizeof(int8[VERTEX_ELEMENT_COUNT])
-#define GET_VOXEL(x, y, z)   blocks[(z)*BLOCKS_PER_LAYER + (y)*BLOCK_WIDTH + (x)]
+
+#define VERTEX_WIDTH       (MAP_BLOCK_WIDTH + 1)
+#define VERTEX_HEIGHT      (MAP_BLOCK_HEIGHT + 1)
+#define VERTEX_DEPTH       (MAP_BLOCK_DEPTH + 1)
+#define VERTICES_PER_LAYER (VERTEX_WIDTH*VERTEX_HEIGHT)
+#define VERTICES_PER_BLOCK VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH
 
 static void remesh_block(int b);
 static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z2, int axis);
@@ -51,23 +44,19 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
+struct MapData     map_data;
+struct VoxelBlock* map_blocks;
 
 static struct Pipeline pipeln;
 static UBO  ubo_buf;
 static VBO  vbo_buf;
 static IBO* ibo_bufs;
 static int* indcs;
-static struct Voxel* blocks;
 static int blockc;
-struct {
-	mat4   cam_vp;
-	ivec4s map_size;
-	ivec4s block_size;
-} map_data;
 
 void map_init(VkRenderPass render_pass)
 {
-	map_data.block_size = (ivec4s){ BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_DEPTH };
+	map_data.block_size = (ivec4s){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH };
 	ubo_buf = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "map.vert"),
@@ -83,25 +72,28 @@ void map_init(VkRenderPass render_pass)
 	};
 	pipeln_init(&pipeln, render_pass);
 	DEBUG(4, "[MAP] Map initialized. Block dimensions are set to: %dx%dx%d",
-	      BLOCK_WIDTH, BLOCK_HEIGHT, BLOCK_DEPTH);
+	      MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
 }
 
 // TODO: need to free old data on subsequent calls
 void map_new(ivec3s dim)
 {
 	map_data.map_size = (ivec4s){
-		ceil((float)dim.x/(float)BLOCK_WIDTH),
-		ceil((float)dim.y/(float)BLOCK_HEIGHT),
-		ceil((float)dim.z/(float)BLOCK_DEPTH),
+		ceil((float)dim.x/(float)MAP_BLOCK_WIDTH),
+		ceil((float)dim.y/(float)MAP_BLOCK_HEIGHT),
+		ceil((float)dim.z/(float)MAP_BLOCK_DEPTH),
 	};
 	blockc = map_data.map_size.x*map_data.map_size.y*map_data.map_size.z;
 
-	blocks = smalloc(blockc*VOXELS_PER_BLOCK*sizeof(struct Voxel));
-	for (int z = 0; z < BLOCK_DEPTH; z++)
-		for (int y = 0; y < BLOCK_HEIGHT; y++)
-			for (int x = 0; x < BLOCK_WIDTH; x++)
-				GET_VOXEL(x, y, z).data = 1;
-				// GET_VOXEL(x, y, z).data = x == 0 || x == BLOCK_WIDTH-1 || y == 0 || y == BLOCK_HEIGHT-1? 1: 0;
+	map_blocks = scalloc(blockc, sizeof(struct VoxelBlock));
+	for (int i = 0; i < blockc; i++) {
+		map_blocks[i].voxels = scalloc(MAP_VOXELS_PER_BLOCK, sizeof(struct Voxel));
+		for (int z = 0; z < MAP_BLOCK_DEPTH; z++)
+			for (int y = 0; y < MAP_BLOCK_HEIGHT; y++)
+				for (int x = 0; x < MAP_BLOCK_WIDTH; x++)
+					// map_get_voxel((ivec3s){ x, y, z })->data = 1;
+					map_get_voxel((ivec3s){ x, y, z })->data = x == 0 || x == MAP_BLOCK_WIDTH-1 || y == 0 || y == MAP_BLOCK_HEIGHT-1? 1: 0;
+	}
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
 	intptr vert_size = 3*VERTEX_DEPTH*VERTEX_HEIGHT*VERTEX_WIDTH*VERTEX_ELEMENT_COUNT*sizeof(int8);
@@ -130,7 +122,7 @@ void map_new(ivec3s dim)
 		remesh_block(b);
 
 	DEBUG(3, "[MAP] Initialized map with dimensions: %dx%dx%d (%d blocks)",
-	      map_data.map_size.x*BLOCK_WIDTH, map_data.map_size.y*BLOCK_HEIGHT, map_data.map_size.z*BLOCK_DEPTH, blockc);
+	      map_data.map_size.x*MAP_BLOCK_WIDTH, map_data.map_size.y*MAP_BLOCK_HEIGHT, map_data.map_size.z*MAP_BLOCK_DEPTH, blockc);
 }
 
 void map_record_commands(VkCommandBuffer cmd_buf)
@@ -158,7 +150,10 @@ void map_free()
 
 	free(ibo_bufs);
 	free(indcs);
-	free(blocks);
+	for (int i = 0; i < blockc; i++)
+		if (map_blocks[i].voxels)
+			free(map_blocks[i].voxels);
+	free(map_blocks);
 
 	pipeln_free(&pipeln);
 }
@@ -173,18 +168,18 @@ static void remesh_block(int b)
 	// TODO: greed over multiple rows as well
 	uint16 current_vxl, next_vxl;
 	int x0 = 0, y0 = 0;
-	for (int z = 0; z < BLOCK_DEPTH; z++) {
+	for (int z = 0; z < MAP_BLOCK_DEPTH; z++) {
 		/* Tops */
-		for (int y = 0; y < BLOCK_HEIGHT; y++) {
-			for (int x = 0; x < BLOCK_WIDTH; x++) {
+		for (int y = 0; y < MAP_BLOCK_HEIGHT; y++) {
+			for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = GET_VOXEL(x, y, z).data) || !is_visible(x, y, z, 2))
+				if (!(current_vxl = map_get_voxel((ivec3s){ x, y, z })->data) || !is_visible(x, y, z, 2))
 					continue;
 
 				next_vxl = current_vxl;
-				while (x < BLOCK_WIDTH) {
-					next_vxl = GET_VOXEL(x, y, z).data;
+				while (x < MAP_BLOCK_WIDTH) {
+					next_vxl = map_get_voxel((ivec3s){ x, y, z })->data;
 					if (next_vxl != current_vxl)
 						break;
 					x++;
@@ -196,16 +191,16 @@ static void remesh_block(int b)
 			}
 		}
 		/* Right sides */
-		for (int y = 0; y < BLOCK_HEIGHT; y++) {
-			for (int x = 0; x < BLOCK_WIDTH; x++) {
+		for (int y = 0; y < MAP_BLOCK_HEIGHT; y++) {
+			for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = GET_VOXEL(x, y, z).data) || !is_visible(x, y, z, 1))
+				if (!(current_vxl = map_get_voxel((ivec3s){ x, y, z })->data) || !is_visible(x, y, z, 1))
 					continue;
 
 				next_vxl = current_vxl;
-				while (x < BLOCK_WIDTH) {
-					next_vxl = GET_VOXEL(x, y, z).data;
+				while (x < MAP_BLOCK_WIDTH) {
+					next_vxl = map_get_voxel((ivec3s){ x, y, z })->data;
 					if (next_vxl != current_vxl)
 						break;
 					x++;
@@ -217,16 +212,16 @@ static void remesh_block(int b)
 			}
 		}
 		/* Left sides */
-		for (int x = 0; x < BLOCK_WIDTH; x++) {
-			for (int y = 0; y < BLOCK_HEIGHT; y++) {
+		for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
+			for (int y = 0; y < MAP_BLOCK_HEIGHT; y++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = GET_VOXEL(x, y, z).data) || !is_visible(x, y, z, 0))
+				if (!(current_vxl = map_get_voxel((ivec3s){ x, y, z })->data) || !is_visible(x, y, z, 0))
 					continue;
 
 				next_vxl = current_vxl;
-				while (y < BLOCK_HEIGHT) {
-					next_vxl = GET_VOXEL(x, y, z).data;
+				while (y < MAP_BLOCK_HEIGHT) {
+					next_vxl = map_get_voxel((ivec3s){ x, y, z })->data;
 					if (next_vxl != current_vxl)
 						break;
 					y++;
@@ -281,25 +276,25 @@ static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z
 
 inline static bool is_visible(int x, int y, int z, int axis)
 {
-	if (!GET_VOXEL(x, y, z).data)
+	if (!map_get_voxel((ivec3s){ x, y, z })->data)
 		return false;
 
 	switch (axis) {
 		case 0: /* x-axis */
-			if (x + 1 >= BLOCK_WIDTH)
+			if (x + 1 >= MAP_BLOCK_WIDTH)
 				return true;
 			else
-				return GET_VOXEL(x + 1, y, z).data == 0;
+				return map_get_voxel((ivec3s){ x + 1, y, z })->data == 0;
 		case 1: /* y-axis */
-			if (y + 1 >= BLOCK_HEIGHT)
+			if (y + 1 >= MAP_BLOCK_HEIGHT)
 				return true;
 			else
-				return GET_VOXEL(x, y + 1, z).data == 0;
+				return map_get_voxel((ivec3s){ x, y + 1, z })->data == 0;
 		case 2: /* z-axis */
 			if (z == 0)
 				return true;
 			else
-				return GET_VOXEL(x, y, z - 1).data == 0;
+				return map_get_voxel((ivec3s){ x, y, z - 1 })->data == 0;
 		default: // TODO: some sort of ray cast check for diagonals?
 			return true;
 	}

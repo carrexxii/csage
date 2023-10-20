@@ -3,6 +3,8 @@
 
 #include "component.h"
 
+#define G 0.5f
+
 struct Body {
 	vec3s pos;
 	vec3s facing;

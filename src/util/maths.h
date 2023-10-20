@@ -12,6 +12,15 @@ struct Capsule {
 	float r;
 };
 
+inline static ivec3s ivec3s_of_vec3s(vec3s v)
+{
+	return (ivec3s){
+		.x = (int)v.x,
+		.y = (int)v.y,
+		.z = (int)v.z,
+	};
+}
+
 inline static void ivec3_copy_vec3(vec3 v, ivec3 u) {
 	u[0] = (int)v[0];
 	u[1] = (int)v[1];

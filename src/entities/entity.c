@@ -2,11 +2,6 @@
 #include "body.h"
 #include "component.h"
 #include "entity.h"
-#include <cglm/affine-post.h>
-#include <cglm/affine-pre.h>
-#include <cglm/io.h>
-#include <cglm/mat4.h>
-#include <cglm/struct/affine.h>
 
 #define MAX_ENTITIES (UINT16_MAX - 1)
 
@@ -40,6 +35,7 @@ Entity entity_new(vec3s pos, char* model_path)
 		.pos     = pos,
 		.facing  = (vec3s){ 1.0, 0.0, 0.0 },
 		.vel     = 0.1,
+		// .moving  = true,
 	};
 	component_add(&bodies, e, &body);
 
