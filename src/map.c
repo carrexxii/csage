@@ -91,8 +91,8 @@ void map_new(ivec3s dim)
 		for (int z = 0; z < MAP_BLOCK_DEPTH; z++)
 			for (int y = 0; y < MAP_BLOCK_HEIGHT; y++)
 				for (int x = 0; x < MAP_BLOCK_WIDTH; x++)
-					// map_get_voxel((ivec3s){ x, y, z })->data = 1;
-					map_get_voxel((ivec3s){ x, y, z })->data = x == 0 || x == MAP_BLOCK_WIDTH-1 || y == 0 || y == MAP_BLOCK_HEIGHT-1? 1: 0;
+					map_get_voxel((ivec3s){ x, y, z })->data = 1;
+					// map_get_voxel((ivec3s){ x, y, z })->data = x == 0 || x == MAP_BLOCK_WIDTH-1 || y == 0 || y == MAP_BLOCK_HEIGHT-1? 1: 0;
 	}
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
