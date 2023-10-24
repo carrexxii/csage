@@ -39,6 +39,18 @@ inline static void vec3_clamp(vec3 v, vec3 vmax, vec3 vmin) {
 	CLAMP(v[2], vmin[2], vmax[2]);
 }
 
+inline static bool ivec3s_eq(ivec3s v, ivec3s u) {
+	return v.x == u.x && v.y == u.y && v.z == u.z;
+}
+
+inline static ivec3s ivec3s_add(ivec3s v, ivec3s u) {
+	return (ivec3s){
+		.x = v.x + u.x,
+		.y = v.y + u.y,
+		.z = v.z + u.z,
+	};
+}
+
 /* This is modified from Paul Bourke's solution: http://paulbourke.net/geometry/pointlineplane/
  * Calculate the line segment p1p2 that is the shortest route between two lines p1p2 and p3p4.
  * Returns false if no solution exists.

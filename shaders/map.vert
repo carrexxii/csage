@@ -3,7 +3,8 @@
 layout(location = 0) in ivec3 Vxyz;
 layout(location = 1) in ivec3 Vnnn;
 
-layout(location = 0) out vec3 Fnnn;
+layout(location = 0) out vec3 Fxyz;
+layout(location = 1) out vec3 Fnnn;
 
 // struct ObjectData {
 // 	mat4 mat;
@@ -24,6 +25,7 @@ layout(push_constant) uniform PushConstants {
 
 void main()
 {
+	Fxyz = vec3(Vxyz);
 	Fnnn = vec3(Vnnn);
 	
 	vec3 block_pos = vec3(mod(constants.i, ubo.map_dim.x) * ubo.block_dim.x,

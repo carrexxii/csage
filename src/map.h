@@ -3,6 +3,8 @@
 
 #include "vulkan/vulkan.h"
 
+#define MAP_MAX_SELECTIONS 64
+
 #define MAP_BLOCK_WIDTH      32
 #define MAP_BLOCK_HEIGHT     MAP_BLOCK_WIDTH
 #define MAP_BLOCK_DEPTH      16
@@ -16,12 +18,12 @@ struct Voxel {
 };
 
 struct VoxelBlock {
-	struct Voxel* voxels;
-	int voxelc;
+	struct Voxel voxels[MAP_BLOCK_DEPTH][MAP_BLOCK_HEIGHT][MAP_BLOCK_WIDTH];
 };
 
 void map_init(VkRenderPass render_pass);
 void map_new(ivec3s dim);
+int  map_highlight_area(ivec4s area);
 void map_record_commands(VkCommandBuffer cmd_buf);
 void map_free();
 
@@ -32,19 +34,28 @@ extern struct MapData {
 } map_data;
 extern struct VoxelBlock* map_blocks;
 
-[[gnu::always_inline]]
-inline static int map_get_block_index(ivec3s pos) {
-	return (pos.z/MAP_BLOCK_DEPTH)*map_data.map_size.z +
-	       (pos.y/MAP_BLOCK_WIDTH)*map_data.map_size.y +
-	       (pos.x/MAP_BLOCK_WIDTH);
+inline static int map_get_block_x(ivec3s world_pos) { return world_pos.x / MAP_BLOCK_WIDTH;  }
+inline static int map_get_block_y(ivec3s world_pos) { return world_pos.y / MAP_BLOCK_HEIGHT; }
+inline static int map_get_block_z(ivec3s world_pos) { return world_pos.z / MAP_BLOCK_DEPTH;  }
+inline static struct VoxelBlock* map_get_block(ivec3s world_pos) {
+	return &map_blocks[map_get_block_z(world_pos)*MAP_BLOCKS_PER_LAYER +
+	                   map_get_block_y(world_pos)*MAP_BLOCK_WIDTH      +
+	                   map_get_block_x(world_pos)];
 }
 
-[[gnu::always_inline]]
-inline static struct Voxel* map_get_voxel(ivec3s pos) {
-	struct VoxelBlock* block = &map_blocks[map_get_block_index(pos)];
-	return &block->voxels[(pos.z % MAP_BLOCK_DEPTH)*MAP_VOXELS_PER_LAYER +
-	                      (pos.y % MAP_BLOCK_HEIGHT)*MAP_BLOCK_WIDTH + 
-	                      (pos.x % MAP_BLOCK_WIDTH)];
+inline static int map_get_voxel_x(ivec3s local_pos) { return local_pos.x % MAP_BLOCK_WIDTH;  }
+inline static int map_get_voxel_y(ivec3s local_pos) { return local_pos.y % MAP_BLOCK_HEIGHT; }
+inline static int map_get_voxel_z(ivec3s local_pos) { return local_pos.z % MAP_BLOCK_DEPTH;  }
+inline static struct Voxel* map_get_voxel(ivec3s world_pos) {
+	int x = map_get_voxel_x(world_pos);
+	int y = map_get_voxel_y(world_pos);
+	int z = map_get_voxel_z(world_pos);
+	if (BETWEEN(x, 0, MAP_BLOCK_WIDTH  - 1) &&
+		BETWEEN(y, 0, MAP_BLOCK_HEIGHT - 1) &&
+		BETWEEN(z, 0, MAP_BLOCK_DEPTH  - 1))
+		return &map_get_block(world_pos)->voxels[z][y][x];
+	else
+		return NULL;
 }
 
 #endif

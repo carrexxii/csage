@@ -6,6 +6,7 @@
 #include "gfx/pipeline.h"
 #include "camera.h"
 #include "map.h"
+#include <vulkan/vulkan_core.h>
 
 #define TRIANGLES_PER_VOXEL  6
 #define VERTICES_PER_VOXEL   3*TRIANGLES_PER_VOXEL
@@ -18,6 +19,11 @@
 #define VERTEX_DEPTH       (MAP_BLOCK_DEPTH + 1)
 #define VERTICES_PER_LAYER (VERTEX_WIDTH*VERTEX_HEIGHT)
 #define VERTICES_PER_BLOCK VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH
+
+struct PushData {
+	ivec4s selection;
+	int i;
+};
 
 static void remesh_block(int b);
 static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z2, int axis);
@@ -48,16 +54,19 @@ struct MapData     map_data;
 struct VoxelBlock* map_blocks;
 
 static struct Pipeline pipeln;
-static UBO  ubo_buf;
+static UBO  ubo_bufs[2];
 static VBO  vbo_buf;
 static IBO* ibo_bufs;
 static int* indcs;
 static int blockc;
+static ivec4s selections[MAP_MAX_SELECTIONS];
+static int    selectionc;
 
 void map_init(VkRenderPass render_pass)
 {
 	map_data.block_size = (ivec4s){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH };
-	ubo_buf = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
+	ubo_bufs[0] = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
+	ubo_bufs[1] = ubo_new(sizeof(selections)); /* Selections to be highlighted */
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "map.vert"),
 		.fshader    = create_shader(SHADER_DIR "map.frag"),
@@ -65,13 +74,13 @@ void map_init(VkRenderPass render_pass)
 		.vertbinds  = vert_binds,
 		.vertattrc  = ARRAY_LEN(vertex_attrs),
 		.vertattrs  = vertex_attrs,
-		.uboc       = 1,
-		.ubos       = &ubo_buf,
+		.uboc       = 2,
+		.ubos       = ubo_bufs,
 		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
 		.pushsz     = sizeof(int), /* Index of the current block being drawn */
 	};
 	pipeln_init(&pipeln, render_pass);
-	DEBUG(4, "[MAP] Map initialized. Block dimensions are set to: %dx%dx%d",
+	DEBUG(3, "[MAP] Map initialized. Block dimensions are set to: %dx%dx%d",
 	      MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
 }
 
@@ -87,7 +96,7 @@ void map_new(ivec3s dim)
 
 	map_blocks = scalloc(blockc, sizeof(struct VoxelBlock));
 	for (int i = 0; i < blockc; i++) {
-		map_blocks[i].voxels = scalloc(MAP_VOXELS_PER_BLOCK, sizeof(struct Voxel));
+		// map_blocks[i].voxels = scalloc(MAP_VOXELS_PER_BLOCK, sizeof(struct Voxel));
 		for (int z = 0; z < MAP_BLOCK_DEPTH; z++)
 			for (int y = 0; y < MAP_BLOCK_HEIGHT; y++)
 				for (int x = 0; x < MAP_BLOCK_WIDTH; x++)
@@ -125,10 +134,18 @@ void map_new(ivec3s dim)
 	      map_data.map_size.x*MAP_BLOCK_WIDTH, map_data.map_size.y*MAP_BLOCK_HEIGHT, map_data.map_size.z*MAP_BLOCK_DEPTH, blockc);
 }
 
+int map_highlight_area(ivec4s area)
+{
+	selections[selectionc] = area;
+
+	return selectionc++;
+}
+
 void map_record_commands(VkCommandBuffer cmd_buf)
 {
 	camera_get_vp(map_data.cam_vp);
-	buffer_update(ubo_buf, sizeof(map_data), &map_data);
+	buffer_update(ubo_bufs[0], sizeof(map_data), &map_data);
+	buffer_update(ubo_bufs[1], sizeof(selections), selections);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
@@ -150,9 +167,9 @@ void map_free()
 
 	free(ibo_bufs);
 	free(indcs);
-	for (int i = 0; i < blockc; i++)
-		if (map_blocks[i].voxels)
-			free(map_blocks[i].voxels);
+	// for (int i = 0; i < blockc; i++)
+		// if (map_blocks[i].voxels)
+			// free(map_blocks[i].voxels);
 	free(map_blocks);
 
 	pipeln_free(&pipeln);

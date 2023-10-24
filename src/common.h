@@ -95,14 +95,19 @@ union Data {
 	double dbl;
 	void*  ptr;
 };
+#define DATA(x) _Generic((x), char* : (union Data){ .str = (x) }, \
+                              int   : (union Data){ .s64 = (x) }, \
+                              uint  : (union Data){ .u64 = (x) }, \
+                              float : (union Data){ .flt = (x) }, \
+                              double: (union Data){ .dbl = (x) })
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
 #define MAX(a, b) ((a) > (b)? (a): (b))
 #endif
 #define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
-#define CLAMP(a, b, c)   do { ((a) = (a) < (b)? (b): (a) > (c)? (c): (a));} while (0)
-#define ARRAY_LEN(a)     (sizeof(a)/sizeof(a[0]))
+#define CLAMP(a, b, c)   do { ((a) = (a) < (b)? (b): (a) > (c)? (c): (a)); } while (0)
+#define ARRAY_LEN(a)     (sizeof(a) / sizeof(a[0]))
 #define DIV_CEIL(a, b)   (((a) + (b) - 1) / (b))
 #define AVERAGE(a, b)    (((a) + (b)) / 2)
 
@@ -171,7 +176,7 @@ union Data {
 			long long int: "Long Long: %lld\n", unsigned long long int: "ULong Long: %llu\n", \
 			        float: "Float: %g\n",                       double: "Double: %g\n",        \
 			  long double: "Long Double: %lg\n",                 char*: "Char*: %s\n",          \
-			  default: "<unknown or pointer type>%p\n"), (x));                            \
+			  default: "<unknown or pointer type>%p\n"), (x));                                   \
 		} while (0)
 #define ERROR(...) do {                                   \
 			fprintf(stderr, TERM_RED);                     \
