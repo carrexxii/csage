@@ -24,6 +24,7 @@ struct VoxelBlock {
 void map_init(VkRenderPass render_pass);
 void map_new(ivec3s dim);
 int  map_highlight_area(ivec4s area);
+void map_clear_highlight();
 void map_record_commands(VkCommandBuffer cmd_buf);
 void map_free();
 

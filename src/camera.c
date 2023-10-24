@@ -27,14 +27,24 @@ void camera_get_vp(mat4 out)
 	glm_mat4_mul(camproj, camview, out);
 }
 
-vec2s camera_get_point(float x, float y)
+struct Ray camera_get_mouse_ray(float x, float y)
 {
 	mat4 vp;
 	camera_get_vp(vp);
 
-	vec3s v = glms_unproject((vec3s){ x, y, 0.0 }, *(mat4s*)vp, (vec4s){ 0.0, 0.0, config_window_width, config_window_height });
+	vec3 p1, p2;
+	glm_unproject((vec3){ x, y, 0.0 }, vp, (float[]){ 0.0, 0.0, config_window_width, config_window_height }, p1);
+	glm_unproject((vec3){ x, y, 1.0 }, vp, (float[]){ 0.0, 0.0, config_window_width, config_window_height }, p2);
 
-	return (vec2s){ v.x, v.y };
+	return ray_from_points(p1, p2);
+}
+
+vec2s camera_get_map_point(struct Ray ray)
+{
+	vec3 p;
+	ray_plane_intersection(ray, (vec4){ 0.0, 0.0, -1.0, 0.0 }, p);
+
+	return (vec2s){ p[0], p[1] };
 }
 
 void camera_set_perspective()

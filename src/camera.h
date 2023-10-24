@@ -14,7 +14,8 @@ extern enum Direction camdir;
 
 void  camera_init();
 void  camera_get_vp(mat4 out);
-vec2s camera_get_point(float x, float y);
+struct Ray camera_get_mouse_ray(float x, float y);
+vec2s camera_get_map_point(struct Ray ray);
 void  camera_set_perspective();
 void  camera_update();
 

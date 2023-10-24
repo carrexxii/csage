@@ -141,6 +141,12 @@ int map_highlight_area(ivec4s area)
 	return selectionc++;
 }
 
+void map_clear_highlight()
+{
+	selectionc = 0;
+	memset(selections, 0, sizeof(selections));
+}
+
 void map_record_commands(VkCommandBuffer cmd_buf)
 {
 	camera_get_vp(map_data.cam_vp);

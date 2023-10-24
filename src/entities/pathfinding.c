@@ -22,6 +22,13 @@ static ivec3s directions[] = {
 
 struct Path path_new(ivec3s start, ivec3s end)
 {
+	if (!BETWEEN(end.x, 0, MAP_BLOCK_WIDTH  - 1) ||
+		!BETWEEN(end.y, 0, MAP_BLOCK_HEIGHT - 1) ||
+		!BETWEEN(end.z, 0, MAP_BLOCK_DEPTH  - 1)) {
+		ERROR("[ENT] Cannot find path to (%d, %d, %d)", end.x, end.y, end.z);
+		return (struct Path){ 0 };
+	}
+
 	struct Path path = {
 		.start = start,
 		.end   = end,
@@ -77,6 +84,7 @@ struct Path path_new(ivec3s start, ivec3s end)
 		}
 	} while (!minheap_is_empty(&open_nodes));
 
+	map_clear_highlight();
 	for (int i = 0; i < closed_nodec; i++) {
 		DEBUG(1, "[%d] (%d, %d) = %d", i, closed_nodes[i].pos.x, closed_nodes[i].pos.y, closed_nodes[i].g+closed_nodes[i].h);
 		map_highlight_area((ivec4s){ closed_nodes[i].pos.x, closed_nodes[i].pos.y, 1, 1 });
