@@ -1,6 +1,10 @@
+#include "util/maths.h"
 #include "util/minheap.h"
 #include "map.h"
 #include "pathfinding.h"
+#include <cglm/struct/io.h>
+#include <cglm/struct/vec3.h>
+#include <stdint.h>
 
 #define HEAP_STARTING_DEPTH    10
 #define MAX_SEARCHED_POSITIONS 1024
@@ -12,6 +16,7 @@ struct PathNode {
 };
 
 inline static int dist(ivec3s p1, ivec3s p2);
+inline static void build_path(struct Path* path, int nodec, struct PathNode* nodes, bool is_local);
 
 static ivec3s directions[] = {
 	{  1, 0, 0 }, { -1,  0, 0 },
@@ -20,19 +25,20 @@ static ivec3s directions[] = {
 	{ -1, 1, 0 }, {  1, -1, 0 },
 };
 
-struct Path path_new(ivec3s start, ivec3s end)
+void path_new(struct Path* path)
 {
+	ivec3s start = path->start;
+	ivec3s end   = path->end;
+	if (ivec3s_eq(start, end)) {
+		ERROR("[ENT] Should not be trying to path with same start and end");
+		return;
+	}
 	if (!BETWEEN(end.x, 0, MAP_BLOCK_WIDTH  - 1) ||
 		!BETWEEN(end.y, 0, MAP_BLOCK_HEIGHT - 1) ||
 		!BETWEEN(end.z, 0, MAP_BLOCK_DEPTH  - 1)) {
 		ERROR("[ENT] Cannot find path to (%d, %d, %d)", end.x, end.y, end.z);
-		return (struct Path){ 0 };
+		return;
 	}
-
-	struct Path path = {
-		.start = start,
-		.end   = end,
-	};
 
 	if (start.z != end.z)
 		ERROR("[ENT] Traversing z-levels is not completed");
@@ -84,16 +90,16 @@ struct Path path_new(ivec3s start, ivec3s end)
 		}
 	} while (!minheap_is_empty(&open_nodes));
 
+	build_path(path, closed_nodec, closed_nodes, true);
+
 	map_clear_highlight();
 	for (int i = 0; i < closed_nodec; i++) {
-		DEBUG(1, "[%d] (%d, %d) = %d", i, closed_nodes[i].pos.x, closed_nodes[i].pos.y, closed_nodes[i].g+closed_nodes[i].h);
-		map_highlight_area((ivec4s){ closed_nodes[i].pos.x, closed_nodes[i].pos.y, 1, 1 });
+		// DEBUG(1, "[%d] (%d, %d) = %d", i, path->local_path[i][0], path->local_path[i][1], closed_nodes[i].g+closed_nodes[i].h);
+		map_highlight_area((ivec4s){ path->local_path[i][0], path->local_path[i][1], 1, 1 });
 	}
 
 	free(closed_nodes);
 	minheap_free(&open_nodes, NULL);
-
-	return path;
 }
 
 inline static int dist(ivec3s p1, ivec3s p2)
@@ -102,4 +108,18 @@ inline static int dist(ivec3s p1, ivec3s p2)
 	int dy = abs(p1.y - p2.y);
 	return dx > dy? 14*dy + 10*(dx - dy):
 	                14*dx + 10*(dy - dx);
+}
+
+inline static void build_path(struct Path* path, int nodec, struct PathNode* nodes, bool is_local)
+{
+	if (is_local) {
+		memset(path->local_path, INT8_MIN, PATHFINDING_MAX_LOOKAHEAD*sizeof(path->local_path[0]));
+		for (int i = 0; i < nodec; i++) {
+			path->local_path[i][0] = nodes[i].pos.x;
+			path->local_path[i][1] = nodes[i].pos.y;
+			path->local_path[i][2] = nodes[i].pos.z;
+		}
+	} else {
+		D;
+	}
 }

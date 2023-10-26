@@ -35,15 +35,16 @@ void* _scalloc(uintptr n, uintptr s, const char* restrict file, int line, const 
 	}
 }
 
-void* _srealloc(void* mem, uintptr n, const char* restrict file, int line, const char* restrict fn)
+void* _srealloc(void* mem, uintptr s, const char* restrict file, int line, const char* restrict fn)
 {
-	mem = realloc(mem, n);
+	mem = realloc(mem, s);
 	if (!mem) {
-		ERROR("[MEM] Realloc failed for %lu bytes", n);
+		ERROR("[MEM] Realloc failed for %lu bytes", s);
 		exit(1);
 	} else {
-		DEBUG(2, "[MEM] Reallocated %luB (%.2fkB) (%.2fkB total) in \"%s:%d:%s\"",
-		      n, (double)n/1024.0, (double)malloced/1024.0, file, line, fn);
+		if (s >= DEBUG_MALLOC_MIN)
+			DEBUG(2, "[MEM] Reallocated %luB (%.2fkB) (%.2fkB total) in \"%s:%d:%s\"",
+			      s, (double)s/1024.0, (double)malloced/1024.0, file, line, fn);
 		return mem;
 	}
 }

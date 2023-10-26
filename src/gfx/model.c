@@ -49,7 +49,7 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 /* -------------------------------------------------------------------- */
 
 void (*update_model_transforms)(SBO);
-mat4* model_transforms;
+mat4s* model_transforms;
 
 static struct Pipeline pipeln;
 static struct Model models[MAX_MODELS];

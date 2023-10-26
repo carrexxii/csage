@@ -21,8 +21,8 @@ void camera_get_vp(mat4 out)
 {
 	camera_set_perspective();
 	glm_translate_make(camview, campos);
-	glm_rotate_x(camview,  glm_rad(45.0) , camview);
-	glm_rotate_z(camview, -glm_rad(135.0) , camview);
+	glm_rotate_x(camview,  glm_rad(45.0), camview);
+	glm_rotate_z(camview, -glm_rad(135.0), camview);
 
 	glm_mat4_mul(camproj, camview, out);
 }

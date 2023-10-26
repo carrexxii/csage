@@ -1,56 +1,55 @@
 #include "util/varray.h"
 
-struct VArray varray_new(intptr elemc, intptr elem_size)
+struct VArray varray_new(intptr starting_item_count, intptr data_size)
 {
-	if (elemc < 1)
+	if (starting_item_count < 1)
 		ERROR("[UTIL] Should not create VArray with < 1 elements");
 
 	struct VArray arr = {
-		.len       = elemc,
-		.elem_size = elem_size,
-		.data      = scalloc(elem_size, elemc),
+		.len       = 0,
+		.max_len   = starting_item_count*data_size,
+		.data_size = data_size,
+		.data      = scalloc(starting_item_count, data_size),
 	};
 
-	DEBUG(4, "[UTIL] Created new VArray with %ld elements of size %ld (%ld total)", elemc, elem_size, elemc*elem_size);
+	DEBUG(4, "[UTIL] Created new VArray with %ld elements of size %ld", arr.max_len, arr.data_size);
 	return arr;
 }
 
-void* varray_set(struct VArray* arr, intptr i, void* elem)
+void* varray_set(struct VArray* arr, intptr i, void* data)
 {
-	if (i < 0) {
-		ERROR("[UTIL] Array index cannot be negative (%ld)", i);
-		return NULL;
-	}
-	if (i > arr->len)
-		arr->len = i;
-	if (i > arr->capacity)
+	if (i < 0 || i > arr->max_len*VARRAY_SIZE_MULTIPLIER || !data)
+		ERROR("[UTIL] Error setting value (%p) for varray (len: %ld; max_len: %ld, i: %ld)",
+		      data, arr->len, arr->max_len, i);
+	if (i > arr->max_len*arr->data_size || i > arr->max_len)
 		varray_resize(arr, -1);
 
-	memcpy((byte*)arr->data + i*arr->elem_size, elem, arr->elem_size);
+	memcpy(arr->data + i*arr->data_size, data, arr->data_size);
 
-	return (byte*)arr->data + i*arr->elem_size;
+	return arr->data + i*arr->data_size;
 }
 
-void* varray_push(struct VArray* arr, void* elem)
+int varray_push(struct VArray* arr, void* data)
 {
-	return varray_set(arr, arr->len, elem);
+	varray_set(arr, arr->len, data);
+
+	return arr->len++;
 }
 
 void varray_resize(struct VArray* arr, intptr new_size)
 {
-	intptr old_size = arr->capacity;
 	if (new_size < 0)
-		arr->capacity *= 1.5;
+		arr->max_len *= VARRAY_SIZE_MULTIPLIER;
 	else
-		arr->capacity = new_size;
-	arr->data = srealloc(arr->data, arr->capacity);
-
-	DEBUG(3, "[UTIL] Resized VArray (%p) from %ld to %ld", (void*)arr, old_size, arr->capacity);
+		arr->max_len = new_size;
+	arr->data = srealloc(arr->data, arr->max_len*arr->data_size);
 }
 
 void varray_free(struct VArray* arr)
 {
-	arr->capacity = 0;
-	arr->len      = 0;
-	free(arr->data);
+	arr->max_len = 0;
+	arr->len     = 0;
+
+	sfree(arr->data);
+	arr->data = NULL;
 }

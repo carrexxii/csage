@@ -1,6 +1,7 @@
 #ifndef UTIL_MINHEAP_H
 #define UTIL_MINHEAP_H
 
+#include "common.h"
 #define MINHEAP_BUFFER_SIZE   256
 #define MINHEAP_NODE_COUNT(d) ((1 << (d)) - 1)
 
@@ -34,8 +35,9 @@ inline static struct MinHeap minheap_new(int depth, int data_size)
 	};
 	minheap_resize(&heap, depth);
 
-	DEBUG(5, "[UTIL] Created new MinHeap with depth %d (%d nodes of size %dB)",
-	      depth, MINHEAP_NODE_COUNT(depth), data_size);
+	if (data_size >= DEBUG_MALLOC_MIN)
+		DEBUG(5, "[UTIL] Created new MinHeap with depth %d (%d nodes of size %dB)",
+		      depth, MINHEAP_NODE_COUNT(depth), data_size);
 	return heap;
 }
 

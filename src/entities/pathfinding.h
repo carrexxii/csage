@@ -6,11 +6,11 @@
 struct Path {
 	ivec3s start;
 	ivec3s end;
-	int8 block_path[PATHFINDING_MAX_LOOKAHEAD];
-	int8 local_path[PATHFINDING_MAX_LOOKAHEAD];
+	int8 block_path[PATHFINDING_MAX_LOOKAHEAD][3];
+	int8 local_path[PATHFINDING_MAX_LOOKAHEAD][3];
 	bool complete;
 };
 
-struct Path path_new(ivec3s start, ivec3s end);
+void path_new(struct Path* path);
 
 #endif

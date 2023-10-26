@@ -1,8 +1,6 @@
 #ifndef ENTITIES_BODY_H
 #define ENTITIES_BODY_H
 
-#include "component.h"
-
 #define G 0.5f
 
 struct Body {
@@ -12,6 +10,6 @@ struct Body {
 	bool moving;
 };
 
-void bodies_update(struct ComponentArray* bodies);
+void bodies_update(int bodyc, struct Body* bodies);
 
 #endif

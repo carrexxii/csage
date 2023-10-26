@@ -39,6 +39,6 @@ void  model_free(ID model_id);
 void  models_free();
 
 extern void (*update_model_transforms)(SBO);
-extern mat4* model_transforms;
+extern mat4s* model_transforms;
 
 #endif
