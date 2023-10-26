@@ -1,7 +1,6 @@
 #ifndef UTIL_MINHEAP_H
 #define UTIL_MINHEAP_H
 
-#include "common.h"
 #define MINHEAP_BUFFER_SIZE   256
 #define MINHEAP_NODE_COUNT(d) ((1 << (d)) - 1)
 
@@ -69,7 +68,6 @@ inline static void* minheap_pop(struct MinHeap* heap)
 
 	int l, r, i = 0;
 	minheap_swap(heap, 0, heap->tail);
-	// heap->nodes[0] = heap->nodes[heap->tail];
 	while (i <= heap->tail) {
 		l = heap->nodes[minheap_left(i)];
 		r = heap->nodes[minheap_right(i)];
@@ -118,11 +116,11 @@ inline static bool minheap_is_empty(struct MinHeap* heap) { return heap->tail < 
 inline static void minheap_reset(struct MinHeap* heap)    { heap->tail = 0;        }
 
 inline static void minheap_free(struct MinHeap* heap, void (*fn)(void*)) {
-	free(heap->nodes);
+	sfree(heap->nodes);
 	if (fn)
 		for (int i = 0; i < heap->tail; i++)
 			fn(minheap_get(heap, i));
-	free(heap->data);
+	sfree(heap->data);
 }
 
 static void minheap_print(struct MinHeap* heap)

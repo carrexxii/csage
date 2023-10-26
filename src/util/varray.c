@@ -7,9 +7,9 @@ struct VArray varray_new(intptr starting_item_count, intptr data_size)
 
 	struct VArray arr = {
 		.len       = 0,
-		.max_len   = starting_item_count*data_size,
+		.max_len   = starting_item_count,
 		.data_size = data_size,
-		.data      = scalloc(starting_item_count, data_size),
+		.data      = smalloc(starting_item_count*data_size),
 	};
 
 	DEBUG(4, "[UTIL] Created new VArray with %ld elements of size %ld", arr.max_len, arr.data_size);

@@ -1,4 +1,3 @@
-#include "util/varray.h"
 #include "map.h"
 #include "body.h"
 
@@ -12,7 +11,8 @@ void bodies_update(int bodyc, struct Body* bodies)
 
 		v = ivec3s_of_vec3s(body->pos);
 		v.z += 1;
-		if (map_get_voxel(v)->data == 0)
+		struct Voxel* vxl_below = map_get_voxel(v);
+		if (vxl_below && vxl_below->data == 0)
 			body->pos.z += G;
 	}
 }

@@ -3,6 +3,7 @@
 
 #define MAX_ENTITIES        (UINT16_MAX - 1)
 #define STARTING_ARRAY_SIZE 8
+#define ENTITY_PATH_EPSILON 0.1 /* Will be compared to the square of the distance */
 
 typedef uint16 EntityID;
 

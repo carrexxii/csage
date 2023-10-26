@@ -12,14 +12,9 @@ struct Capsule {
 	float r;
 };
 
-inline static ivec3s ivec3s_of_vec3s(vec3s v)
-{
-	return (ivec3s){
-		.x = (int)v.x,
-		.y = (int)v.y,
-		.z = (int)v.z,
-	};
-}
+inline static ivec3s ivec3s_of_vec3s(vec3s v)  { return (ivec3s){ .x = (int)v.x, .y = (int)v.y, .z = (int)v.z }; }
+inline static vec3s  vec3s_of_ivec3s(ivec3s v) { return (vec3s){ .x = (float)v.x, .y = (float)v.y, .z = (float)v.z }; }
+inline static vec3s  vec3s_of_int8(int8 v[3])  { return (vec3s){ .x = (float)v[0], .y = (float)v[1], .z = (float)v[2] }; }
 
 inline static void ivec3_copy_vec3(vec3 v, ivec3 u) {
 	u[0] = (int)v[0];

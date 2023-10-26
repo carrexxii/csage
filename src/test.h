@@ -35,6 +35,6 @@ void test_init()
 	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "dwarf.glb");
 	DEBUG_VALUE(e1);
 
-	input_register_mouse(MOUSE_DRAG, path_to_mouse);
+	// input_register_mouse(MOUSE_DRAG, path_to_mouse);
 	input_register_mouse(MOUSE_RIGHT, move_to_mouse);
 }

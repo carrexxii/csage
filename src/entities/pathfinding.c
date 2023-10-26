@@ -88,8 +88,9 @@ void path_new(struct Path* path)
 		} else {
 			break;
 		}
-	} while (!minheap_is_empty(&open_nodes));
+	} while (!minheap_is_empty(&open_nodes) && closed_nodec < MAX_SEARCHED_POSITIONS);
 
+	path->complete = false;
 	build_path(path, closed_nodec, closed_nodes, true);
 
 	map_clear_highlight();
@@ -98,7 +99,7 @@ void path_new(struct Path* path)
 		map_highlight_area((ivec4s){ path->local_path[i][0], path->local_path[i][1], 1, 1 });
 	}
 
-	free(closed_nodes);
+	sfree(closed_nodes);
 	minheap_free(&open_nodes, NULL);
 }
 
@@ -113,6 +114,7 @@ inline static int dist(ivec3s p1, ivec3s p2)
 inline static void build_path(struct Path* path, int nodec, struct PathNode* nodes, bool is_local)
 {
 	if (is_local) {
+		path->local_path_current = 0;
 		memset(path->local_path, INT8_MIN, PATHFINDING_MAX_LOOKAHEAD*sizeof(path->local_path[0]));
 		for (int i = 0; i < nodec; i++) {
 			path->local_path[i][0] = nodes[i].pos.x;

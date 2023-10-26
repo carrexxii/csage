@@ -6,7 +6,6 @@
 #include "gfx/pipeline.h"
 #include "camera.h"
 #include "map.h"
-#include <vulkan/vulkan_core.h>
 
 #define TRIANGLES_PER_VOXEL  6
 #define VERTICES_PER_VOXEL   3*TRIANGLES_PER_VOXEL

@@ -36,7 +36,7 @@
 
 #define dt_ms                    (20u)
 #define dt                       (1.0/dt_ms)
-#define DEBUG_MALLOC_MIN         (128*1024*1024)
+#define DEBUG_MALLOC_MIN         (128*1024)
 #define BODY_MAX_POLYGONS        16
 #define MAX_VERTICES_PER_POLYGON 32
 

@@ -32,5 +32,5 @@ void main()
 	                      mod((constants.i / ubo.map_dim.y), ubo.map_dim.y) * ubo.block_dim.y,
 	                      constants.i / (ubo.map_dim.x*ubo.map_dim.y) * ubo.block_dim.z);
 
-	gl_Position = ubo.cam_vp * vec4(Vxyz + block_pos*1.1, 1.0);
+	gl_Position = ubo.cam_vp * vec4(Vxyz + vec3(-0.5, -0.5, 0.0) + block_pos*1.1, 1.0);
 }

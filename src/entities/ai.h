@@ -12,6 +12,6 @@ struct AI {
 	enum AIState state;
 };
 
-void ais_update();
+void ais_update(int aic, struct AI* ais);
 
 #endif
