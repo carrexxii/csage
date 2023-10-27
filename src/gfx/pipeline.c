@@ -123,7 +123,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 		.pushConstantRangeCount = pipeln->pushsz > 0? 1: 0,
 		.pPushConstantRanges    = &tpushr,
 	};
-	if (vkCreatePipelineLayout(gpu, &tlaysci, alloccb, &pipeln->layout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(gpu, &tlaysci, NULL, &pipeln->layout) != VK_SUCCESS)
 		ERROR("[VK] Failed to create pipeline layout");
 	else
 		DEBUG(4, "[VK] Created pipeline layout");
@@ -146,7 +146,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 		.basePipelineHandle  = NULL,
 		.basePipelineIndex   = -1,
 	};
-	if (vkCreateGraphicsPipelines(gpu, NULL, 1, &tpipelnci, alloccb, &pipeln->pipeln) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(gpu, NULL, 1, &tpipelnci, NULL, &pipeln->pipeln) != VK_SUCCESS)
 		ERROR("[VK] Failed to create pipeline");
 	else
 		DEBUG(3, "[VK] Pipeline created");
@@ -155,22 +155,23 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 void pipeln_free(struct Pipeline* pipeln)
 {
 	DEBUG(3, "[VK] Destroying pipeline (%p)...", (void*)pipeln);
-	vkDestroyPipeline(gpu, pipeln->pipeln, alloccb);
-	vkDestroyPipelineLayout(gpu, pipeln->layout, alloccb);
-	vkDestroyDescriptorPool(gpu, pipeln->dpool, alloccb);
+	vkDestroyPipeline(gpu, pipeln->pipeln, NULL);
+	vkDestroyPipelineLayout(gpu, pipeln->layout, NULL);
+	vkDestroyDescriptorPool(gpu, pipeln->dpool, NULL);
 
-	if (pipeln->vshader)  vkDestroyShaderModule(gpu, pipeln->vshader , alloccb);
-	if (pipeln->tcshader) vkDestroyShaderModule(gpu, pipeln->tcshader, alloccb);
-	if (pipeln->teshader) vkDestroyShaderModule(gpu, pipeln->teshader, alloccb);
-	if (pipeln->gshader)  vkDestroyShaderModule(gpu, pipeln->gshader , alloccb);
-	if (pipeln->fshader)  vkDestroyShaderModule(gpu, pipeln->fshader , alloccb);
+	if (pipeln->vshader)  vkDestroyShaderModule(gpu, pipeln->vshader , NULL);
+	if (pipeln->tcshader) vkDestroyShaderModule(gpu, pipeln->tcshader, NULL);
+	if (pipeln->teshader) vkDestroyShaderModule(gpu, pipeln->teshader, NULL);
+	if (pipeln->gshader)  vkDestroyShaderModule(gpu, pipeln->gshader , NULL);
+	if (pipeln->fshader)  vkDestroyShaderModule(gpu, pipeln->fshader , NULL);
 
-	vkDestroyDescriptorSetLayout(gpu, pipeln->dsetlayout, alloccb);
+	vkDestroyDescriptorSetLayout(gpu, pipeln->dsetlayout, NULL);
 
 	for (int i = 0; i < pipeln->uboc; i++)
 		if (pipeln->ubos[i].sz)
 			ubo_free(&pipeln->ubos[i]);
-	if (pipeln->sbo)
+
+	if (pipeln->sbo && pipeln->sbo->sz)
 		sbo_free(pipeln->sbo);
 }
 
@@ -219,7 +220,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 		.bindingCount = dsetlayoutc,
 		.pBindings    = dsetlayouts,
 	};
-	if (vkCreateDescriptorSetLayout(gpu, &dsetlayoutci, alloccb, &pipeln->dsetlayout))
+	if (vkCreateDescriptorSetLayout(gpu, &dsetlayoutci, NULL, &pipeln->dsetlayout))
 		ERROR("[VK] Failed to create descriptor set layout");
 	else
 		DEBUG(3, "[VK] Created descriptor set layout");
@@ -239,7 +240,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 		},
 		.maxSets = 1,
 	};
-	if (vkCreateDescriptorPool(gpu, &dpoolci, alloccb, &pipeln->dpool))
+	if (vkCreateDescriptorPool(gpu, &dpoolci, NULL, &pipeln->dpool))
 		ERROR("[VK] Failed to create descriptor pool");
 	else
 		DEBUG(3, "[VK] Created descriptor pool");

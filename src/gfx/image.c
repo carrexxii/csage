@@ -58,7 +58,7 @@ void image_new(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices   = NULL,
 	};
-	if (vkCreateImage(gpu, &imgi, alloccb, &images[imagec]) != VK_SUCCESS)
+	if (vkCreateImage(gpu, &imgi, NULL, &images[imagec]) != VK_SUCCESS)
 		ERROR("[VK] Failed to create image");
 	else
 		DEBUG(3, "[VK] Created image (%ux%d)", w, h);
@@ -70,7 +70,7 @@ void image_new(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
 		.allocationSize  = memreq.size,
 		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
-	if (vkAllocateMemory(gpu, &alloci, alloccb, &imagemems[imagec]) != VK_SUCCESS)
+	if (vkAllocateMemory(gpu, &alloci, NULL, &imagemems[imagec]) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate memory for image");
 	vkBindImageMemory(gpu, images[imagec], imagemems[imagec], 0);
 
@@ -99,7 +99,7 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 			.layerCount     = 1,
 		},
 	};
-	if (vkCreateImageView(gpu, &viewi, alloccb, &imgview) != VK_SUCCESS)
+	if (vkCreateImageView(gpu, &viewi, NULL, &imgview) != VK_SUCCESS)
 		ERROR("[VK] Failed to create image view");
 	else
 		DEBUG(3, "[VK] Created image view");
@@ -132,7 +132,7 @@ void image_new_depth_image()
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices = NULL,
 	};
-	if (vkCreateImage(gpu, &imgi, alloccb, &depthimg) != VK_SUCCESS)
+	if (vkCreateImage(gpu, &imgi, NULL, &depthimg) != VK_SUCCESS)
 		ERROR("[VK] Failed to create depth image");
 	else
 		DEBUG(3, "[VK] Created depth image");
@@ -144,7 +144,7 @@ void image_new_depth_image()
 		.allocationSize = memreq.size,
 		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
-	if (vkAllocateMemory(gpu, &alloci, alloccb, &depthmem) != VK_SUCCESS)
+	if (vkAllocateMemory(gpu, &alloci, NULL, &depthmem) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate memory for depth image");
 	vkBindImageMemory(gpu, depthimg, depthmem, 0);
 
@@ -169,7 +169,7 @@ void image_new_depth_image()
 			.layerCount = 1,
 		},
 	};
-	if (vkCreateImageView(gpu, &viewi, alloccb, &depthview) != VK_SUCCESS)
+	if (vkCreateImageView(gpu, &viewi, NULL, &depthview) != VK_SUCCESS)
 		ERROR("[VK] Failed to create depth image view");
 	else
 		DEBUG(3, "[VK] Created depth image view");
@@ -278,17 +278,17 @@ void image_free()
 {
 	DEBUG(3, "[VK] Destroying image views...");
 	for (int i = 0; i < imagec; i++) {
-		vkDestroyImageView(gpu, imageviews[i], alloccb);
-		vkDestroyImage(gpu, images[i], alloccb);
+		vkDestroyImageView(gpu, imageviews[i], NULL);
+		vkDestroyImage(gpu, images[i], NULL);
 		if (imagemems[i])
-			vkFreeMemory(gpu, imagemems[i], alloccb);
+			vkFreeMemory(gpu, imagemems[i], NULL);
 	}
-	vkDestroyImageView(gpu, depthview, alloccb);
-	vkDestroyImage(gpu, depthimg, alloccb);
-	vkFreeMemory(gpu, depthmem, alloccb);
+	vkDestroyImageView(gpu, depthview, NULL);
+	vkDestroyImage(gpu, depthimg, NULL);
+	vkFreeMemory(gpu, depthmem, NULL);
 
 	DEBUG(3, "[VK] Destroying sampler...");
-	vkDestroySampler(gpu, sampler, alloccb);
+	vkDestroySampler(gpu, sampler, NULL);
 
 	free(images);
 }
@@ -315,7 +315,7 @@ static void create_sampler(VkSampler* samp)
 		.borderColor      = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
 		.unnormalizedCoordinates = VK_FALSE,
 	};
-	if (vkCreateSampler(gpu, &spli, alloccb, samp) != VK_SUCCESS)
+	if (vkCreateSampler(gpu, &spli, NULL, samp) != VK_SUCCESS)
 		ERROR("[VK] Failed to create sampler");
 	else
 		DEBUG(2, "[VK] Created sampler");

@@ -58,7 +58,7 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 		swapchaini.pQueueFamilyIndices   = NULL;
 	}
 
-	if (vkCreateSwapchainKHR(gpu, &swapchaini, alloccb, &swapchain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(gpu, &swapchaini, NULL, &swapchain) != VK_SUCCESS)
 		ERROR("[VK] Failed to create swapchain");
 	else
 		DEBUG(1, "[VK] Created swapchain (queue families: %u | minimum images: %u)",
@@ -107,11 +107,11 @@ void swapchain_free()
 {
 	DEBUG(3, "[VK] Destroying swapchain image views...");
 	for (int i = 0; i < (int)swapchainimgc; i++)
-		vkDestroyImageView(gpu, swapchainimgviews[i], alloccb);
+		vkDestroyImageView(gpu, swapchainimgviews[i], NULL);
 	DEBUG(3, "[VK] Destroying command pool...");
-	vkDestroyCommandPool(gpu, cmdpool, alloccb);
+	vkDestroyCommandPool(gpu, cmdpool, NULL);
 	DEBUG(3, "[VK] Destroying swapchain...");
-	vkDestroySwapchainKHR(gpu, swapchain, alloccb);
+	vkDestroySwapchainKHR(gpu, swapchain, NULL);
 
 	free(swapchainimgs);
 }
@@ -123,7 +123,7 @@ static void create_command_pool()
 		.queueFamilyIndex = qinds.graphics,
 		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 	};
-	if (vkCreateCommandPool(gpu, &pooli, alloccb, &cmdpool) != VK_SUCCESS)
+	if (vkCreateCommandPool(gpu, &pooli, NULL, &cmdpool) != VK_SUCCESS)
 		ERROR("[VK] Failed to create command pool");
 	else
 		DEBUG(3, "[VK] Created command pool");

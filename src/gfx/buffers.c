@@ -41,7 +41,7 @@ void end_command_buffer(VkCommandBuffer buf, VkFence fence)
 }
 
 void buffer_new(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags propfs, VkBuffer* buf,
-                   VkDeviceMemory* mem)
+                VkDeviceMemory* mem)
 {
 	VkBufferCreateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -52,7 +52,7 @@ void buffer_new(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices   = NULL,
 	};
-	if (vkCreateBuffer(gpu, &bufi, alloccb, buf) != VK_SUCCESS)
+	if (vkCreateBuffer(gpu, &bufi, NULL, buf) != VK_SUCCESS)
 		ERROR("\tFailed to create buffer");
 
 	VkMemoryRequirements memreq;
@@ -62,7 +62,7 @@ void buffer_new(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags
 		.allocationSize  = memreq.size,
 		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, propfs),
 	};
-	if (vkAllocateMemory(gpu, &alloci, alloccb, mem) != VK_SUCCESS)
+	if (vkAllocateMemory(gpu, &alloci, NULL, mem) != VK_SUCCESS)
 		ERROR("\tFailed to allocate memory for buffer");
 
 	vkBindBufferMemory(gpu, *buf, *mem, 0);
@@ -135,8 +135,8 @@ void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data)
 
 void buffer_free(struct Buffer* buf)
 {
-	vkDestroyBuffer(gpu, buf->buf, alloccb);
-	vkFreeMemory(gpu, buf->mem, alloccb);
+	vkDestroyBuffer(gpu, buf->buf, NULL);
+	vkFreeMemory(gpu, buf->mem, NULL);
 	buf->sz = 0;
 }
 

@@ -92,7 +92,7 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 		.enabledExtensionCount   = extc,
 		.ppEnabledExtensionNames = exts,
 	};
-	if (vkCreateDevice(physicalgpu, &devi, alloccb, &gpu) != VK_SUCCESS)
+	if (vkCreateDevice(physicalgpu, &devi, NULL, &gpu) != VK_SUCCESS)
 		ERROR("[VK] Failed to create logical device");
 	else
 		DEBUG(3, "[VK] Created logical device");
@@ -105,7 +105,7 @@ void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
 void device_free()
 {
 	DEBUG(3, "[VK] Destroying device...");
-	vkDestroyDevice(gpu, alloccb);
+	vkDestroyDevice(gpu, NULL);
 }
 
 static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)

@@ -10,7 +10,6 @@
 #include "renderer.h"
 #include "vulkan.h"
 
-VkAllocationCallbacks* alloccb;
 VkInstance   instance;
 VkSurfaceKHR surface;
 
@@ -81,7 +80,7 @@ void init_vulkan(SDL_Window* win)
 		.enabledLayerCount	     = VK_LAYERC,
 		.ppEnabledLayerNames	 = VK_LAYERS,
 	};
-	if (vkCreateInstance(&instci, alloccb, &instance) != VK_SUCCESS)
+	if (vkCreateInstance(&instci, NULL, &instance) != VK_SUCCESS)
 		ERROR("[VK] Failed to create Vulkan instance");
 	else
 		DEBUG(1, "[VK] Created Vulkan instance");
@@ -96,7 +95,7 @@ void init_vulkan(SDL_Window* win)
 	VK_GET_EXT(dbgfn, vkCreateDebugReportCallbackEXT);
 	if (!dbgfn)
 		ERROR("[VK] Failed to find debug extension callback function");
-	dbgfn(instance, &debugi, alloccb, &dbgcb);
+	dbgfn(instance, &debugi, NULL, &dbgcb);
 	DEBUG(3, "[VK] Created debug callback");
 #endif
 
@@ -118,7 +117,7 @@ VkShaderModule create_shader(char* restrict path)
 		.pCode	  = (const uint32*)code,
 	};
 	fclose(file);
-	if (vkCreateShaderModule(gpu, &moduleci, alloccb, &module))
+	if (vkCreateShaderModule(gpu, &moduleci, NULL, &module))
 		ERROR("[VK] Failed to create shader module \"%s\"", path);
 	else
 		DEBUG(3, "[VK] Created new shader module \"%s\"", path);
@@ -133,13 +132,13 @@ void free_vulkan()
 	VK_GET_EXT(dbgfn, vkDestroyDebugReportCallbackEXT);
 	if (!dbgfn)
 		ERROR("[VK] Failed to find debug extension callback destructor function");
-	dbgfn(instance, dbgcb, alloccb);
+	dbgfn(instance, dbgcb, NULL);
 #endif
 
-	vkDestroySurfaceKHR(instance, surface, alloccb);
+	vkDestroySurfaceKHR(instance, surface, NULL);
 	device_free();
 
 	DEBUG(2, "[VK] Destroying Vulkan instance...");
-	vkDestroyInstance(instance, alloccb);
+	vkDestroyInstance(instance, NULL);
 }
 

@@ -1,6 +1,12 @@
 #ifndef UTIL_MATHS_H
 #define UTIL_MATHS_H
 
+struct Transform {
+	vec4s rotation;
+	vec3s translation;
+	vec3s scale;
+};
+
 /* P(t) = p + t*v */
 struct Ray {
 	vec3 p;

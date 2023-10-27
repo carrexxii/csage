@@ -1,10 +1,8 @@
 #version 460
 
-layout(location = 0) in vec3  Vxyz;
-layout(location = 1) in vec3  Vnnn;
-layout(location = 2) in vec2  Vuv;
-layout(location = 3) in ivec4 Vbone_IDs;
-layout(location = 4) in vec4  Vbone_weights;
+layout(location = 0) in vec3 Vxyz;
+layout(location = 1) in vec3 Vnnn;
+layout(location = 2) in vec2 Vuv;
 
 layout(location = 0) out vec2 Fuv;
 layout(location = 1) out vec3 Fnnn;

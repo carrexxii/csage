@@ -30,9 +30,9 @@ static bool move_to_mouse(int type, bool kdown, int x, int y)
 
 void test_init()
 {
-	map_new((ivec3s){ 64, 64, MAP_BLOCK_DEPTH });
+	map_new((ivec3s){ 64, 64, 16 });
 
-	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "dwarf.glb");
+	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "cube.glb");
 	DEBUG_VALUE(e1);
 
 	// input_register_mouse(MOUSE_DRAG, path_to_mouse);

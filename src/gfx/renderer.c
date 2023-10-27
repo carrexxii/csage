@@ -95,7 +95,7 @@ void renderer_init()
 		.dependencyCount = 1,
 		.pDependencies   = &subpassdep,
 	};
-	if (vkCreateRenderPass(gpu, &renpassi, alloccb, &render_pass) != VK_SUCCESS)
+	if (vkCreateRenderPass(gpu, &renpassi, NULL, &render_pass) != VK_SUCCESS)
 		ERROR("[VK] Failed to create render pass");
 	else
 		DEBUG(1, "[VK] Created render pass");
@@ -159,9 +159,9 @@ void renderer_free()
 
 	DEBUG(3, "[VK] Destroying sync objects...");
 	for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
-		vkDestroySemaphore(gpu, semas.imgavail[i], alloccb);
-		vkDestroySemaphore(gpu, semas.renderdone[i], alloccb);
-		vkDestroyFence(gpu, fences.frames[i], alloccb);
+		vkDestroySemaphore(gpu, semas.imgavail[i], NULL);
+		vkDestroySemaphore(gpu, semas.renderdone[i], NULL);
+		vkDestroyFence(gpu, fences.frames[i], NULL);
 	}
 
 	image_free();
@@ -169,14 +169,14 @@ void renderer_free()
 
 	DEBUG(3, "[VK] Destroying frambuffers...");
 	for (uint i = 0; i < swapchainimgc; i++)
-		vkDestroyFramebuffer(gpu, frame_bufs[i], alloccb);
+		vkDestroyFramebuffer(gpu, frame_bufs[i], NULL);
 
 	models_free();
 	font_free();
 	particles_free();
 
 	DEBUG(3, "[VK] Destroying render pass...");
-	vkDestroyRenderPass(gpu, render_pass, alloccb);
+	vkDestroyRenderPass(gpu, render_pass, NULL);
 
 	free(frame_bufs);
 	free(cmd_bufs);
@@ -236,7 +236,7 @@ static void create_framebuffers()
 			.height          = swapchainext.height,
 			.layers          = 1,
 		};
-		if (vkCreateFramebuffer(gpu, &framebufi, alloccb, &frame_bufs[i]))
+		if (vkCreateFramebuffer(gpu, &framebufi, NULL, &frame_bufs[i]))
 			ERROR("[VK] Failed to create framebuffer %u", i);
 		else
 			DEBUG(3, "[VK] Created framebuffer %u", i);
@@ -269,9 +269,9 @@ static void create_sync_objects()
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT,
 	};
 	for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
-		if (vkCreateSemaphore(gpu, &semai, alloccb, &semas.renderdone[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(gpu, &semai, alloccb, &semas.imgavail[i]) != VK_SUCCESS ||
-			vkCreateFence(gpu, &fencei, alloccb, &fences.frames[i]) != VK_SUCCESS)
+		if (vkCreateSemaphore(gpu, &semai, NULL, &semas.renderdone[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(gpu, &semai, NULL, &semas.imgavail[i]) != VK_SUCCESS ||
+			vkCreateFence(gpu, &fencei, NULL, &fences.frames[i]) != VK_SUCCESS)
 			ERROR("[VK] Failed to create sync object(s) for frame %d", i);
 	DEBUG(3, "[VK] Created %d sync objects", FRAMES_IN_FLIGHT);
 }

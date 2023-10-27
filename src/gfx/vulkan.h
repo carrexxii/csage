@@ -15,18 +15,18 @@
 #define ENGINE_VERSION      VK_MAKE_VERSION(0, 0, 1)
 
 #if DEBUG_LEVEL > 0
-    #ifdef _WIN32
-        #define VK_LAYERC 2
-        #define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
-                                                 "VK_LAYER_LUNARG_monitor" }
-    #else
-        #define VK_LAYERC 2
-        #define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
-                                                 "VK_LAYER_LUNARG_monitor", }
-    #endif
+	#ifdef _WIN32
+		#define VK_LAYERC 2
+		#define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
+		                                         "VK_LAYER_LUNARG_monitor" }
+	#else
+		#define VK_LAYERC 2
+		#define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
+		                                         "VK_LAYER_LUNARG_monitor", }
+	#endif
 #else
-    #define VK_LAYERC 0
-    #define VK_LAYERS (char const* const[]){ }
+	#define VK_LAYERC 0
+	#define VK_LAYERS (char const* const[]){ }
 #endif
 
 #define VK_GET_EXT(var, ext) \
@@ -64,85 +64,84 @@
 	 (x) == VK_DEBUG_REPORT_DEBUG_BIT_EXT              ? "Debug"              : \
 	 "Unknown")
 #define STRING_DEBUG_REPORT_OBJECT(x)                                                                                \
-    ((x) == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT                       ? "Unknown"                       : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT                      ? "Instance"                      : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT               ? "Physical Device"               : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT                        ? "Device"                        : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT                         ? "Queue"                         : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT                     ? "Semaphore"                     : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT                ? "Command Buffer"                : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT                         ? "Fence"                         : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT                 ? "Device Memory"                 : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT                        ? "Buffer1"                       : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT                         ? "Image"                         : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT                         ? "Event"                         : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT                    ? "Query Pool"                    : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT                   ? "Buffer View"                   : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT                    ? "Image View"                    : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT                 ? "Shader Module"                 : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT                ? "Pipeline Cache"                : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT               ? "Pipeline Layout"               : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT                   ? "Render Pass"                   : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT                      ? "Pipeline"                      : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT         ? "Descriptor Set Layout"         : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT                       ? "Sampler"                       : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT               ? "Descriptor Pool"               : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT                ? "Descriptor Set"                : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT                   ? "Framebuffer"                   : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT                  ? "Command Pool"                  : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT                   ? "Surface KHR"                   : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT                 ? "Swapchain KHR"                 : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT     ? "Debug Report Callback EXT"     : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT                   ? "Display KHR"                   : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT              ? "Display Mode KHR"              : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT          ? "Validation Cache EXT"          : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT      ? "Sampler YCBBCR Conversion"     : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT    ? "Descriptor Update Template"    : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT    ? "Acceleration Structure KHR"    : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT     ? "Acceleration Structure NV"     : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT                  ? "Debug Report"                  : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT              ? "Validation Cache"              : \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_KHR_EXT? "Descriptor Update Template KHR": \
-     (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_KHR_EXT  ? "Sampler YCBCR Conversion KHR"  : \
-     "Unknown")
+	((x) == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT                       ? "Unknown"                       : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT                      ? "Instance"                      : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT               ? "Physical Device"               : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT                        ? "Device"                        : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT                         ? "Queue"                         : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT                     ? "Semaphore"                     : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT                ? "Command Buffer"                : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT                         ? "Fence"                         : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT                 ? "Device Memory"                 : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT                        ? "Buffer1"                       : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT                         ? "Image"                         : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT                         ? "Event"                         : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT                    ? "Query Pool"                    : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT                   ? "Buffer View"                   : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT                    ? "Image View"                    : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT                 ? "Shader Module"                 : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT                ? "Pipeline Cache"                : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT               ? "Pipeline Layout"               : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT                   ? "Render Pass"                   : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT                      ? "Pipeline"                      : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT         ? "Descriptor Set Layout"         : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT                       ? "Sampler"                       : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT               ? "Descriptor Pool"               : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT                ? "Descriptor Set"                : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT                   ? "Framebuffer"                   : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT                  ? "Command Pool"                  : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT                   ? "Surface KHR"                   : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT                 ? "Swapchain KHR"                 : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT     ? "Debug Report Callback EXT"     : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT                   ? "Display KHR"                   : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT              ? "Display Mode KHR"              : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT          ? "Validation Cache EXT"          : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT      ? "Sampler YCBBCR Conversion"     : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT    ? "Descriptor Update Template"    : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT    ? "Acceleration Structure KHR"    : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT     ? "Acceleration Structure NV"     : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT                  ? "Debug Report"                  : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT              ? "Validation Cache"              : \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_KHR_EXT? "Descriptor Update Template KHR": \
+	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_KHR_EXT  ? "Sampler YCBCR Conversion KHR"  : \
+	 "Unknown")
 #define STRING_IMAGE_LAYOUT(x)                                                                                                                \
-    ((x) == VK_IMAGE_LAYOUT_UNDEFINED                                     ? "VK_IMAGE_LAYOUT_UNDEFINED"                                     : \
-     (x) == VK_IMAGE_LAYOUT_GENERAL                                       ? "VK_IMAGE_LAYOUT_GENERAL"                                       : \
-     (x) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL                      ? "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL"                      : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL              ? "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL"              : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL               ? "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL"               : \
-     (x) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL                      ? "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL"                      : \
-     (x) == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL                          ? "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL"                          : \
-     (x) == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL                          ? "VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL"                          : \
-     (x) == VK_IMAGE_LAYOUT_PREINITIALIZED                                ? "VK_IMAGE_LAYOUT_PREINITIALIZED"                                : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL    ? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL"    : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL    ? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL"    : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL                      ? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL"                      : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL                       ? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL"                       : \
-     (x) == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL                    ? "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL"                    : \
-     (x) == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL                     ? "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL"                     : \
-     (x) == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL                             ? "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL"                             : \
-     (x) == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL                            ? "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL"                            : \
-     (x) == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR                               ? "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR"                               : \
-     (x) == VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR                            ? "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR"                            : \
-     (x) == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT              ? "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT"              : \
-     (x) == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR  ? "VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR"  : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR": \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR": \
-     (x) == VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV                       ? "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV"                       : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR                  ? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR"                  : \
-     (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR                   ? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR"                   : \
-     (x) == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR                ? "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR"                : \
-     (x) == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR                 ? "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR"                 : \
-     (x) == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR                         ? "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR"                         : \
-     (x) == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR                        ? "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR"                        : \
-     "Unknown")
+	((x) == VK_IMAGE_LAYOUT_UNDEFINED                                     ? "VK_IMAGE_LAYOUT_UNDEFINED"                                     : \
+	 (x) == VK_IMAGE_LAYOUT_GENERAL                                       ? "VK_IMAGE_LAYOUT_GENERAL"                                       : \
+	 (x) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL                      ? "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL"                      : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL              ? "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL"              : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL               ? "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL"               : \
+	 (x) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL                      ? "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL"                      : \
+	 (x) == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL                          ? "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL"                          : \
+	 (x) == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL                          ? "VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL"                          : \
+	 (x) == VK_IMAGE_LAYOUT_PREINITIALIZED                                ? "VK_IMAGE_LAYOUT_PREINITIALIZED"                                : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL    ? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL"    : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL    ? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL"    : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL                      ? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL"                      : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL                       ? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL"                       : \
+	 (x) == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL                    ? "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL"                    : \
+	 (x) == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL                     ? "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL"                     : \
+	 (x) == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL                             ? "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL"                             : \
+	 (x) == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL                            ? "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL"                            : \
+	 (x) == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR                               ? "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR"                               : \
+	 (x) == VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR                            ? "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR"                            : \
+	 (x) == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT              ? "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT"              : \
+	 (x) == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR  ? "VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR"  : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR": \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR": \
+	 (x) == VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV                       ? "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV"                       : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR                  ? "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR"                  : \
+	 (x) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR                   ? "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR"                   : \
+	 (x) == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR                ? "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR"                : \
+	 (x) == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR                 ? "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR"                 : \
+	 (x) == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR                         ? "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR"                         : \
+	 (x) == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR                        ? "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR"                        : \
+	 "Unknown")
          
 void           init_vulkan(SDL_Window* window);
 VkShaderModule create_shader(char* restrict file);
 void           free_vulkan();
 
-extern VkAllocationCallbacks* alloccb;
 extern VkInstance   instance;
 extern VkSurfaceKHR surface;
 

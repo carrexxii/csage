@@ -47,7 +47,7 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices   = NULL,
 	};
-	if (vkCreateImage(gpu, &imgi, alloccb, &tex.image) != VK_SUCCESS)
+	if (vkCreateImage(gpu, &imgi, NULL, &tex.image) != VK_SUCCESS)
 		ERROR("[VK] Failed to create image");
 
 	VkMemoryRequirements memreq;
@@ -58,7 +58,7 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits,
 		                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
-	if (vkAllocateMemory(gpu, &alloci, alloccb, &tex.memory) != VK_SUCCESS)
+	if (vkAllocateMemory(gpu, &alloci, NULL, &tex.memory) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate memory for image");
 	vkBindImageMemory(gpu, tex.image, tex.memory, 0);
 
@@ -90,9 +90,9 @@ struct Texture texture_new_from_image(const char* path)
 void texture_free(struct Texture tex)
 {
 	DEBUG(2, "[VK] Destroying texture...");
-	vkDestroyImageView(gpu, tex.image_view, alloccb);
-	vkDestroyImage(gpu, tex.image, alloccb);
-	vkFreeMemory(gpu, tex.memory, alloccb);
+	vkDestroyImageView(gpu, tex.image_view, NULL);
+	vkDestroyImage(gpu, tex.image, NULL);
+	vkFreeMemory(gpu, tex.memory, NULL);
 }
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h)
