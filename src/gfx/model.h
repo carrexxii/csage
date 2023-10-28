@@ -2,6 +2,8 @@
 #define GFX_MODEL_H
 
 #include "vulkan/vulkan.h"
+#undef CGLTF_IMPLEMENTATION
+#include "cgltf.h"
 
 #include "buffers.h"
 #include "texture.h"
@@ -10,14 +12,26 @@
 #define MAX_MATERIALS   8
 #define MAX_NAME_LENGTH 32
 
+enum InterpolationType {
+	INTERPOLATION_NONE,
+	INTERPOLATION_LINEAR       = cgltf_interpolation_type_linear,
+	INTERPOLATION_STEP         = cgltf_interpolation_type_step,
+	INTERPOLATION_CUBIC_SPLINE = cgltf_interpolation_type_cubic_spline,
+};
+
+enum AnimationType {
+	ANIMATION_NONE,
+	ANIMATION_TRANSLATE = cgltf_animation_path_type_translation,
+	ANIMATION_SCALE     = cgltf_animation_path_type_scale,
+	ANIMATION_ROTATE    = cgltf_animation_path_type_rotation,
+};
+
 struct Mesh {
-	VBO     vbos[5];
-	IBO     ibo;
-	// float*  verts;
-	// uint16* inds;
-	int     vertc;
-	uint16  indc;
-	int     materiali;
+	VBO    vbos[5];
+	IBO    ibo;
+	int    vertc;
+	uint16 indc;
+	int    materiali;
 };
 
 /* This must be aligned correctly for the shader */
@@ -41,10 +55,13 @@ struct Skin {
 
 struct Animation {
 	char name[MAX_NAME_LENGTH];
+	enum AnimationType     type;
+	enum InterpolationType interpolation;
+	struct {
+		struct Transform start;
+		struct Transform end;
+	}* frames;
 	int framec;
-	int bonec;
-	struct Bone* bones;
-	struct Transform** frame_transforms;
 };
 
 struct Model {

@@ -32,7 +32,7 @@ void test_init()
 {
 	map_new((ivec3s){ 64, 64, 16 });
 
-	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "cube.glb");
+	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "human2.glb");
 	DEBUG_VALUE(e1);
 
 	// input_register_mouse(MOUSE_DRAG, path_to_mouse);

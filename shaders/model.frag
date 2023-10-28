@@ -22,4 +22,5 @@ layout(push_constant) uniform PushConstants
 void main()
 {
 	rgba = vec4(materials.materials[constants.materiali].albedo);
+	// rgba = vec4(Fnnn, 1.0);
 }

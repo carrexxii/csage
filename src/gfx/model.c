@@ -33,31 +33,31 @@ static VkVertexInputBindingDescription vert_binds[] = {
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
 };
 static VkVertexInputAttributeDescription vertex_attrs[] = {
-	/* xyz */
+	/* position */
 	{ .binding  = 0,
 	  .location = 0,
 	  .format   = VK_FORMAT_R32G32B32_SFLOAT,
 	  .offset   = 0, },
-	/* nnn */
+	/* normal */
 	{ .binding  = 1,
 	  .location = 1,
 	  .format   = VK_FORMAT_R32G32B32_SFLOAT,
-	  .offset   = sizeof(float[3]), },
-	/* uv */
+	  .offset   = 0, },
+	/* uvs */
 	{ .binding  = 2,
 	  .location = 2,
 	  .format   = VK_FORMAT_R32G32_SFLOAT,
-	  .offset   = sizeof(float[6]), },
+	  .offset   = 0, },
 	/* bone IDs */
 	{ .binding  = 3,
 	  .location = 3,
 	  .format   = VK_FORMAT_R8G8B8A8_UINT,
-	  .offset   = sizeof(float[8]), },
+	  .offset   = 0, },
 	/* bone weights */
 	{ .binding  = 4,
 	  .location = 4,
 	  .format   = VK_FORMAT_R32G32B32A32_SFLOAT,
-	  .offset   = sizeof(float[8]) + sizeof(uint8[4]), },
+	  .offset   = 0, },
 };
 /* -------------------------------------------------------------------- */
 
@@ -80,9 +80,9 @@ void models_init(VkRenderPass render_pass)
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "model.vert"),
 		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc  = ARRAY_LEN(vert_binds),
+		.vertbindc  = 5,
 		.vertbinds  = vert_binds,
-		.vertattrc  = ARRAY_LEN(vertex_attrs),
+		.vertattrc  = 5,
 		.vertattrs  = vertex_attrs,
 		.uboc       = 2,
 		.ubos       = ubo_bufs,
@@ -201,30 +201,23 @@ struct Model* model_new(char* path, bool keep_verts)
 			assert(prim->type == cgltf_primitive_type_triangles);
 			for (int a = 0; a < (int)prim->attributes_count; a++) {
 				attr = prim->attributes[a].data;
-				// if (attr->component_type != cgltf_component_type_r_32f && attr->type != cgltf_type_vec3)
-					// continue;
-				// model->meshes[m].vertc = attr->count;
 				vert = (float*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(float) + attr->offset/sizeof(float);
 				int i = 0;
-				// DEBUG_VALUE(mesh->name);
 				for (int v = 0; v < (int)attr->count; v++) {
 					switch(prim->attributes[a].type) {
 						case cgltf_attribute_type_position:
 							verts[3*v + 0] = vert[i + 0];
 							verts[3*v + 1] = vert[i + 1];
 							verts[3*v + 2] = vert[i + 2];
-							// DEBUG(1, "vert: %.2f, %.2f, %.2f", vert[i], vert[i + 1], vert[i + 2]);
 							break;
 						case cgltf_attribute_type_normal:
 							normals[3*v + 0] = vert[i + 0];
 							normals[3*v + 1] = vert[i + 1];
 							normals[3*v + 2] = vert[i + 2];
-							// DEBUG(1, "normal: %.2f, %.2f, %.2f", vert[i], vert[i + 1], vert[i + 2]);
 							break;
 						case cgltf_attribute_type_texcoord:
 							uvs[2*v + 0] = vert[i + 0];
 							uvs[2*v + 1] = vert[i + 1];
-							// DEBUG(1, "uv: %.2f, %.2f", vert[i], vert[i + 1]);
 							break;
 						case cgltf_attribute_type_joints:
 							joint_ids[3*v + 0] = vert[i + 0];
@@ -301,7 +294,7 @@ struct Model* model_new(char* path, bool keep_verts)
 		}
 	}
 
-	/* *** Animation Data *** */
+	/* *** Skin Data *** */
 	cgltf_skin* skin;
 	cgltf_node* node;
 	struct Joint* joint;
@@ -310,6 +303,7 @@ struct Model* model_new(char* path, bool keep_verts)
 	else if (data->skins_count) {
 		skin = data->skins;
 		model->skin = smalloc(skin->joints_count*sizeof(struct Joint) + sizeof(struct Skin));
+		model->skin->jointc = (int)skin->joints_count;
 		for (int j = 0; j < (int)skin->joints_count; j++) {
 			joint = &model->skin->joints[j];
 			node  = skin->joints[j];
@@ -349,8 +343,86 @@ struct Model* model_new(char* path, bool keep_verts)
 				ERROR("[GFX] Assuming joints are toplogically sorted, but joint %d has parent %d", j, joint->parent);
 			}
 
-			DEBUG(1, "Joint name: %32s; parent: %d", model->skin->joints[j].name, model->skin->joints[j].parent);
+			// DEBUG(1, "Joint name: %32s; parent: %d", model->skin->joints[j].name, model->skin->joints[j].parent);
 		}
+	}
+
+	/* *** Animation Data *** */
+	model->animationc = data->animations_count;
+	model->animations = smalloc(model->animationc*sizeof(struct Animation));
+
+	struct {
+		cgltf_animation_path_type type;
+		cgltf_animation_channel*  channel;
+	}* transforms;
+	float duration;
+	cgltf_animation*         animation;
+	cgltf_animation_channel* channel;
+	cgltf_accessor*          input;
+	cgltf_accessor*          output;
+	skin = &data->skins[0];
+	for (int a = 0; a < (int)data->animations_count; a++) {
+		animation = &data->animations[a];
+		strncpy(model->animations[a].name, animation->name, MAX_NAME_LENGTH);
+
+		// TODO: move this out of the loop
+		// transforms = scalloc(animation->channels_count, sizeof(*transforms));
+		model->animations[a].frames = smalloc(animation->channels_count*sizeof(struct Transform));
+		duration = 0.0;
+		float* start;
+		float* end;
+		intptr size;
+		for (int c = 0; c < (int)animation->channels_count; c++) {
+			channel = &animation->channels[c];
+			// DEBUG(1, "Channel %d:\n\ttype: %d\n\ttarget: %s",
+			      // c, channel->target_path, channel->target_node->name);
+			int joint_index = -1;
+			for (int j = 0; j < (int)skin->joints_count; j++) {
+				if (skin->joints[j] == channel->target_node) {
+					joint_index = j;
+					break;
+				}
+			}
+			if (joint_index == -1)
+				ERROR("[GFX] Animation channel %d is not in the skin", c);
+
+			switch (channel->target_path) {
+				case cgltf_animation_path_type_translation:
+					start = model->animations[a].frames[joint_index].start.translation.raw;
+					end   = model->animations[a].frames[joint_index].end.translation.raw;
+					size  = sizeof(vec3);
+					break;
+				case cgltf_animation_path_type_rotation:
+					start = model->animations[a].frames[joint_index].start.rotation.raw;
+					end   = model->animations[a].frames[joint_index].end.rotation.raw;
+					size  = sizeof(vec4);
+					break;
+				case cgltf_animation_path_type_scale:
+					start = model->animations[a].frames[joint_index].start.scale.raw;
+					end   = model->animations[a].frames[joint_index].end.scale.raw;
+					size  = sizeof(vec3);
+					break;
+				default:
+					ERROR("[GFX] Invalid target path for animation %d", channel->target_path);
+					start = NULL;
+					end   = NULL;
+					size  = 0;
+			}
+			cgltf_accessor_read_float(channel->sampler->input, 0, start, size);
+			cgltf_accessor_read_float(channel->sampler->input, 1, end  , size);
+			cgltf_accessor_read_float(channel->sampler->input, channel->sampler->input->count - 1, &duration, 1);
+		}
+		// DEBUG_VALUE((int)(duration*1000.0/16.67));
+		// DEBUG_VALUE(model->animations[a].name);
+		// exit(0);
+
+		// model->animations[a].framec = (int)(duration*1000.0/16.67);
+		// model->animations[a].frames = smalloc(model->animations[a].framec*sizeof(struct Transform));
+		// for (int f = 0; f < model->animations[a].framec; f++) {
+
+		// }
+
+		// sfree(transforms);
 	}
 
 	// for (int i = 0; i < vert_max; i++) {
@@ -372,8 +444,8 @@ struct Model* model_new(char* path, bool keep_verts)
 	sfree(verts);
 	sfree(inds);
 	cgltf_free(data);
-	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations",
-	      path, model->meshc, total_indc, total_indc/3, model->animationc);
+	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints)",
+	      path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin->jointc);
 	// exit(0);
 	return model;
 }
@@ -389,7 +461,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 	
 	update_model_transforms(sbo_buf);
 
-	/* Dynamic models */
+	/* Animated models */
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 	for (int i = 0; i < modelc; i++) {
@@ -402,7 +474,8 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
 			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_LEN(vertex_attrs), (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
-			                       (VkDeviceSize[]){ 0 });
+			                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
+			                       // (VkDeviceSize[]){ 0, sizeof(VkBuffer), sizeof(VkBuffer[2]), sizeof(VkBuffer[3]), sizeof(VkBuffer[4]) });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &mesh->materiali);
 			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
@@ -411,7 +484,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 
 	/* Static models */
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0, 1, &pipeln_static.dset, 0, NULL);
 	for (int i = 0; i < modelc; i++) {
 		model = &models[i];
 		if (model->skin)
@@ -423,7 +496,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_LEN(vertex_attrs) - 2, (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, sizeof(VkBuffer), sizeof(VkBuffer[2]) });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &mesh->materiali);
+			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.pushstages, 0, pipeln_static.pushsz, &mesh->materiali);
 			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}
