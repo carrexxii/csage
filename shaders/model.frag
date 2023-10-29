@@ -16,11 +16,12 @@ layout(binding = 2) uniform MaterialsBuffer {
 
 layout(push_constant) uniform PushConstants
 {
-	int materiali;
+	int   materiali;
+	float timer;
 } constants;
 
 void main()
 {
-	rgba = vec4(materials.materials[constants.materiali].albedo);
-	// rgba = vec4(Fnnn, 1.0);
+	// rgba = vec4(materials.materials[constants.materiali].albedo);
+	rgba = vec4(Fnnn, 1.0);
 }

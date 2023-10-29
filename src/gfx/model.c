@@ -11,10 +11,15 @@
 
 #define LINE_BUFFER_SIZE 256
 
+static struct PushConstants {
+	int   materiali;
+	float timer;
+} push_constants;
+
 static void print_model(struct Model mdl);
 
 /* -------------------------------------------------------------------- */
-static VkVertexInputBindingDescription vert_binds[] = {
+static VkVertexInputBindingDescription vertex_binds[] = {
 	/* [3:xyz][3:nnn][2:uv][4:bone ids][4:bone weights] */
 	{ .binding   = 0,
 	  .stride    = sizeof(float[3]),
@@ -68,36 +73,37 @@ static struct Pipeline pipeln;
 static struct Pipeline pipeln_static;
 static struct Model models[MAX_MODELS];
 static intptr modelc = 0;
-static UBO ubo_bufs[2];
+static UBO ubo_bufs[3];
 static SBO sbo_buf;
 
 void models_init(VkRenderPass render_pass)
 {
 	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
-	ubo_bufs[0] = ubo_new(sizeof(mat4));                          /* Camera matrix */
-	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material)); /* Material data */
+	ubo_bufs[0] = ubo_new(sizeof(mat4));                           /* Camera matrix */
+	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material));  /* Material data */
+	ubo_bufs[2] = ubo_new(MAX_JOINTS*sizeof(struct Transform[2])); /* Joint data    */
 
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "model.vert"),
 		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc  = 5,
-		.vertbinds  = vert_binds,
-		.vertattrc  = 5,
+		.vertbindc  = ARRAY_LEN(vertex_binds),
+		.vertbinds  = vertex_binds,
+		.vertattrc  = ARRAY_LEN(vertex_attrs),
 		.vertattrs  = vertex_attrs,
-		.uboc       = 2,
+		.uboc       = ARRAY_LEN(ubo_bufs),
 		.ubos       = ubo_bufs,
 		.sbo        = &sbo_buf,
 		.sbosz      = MAX_MODELS*sizeof(mat4),
-		.pushstages = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.pushsz     = sizeof(int), /* Material index - must be a multiple of 4 */
+		.pushstages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		.pushsz     = sizeof(struct PushConstants),
 	};
 	pipeln_init(&pipeln, render_pass);
 
 	pipeln_static = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "model_static.vert"),
 		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc  = ARRAY_LEN(vert_binds) - 2,
-		.vertbinds  = vert_binds,
+		.vertbindc  = ARRAY_LEN(vertex_binds) - 2,
+		.vertbinds  = vertex_binds,
 		.vertattrc  = ARRAY_LEN(vertex_attrs) - 2,
 		.vertattrs  = vertex_attrs,
 		.uboc       = 2,
@@ -105,9 +111,13 @@ void models_init(VkRenderPass render_pass)
 		.sbo        = &sbo_buf,
 		.sbosz      = MAX_MODELS*sizeof(mat4),
 		.pushstages = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.pushsz     = sizeof(int), /* Material index - must be a multiple of 4 */
+		.pushsz     = sizeof(struct PushConstants),
 	};
 	pipeln_init(&pipeln_static, render_pass);
+}
+
+inline static int float_compare(const void* restrict f1, const void* restrict f2) {
+	return *(float*)f1 > *(float*)f2? 1: *(float*)f2 > *(float*)f1? -1: 0;
 }
 
 // TODO: this doesnt work properly for removing elements
@@ -355,30 +365,87 @@ struct Model* model_new(char* path, bool keep_verts)
 		cgltf_animation_path_type type;
 		cgltf_animation_channel*  channel;
 	}* transforms;
-	float duration;
+	int total_framec = 0;
 	cgltf_animation*         animation;
 	cgltf_animation_channel* channel;
+	cgltf_animation_sampler* sampler;
 	cgltf_accessor*          input;
 	cgltf_accessor*          output;
 	skin = &data->skins[0];
+	// TODO: Combine allocations/flatten data
 	for (int a = 0; a < (int)data->animations_count; a++) {
 		animation = &data->animations[a];
+		assert(animation->samplers_count == animation->channels_count);
 		strncpy(model->animations[a].name, animation->name, MAX_NAME_LENGTH);
+		DEBUG(1, " *** %s *** channels: %lu; samplers: %lu", model->animations[a].name, animation->channels_count, animation->samplers_count);
 
-		// TODO: move this out of the loop
-		// transforms = scalloc(animation->channels_count, sizeof(*transforms));
-		model->animations[a].frames = smalloc(animation->channels_count*sizeof(struct Transform));
-		duration = 0.0;
-		float* start;
-		float* end;
+		/* First calculate the number of frames to be allocated for */
+		int framec = 0;
+
+		int nodecs[MAX_ANIMATION_FRAMES] = { 0 };
+		cgltf_node* nodes[MAX_ANIMATION_FRAMES] = { 0 };
+		int nodec = 0;
+
+		float time;
+		float times[MAX_ANIMATION_FRAMES] = { 0 };
+		for (int c = 0; c < (int)animation->channels_count; c++) {
+			channel = &animation->channels[c];
+			sampler = channel->sampler;
+
+			// TODO:
+			/* Count how many joints are transformed per frame */
+			for (int n = 0; n < nodec; n++)
+				if (channel->target_node == nodes[n])
+					goto skip_duplicate_node;
+
+			nodecs[nodec]  = model->skin->jointc;
+			nodes[nodec++] = channel->target_node;
+			skip_duplicate_node:
+
+			/* Count how many frames for the animation */
+			for (int t = 0; t < (int)sampler->input->count; t++) {
+				if (!cgltf_accessor_read_float(sampler->input, t, &time, 1))
+					ERROR("[GFX] Error reading from accessor %d", t);
+				for (int f = 0; f < framec; f++)
+					if (fabs(time - times[f]) <= FLT_EPSILON)
+						goto skip_duplicate_time;
+
+				times[framec++] = time;
+				skip_duplicate_time:
+			}
+			if (framec > MAX_ANIMATION_FRAMES)
+				goto skip_animation;
+		}
+
+		DEBUG(1, "Animation %d of %d has %d frames (%luB mem for frames)", a + 1, model->animationc, framec, framec*sizeof(struct AnimationFrame) + framec*sizeof(float));
+		total_framec += framec;
+		model->animations[a].framec = framec;
+		model->animations[a].frames = smalloc(framec*sizeof(struct AnimationFrame) + framec*sizeof(float));
+		model->animations[a].times  = (float*)(model->animations[a].frames + framec);
+		for (int f = 0; f < framec; f++) {
+			DEBUG(1, "\t Allocating %luB for frame %d (%d joints)", nodecs[f]*sizeof(struct Transform), f, nodecs[f]);
+			if (model->animations[a].frames[f].jointc = nodecs[f])
+				model->animations[a].frames[f].transforms = smalloc(nodecs[f]*sizeof(struct Transform));
+			else
+				model->animations[a].frames[f].transforms = NULL;
+		}
+
+		memcpy(model->animations[a].times, times, framec*sizeof(float));
+		// TODO: own sorting function
+		qsort(model->animations[a].times, model->animations[a].framec, sizeof(float), float_compare);
+
+		/* Load the actual tranforms */
+		struct AnimationFrame* frame;
+		float* target;
 		intptr size;
 		for (int c = 0; c < (int)animation->channels_count; c++) {
 			channel = &animation->channels[c];
-			// DEBUG(1, "Channel %d:\n\ttype: %d\n\ttarget: %s",
-			      // c, channel->target_path, channel->target_node->name);
+			sampler = channel->sampler;
+
+			/* Find which joint this belongs to */
 			int joint_index = -1;
 			for (int j = 0; j < (int)skin->joints_count; j++) {
-				if (skin->joints[j] == channel->target_node) {
+				if (skin->joints[j] == channel->target_node) { // !!!!
 					joint_index = j;
 					break;
 				}
@@ -386,43 +453,52 @@ struct Model* model_new(char* path, bool keep_verts)
 			if (joint_index == -1)
 				ERROR("[GFX] Animation channel %d is not in the skin", c);
 
-			switch (channel->target_path) {
-				case cgltf_animation_path_type_translation:
-					start = model->animations[a].frames[joint_index].start.translation.raw;
-					end   = model->animations[a].frames[joint_index].end.translation.raw;
-					size  = sizeof(vec3);
-					break;
-				case cgltf_animation_path_type_rotation:
-					start = model->animations[a].frames[joint_index].start.rotation.raw;
-					end   = model->animations[a].frames[joint_index].end.rotation.raw;
-					size  = sizeof(vec4);
-					break;
-				case cgltf_animation_path_type_scale:
-					start = model->animations[a].frames[joint_index].start.scale.raw;
-					end   = model->animations[a].frames[joint_index].end.scale.raw;
-					size  = sizeof(vec3);
-					break;
-				default:
-					ERROR("[GFX] Invalid target path for animation %d", channel->target_path);
-					start = NULL;
-					end   = NULL;
-					size  = 0;
+			/* Load each transform */
+			for (int t = 0; t < (int)sampler->input->count; t++) {
+				/* Find which frame this is for using the time */
+				if (!cgltf_accessor_read_float(sampler->input, t, &time, 1))
+					ERROR("[GFX] Error reading from accessor");
+				frame = NULL;
+				for (int f = 0; f < model->animations[a].framec; f++) {
+					if (fabs(model->animations[a].times[f] - time) <= FLT_EPSILON) {
+						frame = &model->animations[a].frames[f];
+						break;
+					}
+				}
+				if (!frame) {
+					ERROR("[GFX] Skipping accessor %d for time %f", t, time);
+					continue;
+				}
+
+				if (sampler->output->type == cgltf_type_vec3 || sampler->output->type == cgltf_type_vec4) {
+					switch (channel->target_path) {
+						case cgltf_animation_path_type_translation:
+							target = frame->transforms[joint_index].translation.raw;
+							size   = 3;
+							break;
+						case cgltf_animation_path_type_rotation:
+							target = frame->transforms[joint_index].rotation.raw;
+							size   = 4;
+							break;
+						case cgltf_animation_path_type_scale:
+							target = frame->transforms[joint_index].scale.raw;
+							size   = 3;
+							break;
+						default:
+							ERROR("[GFX] Invalid target path for animation %d", channel->target_path);
+							target = NULL;
+							size   = 0;
+					}
+					// DEBUG(1, "joint_index: %d; size: %ld", joint_index, size);
+					if (!cgltf_accessor_read_float(sampler->output, t, target, size))
+						ERROR("[GFX] Error reading from accessor %d", t);
+				} else {
+					ERROR("[GFX] Accessor has invalid type: %u", sampler->output->type);
+				}
+				// DEBUG(1, " ");
 			}
-			cgltf_accessor_read_float(channel->sampler->input, 0, start, size);
-			cgltf_accessor_read_float(channel->sampler->input, 1, end  , size);
-			cgltf_accessor_read_float(channel->sampler->input, channel->sampler->input->count - 1, &duration, 1);
+		skip_animation:
 		}
-		// DEBUG_VALUE((int)(duration*1000.0/16.67));
-		// DEBUG_VALUE(model->animations[a].name);
-		// exit(0);
-
-		// model->animations[a].framec = (int)(duration*1000.0/16.67);
-		// model->animations[a].frames = smalloc(model->animations[a].framec*sizeof(struct Transform));
-		// for (int f = 0; f < model->animations[a].framec; f++) {
-
-		// }
-
-		// sfree(transforms);
 	}
 
 	// for (int i = 0; i < vert_max; i++) {
@@ -441,19 +517,23 @@ struct Model* model_new(char* path, bool keep_verts)
 		total_indc += model->meshes[i].indc;
 	}
 
+	model->current_animation = 3;
+	model->timer = 0.0;
+
 	sfree(verts);
 	sfree(inds);
 	cgltf_free(data);
-	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints)",
-	      path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin->jointc);
-	// exit(0);
+	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
+	      path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin->jointc, total_framec);
+	exit(0);
 	return model;
 }
 
 void models_record_commands(VkCommandBuffer cmd_buf)
 {
-	struct Model* model;
-	struct Mesh*  mesh;
+	struct Model*     model;
+	struct Mesh*      mesh;
+	struct Animation* animation;
 
 	mat4 vp;
 	camera_get_vp(vp);
@@ -465,19 +545,24 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 	for (int i = 0; i < modelc; i++) {
-		model = &models[i];
+		model     = &models[i];
+		animation = &model->animations[model->current_animation];
 		if (!model->skin)
 			continue;
 		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
+		// DEBUG_VALUE(model->skin->jointc);
+		// buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform[2]), animation->frames);
 		for (int m = 0; m < models[i].meshc; m++) {
 			mesh = &model->meshes[m];
+			push_constants.materiali = mesh->materiali;
+			// push_constants.timer     = model->timer/animation->duration;
 			// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
+
 			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_LEN(vertex_attrs), (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
 			                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
-			                       // (VkDeviceSize[]){ 0, sizeof(VkBuffer), sizeof(VkBuffer[2]), sizeof(VkBuffer[3]), sizeof(VkBuffer[4]) });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &mesh->materiali);
+			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &push_constants);
 			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}
@@ -492,11 +577,13 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
 		for (int m = 0; m < models[i].meshc; m++) {
 			mesh = &model->meshes[m];
+			push_constants.materiali = mesh->materiali;
 			// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].indc);
+
 			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_LEN(vertex_attrs) - 2, (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, sizeof(VkBuffer), sizeof(VkBuffer[2]) });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.pushstages, 0, pipeln_static.pushsz, &mesh->materiali);
+			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.pushstages, 0, pipeln_static.pushsz, &push_constants);
 			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}

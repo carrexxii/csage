@@ -158,7 +158,7 @@ union Data {
 #endif
 
 #if DEBUG_LEVEL > 0
-#define D DEBUG(1, "<debug marker>")
+#define D DEBUG(1, TERM_RED "<debug marker>" TERM_NORMAL)
 #define DEBUG(_lvl, ...) do {                                        \
 			if (_lvl <= DEBUG_LEVEL && SELECT1(__VA_ARGS__, "")[0]) { \
 				DEBUG_COLOUR(SELECT1(__VA_ARGS__, ""));                \

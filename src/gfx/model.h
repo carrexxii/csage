@@ -8,9 +8,11 @@
 #include "buffers.h"
 #include "texture.h"
 
-#define MAX_MODELS      16
-#define MAX_MATERIALS   8
-#define MAX_NAME_LENGTH 32
+#define MAX_MODELS           16
+#define MAX_MATERIALS        8
+#define MAX_JOINTS           64
+#define MAX_NAME_LENGTH      32
+#define MAX_ANIMATION_FRAMES 64
 
 enum InterpolationType {
 	INTERPOLATION_NONE,
@@ -53,14 +55,18 @@ struct Skin {
 	struct Joint joints[];
 };
 
+struct AnimationFrame {
+	struct Transform* transforms;
+	int* joint_indices;
+	int  jointc;
+};
+
 struct Animation {
 	char name[MAX_NAME_LENGTH];
 	enum AnimationType     type;
 	enum InterpolationType interpolation;
-	struct {
-		struct Transform start;
-		struct Transform end;
-	}* frames;
+	struct AnimationFrame* frames;
+	float* times;
 	int framec;
 };
 
@@ -72,6 +78,8 @@ struct Model {
 	int meshc;
 	int materialc;
 	int animationc;
+	int current_animation;
+	float timer;
 };
 
 void models_init(VkRenderPass render_pass);
