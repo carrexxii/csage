@@ -68,6 +68,7 @@ struct Animation {
 	struct AnimationFrame* frames;
 	float* times;
 	int framec;
+	int current_frame;
 };
 
 struct Model {
@@ -84,10 +85,10 @@ struct Model {
 
 void models_init(VkRenderPass render_pass);
 struct Model* model_new(char* path, bool keep_verts);
-void  models_record_commands(VkCommandBuffer cmd_buf);
-mat4* model_get_matrix(ID model_id);
-void  model_free(ID model_id);
-void  models_free();
+void models_update();
+void models_record_commands(VkCommandBuffer cmd_buf);
+void model_free(ID model_id);
+void models_free();
 
 extern void (*update_model_transforms)(SBO);
 extern mat4s* model_transforms;

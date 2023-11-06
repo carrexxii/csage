@@ -10,8 +10,7 @@ OBJDIR    = ./obj
 SHADERDIR = ./shaders
 LIBDIR    = ./lib
 
-COMPILE_WITH = -DDEBUG_LEVEL=5
-BUILD_WITH   =
+COMPILE_WITH = -DDEBUG_LEVEL=3
 
 WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict \
            -Wstrict-aliasing=3 -Wno-parentheses -Wno-missing-braces -Wno-missing-field-initializers             \
@@ -27,20 +26,21 @@ DEPFLAGS = -MT $@ -MMD -MF $(OBJDIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED
 
-SRC  := $(wildcard $(SRCDIR)/util/*.c) \
-        $(wildcard $(SRCDIR)/maths/*.c) \
-        $(wildcard $(SRCDIR)/gfx/*.c)    \
-        $(wildcard $(SRCDIR)/map/*.c)     \
-        $(wildcard $(SRCDIR)/entities/*.c) \
-        $(wildcard $(SRCDIR)/*.c)
-OBJ  := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-DEP  := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.dep)
+SRC := $(wildcard $(SRCDIR)/util/*.c) \
+       $(wildcard $(SRCDIR)/gfx/*.c)   \
+       $(wildcard $(SRCDIR)/map/*.c)    \
+       $(wildcard $(SRCDIR)/maths/*.c)   \
+       $(wildcard $(SRCDIR)/lang/*.c)     \
+       $(wildcard $(SRCDIR)/entities/*.c)  \
+       $(wildcard $(SRCDIR)/*.c)
+OBJ := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+DEP := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.dep)
 GLSL := $(wildcard $(SHADERDIR)/*.vert) \
         $(wildcard $(SHADERDIR)/*.geom) \
         $(wildcard $(SHADERDIR)/*.tesc) \
         $(wildcard $(SHADERDIR)/*.tese) \
         $(wildcard $(SHADERDIR)/*.frag)
-SPV  := $(GLSL:$(SHADERDIR)/%=$(SHADERDIR)/spirv/%)
+SPV := $(GLSL:$(SHADERDIR)/%=$(SHADERDIR)/spirv/%)
 
 PRECOMPILE  = mkdir -p $(@D)
 POSTCOMPILE =
@@ -79,7 +79,8 @@ valgrind: BUILD_WITH += valgrind
 valgrind: game
 
 .PHONY: game
-game: all
+game:
+	@make -j12
 	@make spir-v -j12
 	./$(BIN)
 # 	@make shared -j12
@@ -89,9 +90,10 @@ game: all
 # 	                                      \";$(GAMEDIR)/?.lua\" \
 # 	                       dofile(\"$(GAMEDIR)/game.lua\")"
 
-.PHONY: test
-test: COMPILE_WITH += -D RUN_TESTS
-test: game
+.PHONY: lang
+lang: 
+	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -DTESTING -DTESTING_LANG' -j12
+	./$(BIN)
 	@echo "Tests complete"
 
 .PHONY: clean

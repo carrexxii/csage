@@ -10,7 +10,7 @@ layout(location = 0) out vec2 Fuv;
 layout(location = 1) out vec3 Fnnn;
 
 struct ObjectData { mat4 mat; };
-layout(std140, binding = 0) readonly buffer ObjectBuffer {
+layout(binding = 0) readonly buffer ObjectBuffer {
 	ObjectData objs[];
 } mdls;
 
@@ -32,17 +32,22 @@ layout(push_constant) uniform PushConstants {
 	float timer;
 } constants;
 
+const int MAX_BONES = 64;
+
 void main()
 {
 	Fuv  = Vuv;
 	Fnnn = Vnormal;
-	Fnnn = vec3(constants.timer);
-	
+
+	vec3 anim_pos = Vpos;
 	for (int i = 0; i < 4; i++) {
 		if (Vjoint_IDs[i] == -1)
 			continue;
+		else if (Vjoint_IDs[i] >= MAX_BONES)
+			break;
+		anim_pos += anim.transforms[Vjoint_IDs[i]].translation * Vjoint_weights[i];
 	}
 
 	mat4 mdl = mdls.objs[gl_BaseInstance].mat;
-	gl_Position = cam.vp * mdl * vec4(Vpos, 1.0);
+	gl_Position = cam.vp * mdl * vec4(anim_pos, 1.0);
 }

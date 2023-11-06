@@ -24,6 +24,7 @@ SDL_Window*   window;
 uint config_window_width  = 1280;
 uint config_window_height = 720;
 
+#ifndef TESTING
 int main(int argc, char** argv)
 {
 	for (int i = 0; i < argc; i++)
@@ -40,14 +41,15 @@ int main(int argc, char** argv)
 	init_vulkan(window);
 	renderer_init();
 	camera_init();
-	entity_init();
+	entities_init();
 
 	srand(SDL_GetTicks64());
 
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
 	taskmgr_add_task(particles_update);
-	taskmgr_add_task(entity_update);
+	taskmgr_add_task(entities_update);
+	taskmgr_add_task(models_update);
 
 	test_init();
 
@@ -68,6 +70,7 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+#endif /* TESTING */
 
 void init_sdl()
 {
@@ -106,7 +109,7 @@ noreturn void quit_cb(bool kdown)
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
 	map_free();
-	entity_free();
+	entities_free();
 	free_vulkan();
 	SDL_Quit();
 	exit(0);

@@ -11,10 +11,10 @@ enum EntityComponent {
 	COMPONENT_NONE = 0x0,
 };
 
-void entity_init();
+void entities_init();
 EntityID entity_new(vec3s pos, char* model_path);
 void entity_path_to(EntityID e, ivec3s pos);
-void entity_update();
-void entity_free();
+void entities_update();
+void entities_free();
 
 #endif

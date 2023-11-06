@@ -15,6 +15,7 @@
 #include <stdarg.h>
 #include <math.h>
 #include <fenv.h>
+#include <ctype.h>
 
 #if defined __STDC_NO_ATOMICS__ || defined __STDC_NO_THREADS__
 	#error "Both C11 threads and atomics are required"
@@ -34,16 +35,18 @@
 #define CGLM_OMIT_NS_FROM_STRUCT_API
 #include "cglm/struct.h"
 
-#define dt_ms                    (20u)
-#define dt                       (1.0/dt_ms)
+#define SHORTSTRING_LENGTH 32
+
+#define fps                      50.0
+#define dt                       (1.0/fps)
+#define dt_ms                    (dt*1000.0)
 #define DEBUG_MALLOC_MIN         (128*1024)
-#define BODY_MAX_POLYGONS        16
-#define MAX_VERTICES_PER_POLYGON 32
 
 #define FONT_PATH    "data/font.ttf"
 #define SHADER_DIR   "shaders/spirv/"
 #define MODEL_PATH   "data/models/"
 #define TEXTURE_PATH "data/textures/"
+#define SCRIPT_PATH  "scripts/"
 
 /*  +------------------------------------------+
  *  |           Integral Types Chart           |
@@ -100,6 +103,8 @@ union Data {
                               uint  : (union Data){ .u64 = (x) }, \
                               float : (union Data){ .flt = (x) }, \
                               double: (union Data){ .dbl = (x) })
+
+typedef char ShortString[SHORTSTRING_LENGTH];
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
@@ -232,7 +237,7 @@ inline static int random_int(int min, int max)
     return num;
 }
 
-#include "util/maths.h"
+#include "maths/maths.h"
 
 #endif
 

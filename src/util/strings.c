@@ -1,5 +1,13 @@
 #include "strings.h"
 
+char* string_new(char* src, intptr len)
+{
+	char* str = smalloc((len + 1)*sizeof(char));
+	strncpy(str, src, len + 1);
+
+	return str;
+}
+
 bool starts_with(char* restrict str, char* restrict start)
 {
 	for (int i = 0; start[i] && str[i]; i++)

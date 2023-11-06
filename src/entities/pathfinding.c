@@ -1,10 +1,6 @@
-#include "util/maths.h"
 #include "util/minheap.h"
 #include "map.h"
 #include "pathfinding.h"
-#include <cglm/struct/io.h>
-#include <cglm/struct/vec3.h>
-#include <stdint.h>
 
 #define HEAP_STARTING_DEPTH    10
 #define MAX_SEARCHED_POSITIONS 1024

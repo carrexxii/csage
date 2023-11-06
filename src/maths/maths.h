@@ -161,4 +161,3 @@ inline static float polygon_moment(int vertc, vec2 verts, vec2 cm, float m)
 }
 
 #endif
-

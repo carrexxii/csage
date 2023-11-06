@@ -1,12 +1,9 @@
-#include "common.h"
 #include "util/varray.h"
 #include "gfx/model.h"
 #include "body.h"
 #include "pathfinding.h"
 #include "ai.h"
 #include "entity.h"
-#include <cglm/struct/vec3.h>
-#include <cglm/vec3.h>
 
 #define ENTITY(e)           (((struct Entity*)entities.data)[e - 1])
 #define ENTITY_TRANSFORM(e) (mat4s*)(transforms.data + (e)*sizeof(mat4s))
@@ -33,7 +30,7 @@ static struct VArray bodies;
 static struct VArray paths;
 static struct VArray ais;
 
-void entity_init()
+void entities_init()
 {
 	entities   = varray_new(STARTING_ARRAY_SIZE, sizeof(struct Entity));
 	transforms = varray_new(STARTING_ARRAY_SIZE, sizeof(mat4s));
@@ -74,7 +71,7 @@ void entity_path_to(EntityID e, ivec3s pos)
 	path_new(path);
 }
 
-void entity_update()
+void entities_update()
 {
 	struct Body* body;
 	struct Path* path;
@@ -125,7 +122,7 @@ static void entity_update_transforms(SBO sbo_buf)
 	buffer_unmap_memory(sbo_buf);
 }
 
-void entity_free()
+void entities_free()
 {
 	varray_free(&entities);
 	varray_free(&transforms);
