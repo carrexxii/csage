@@ -18,6 +18,7 @@ struct TokenList* lexer_tokenize(char* text)
 	tokens->tokenc = 0;
 
 	struct Token* token;
+	char* line_start = text;
 	int line = 1;
 	int len;
 	char c;
@@ -30,9 +31,11 @@ struct TokenList* lexer_tokenize(char* text)
 		c = *text;
 		len = 1;
 		if (isspace(c)) {
-			if (c == '\n')
-				line++;
 			text++;
+			if (c == '\n') {
+				line++;
+				line_start = text;
+			}
 			continue;
 		}
 
@@ -61,6 +64,7 @@ struct TokenList* lexer_tokenize(char* text)
 
 		token->lexeme = string_new(text, len);
 		token->line   = line;
+		token->col    = text - line_start + 1;
 		text += len;
 	} while (*text);
 
@@ -85,7 +89,7 @@ struct TokenList* lexer_load(char* fname)
 
 void print_token(struct Token token)
 {
-	fprintf(stderr, "%s \t %s on line %d\n", token.lexeme, STRING_OF_TOKEN(token.type), token.line);
+	fprintf(stderr, "%s \t %s on line %d, col %d\n", token.lexeme, STRING_OF_TOKEN(token.type), token.line, token.col);
 }
 
 inline static int read_number(char* text)

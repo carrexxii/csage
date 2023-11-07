@@ -51,6 +51,7 @@ struct Token {
 	char* lexeme;
 	enum TokenType type;
 	int line;
+	int col;
 };
 
 struct TokenList {
