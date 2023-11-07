@@ -6,8 +6,10 @@
 #define LEXER_TOKEN_MULTIPLIER 2
 #define LEXER_SYMBOLS          "-=_+[]{};':\"\\|,.<>/?`~!@#$%^&*()"
 
-inline static bool is_number(char* str, int len);
-inline static bool is_string(char* str, int len);
+inline static int read_number(char* text);
+inline static int read_string(char* text);
+inline static int read_ident(char* text);
+inline static enum TokenType read_symbol(char* text);
 
 struct TokenList* lexer_tokenize(char* text)
 {
@@ -15,52 +17,57 @@ struct TokenList* lexer_tokenize(char* text)
 	struct TokenList* tokens = smalloc(sizeof(struct TokenList) + max_tokens*sizeof(struct Token));
 	tokens->tokenc = 0;
 
-	int buf_len;
-	char buf[LEXER_BUFFER_SIZE];
-	enum TokenType type;
+	struct Token* token;
 	int line = 1;
+	int len;
+	char c;
 	do {
-		buf_len = 0;
-		while (isspace(*text)) {
-			if (*text == '\n')
-				line++;
-			text++;
-		}
-
-		while (*text && !isspace(*text))
-			buf[buf_len++] = *text++;
-		buf[buf_len] = '\0';
-
-		if (buf_len <= 0) {
-			continue;
-		} else if (is_number(buf, buf_len)) {
-			type = TOKEN_NUMBER;
-		} else if (is_string(buf, buf_len)) {
-			type = TOKEN_STRING;
-		} else if (isgraph(*buf)) {
-			#define is_token(s) !strncmp(buf, s, LEXER_BUFFER_SIZE)
-			type = is_token("var")? TOKEN_VAR:
-			       is_token("let")? TOKEN_LET:
-			       is_token("=")  ? TOKEN_EQ :
-			       is_token("")   ? TOKEN_NONE:
-			       TOKEN_IDENT;
-			#undef is_token
-		} else {
-			type = TOKEN_NONE;
-		}
-
 		if (tokens->tokenc >= max_tokens) {
 			max_tokens *= LEXER_TOKEN_MULTIPLIER;
 			tokens = srealloc(tokens, sizeof(struct TokenList) + max_tokens*sizeof(struct Token));
 		}
-		tokens->tokens[tokens->tokenc] = (struct Token){
-			.type = type,
-			.line = line,
-		};
-		tokens->tokens[tokens->tokenc].lexeme = string_new(buf, buf_len);
-		print_token(tokens->tokens[tokens->tokenc]);
-		tokens->tokenc++;
+
+		c = *text;
+		len = 1;
+		if (isspace(c)) {
+			if (c == '\n')
+				line++;
+			text++;
+			continue;
+		}
+
+		token = &tokens->tokens[tokens->tokenc++];
+		if (isdigit(c)) {
+			len = read_number(text);
+			token->type = TOKEN_NUMBER;
+		} else if (c == '"') {
+			len = read_string(text);
+			token->type = TOKEN_STRING;
+		} else if (isalpha(c) || c == '_') {
+			len = read_ident(text);
+			token->type = TOKEN_IDENT;
+		} else if (isgraph(c)) {
+			len = 1;
+			token->type = read_symbol(text);
+		} else {
+			ERROR("[LANG] Unexpected character: %c", *text);
+		}
+
+		// TODO: cleanup
+		if (len == -1) {
+			ERROR("[LANG] Line: %d", line);
+			return NULL;
+		}
+
+		token->lexeme = string_new(text, len);
+		token->line   = line;
+		text += len;
 	} while (*text);
+
+	tokens->tokens[tokens->tokenc++] = (struct Token){
+		.type = TOKEN_EOF,
+		.line = line,
+	};
 
 	return tokens;
 }
@@ -81,23 +88,82 @@ void print_token(struct Token token)
 	fprintf(stderr, "%s \t %s on line %d\n", token.lexeme, STRING_OF_TOKEN(token.type), token.line);
 }
 
-inline static bool is_number(char* str, int len)
+inline static int read_number(char* text)
 {
-	if (len <= 0)
-		return false;
+	int len = 0;
+	while (isdigit(*text)) {
+		len++;
+		text++;
+	}
 
-	for (int i = 0; i < len; i++)
-		if (!isdigit(str[i]))
-			return false;
-
-	return true;
+	return len;
 }
 
-inline static bool is_string(char* str, int len)
+inline static int read_string(char* text)
 {
-	if (len <= 0)
-		return false;
+	int len = 1;
+	text++;
+	while (*text != '"') {
+		if (*text == '\n') {
+			ERROR("Expected end of string before end of line");
+			return -1;
+		}
+		len++;
+		text++;
+	}
 
-	return str[0]       == '"' &&
-	       str[len - 1] == '"';
+	return len + 1;
+}
+
+inline static int read_ident(char* text)
+{
+	int len = 1;
+	text++;
+	while (isalnum(*text) || *text == '_') {
+		len++;
+		text++;
+	}
+
+	return len;
+}
+
+inline static enum TokenType read_symbol(char* text)
+{
+	switch (*text) {
+		case '=' : return TOKEN_EQ;
+		case '+' : return TOKEN_PLUS;
+		case '-' : return TOKEN_MINUS;
+		case '*' : return TOKEN_STAR;
+		case '/' : return TOKEN_FSLASH;
+		case '\\': return TOKEN_BSLASH;
+		case '(' : return TOKEN_LPAREN;
+		case ')' : return TOKEN_RPAREN;
+		case '[' : return TOKEN_LBRACKET;
+		case ']' : return TOKEN_RBRACKET;
+		case '{' : return TOKEN_LBRACE;
+		case '}' : return TOKEN_RBRACE;
+		case '~' : return TOKEN_TILDE;
+		case '`' : return TOKEN_BTICK;
+		case '@' : return TOKEN_AT;
+		case '#' : return TOKEN_HASH;
+		case '$' : return TOKEN_DOLLAR;
+		case '%' : return TOKEN_PERCENT;
+		case '^' : return TOKEN_CARET;
+		case '&' : return TOKEN_AMPER;
+		case '_' : return TOKEN_UNDERSCORE;
+		case ':' : return TOKEN_COLON;
+		case ';' : return TOKEN_SCOLON;
+		case '\'': return TOKEN_SQUOTE;
+		case '"' : return TOKEN_DQUOTE;
+		case '.' : return TOKEN_PERIOD;
+		case ',' : return TOKEN_COMMA;
+		case '<' : return TOKEN_LT;
+		case '>' : return TOKEN_GT;
+		case '|' : return TOKEN_PIPE;
+		case '!' : return TOKEN_EMARK;
+		case '?' : return TOKEN_QMARK;
+		default:
+			ERROR("[LANG] Unrecognized symbol: %c", *text);
+			return TOKEN_NONE;
+	}
 }

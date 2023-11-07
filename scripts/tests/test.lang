@@ -1,2 +1,5 @@
 var x = 1
 let y = "2"
+let c = x^2 + y^2 + 2xy
+c--
+y++
