@@ -1,5 +1,5 @@
 #include "util/file.h"
-#include "util/strings.h"
+#include "util/string.h"
 #include "lexer.h"
 
 #define LEXER_BUFFER_SIZE      1024
@@ -13,7 +13,7 @@ inline static enum TokenType read_symbol(char* text);
 
 struct TokenList* lexer_tokenize(char* text)
 {
-	intptr max_tokens = 128;
+	intptr max_tokens = 1024;
 	struct TokenList* tokens = smalloc(sizeof(struct TokenList) + max_tokens*sizeof(struct Token));
 	tokens->tokenc = 0;
 
@@ -78,9 +78,9 @@ struct TokenList* lexer_tokenize(char* text)
 
 struct TokenList* lexer_load(char* fname)
 {
-	ShortString path;
-	snprintf(path, SHORTSTRING_LENGTH, SCRIPT_PATH "%s", fname);
-	char* text = file_load(path);
+	String64 path;
+	snprintf(path.data, sizeof(path), SCRIPT_PATH "%s", fname);
+	char* text = file_load(path.data);
 	struct TokenList* tokens = lexer_tokenize(text);
 
 	sfree(text);
@@ -89,7 +89,7 @@ struct TokenList* lexer_load(char* fname)
 
 void print_token(struct Token token)
 {
-	fprintf(stderr, "%s \t %s on line %d, col %d\n", token.lexeme, STRING_OF_TOKEN(token.type), token.line, token.col);
+	fprintf(stderr, "%s \t %s on line %d, col %d\n", token.lexeme.data, STRING_OF_TOKEN(token.type), token.line, token.col);
 }
 
 inline static int read_number(char* text)

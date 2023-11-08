@@ -35,8 +35,6 @@
 #define CGLM_OMIT_NS_FROM_STRUCT_API
 #include "cglm/struct.h"
 
-#define SHORTSTRING_LENGTH 32
-
 #define fps                      50.0
 #define dt                       (1.0/fps)
 #define dt_ms                    (dt*1000.0)
@@ -103,8 +101,6 @@ union Data {
                               uint  : (union Data){ .u64 = (x) }, \
                               float : (union Data){ .flt = (x) }, \
                               double: (union Data){ .dbl = (x) })
-
-typedef char ShortString[SHORTSTRING_LENGTH];
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
