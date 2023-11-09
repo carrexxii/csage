@@ -14,7 +14,8 @@ int main(int argc, char** argv)
 	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
 	parser_print_ast(ast);
 	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
-	bytecode_generate(ast);
+	struct Bytecode code = bytecode_generate(ast);
+	bytecode_print(code);
 	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
 
 	// lang_repl();

@@ -10,6 +10,13 @@ enum BytecodeOp {
 	OP_CODE_MAX,
 };
 
-void bytecode_generate(struct AST ast);
+struct Bytecode {
+	byte*  data;
+	byte*  sp;
+	intptr capacity;
+};
+
+struct Bytecode bytecode_generate(struct AST ast);
+void bytecode_print(struct Bytecode code);
 
 #endif
