@@ -52,6 +52,11 @@ struct AST {
 struct AST parser_parse(struct TokenList* tokens);
 void parser_print_ast(struct AST ast);
 
+inline static bool token_is_terminal(enum ASTType type) {
+	return type == AST_INT  || type == AST_REAL  || type == AST_STR ||
+	       type == AST_BOOL || type == AST_IDENT || type == AST_IDENT_LIST;
+}
+
 #define STRING_OF_NODE(_e0) \
 	(_e0) == AST_NONE?       "AST_NONE":       (_e0) == AST_INT?    "AST_INT":   (_e0) == AST_REAL?  "AST_REAL":  \
 	(_e0) == AST_STR?        "AST_STR":        (_e0) == AST_BOOL?   "AST_BOOL":  (_e0) == AST_IDENT? "AST_IDENT": \

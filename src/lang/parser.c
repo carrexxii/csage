@@ -2,7 +2,6 @@
 #include "lexer.h"
 #include "parser.h"
 
-inline static bool is_terminal(enum ASTType type);
 inline static struct ASTNode* new_node();
 inline static struct ASTNode* new_literal(struct Token** token);
 inline static struct ASTNode* new_ident(struct Token** token);
@@ -46,8 +45,15 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 {
 	for (int s = 0; s < spacec; s++)
 		fprintf(stderr, "  ");
-	fprintf(stderr, "[%s]\n", STRING_OF_NODE(node->type));
-	if (is_terminal(node->type))
+	fprintf(stderr, "[%s] ", STRING_OF_NODE(node->type));
+	switch (node->type) {
+	case AST_INT : fprintf(stderr, "%ld", node->integer);     break;
+	case AST_REAL: fprintf(stderr, "%lf", node->real);        break;
+	case AST_STR : fprintf(stderr, "%s" , node->string.data); break;
+	default:
+	}
+	fprintf(stderr, "\n");
+	if (token_is_terminal(node->type))
 		return;
 
 	switch (node->type) {
@@ -63,7 +69,7 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 		print_ast_rec(node->node, spacec + 1);
 		break;
 	default:
-		ERROR("[LANG] Could print node type \"%s\" (%d)", STRING_OF_NODE(node->type), node->type);
+		ERROR("[LANG] Could not print node type \"%s\" (%d)", STRING_OF_NODE(node->type), node->type);
 	}
 }
 
@@ -78,12 +84,6 @@ void parser_print_ast(struct AST ast)
 
 /* -------------------------------------------------------------------- */
 
-inline static bool is_terminal(enum ASTType type)
-{
-	return type == AST_INT  || type == AST_REAL  || type == AST_STR ||
-	       type == AST_BOOL || type == AST_IDENT || type == AST_IDENT_LIST;
-}
-
 inline static struct ASTNode* new_node()
 {
 	return smalloc(sizeof(struct ASTNode));
@@ -96,12 +96,12 @@ inline static struct ASTNode* new_literal(struct Token** token)
 	struct Token* tk = *token;
 	struct ASTNode* node = new_node();
 	if (tk->type == TOKEN_NUMBER) {
-		if (string_contains(tk->lexeme, '.')) {
+		if (!string_contains(tk->lexeme, '.')) {
 			node->type = AST_REAL;
 			node->real = atof(tk->lexeme.data);
 		} else {
-			node->type = AST_INT;
-			node->real = atoi(tk->lexeme.data);
+			node->type    = AST_INT;
+			node->integer = atoi(tk->lexeme.data);
 		}
 	} else if (tk->type == TOKEN_STRING) {
 		node->type   = AST_STR;

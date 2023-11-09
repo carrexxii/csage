@@ -2,6 +2,7 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "bytecode.h"
 #include "repl.h"
 
 int main(int argc, char** argv)
@@ -10,7 +11,11 @@ int main(int argc, char** argv)
 	// for (int i = 0; i < tokens->tokenc; i++)
 		// print_token(tokens->tokens[i]);
 	struct AST ast = parser_parse(tokens);
+	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
 	parser_print_ast(ast);
+	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
+	bytecode_generate(ast);
+	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
 
 	// lang_repl();
 
