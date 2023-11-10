@@ -1,3 +1,4 @@
+#include "util/htable.h"
 #include "parser.h"
 #include "bytecode.h"
 
@@ -73,9 +74,9 @@ inline static void push_expr(struct Bytecode* code, struct ASTNode* node)
 {
 	write_op(code, OP_PUSH);
 	switch (node->type) {
-	case AST_INT : write_operand(code, &node->integer   ); break;
-	case AST_REAL: write_operand(code, &node->real      ); break;
-	case AST_STR : write_operand(code, node->string.data); break;
+	case AST_INT : write_operand(code, &node->integer    ); break;
+	case AST_REAL: write_operand(code, &node->real       ); break;
+	case AST_STR : write_operand(code, node->string->data); break;
 	default:
 		ERROR("[LANG] Unexpected token: %s", STRING_OF_NODE(node->type));
 	}
@@ -85,5 +86,5 @@ inline static void write_assign(struct Bytecode* code, struct ASTNode* node)
 {
 	push_expr(code, node->right);
 	write_op(code, OP_POP);
-	write_operand(code, node->left->ident.data);
+	write_operand(code, node->left->ident->data);
 }

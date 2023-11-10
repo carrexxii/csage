@@ -56,7 +56,7 @@ enum TokenType {
 };
 
 struct Token {
-	String lexeme;
+	String* lexeme;
 	enum TokenType type;
 	int line;
 	int col;

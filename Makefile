@@ -91,8 +91,14 @@ game:
 # 	                       dofile(\"$(GAMEDIR)/game.lua\")"
 
 .PHONY: lang
-lang: 
+lang:
 	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -DTESTING -DTESTING_LANG' -j12
+	./$(BIN)
+	@echo "Tests complete"
+
+.PHONY: test
+test:
+	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -DTESTING -DTESTING_UTIL' -j12
 	./$(BIN)
 	@echo "Tests complete"
 

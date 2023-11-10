@@ -27,7 +27,7 @@ struct AST parser_parse(struct TokenList* tokens)
 				break;
 			default:
 				ERROR("[LANG] Expected <> got [%s (%s)]:%d:%d", STRING_OF_TOKEN(token->type),
-				      token->lexeme.data, token->line, token->col);
+				      token->lexeme->data, token->line, token->col);
 			}
 			break;
 		case TOKEN_EOF:
@@ -47,9 +47,9 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 		fprintf(stderr, "  ");
 	fprintf(stderr, "[%s] ", STRING_OF_NODE(node->type));
 	switch (node->type) {
-	case AST_INT : fprintf(stderr, "%ld", node->integer);     break;
-	case AST_REAL: fprintf(stderr, "%lf", node->real);        break;
-	case AST_STR : fprintf(stderr, "%s" , node->string.data); break;
+	case AST_INT : fprintf(stderr, "%ld", node->integer);      break;
+	case AST_REAL: fprintf(stderr, "%lf", node->real);         break;
+	case AST_STR : fprintf(stderr, "%s" , node->string->data); break;
 	default:
 	}
 	fprintf(stderr, "\n");
@@ -98,17 +98,17 @@ inline static struct ASTNode* new_literal(struct Token** token)
 	if (tk->type == TOKEN_NUMBER) {
 		if (!string_contains(tk->lexeme, '.')) {
 			node->type = AST_REAL;
-			node->real = atof(tk->lexeme.data);
+			node->real = atof(tk->lexeme->data);
 		} else {
 			node->type    = AST_INT;
-			node->integer = atoi(tk->lexeme.data);
+			node->integer = atoi(tk->lexeme->data);
 		}
 	} else if (tk->type == TOKEN_STRING) {
 		node->type   = AST_STR;
-		node->string = string_new(tk->lexeme.data, tk->lexeme.len);
+		node->string = string_new(tk->lexeme->data, tk->lexeme->len);
 	} else {
 		ERROR("[LANG] Token is not a valid literal: [%s (%s)]:%d:%d", STRING_OF_TOKEN(tk->type),
-		      tk->lexeme.data, tk->line, tk->col);
+		      tk->lexeme->data, tk->line, tk->col);
 	}
 
 	(*token)++;
@@ -144,7 +144,7 @@ static struct ASTNode* parse_expr(struct Token** token)
 		return new_literal(token);
 
 	ERROR("[LANG] Could not parse expression: [%s (%s)]:%d:%d", STRING_OF_TOKEN(tk->type),
-	      tk->lexeme.data, tk->line, tk->col);
+	      tk->lexeme->data, tk->line, tk->col);
 	return NULL;
 }
 

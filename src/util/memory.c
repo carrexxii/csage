@@ -51,10 +51,8 @@ void* _srealloc(void* mem, uintptr s, const char* restrict file, int line, const
 
 void _sfree(void* restrict mem, const char* file, int line, const char* fn)
 {
-	if (!mem) {
-		ERROR("[MEM] Attempt to free NULL pointer in \"%s:%d:%s\"", file, line, fn);
-	} else {
+	if (mem)
 		free(mem);
-		mem = NULL;
-	}
+	else
+		ERROR("[MEM] Attempt to free NULL pointer in \"%s:%d:%s\"", file, line, fn);
 }

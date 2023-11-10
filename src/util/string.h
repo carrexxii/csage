@@ -2,30 +2,22 @@
 #define UTIL_STRINGS_H
 
 typedef struct {
-	char*  data;
 	intptr len;
+	char   data[];
 } String;
 
-typedef struct {
-	char data[7];
-	int8 len;
-} String8;
-typedef struct {
-	char data[15];
-	int8 len;
-} String16;
-typedef struct {
-	char data[31];
-	int8 len;
-} String32;
-typedef struct {
-	char data[63];
-	int8 len;
-} String64;
+#define STRING8(x)  (String8){  .data = x }
+#define STRING16(x) (String16){ .data = x }
+#define STRING32(x) (String32){ .data = x }
+#define STRING64(x) (String64){ .data = x }
+typedef struct { char data[8];  } String8;
+typedef struct { char data[16]; } String16;
+typedef struct { char data[32]; } String32;
+typedef struct { char data[64]; } String64;
 
-String string_new(char* src, intptr len);
-String string_copy(String src);
-int    string_contains(String str, char c);
+String* string_new(char* src, intptr len);
+String* string_copy(String* src);
+int     string_contains(String* str, char c);
 
 bool starts_with(char* restrict str, char* restrict start);
 void file_extension(char* restrict file, char* restrict name, char* restrict ext);

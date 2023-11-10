@@ -21,11 +21,11 @@ struct ASTNode {
 	enum ASTType type;
 	union {
 		/* Terminal */
-		String ident;
+		String* ident;
 		union {
-			int64  integer;
-			double real;
-			String string;
+			int64   integer;
+			double  real;
+			String* string;
 		};
 		/* Non-terminal */
 		struct ASTNode* paren;

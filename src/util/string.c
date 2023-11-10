@@ -1,30 +1,28 @@
 #include "string.h"
 
-String string_new(char* src, intptr len)
+String* string_new(char* src, intptr len)
 {
 	if (len <= 0)
 		len = strlen(src);
-	String str = {
-		.len  = len,
-		.data = smalloc((len + 1)*sizeof(char)),
-	};
+	String* str = smalloc(len + 1);
+	str->len = len;
 
-	strncpy(str.data, src, len);
-	str.data[len] = '\0';
+	memcpy(str->data, src, len);
+	str->data[len] = '\0';
 
 	return str;
 }
 
-String string_copy(String src)
+String* string_copy(String* src)
 {
-	return string_new(src.data, src.len);
+	return string_new(src->data, src->len);
 }
 
-int string_contains(String str, char c)
+int string_contains(String* str, char c)
 {
-	char* s = str.data;
-	for (int i = 0; i < str.len; i++)
-		if (str.data[i] == c)
+	char* s = str->data;
+	for (int i = 0; i < str->len; i++)
+		if (str->data[i] == c)
 			return i;
 	return -1;
 }
