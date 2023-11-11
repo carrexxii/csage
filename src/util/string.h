@@ -1,6 +1,7 @@
 #ifndef UTIL_STRINGS_H
 #define UTIL_STRINGS_H
 
+// TODO: Add an allocator parameter for creating strings
 typedef struct {
 	intptr len;
 	char   data[];

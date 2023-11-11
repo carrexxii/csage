@@ -18,6 +18,7 @@ enum ASTType {
 };
 
 struct ASTNode {
+	String* lexeme;
 	enum ASTType type;
 	union {
 		/* Terminal */

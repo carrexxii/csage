@@ -3,59 +3,77 @@
 
 #include "string.h"
 
+/* TODO:
+ *  - Move to .c
+ *  - Add a resize function
+ *  - Add a dynamic array for storing linked list elements and strings (arena allocator?)
+ */
+
 struct HPair {
-	String32 key;
-	union Data val;
+	String* key;
+	int64   val;
 	struct HPair* next;
 };
 
 struct HTable {
-	intptr capacity;
+	intptr cap;
 	struct HPair pairs[];
 };
 
 inline static struct HTable* htable_new(intptr count)
 {
 	struct HTable* htable = scalloc(sizeof(struct HTable) + count*sizeof(struct HPair), 1);
-	htable->capacity = count;
+	htable->cap = count;
 
 	return htable;
 }
 
 /* PJW Hash Function: https://www.partow.net/programming/hashfunctions/ */
-inline static uint64 htable_hash(struct HTable* htable, String32 str)
+inline static uint64 htable_hash(struct HTable* htable, String* str)
 {
 	uint hash = 1315423911;
-	char* c = str.data;
+	char* c = str->data;
 	while (*c)
 		hash ^= ((hash << 5) + (*c++) + (hash >> 2));
 
-	return hash % htable->capacity;
+	return hash % htable->cap;
 }
 
-inline static struct HPair* htable_insert(struct HTable* htable, String32 key, union Data val)
+inline static struct HPair* htable_insert(struct HTable* htable, String* key, int64 val)
 {
 	int i = htable_hash(htable, key);
 	struct HPair* pair = &htable->pairs[i];
-	if (pair->key.data[0]) {
-		while (pair->next)
+	/* Only search through the list if first slot is not available */
+	if (pair->key) {
+		do {
+			/* Check for duplicate keys */
+			if (!strncmp(pair->key->data, key->data, key->len))
+				break;
+			if (!pair->next) {
+				pair->next = smalloc(sizeof(struct HPair)); // TODO: Have extra array in hashtable for this
+				pair = pair->next;
+				pair->next = NULL;
+				break;
+			}
 			pair = pair->next;
-		pair->next = smalloc(sizeof(struct HPair)); // TODO: Have extra array in hashtable for this
-		pair = pair->next;
+		} while (pair);
 	}
-	pair->key  = key;
-	pair->val  = val;
-	pair->next = NULL;
+	pair->key = string_copy(key);
+	// pair->key = key;
+	pair->val = val;
 
 	return pair;
 }
 
 /* Returns NULL if the key was not found */
-inline static struct HPair* htable_get_pair(struct HTable* htable, String32 key)
+inline static struct HPair* htable_get_pair(struct HTable* htable, String* key)
 {
 	int i = htable_hash(htable, key);
 	struct HPair* pair = &htable->pairs[i];
-	while (strncmp(pair->key.data, key.data, sizeof(String32))) {
+	if (!pair->key)
+		return NULL;
+
+	while (strncmp(pair->key->data, key->data, key->len)) {
 		pair = pair->next;
 		if (!pair)
 			return NULL;
@@ -64,18 +82,19 @@ inline static struct HPair* htable_get_pair(struct HTable* htable, String32 key)
 	return pair;
 }
 
-/* Returns DATA(0) if the key was not found */
-inline static union Data htable_get(struct HTable* htable, String32 key)
+/* Returns 0 if the key was not found */
+inline static int64 htable_get(struct HTable* htable, String* key)
 {
 	int i = htable_hash(htable, key);
 	struct HPair* pair = htable_get_pair(htable, key);
 
-	return pair? pair->val: DATA(0);
+	return pair? pair->val: 0;
 }
 
 /* Returns 0 if the value was set or -1 if the key was not found */
-inline static int htable_set(struct HTable* htable, String32 key, union Data val)
+inline static int htable_set(struct HTable* htable, String* key, int64 val)
 {
+	// TODO: This should insert if its not there (ie, combine with htable_insert())
 	int i = htable_hash(htable, key);
 	struct HPair* pair = htable_get_pair(htable, key);
 	if (pair)
@@ -88,14 +107,14 @@ inline static int htable_set(struct HTable* htable, String32 key, union Data val
 
 inline static void htable_print(struct HTable* htable)
 {
-	fprintf(stderr, "Hashtable (capacity: %ld):\n", htable->capacity);
+	fprintf(stderr, "Hashtable (capacity: %ld):\n", htable->cap);
 	struct HPair* pair;
-	for (int i = 0; i < htable->capacity; i++) {
+	for (int i = 0; i < htable->cap; i++) {
 		pair = &htable->pairs[i];
-		fprintf(stderr, "\t[%s: %ld]", pair->key.data, pair->val.s64);
+		fprintf(stderr, "\t[%s: %ld]", pair->key? pair->key->data: "", pair->val);
 		while (pair->next) {
 			pair = pair->next;
-			fprintf(stderr, " -> [%s: %ld]", pair->key.data, pair->val.s64);
+			fprintf(stderr, " -> [%s: %ld]", pair->key->data, pair->val);
 		}
 		fprintf(stderr, "\n");
 	}

@@ -8,38 +8,44 @@ int main(int agrc, char** argv)
 
 	DEBUG(1, "\n - - - - - - - * htable_insert * - - - - - - - ");
 	struct HTable* htable = htable_new(16);
-	htable_insert(htable, STRING32("x"), DATA(1));
-	htable_insert(htable, STRING32("y"), DATA(2));
-	htable_insert(htable, STRING32("table"), DATA(3));
-	htable_insert(htable, STRING32("hash"), DATA(4));
-	htable_insert(htable, STRING32("longer_value"), DATA(5));
-	htable_insert(htable, STRING32("another_value"), DATA(6));
-	htable_insert(htable, STRING32("hello"), DATA(7));
-	htable_insert(htable, STRING32("world"), DATA(8));
-	htable_insert(htable, STRING32("x2"), DATA(9));
-	htable_insert(htable, STRING32("y2"), DATA(10));
+	htable_insert(htable, string_new("x", -1), 1);
+	htable_insert(htable, string_new("y", -1), 2);
+	htable_insert(htable, string_new("table", -1), 3);
+	htable_insert(htable, string_new("hash", -1), 4);
+	htable_insert(htable, string_new("longer_value", -1), 5);
+	htable_insert(htable, string_new("another_value", -1), 6);
+	htable_insert(htable, string_new("hello", -1), 7);
+	htable_insert(htable, string_new("world", -1), 8);
+	htable_insert(htable, string_new("x2", -1), 9);
+	htable_insert(htable, string_new("y2", -1), 10);
 
 	DEBUG(1, "\n - - - - - - - * htable_print * - - - - - - - ");
 	htable_print(htable);
 
-	DEBUG(1, "\n - - - - - - - * htable_get * - - - - - - - ");
-	DEBUG(1, "x: %ld", htable_get(htable, STRING32("x")).s64);
-	DEBUG(1, "y: %ld", htable_get(htable, STRING32("y")).s64);
-	DEBUG(1, "table: %ld", htable_get(htable, STRING32("table")).s64);
-	DEBUG(1, "hash: %ld", htable_get(htable, STRING32("hash")).s64);
-	DEBUG(1, "longer_value: %ld", htable_get(htable, STRING32("longer_value")).s64);
-	DEBUG(1, "another_value: %ld", htable_get(htable, STRING32("another_value")).s64);
-	DEBUG(1, "hello: %ld", htable_get(htable, STRING32("hello")).s64);
-	DEBUG(1, "world: %ld", htable_get(htable, STRING32("world")).s64);
-	DEBUG(1, "x2: %ld", htable_get(htable, STRING32("x2")).s64);
-	DEBUG(1, "y2: %ld", htable_get(htable, STRING32("y2")).s64);
+	assert(1  == htable_get(htable, string_new("x", -1)));
+	assert(2  == htable_get(htable, string_new("y", -1)));
+	assert(3  == htable_get(htable, string_new("table", -1)));
+	assert(4  == htable_get(htable, string_new("hash", -1)));
+	assert(5  == htable_get(htable, string_new("longer_value", -1)));
+	assert(6  == htable_get(htable, string_new("another_value", -1)));
+	assert(7  == htable_get(htable, string_new("hello", -1)));
+	assert(8  == htable_get(htable, string_new("world", -1)));
+	assert(9  == htable_get(htable, string_new("x2", -1)));
+	assert(10 == htable_get(htable, string_new("y2", -1)));
 
 	DEBUG(1, "\n - - - - - - - * htable_set * - - - - - - - ");
-	DEBUG(1, "Setting x and y to 50 and x2 and y2 to 100");
-	htable_set(htable, STRING32("x"), DATA(50));
-	htable_set(htable, STRING32("y"), DATA(50));
-	htable_set(htable, STRING32("x2"), DATA(100));
-	htable_set(htable, STRING32("y2"), DATA(100));
+	DEBUG(1, "Setting x and y to 50 and x2 and y2 to 100. Changing hash to 30 using htable_insert");
+	htable_set(htable, string_new("x", -1), 50);
+	htable_set(htable, string_new("y", -1), 50);
+	htable_set(htable, string_new("x2", -1), 100);
+	htable_set(htable, string_new("y2", -1), 100);
+	htable_insert(htable, string_new("hash", -1), 30);
+
+	assert(50  == htable_get(htable, string_new("x", -1)));
+	assert(50  == htable_get(htable, string_new("y", -1)));
+	assert(100 == htable_get(htable, string_new("x2", -1)));
+	assert(100 == htable_get(htable, string_new("y2", -1)));
+	assert(30  == htable_get(htable, string_new("hash", -1)));
 
 	DEBUG(1, "\n - - - - - - - * htable_print * - - - - - - - ");
 	htable_print(htable);

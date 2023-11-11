@@ -44,14 +44,8 @@ struct AST parser_parse(struct TokenList* tokens)
 static void print_ast_rec(struct ASTNode* node, int spacec)
 {
 	for (int s = 0; s < spacec; s++)
-		fprintf(stderr, "  ");
-	fprintf(stderr, "[%s] ", STRING_OF_NODE(node->type));
-	switch (node->type) {
-	case AST_INT : fprintf(stderr, "%ld", node->integer);      break;
-	case AST_REAL: fprintf(stderr, "%lf", node->real);         break;
-	case AST_STR : fprintf(stderr, "%s" , node->string->data); break;
-	default:
-	}
+		fprintf(stderr, " --> ");
+	fprintf(stderr, "[%s (%s)]", STRING_OF_NODE(node->type), node->lexeme->data);
 	fprintf(stderr, "\n");
 	if (token_is_terminal(node->type))
 		return;
@@ -93,24 +87,25 @@ inline static struct ASTNode* new_node()
 
 inline static struct ASTNode* new_literal(struct Token** token)
 {
-	struct Token* tk = *token;
+	struct Token* tok = *token;
 	struct ASTNode* node = new_node();
-	if (tk->type == TOKEN_NUMBER) {
-		if (!string_contains(tk->lexeme, '.')) {
+	if (tok->type == TOKEN_NUMBER) {
+		if (!string_contains(tok->lexeme, '.')) {
 			node->type = AST_REAL;
-			node->real = atof(tk->lexeme->data);
+			node->real = atof(tok->lexeme->data);
 		} else {
 			node->type    = AST_INT;
-			node->integer = atoi(tk->lexeme->data);
+			node->integer = atoi(tok->lexeme->data);
 		}
-	} else if (tk->type == TOKEN_STRING) {
+	} else if (tok->type == TOKEN_STRING) {
 		node->type   = AST_STR;
-		node->string = string_new(tk->lexeme->data, tk->lexeme->len);
+		node->string = string_new(tok->lexeme->data, tok->lexeme->len);
 	} else {
-		ERROR("[LANG] Token is not a valid literal: [%s (%s)]:%d:%d", STRING_OF_TOKEN(tk->type),
-		      tk->lexeme->data, tk->line, tk->col);
+		ERROR("[LANG] Token is not a valid literal: [%s (%s)]:%d:%d", STRING_OF_TOKEN(tok->type),
+		      tok->lexeme->data, tok->line, tok->col);
 	}
 
+	node->lexeme = string_copy(tok->lexeme);
 	(*token)++;
 	return node;
 }
@@ -120,8 +115,9 @@ inline static struct ASTNode* new_ident(struct Token** token)
 	assert((*token)->type == TOKEN_IDENT);
 
 	struct ASTNode* node = new_node();
-	node->type  = AST_IDENT;
-	node->ident = string_copy((*token)->lexeme);
+	node->type   = AST_IDENT;
+	node->ident  = string_copy((*token)->lexeme);
+	node->lexeme = node->ident;
 	
 	(*token)++;
 	return node;
@@ -155,6 +151,7 @@ static struct ASTNode parse_assign(struct Token** token)
 	};
 
 	node.left = new_ident(token);
+	node.lexeme = string_copy((*token)->lexeme);
 	match_eq(token);
 	node.right = parse_expr(token);
 

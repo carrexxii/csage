@@ -2,20 +2,21 @@
 #include "parser.h"
 #include "bytecode.h"
 
-#define BYTECODE_DEFAULT_SIZE    1024
-#define BYTECODE_SIZE_MULTIPLIER 2
+inline static void check_resize(struct ByteCode* code);
+inline static int  add_literal(struct ByteCode* code, struct ASTNode* node);
+inline static void write_instruction(struct ByteCode* code, struct Instruction instr);
+inline static void write_assign(struct ByteCode* code, struct ASTNode* node);
 
-inline static void check_resize(struct Bytecode* code);
-inline static void write_operand(struct Bytecode* code, void* data);
-inline static void write_op(struct Bytecode* code, enum BytecodeOp op);
-inline static void write_assign(struct Bytecode* code, struct ASTNode* node);
-
-struct Bytecode bytecode_generate(struct AST ast)
+struct ByteCode bytecode_generate(struct AST ast)
 {
-	struct Bytecode code;
-	code.capacity = BYTECODE_DEFAULT_SIZE;
-	code.data     = smalloc(code.capacity);
-	code.sp       = code.data;
+	struct ByteCode code = {
+		.instr_cap = BYTECODE_DEFAULT_SIZE,
+		.instrs    = smalloc(code.instr_cap*sizeof(struct Instruction)),
+		.lit_cap   = BYTECODE_LITERAL_COUNT,
+		.lits      = smalloc(code.lit_cap*sizeof(struct Literal)),
+		.lit_table = htable_new(BYTECODE_HTABLE_SIZE),
+		.var_table = htable_new(BYTECODE_HTABLE_SIZE),
+	};
 
 	struct ASTNode* node;
 	for (int n = 0; n < ast.nodec; n++) {
@@ -29,62 +30,118 @@ struct Bytecode bytecode_generate(struct AST ast)
 		}
 	}
 
+	write_instruction(&code, (struct Instruction){ .op = OP_EOF });
+
 	return code;
 }
 
-void bytecode_print(struct Bytecode code)
+void bytecode_print(struct ByteCode code)
 {
-	fprintf(stderr, "--- Bytecode (%ldB) ---\n", code.sp - code.data);
-	for (byte* i = code.data; i < code.sp; i += 9) {
-		// fprintf(stderr, "%s\t", STRING_OF_CODE(*i));
-		fprintf(stderr, "\t%s\t", *i == OP_POP? "OP_POP": *i == OP_PUSH? "OP_PUSH": "<unknown op>");
-		fprintf(stderr, "%ld\n", *(int64*)(i + 1));
+	fprintf(stderr, "--- ByteCode (%dB) ---\n", code.instrc);
+	struct Instruction instr;
+	for (int i = 0; i < code.instrc; i++) {
+		instr = code.instrs[i];
+		// fprintf(stderr, "%s\t", STRING_OF_CODE(instr.op));
+		fprintf(stderr, "\t%s\t", instr.op == OP_POP? "OP_POP": instr.op == OP_PUSH? "OP_PUSH": instr.op == OP_EOF? "OP_EOF": "<unknown op>");
+		fprintf(stderr, "%d\n", instr.operand);
 	}
+}
+
+void bytecode_free(struct ByteCode code)
+{
+	sfree(code.lits);
+	sfree(code.instrs);
 }
 
 /* -------------------------------------------------------------------- */
 
-inline static void check_resize(struct Bytecode* code)
+inline static void check_resize(struct ByteCode* code)
 {
-	intptr offset = code->sp - code->data;
-	if (offset + 8 >= code->capacity) {
-		code->capacity *= BYTECODE_SIZE_MULTIPLIER;
-		code->data = srealloc(code->data, code->capacity);
-		code->sp   = code->data + offset;
+	if (code->instrc + 1 >= code->instr_cap) {
+		code->instr_cap *= BYTECODE_SIZE_MULTIPLIER;
+		code->instrs = srealloc(code->instrs, code->instr_cap);
+	}
+
+	if (code->litc + 1 >= code->lit_cap) {
+		code->lit_cap *= BYTECODE_SIZE_MULTIPLIER;
+		code->lits = srealloc(code->lits, code->lit_cap);
 	}
 }
 
-inline static void write_operand(struct Bytecode* code, void* data)
+inline static int add_literal(struct ByteCode* code, struct ASTNode* node)
 {
-	DEBUG(1, "Writing 8 bytes");
+	assert(node->type == AST_INT || node->type == AST_REAL || node->type == AST_STR);
 	check_resize(code);
-	memcpy(code->sp, data, 8);
-	code->sp += 8;
-}
 
-inline static void write_op(struct Bytecode* code, enum BytecodeOp op)
-{
-	DEBUG(1, "Writing 1 byte");
-	check_resize(code);
-	memcpy(code->sp, (int8[]){ (int8)op }, 1);
-	code->sp++;
-}
-
-inline static void push_expr(struct Bytecode* code, struct ASTNode* node)
-{
-	write_op(code, OP_PUSH);
+	// htable_insert(&code->lit_table, node->lexeme, );
+	int i = code->litc++;
+	struct Literal* lit = &code->lits[i];
 	switch (node->type) {
-	case AST_INT : write_operand(code, &node->integer    ); break;
-	case AST_REAL: write_operand(code, &node->real       ); break;
-	case AST_STR : write_operand(code, node->string->data); break;
+	case AST_INT : lit->integer = node->integer; break;
+	case AST_REAL: lit->real    = node->real;    break;
+	case AST_STR : lit->string  = string_copy(node->string); break;
+	default:
+		ERROR("[LANG] Invalid type for a literal: %s", STRING_OF_NODE(node->type));
+	}
+
+	return i;
+}
+
+inline static void write_instruction(struct ByteCode* code, struct Instruction instr)
+{
+	DEBUG(1, "[%d] Writing instruction: %d  %d (%s)", code->instrc, instr.op, instr.operand, STRING_TF(instr.is_var));
+	check_resize(code);
+	code->instrs[code->instrc++] = instr;
+}
+
+inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
+{
+	struct Instruction instr = {
+		.op = OP_PUSH,
+	};
+
+	int i;
+	switch (node->type) {
+	case AST_INT:
+	case AST_REAL:
+	case AST_STR:
+		i = htable_get(code->lit_table, node->lexeme);
+		if (!i) {
+			i = code->litc++;
+			htable_insert(code->lit_table, node->lexeme, i);
+			DEBUG(5, "\t[LANG] Added new literal: %s", node->lexeme->data);
+		}
+
+		instr.operand = i;
+		instr.is_var  = false;
+		break;
 	default:
 		ERROR("[LANG] Unexpected token: %s", STRING_OF_NODE(node->type));
 	}
+
+	write_instruction(code, instr);
 }
 
-inline static void write_assign(struct Bytecode* code, struct ASTNode* node)
+inline static void pop_var(struct ByteCode* code, struct ASTNode* node)
+{
+	assert(node->type == AST_IDENT);
+	struct Instruction instr = {
+		.op = OP_POP,
+	};
+
+	int i = htable_get(code->var_table, node->ident);
+	if (!i) {
+		i = code->varc++;
+		htable_insert(code->var_table, node->lexeme, i);
+		DEBUG(5, "Adding variable: %s", node->lexeme->data);
+	}
+	instr.operand = i;
+
+	write_instruction(code, instr);
+}
+
+inline static void write_assign(struct ByteCode* code, struct ASTNode* node)
 {
 	push_expr(code, node->right);
-	write_op(code, OP_POP);
-	write_operand(code, node->left->ident->data);
+	pop_var(code, node->left);
 }

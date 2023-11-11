@@ -88,20 +88,6 @@ enum Direction {
 	DIRECTION_BACKWARDS = 0x20,
 };
 
-union Data {
-	int64  s64;
-	uint64 u64;
-	float  flt;
-	double dbl;
-	void*  ptr;
-};
-#define DATA(x) _Generic(x,                   \
-	int   : (union Data){ .s64 =  (int64)x }, \
-	uint  : (union Data){ .u64 = (uint64)x }, \
-	float : (union Data){ .flt =  (float)x }, \
-	double: (union Data){ .dbl = (double)x }, \
-	void* : (union Data){ .ptr =  (void*)x })
-
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
 #define MAX(a, b) ((a) > (b)? (a): (b))
