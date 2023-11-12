@@ -25,6 +25,7 @@ int main(int argc, char** argv)
 
 	// lang_repl();
 
+	bytecode_free(code);
 	vm_free(vm);
 	sfree(tokens);
 }

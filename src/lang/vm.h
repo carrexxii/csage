@@ -13,8 +13,9 @@ enum VMFlag {
 };
 
 struct VM {
-	// TODO: add tagged union array for constants/literals
-	struct HTable*  vars;
+	struct Instruction* instrs;
+	// TODO: copy the bytecode's hashtable for variables for the repl?
+	struct Literal* vars;
 	struct Literal* lits;
 
 	/* Registers */
@@ -23,7 +24,7 @@ struct VM {
 	intptr acc;
 	enum VMFlag flag;
 
-	byte stack[];
+	int64 stack[]; // TODO: better type
 };
 
 struct VM* vm_load(struct ByteCode code);

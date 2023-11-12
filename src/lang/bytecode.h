@@ -27,9 +27,9 @@ enum LiteralType {
 struct Literal {
 	enum LiteralType type;
 	union {
-		int64   integer;
-		double  real;
-		String* string;
+		int64  integer;
+		double real;
+		String string;
 	};
 };
 

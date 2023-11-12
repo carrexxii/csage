@@ -4,9 +4,10 @@
 // TODO: Add an allocator parameter for creating strings
 typedef struct {
 	intptr len;
-	char   data[];
+	char*  data;
 } String;
 
+#define STRING(x) (String){ .data = x, .len = sizeof(x) }
 #define STRING8(x)  (String8){  .data = x }
 #define STRING16(x) (String16){ .data = x }
 #define STRING32(x) (String32){ .data = x }
@@ -16,9 +17,9 @@ typedef struct { char data[16]; } String16;
 typedef struct { char data[32]; } String32;
 typedef struct { char data[64]; } String64;
 
-String* string_new(char* src, intptr len);
-String* string_copy(String* src);
-int     string_contains(String* str, char c);
+String string_new(char* src, intptr len);
+String string_copy(String src);
+int    string_contains(String str, char c);
 
 bool starts_with(char* restrict str, char* restrict start);
 void file_extension(char* restrict file, char* restrict name, char* restrict ext);

@@ -89,13 +89,16 @@ struct TokenList* lexer_load(char* fname)
 
 void print_token(struct Token token)
 {
-	fprintf(stderr, "%s \t %s on line %d, col %d\n", token.lexeme->data, STRING_OF_TOKEN(token.type), token.line, token.col);
+	fprintf(stderr, "%s \t %s on line %d, col %d\n", token.lexeme.data, STRING_OF_TOKEN(token.type), token.line, token.col);
 }
 
 inline static int read_number(char* text)
 {
 	int len = 0;
-	while (isdigit(*text)) {
+	bool dp = false;
+	while (isdigit(*text) || (*text == '.' && !dp)) {
+		if (*text == '.')
+			dp = true;
 		len++;
 		text++;
 	}

@@ -27,7 +27,7 @@ struct AST parser_parse(struct TokenList* tokens)
 				break;
 			default:
 				ERROR("[LANG] Expected <> got [%s (%s)]:%d:%d", STRING_OF_TOKEN(token->type),
-				      token->lexeme->data, token->line, token->col);
+				      token->lexeme.data, token->line, token->col);
 			}
 			break;
 		case TOKEN_EOF:
@@ -45,7 +45,7 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 {
 	for (int s = 0; s < spacec; s++)
 		fprintf(stderr, " --> ");
-	fprintf(stderr, "[%s (%s)]", STRING_OF_NODE(node->type), node->lexeme->data);
+	fprintf(stderr, "[%s (%s)]", STRING_OF_NODE(node->type), node->lexeme.data);
 	fprintf(stderr, "\n");
 	if (token_is_terminal(node->type))
 		return;
@@ -90,19 +90,18 @@ inline static struct ASTNode* new_literal(struct Token** token)
 	struct Token* tok = *token;
 	struct ASTNode* node = new_node();
 	if (tok->type == TOKEN_NUMBER) {
-		if (!string_contains(tok->lexeme, '.')) {
+		if (string_contains(tok->lexeme, '.') != -1) {
 			node->type = AST_REAL;
-			node->real = atof(tok->lexeme->data);
+			node->real = atof(tok->lexeme.data);
 		} else {
 			node->type    = AST_INT;
-			node->integer = atoi(tok->lexeme->data);
+			node->integer = atoi(tok->lexeme.data);
 		}
 	} else if (tok->type == TOKEN_STRING) {
-		node->type   = AST_STR;
-		node->string = string_new(tok->lexeme->data, tok->lexeme->len);
+		node->type = AST_STR;
 	} else {
 		ERROR("[LANG] Token is not a valid literal: [%s (%s)]:%d:%d", STRING_OF_TOKEN(tok->type),
-		      tok->lexeme->data, tok->line, tok->col);
+		      tok->lexeme.data, tok->line, tok->col);
 	}
 
 	node->lexeme = string_copy(tok->lexeme);
@@ -116,8 +115,7 @@ inline static struct ASTNode* new_ident(struct Token** token)
 
 	struct ASTNode* node = new_node();
 	node->type   = AST_IDENT;
-	node->ident  = string_copy((*token)->lexeme);
-	node->lexeme = node->ident;
+	node->lexeme = string_copy((*token)->lexeme);
 	
 	(*token)++;
 	return node;
@@ -140,7 +138,7 @@ static struct ASTNode* parse_expr(struct Token** token)
 		return new_literal(token);
 
 	ERROR("[LANG] Could not parse expression: [%s (%s)]:%d:%d", STRING_OF_TOKEN(tk->type),
-	      tk->lexeme->data, tk->line, tk->col);
+	      tk->lexeme.data, tk->line, tk->col);
 	return NULL;
 }
 

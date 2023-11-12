@@ -18,15 +18,13 @@ enum ASTType {
 };
 
 struct ASTNode {
-	String* lexeme;
+	String lexeme;
 	enum ASTType type;
 	union {
 		/* Terminal */
-		String* ident;
 		union {
-			int64   integer;
-			double  real;
-			String* string;
+			int64  integer;
+			double real;
 		};
 		/* Non-terminal */
 		struct ASTNode* paren;
