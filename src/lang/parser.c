@@ -24,8 +24,9 @@ struct AST parser_parse(struct TokenList* tokens)
 		case TOKEN_IDENT:
 			switch ((token + 1)->type) {
 			/* Assignment: `IDENT =` */
-			case TOKEN_EQ:
-				ast.nodes[ast.nodec++] = parse_assign(&token);
+			case TOKEN_SYMBOL:
+				if (strncmp(token->lexeme.data, "=", 1))
+					ast.nodes[ast.nodec++] = parse_assign(&token);
 				break;
 			/* Function call: `IDENT INT|REAL|STR|IDENT` */
 			case TOKEN_NUMBER:
@@ -61,19 +62,19 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 	switch (node->type) {
 	case AST_BINARY:
 	case AST_ASSIGN:
-		print_ast_rec(node->left, spacec + 1);
-		print_ast_rec(node->right, spacec + 1);
+		print_ast_rec(node->binary.left, spacec + 1);
+		print_ast_rec(node->binary.right, spacec + 1);
 		break;
 	case AST_PAREN:
 		print_ast_rec(node->paren, spacec + 1);
 		break;
 	case AST_CALL:
 		// fprintf(stderr, "[%s (%s)]\n", STRING_OF_NODE(node->type), node->lexeme.data);
-		for (int i = 0; i < node->paramc; i++)
-			print_ast_rec(node->params[i], spacec + 1);
+		for (int i = 0; i < node->params.len; i++)
+			print_ast_rec(node->params.list[i], spacec + 1);
 		break;
 	case AST_UNARY:
-		print_ast_rec(node->node, spacec + 1);
+		print_ast_rec(node->unary.node, spacec + 1);
 		break;
 	default:
 		ERROR("[LANG] Could not print node type \"%s\" (%d)", STRING_OF_NODE(node->type), node->type);
@@ -105,10 +106,10 @@ inline static struct ASTNode* new_literal(struct Token** token)
 	if (tok->type == TOKEN_NUMBER) {
 		if (string_contains(tok->lexeme, '.') != -1) {
 			node->type = AST_REAL;
-			node->real = atof(tok->lexeme.data);
+			node->literal.dbl = atof(tok->lexeme.data);
 		} else {
-			node->type    = AST_INT;
-			node->integer = atoi(tok->lexeme.data);
+			node->type = AST_INT;
+			node->literal.s64 = atoi(tok->lexeme.data);
 		}
 	} else if (tok->type == TOKEN_STRING) {
 		node->type = AST_STR;
@@ -139,7 +140,7 @@ inline static struct ASTNode* new_ident(struct Token** token)
 
 static inline void match_eq(struct Token** token)
 {
-	assert((*token)->type == TOKEN_EQ);
+	assert(!strncmp((*token)->lexeme.data, "=", 1));
 	(*token)++;
 }
 
@@ -167,10 +168,10 @@ static struct ASTNode parse_assign(struct Token** token)
 		.type = AST_ASSIGN,
 	};
 
-	node.left = new_ident(token);
+	node.binary.left = new_ident(token);
 	node.lexeme = string_copy((*token)->lexeme);
 	match_eq(token);
-	node.right = parse_expr(token);
+	node.binary.right = parse_expr(token);
 
 	return node;
 }
@@ -183,9 +184,9 @@ static struct ASTNode parse_call(struct Token** token)
 	};
 	(*token)++;
 
-	node.paramc = 1;
-	node.params = smalloc(node.paramc*sizeof(struct ASTNode)); // TODO: fix
-	node.params[0] = parse_expr(token);
+	node.params.len = 1;
+	node.params.list = smalloc(node.params.len*sizeof(struct ASTNode)); // TODO: fix
+	node.params.list[0] = parse_expr(token);
 
 	return node;
 }

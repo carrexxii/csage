@@ -6,10 +6,12 @@
 #define LEXER_TOKEN_MULTIPLIER 2
 #define LEXER_SYMBOLS          "-=_+[]{};':\"\\|,.<>/?`~!@#$%^&*()"
 
+noreturn static void error_unhandled(char c);
+
 inline static int read_number(char* text);
 inline static int read_string(char* text);
 inline static int read_ident(char* text);
-inline static enum TokenType read_symbol(char* text);
+inline static int read_symbol(char* text);
 
 struct TokenList* lexer_tokenize(char* text)
 {
@@ -40,7 +42,14 @@ struct TokenList* lexer_tokenize(char* text)
 		}
 
 		token = &tokens->tokens[tokens->tokenc++];
-		if (isdigit(c)) {
+		if (c == '(' &&  *(text + 1) == '*') {
+			text += 2;
+			while (*text != '*' &&  *(text + 1) != ')')
+				text++;
+			text += 2;
+			len = 0;
+			tokens->tokenc--;
+		} else if (isdigit(c)) {
 			len = read_number(text);
 			token->type = TOKEN_NUMBER;
 		} else if (c == '"') {
@@ -50,10 +59,10 @@ struct TokenList* lexer_tokenize(char* text)
 			len = read_ident(text);
 			token->type = TOKEN_IDENT;
 		} else if (isgraph(c)) {
-			len = 1;
-			token->type = read_symbol(text);
+			len = read_symbol(text);
+			token->type = TOKEN_SYMBOL;
 		} else {
-			ERROR("[LANG] Unexpected character: %c", *text);
+			error_unhandled(*text);
 		}
 
 		// TODO: cleanup
@@ -62,10 +71,12 @@ struct TokenList* lexer_tokenize(char* text)
 			return NULL;
 		}
 
-		token->lexeme = string_new(text, len);
-		token->line   = line;
-		token->col    = text - line_start + 1;
-		text += len;
+		if (len) { /* In case of comment */
+			token->lexeme = string_new(text, len);
+			token->line   = line;
+			token->col    = text - line_start + 1;
+			text += len;
+		}
 	} while (*text);
 
 	tokens->tokens[tokens->tokenc++] = (struct Token){
@@ -134,43 +145,21 @@ inline static int read_ident(char* text)
 	return len;
 }
 
-inline static enum TokenType read_symbol(char* text)
+inline static int read_symbol(char* text)
 {
-	switch (*text) {
-		case '=' : return TOKEN_EQ;
-		case '+' : return TOKEN_PLUS;
-		case '-' : return TOKEN_MINUS;
-		case '*' : return TOKEN_STAR;
-		case '/' : return TOKEN_FSLASH;
-		case '\\': return TOKEN_BSLASH;
-		case '(' : return TOKEN_LPAREN;
-		case ')' : return TOKEN_RPAREN;
-		case '[' : return TOKEN_LBRACKET;
-		case ']' : return TOKEN_RBRACKET;
-		case '{' : return TOKEN_LBRACE;
-		case '}' : return TOKEN_RBRACE;
-		case '~' : return TOKEN_TILDE;
-		case '`' : return TOKEN_BTICK;
-		case '@' : return TOKEN_AT;
-		case '#' : return TOKEN_HASH;
-		case '$' : return TOKEN_DOLLAR;
-		case '%' : return TOKEN_PERCENT;
-		case '^' : return TOKEN_CARET;
-		case '&' : return TOKEN_AMPER;
-		case '_' : return TOKEN_UNDERSCORE;
-		case ':' : return TOKEN_COLON;
-		case ';' : return TOKEN_SCOLON;
-		case '\'': return TOKEN_SQUOTE;
-		case '"' : return TOKEN_DQUOTE;
-		case '.' : return TOKEN_PERIOD;
-		case ',' : return TOKEN_COMMA;
-		case '<' : return TOKEN_LT;
-		case '>' : return TOKEN_GT;
-		case '|' : return TOKEN_PIPE;
-		case '!' : return TOKEN_EMARK;
-		case '?' : return TOKEN_QMARK;
-		default:
-			ERROR("[LANG] Unrecognized symbol: %c", *text);
-			return TOKEN_NONE;
-	}
+	int len = 0;
+	do {
+		if (isspace(*text) || isalnum(*text))
+			break;
+		len++;
+		text++;
+	} while (1);
+
+	return len;
+}
+
+noreturn static void error_unhandled(char c)
+{
+	ERROR("[LANG] Error handling character: \"%c\"", c);
+	exit(1);
 }

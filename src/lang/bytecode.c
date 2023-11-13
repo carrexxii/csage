@@ -104,9 +104,9 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 	};
 
 	/* Integers that fit in INT16 are added as literals, anything else is added to the literals table */
-	if (node->type == AST_INT && node->integer <= INT16_MAX && node->integer >= INT16_MIN) {
+	if (node->type == AST_INT && node->literal.s64 <= INT16_MAX && node->literal.s64 >= INT16_MIN) {
 		instr.type    = LANG_INT_LITERAL;
-		instr.operand = node->integer;
+		instr.operand = node->literal.s64;
 	} else {
 		int i;
 		switch (node->type) {
@@ -120,11 +120,11 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 				switch (node->type) {
 				case AST_INT:
 					// code->lits[i].type    = LIT_INT;
-					code->lits[i].s64 = node->integer;
+					code->lits[i].s64 = node->literal.s64;
 					break;
 				case AST_REAL:
 					// code->lits[i].type = LIT_REAL;
-					code->lits[i].dbl = node->real;
+					code->lits[i].dbl = node->literal.dbl;
 					break;
 				case AST_STR:
 					// code->lits[i].type   = LIT_STR;
@@ -168,8 +168,8 @@ inline static void pop_var(struct ByteCode* code, struct ASTNode* node)
 
 inline static void write_assign(struct ByteCode* code, struct ASTNode* node)
 {
-	push_expr(code, node->right);
-	pop_var(code, node->left);
+	push_expr(code, node->binary.right);
+	pop_var(code, node->binary.left);
 }
 
 inline static void write_call(struct ByteCode* code, struct ASTNode* node)
@@ -178,8 +178,8 @@ inline static void write_call(struct ByteCode* code, struct ASTNode* node)
 		.op = OP_CALL,
 	};
 
-	for (int i = 0; i < node->paramc; i++)
-		push_expr(code, node->params[i]);
+	for (int i = 0; i < node->params.len; i++)
+		push_expr(code, node->params.list[i]);
 
 	// int i = code->varc++;
 	// htable_insert(code->var_table, node->lexeme, i);

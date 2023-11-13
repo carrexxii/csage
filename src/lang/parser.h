@@ -1,6 +1,7 @@
 #ifndef LANG_PARSER_H
 #define LANG_PARSER_H
 
+#include "lang.h"
 #include "lexer.h"
 
 enum ASTType {
@@ -10,6 +11,7 @@ enum ASTType {
 	AST_STR,
 	AST_BOOL,
 	AST_IDENT,
+	AST_IDENT_LIST,
 	AST_EXPR_LIST,
 	AST_PAREN,
 	AST_UNARY,
@@ -19,33 +21,29 @@ enum ASTType {
 	AST_COUNT,
 };
 
+struct ASTUnaryNode {
+	struct ASTNode* node;
+};
+struct ASTBinaryNode {
+	struct ASTNode* left;
+	struct ASTNode* right;
+};
+struct ASTList {
+	struct ASTNode** list;
+	int len;
+};
+
 struct ASTNode {
 	String lexeme;
 	enum ASTType type;
 	union {
 		/* Terminal */
-		union {
-			int64  integer;
-			double real;
-		};
+		union LangVal literal;
 		/* Non-terminal */
-		struct ASTNode*  paren;
-		struct {
-			String8 symbol;
-			union {
-				struct { /* Unary */
-					struct ASTNode* node;
-				};
-				struct { /* Binary */
-					struct ASTNode* left;
-					struct ASTNode* right;
-				};
-			};
-		};
-		struct {
-			struct ASTNode** params;
-			int paramc;
-		};
+		struct ASTNode* paren;
+		struct ASTUnaryNode  unary;
+		struct ASTBinaryNode binary;
+		struct ASTList params;
 	};
 };
 
