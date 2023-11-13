@@ -6,6 +6,7 @@ inline static void check_resize(struct ByteCode* code);
 inline static int  add_literal(struct ByteCode* code, struct ASTNode* node);
 inline static void write_instruction(struct ByteCode* code, struct Instruction instr);
 inline static void write_assign(struct ByteCode* code, struct ASTNode* node);
+inline static void write_call(struct ByteCode* code, struct ASTNode* node);
 
 struct ByteCode bytecode_generate(struct AST ast)
 {
@@ -24,6 +25,9 @@ struct ByteCode bytecode_generate(struct AST ast)
 		switch (node->type) {
 		case AST_ASSIGN:
 			write_assign(&code, node);
+			break;
+		case AST_CALL: // TODO: move
+			write_call(&code, node);
 			break;
 		default:
 			ERROR("[LANG] Skipped node [%s]", STRING_OF_NODE(node->type));
@@ -51,11 +55,21 @@ void bytecode_print(struct ByteCode code)
 		fprintf(stderr, i % 2? "\n": "\t");
 	}
 	fprintf(stderr, "\n   ----------------------\n");
+
+	fprintf(stderr, "Variables:\n");
+	for (int i = 0; i < code.var_table->cap; i++) {
+		char* v = code.var_table->pairs[i].key.data;
+		if (!v)
+			continue;
+		fprintf(stderr, "\t[%d]: %s%s", i, v, i % 2? "\n": "\t");
+	}
+	fprintf(stderr, "\n   ----------------------\n");
+
 	struct Instruction instr;
 	for (int i = 0; i < code.instrc; i++) {
 		instr = code.instrs[i];
 		// fprintf(stderr, "%s\t", STRING_OF_OP(instr.op));
-		fprintf(stderr, "\t%s\t ", instr.op == OP_POP? "OP_POP": instr.op == OP_PUSH? "OP_PUSH": instr.op == OP_EOF? "OP_EOF": "<unknown op>");
+		fprintf(stderr, "\t%s\t ", instr.op == OP_POP? "OP_POP": instr.op == OP_PUSH? "OP_PUSH": instr.op == OP_CALL? "OP_CALL": instr.op == OP_EOF? "OP_EOF": "<unknown op>");
 		fprintf(stderr, "%d\n", instr.operand);
 	}
 }
@@ -156,4 +170,20 @@ inline static void write_assign(struct ByteCode* code, struct ASTNode* node)
 {
 	push_expr(code, node->right);
 	pop_var(code, node->left);
+}
+
+inline static void write_call(struct ByteCode* code, struct ASTNode* node)
+{
+	struct Instruction instr = {
+		.op = OP_CALL,
+	};
+
+	for (int i = 0; i < node->paramc; i++)
+		push_expr(code, node->params[i]);
+
+	// int i = code->varc++;
+	// htable_insert(code->var_table, node->lexeme, i);
+	instr.operand = 0xFF;
+
+	write_instruction(code, instr);
 }

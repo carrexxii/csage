@@ -4,7 +4,7 @@ String string_new(char* src, intptr len)
 {
 	String str = {
 		.data = smalloc(len + 1),
-		.len  = len > 0? len: strlen(src),
+		.len  = len > 0? len: (intptr)strlen(src),
 	};
 	memcpy(str.data, src, str.len);
 	str.data[str.len] = '\0';

@@ -24,6 +24,7 @@ struct VM {
 	intptr acc;
 	enum VMFlag flag;
 
+	// TODO: Make this local to the run() fn?
 	int64 stack[]; // TODO: better type
 };
 

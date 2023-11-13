@@ -13,6 +13,7 @@ enum ByteCodeOp {
 	OP_NOOP,
 	OP_PUSH,
 	OP_POP,
+	OP_CALL,
 	OP_EOF,
 	OP_CODE_MAX,
 };
@@ -24,6 +25,7 @@ enum LiteralType {
 	LIT_STR  = AST_STR,
 };
 
+// TODO: move this to more goeneral location
 struct Literal {
 	enum LiteralType type;
 	union {
@@ -37,7 +39,7 @@ struct Literal {
 struct Instruction {
 	enum ByteCodeOp op: 8;
 	bool   is_var;
-	uint16 operand; 
+	uint16 operand;
 }; static_assert(sizeof(struct Instruction) == 4, "struct Instruction");
 
 struct ByteCode {

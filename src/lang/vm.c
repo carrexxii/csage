@@ -52,6 +52,12 @@ void vm_run(struct VM* vm)
 			}
 			DEBUG(1, "Popped %ld into %d", vm->stack[vm->sp], instr.operand);
 			break;
+		case OP_CALL:
+			DEBUG_VALUE(vm->vars[instr.operand].string.data);
+			DEBUG_VALUE(instr.operand);
+			if (instr.operand == 0xFF)
+				printf(TERM_MAGENTA "\t[%ld]\n" TERM_NORMAL, vm->stack[--vm->sp]);
+			break;
 		case OP_EOF:
 			break;
 		default:
