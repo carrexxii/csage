@@ -2,6 +2,7 @@
 #define LANG_BYTECODE_H
 
 #include "util/htable.h"
+#include "lang.h"
 #include "parser.h"
 
 #define BYTECODE_DEFAULT_SIZE    128
@@ -25,32 +26,22 @@ enum LiteralType {
 	LIT_STR  = AST_STR,
 };
 
-// TODO: move this to more goeneral location
-struct Literal {
-	enum LiteralType type;
-	union {
-		int64  integer;
-		double real;
-		String string;
-	};
-};
-
 /* Operand will be a reference to either a literal in the literals table or a variable in the variables table */
 struct Instruction {
 	enum ByteCodeOp op: 8;
-	bool   is_var;
-	uint16 operand;
+	enum LangType type: 8;
+	int16 operand;
 }; static_assert(sizeof(struct Instruction) == 4, "struct Instruction");
 
 struct ByteCode {
 	struct Instruction* instrs;
 	int instr_cap;
 	int instrc;
-	struct Literal* lits;
+	union LangVal* lits;
 	int lit_cap;
 	int litc;
 	int varc;
-	struct HTable* lit_table; // ?
+	struct HTable* lit_table;
 	struct HTable* var_table;
 };
 

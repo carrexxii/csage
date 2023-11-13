@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 	struct ByteCode code = bytecode_generate(ast);
 	bytecode_print(code);
 	DEBUG(1, " - - - - - - - - - VM - - - - - - - - - - ");
-	struct VM* vm = vm_load(code);
+	struct VM vm = vm_load(code);
 	vm_run(vm);
 	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
 
