@@ -11,8 +11,15 @@ enum TokenType {
 	TOKEN_STRING,
 	TOKEN_SYMBOL,
 
-	// TOKEN_VAR,
-	// TOKEN_LET,
+	TOKEN_VAL,
+	TOKEN_VAR,
+	TOKEN_LET,
+	TOKEN_IN,
+	TOKEN_FUN,
+	TOKEN_IF,
+	TOKEN_THEN,
+	TOKEN_ELSE,
+	TOKEN_OF,
 };
 
 struct Token {

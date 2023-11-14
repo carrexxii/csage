@@ -1,5 +1,4 @@
 (* Test Comment *)
-x = 1
-y = 2.0
-z = "a"
-print 47
+val x = 1
+var y = 2
+fun f = 3

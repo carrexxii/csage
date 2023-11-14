@@ -13,7 +13,7 @@ enum LangType {
 
 union LangVal {
 	int64  s64;
-	double dbl;
+	double flt;
 	char*  str;
 }; static_assert(sizeof(union LangVal) == 8, "union LangVal");
 

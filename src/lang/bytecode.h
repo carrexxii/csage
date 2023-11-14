@@ -21,9 +21,9 @@ enum ByteCodeOp {
 
 enum LiteralType {
 	LIT_NONE,
-	LIT_INT  = AST_INT,
-	LIT_REAL = AST_REAL,
-	LIT_STR  = AST_STR,
+	LIT_INT = LANG_INT,
+	LIT_FLT = LANG_FLT,
+	LIT_STR = LANG_STR,
 };
 
 /* Operand will be a reference to either a literal in the literals table or a variable in the variables table */

@@ -11,9 +11,9 @@ int main(int argc, char** argv)
 	struct TokenList* tokens = lexer_load("tests/test.lang");
 	for (int i = 0; i < tokens->tokenc; i++)
 		print_token(tokens->tokens[i]);
-	DEBUG(1, " - - - - - - - - - Parser - - - - - - - - - - ");
+	DEBUG(1, " - - - - - - - - - Parser - - - - - - - - - - - ");
 	struct AST ast = parser_parse(tokens);
-	DEBUG(1, " - - - - - - - - - AST - - - - - - - - - - ");
+	DEBUG(1, " - - - - - - - - - AST - - - - - - - - - - - - ");
 	parser_print_ast(ast);
 	DEBUG(1, " - - - - - - - - - ByteCode - - - - - - - - - - ");
 	struct ByteCode code = bytecode_generate(ast);

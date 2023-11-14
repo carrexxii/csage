@@ -11,6 +11,7 @@ noreturn static void error_unhandled(char c);
 inline static int read_number(char* text);
 inline static int read_string(char* text);
 inline static int read_ident(char* text);
+inline static int read_keyword(char* text, enum TokenType* type);
 inline static int read_symbol(char* text);
 
 struct TokenList* lexer_tokenize(char* text)
@@ -56,8 +57,11 @@ struct TokenList* lexer_tokenize(char* text)
 			len = read_string(text);
 			token->type = TOKEN_STRING;
 		} else if (isalpha(c) || c == '_') {
-			len = read_ident(text);
-			token->type = TOKEN_IDENT;
+			len = read_keyword(text, &token->type);
+			if (token->type == TOKEN_NONE) {
+				len = read_ident(text);
+				token->type = TOKEN_IDENT;
+			}
 		} else if (isgraph(c)) {
 			len = read_symbol(text);
 			token->type = TOKEN_SYMBOL;
@@ -71,7 +75,7 @@ struct TokenList* lexer_tokenize(char* text)
 			return NULL;
 		}
 
-		if (len) { /* In case of comment */
+		if (len) { /* In case of a comment */
 			token->lexeme = string_new(text, len);
 			token->line   = line;
 			token->col    = text - line_start + 1;
@@ -145,12 +149,34 @@ inline static int read_ident(char* text)
 	return len;
 }
 
+#define check(_v, _t)                        \
+	if (!strncmp(text, _v, sizeof(_v) - 1)) { \
+		*type = _t;                            \
+		return sizeof(_v) - 1;                  \
+	}
+inline static int read_keyword(char* text, enum TokenType* type)
+{
+	check("val" , TOKEN_VAL);
+	check("var" , TOKEN_VAR);
+	check("let" , TOKEN_LET);
+	check("in"  , TOKEN_IN);
+	check("fun" , TOKEN_FUN);
+	check("if"  , TOKEN_IF);
+	check("then", TOKEN_THEN);
+	check("else", TOKEN_ELSE);
+	check("of"  , TOKEN_OF);
+
+	*type = TOKEN_NONE;
+	return 0;
+}
+#undef check
+
 inline static int read_symbol(char* text)
 {
 	int len = 0;
 	do {
 		if (isspace(*text) || isalnum(*text))
-			break;
+            break;
 		len++;
 		text++;
 	} while (1);

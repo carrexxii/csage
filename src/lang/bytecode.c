@@ -44,7 +44,7 @@ void bytecode_print(struct ByteCode code)
 	fprintf(stderr, "--- ByteCode (%d Instructions) ---\n", code.instrc);
 	fprintf(stderr, "Literals:\n");
 	for (int i = 0; i < code.litc; i++) {
-		fprintf(stderr, "\t[%d]: %ld (%f)", i, code.lits[i].s64, code.lits[i].dbl);
+		fprintf(stderr, "\t[%d]: %ld (%f)", i, code.lits[i].s64, code.lits[i].flt);
 		fprintf(stderr, i % 2? "\n": "\t");
 	}
 	fprintf(stderr, "\n   ----------------------\n");
@@ -110,9 +110,9 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 	} else {
 		int i;
 		switch (node->type) {
-		case AST_INT : instr.type = LANG_INT; [[fallthrough]];
-		case AST_REAL: instr.type = LANG_FLT; [[fallthrough]];
-		case AST_STR : instr.type = LANG_STR;
+		case AST_INT: instr.type = LANG_INT; [[fallthrough]];
+		case AST_FLT: instr.type = LANG_FLT; [[fallthrough]];
+		case AST_STR: instr.type = LANG_STR;
 			i = htable_get(code->lit_table, node->lexeme);
 			if (!i) {
 				i = code->litc++;
@@ -122,9 +122,9 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 					// code->lits[i].type    = LIT_INT;
 					code->lits[i].s64 = node->literal.s64;
 					break;
-				case AST_REAL:
+				case AST_FLT:
 					// code->lits[i].type = LIT_REAL;
-					code->lits[i].dbl = node->literal.dbl;
+					code->lits[i].flt = node->literal.flt;
 					break;
 				case AST_STR:
 					// code->lits[i].type   = LIT_STR;
