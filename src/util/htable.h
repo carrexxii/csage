@@ -91,6 +91,15 @@ inline static int64 htable_get(struct HTable* htable, String key)
 	return pair? pair->val: 0;
 }
 
+/* Same as htable_get, but will insert the value if the key is not present */
+inline static int64 htable_get_or_insert(struct HTable* htable, String key, int64 val)
+{
+	int i = htable_hash(htable, key);
+	struct HPair* pair = htable_get_pair(htable, key);
+
+	return pair? pair->val: htable_insert(htable, key, val)->val;
+}
+
 /* Returns 0 if the value was set or -1 if the key was not found */
 inline static int htable_set(struct HTable* htable, String key, int64 val)
 {

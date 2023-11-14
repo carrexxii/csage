@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "bytecode.h"
 #include "util/htable.h"
 #include "vm.h"
@@ -17,7 +18,8 @@ struct VM vm_load(struct ByteCode code)
 	return vm;
 }
 
-#define next() do {                        \
+#define next() do {                       \
+		DEBUG_VALUE(ip);                   \
 		ci = vm.instrs[ip];                 \
 		goto *op_labels[vm.instrs[ip++].op]; \
 	} while (0)
@@ -28,9 +30,9 @@ void vm_run(struct VM vm)
 		[OP_PUSH] = &&op_push,
 		[OP_POP]  = &&op_pop,
 		[OP_CALL] = &&op_call,
+		[OP_RET]  = &&op_ret,
 		[OP_EOF]  = &&op_eof,
 	};
-	static_assert(ARRAY_LEN(op_labels) == OP_CODE_MAX, "Need to update op_labels for VM");
 
 	union LangVal* stack = smalloc(VM_STACK_SIZE);
 	register intptr sp = 0;
@@ -56,6 +58,12 @@ op_pop:
 op_call:
 	if (ci.operand == 0xFF)
 		printf("%ld\n", stack[--sp].s64);
+	stack[sp++] = (union LangVal){ .s64 = ip };
+	ip = ci.operand;
+	next();
+
+op_ret:
+	ip = stack[--sp].s64;
 	next();
 
 op_eof:

@@ -15,6 +15,7 @@ enum ByteCodeOp {
 	OP_PUSH,
 	OP_POP,
 	OP_CALL,
+	OP_RET,
 	OP_EOF,
 	OP_CODE_MAX,
 };
@@ -37,12 +38,15 @@ struct ByteCode {
 	struct Instruction* instrs;
 	int instr_cap;
 	int instrc;
+
 	union LangVal* lits;
 	int lit_cap;
 	int litc;
+
 	int varc;
 	struct HTable* lit_table;
 	struct HTable* var_table;
+	struct HTable* fun_table;
 };
 
 struct ByteCode bytecode_generate(struct AST ast);
