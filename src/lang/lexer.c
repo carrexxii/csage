@@ -14,6 +14,14 @@ inline static int read_ident(char* text);
 inline static int read_keyword(char* text, enum TokenType* type);
 inline static int read_symbol(char* text);
 
+struct Tokenizer lexer_load_file(char* path)
+{
+	// struct Tokenizer tokenizer;
+	// tokenizer.file = file_open(path);
+	// tokenizer.file_name = string_new_split(path, '/', -1);
+	// tokenizer.cursor = NULL;
+}
+
 struct TokenList* lexer_tokenize(char* text)
 {
 	intptr max_tokens = 1024;

@@ -12,6 +12,37 @@ String string_new(char* src, intptr len)
 	return str;
 }
 
+/* Create a new string by splitting up `src` on `sep`s and using `index`.
+ *   - If `index` is -1, the last part of the string is given.
+ */
+String string_new_split(char* src, char sep, int index)
+{
+	index = index == -1? INT_MAX: index;
+	String str;
+
+	char* start = src;
+	int sepc = 0;
+	int len  = 0;
+	while (*src) {
+		if (*src == sep) {
+			sepc++;
+			start = ++src;
+			if (*start == sep)
+				start++;
+			if (sepc > index)
+				return (String){ 0 };
+		}
+		if (sepc == index) {
+			while (*src && *src++ != sep)
+				len++;
+			return len? string_new(start, len): (String){ 0 };
+		}
+		src++;
+	}
+
+	return string_new(start, 0);
+}
+
 String string_copy(String src)
 {
 	return string_new(src.data, src.len);

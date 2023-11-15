@@ -4,6 +4,10 @@
 #include "lang.h"
 #include "lexer.h"
 
+#define PARSER_DEFAULT_LITERAL_COUNT  64
+#define PARSER_DEFAULT_VARIABLE_COUNT 8
+#define PARSER_DEFAULT_FUNCTION_COUNT 32
+
 enum ASTType {
 	AST_NONE = 0,
 
@@ -34,6 +38,10 @@ struct ASTBinaryNode {
 	struct ASTNode* left;
 	struct ASTNode* right;
 };
+// struct ASTFunction {
+// 	struct VArray* params;
+// 	struct VArray* symbols;
+// };
 
 struct ASTNode {
 	String lexeme;
@@ -43,6 +51,7 @@ struct ASTNode {
 		union LangVal literal;
 		/* Non-terminal */
 		struct ASTNode* expr;
+		// struct ASTFunction* func;
 		struct ASTNode* paren;
 		struct ASTUnaryNode  unary;
 		struct ASTBinaryNode binary;
@@ -54,6 +63,13 @@ struct ASTNode {
 struct AST {
 	struct ASTNode* nodes;
 	intptr nodec;
+
+	struct VArray* lits;
+	struct HTable* lit_table;
+	struct HTable* var_table;
+	struct HTable* fun_table;
+
+	struct Tokenizer* tokens;
 };
 
 struct AST parser_parse(struct TokenList* tokens);

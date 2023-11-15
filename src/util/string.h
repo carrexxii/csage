@@ -19,6 +19,7 @@ typedef struct { char data[64]; } String64;
 
 // TODO: Add allocator parameters
 String string_new(char* src, intptr len);
+String string_new_split(char* src, char sep, int index);
 String string_copy(String src);
 int    string_contains(String str, char c);
 

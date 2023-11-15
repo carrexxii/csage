@@ -4,8 +4,7 @@
 #include "string.h"
 
 /* TODO:
- *  - Move to .c
- *  - Add a resize function
+ *  - Add a resize function and/or copy function
  *  - Add a dynamic array for storing linked list elements and strings (arena allocator?)
  */
 
@@ -16,11 +15,20 @@ struct HPair {
 };
 
 struct HTable {
-	intptr cap;
+	isize cap;
 	struct HPair pairs[];
 };
 
-inline static struct HTable* htable_new(intptr count)
+inline static struct HTable* htable_new(isize count);
+inline static uint htable_hash(struct HTable* htable, String str);
+inline static struct HPair* htable_insert(struct HTable* htable, String key, int64 val);
+inline static struct HPair* htable_get_pair(struct HTable* htable, String key);
+inline static int64 htable_get(struct HTable* htable, String key);
+inline static int64 htable_get_or_insert(struct HTable* htable, String key, int64 val);
+inline static void  htable_print(struct HTable* htable);
+inline static void  htable_free(struct HTable* htable);
+
+inline static struct HTable* htable_new(isize count)
 {
 	struct HTable* htable = scalloc(sizeof(struct HTable) + count*sizeof(struct HPair), 1);
 	htable->cap = count;
@@ -29,7 +37,7 @@ inline static struct HTable* htable_new(intptr count)
 }
 
 /* PJW Hash Function: https://www.partow.net/programming/hashfunctions/ */
-inline static uint64 htable_hash(struct HTable* htable, String str)
+inline static uint htable_hash(struct HTable* htable, String str)
 {
 	uint hash = 1315423911;
 	char* c = str.data;

@@ -17,9 +17,9 @@ union LangVal {
 	char*  str;
 }; static_assert(sizeof(union LangVal) == 8, "union LangVal");
 
-// struct LangVal {
-// 	enum LangType     type;
-// 	union LangTypeVal val;
-// };
+struct LangValTagged {
+	enum LangType type;
+	union LangVal val;
+};
 
 #endif

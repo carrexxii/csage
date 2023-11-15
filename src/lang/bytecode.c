@@ -142,7 +142,7 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 		case AST_CALL:
 			i = htable_get(code->fun_table, node->lexeme);
 			if (i == -1) {
-				ERROR("[LANG] Bytecode generator: could not find identfier \"%s\" in functions table", node->lexeme.data);
+				ERROR("[LANG] Bytecode generator: could not find identifier \"%s\" in functions table", node->lexeme.data);
 				exit(70);
 			}
 			break;

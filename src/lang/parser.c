@@ -1,6 +1,7 @@
-#include "common.h"
+#include "lang/lang.h"
 #include "util/string.h"
 #include "util/varray.h"
+#include "util/htable.h"
 #include "lexer.h"
 #include "parser.h"
 
@@ -32,6 +33,11 @@ struct AST parser_parse(struct TokenList* tokens)
 	struct AST ast = {
 		.nodec = 0,
 		.nodes = smalloc(max_expr*sizeof(struct ASTNode)),
+
+		.lits = varray_new(PARSER_DEFAULT_LITERAL_COUNT, sizeof(struct LangValTagged)),
+		.lit_table = htable_new(PARSER_DEFAULT_LITERAL_COUNT),
+		.var_table = htable_new(PARSER_DEFAULT_VARIABLE_COUNT),
+		.fun_table = htable_new(PARSER_DEFAULT_FUNCTION_COUNT),
 	};
 
 	struct Token* token = tokens->tokens;
@@ -94,6 +100,17 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 
 void parser_print_ast(struct AST ast)
 {
+	struct HPair* pair;
+	printf("Literals:\n");
+	for (int i = 0; i < ast.lit_table->cap; i++) {
+		pair = &ast.lit_table->pairs[i];
+		if (pair->key.data)
+			printf("\t%s: %ld\n", pair->key.data, pair->val);
+	}
+
+	printf("Variables:\n");
+	printf("Functions:\n");
+
 	struct ASTNode* node;
 	for (int n = 0; n < ast.nodec; n++) {
 		node = &ast.nodes[n];
@@ -115,6 +132,8 @@ inline static struct ASTNode* new_literal(struct Token** token)
 	struct ASTNode* node = new_node();
 	node->lexeme  = string_copy((*token)->lexeme);
 	node->literal = match_literal(token, &node->type);
+
+	
 
 	// (*token)++; token is consumed by match_literal()
 	return node;
@@ -207,21 +226,6 @@ static struct VArray* parse_expr_list(struct Token** token, int count)
 
 	return list;
 }
-
-// static struct ASTNode parse_call(struct Token** token)
-// {
-// 	struct ASTNode node = {
-// 		.type   = AST_CALL,
-// 		.lexeme = string_copy((*token)->lexeme),
-// 	};
-// 	(*token)++;
-
-// 	node.params = varray_new(2, sizeof(struct ASTNode));
-// 	node.params->len = 1;
-// 	varray_push(node.params, parse_expr(token));
-
-// 	return node;
-// }
 
 static struct ASTNode parse_val(struct Token** token)
 {

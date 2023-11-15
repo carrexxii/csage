@@ -39,6 +39,14 @@ struct TokenList {
 	struct Token tokens[];
 };
 
+struct Tokenizer {
+	FILE*  file;
+	String file_name;
+	// char*  cursor;
+};
+
+struct Tokenizer lexer_load_file(char* text);
+
 struct TokenList* lexer_tokenize(char* restrict text);
 struct TokenList* lexer_load(char* restrict fname);
 void print_token(struct Token token);

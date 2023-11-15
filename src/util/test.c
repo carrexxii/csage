@@ -5,6 +5,37 @@
 
 int main(int agrc, char** argv)
 {
+	DEBUG(1, " --- Testing String ---");
+	char* str = "some/file/path.txt";
+	DEBUG(1, "Splitting with `string_new_split()`: \"%s\"", str);
+	DEBUG(1, "\t0 = %s", string_new_split(str, '/', 0).data);
+	DEBUG(1, "\t1 = %s", string_new_split(str, '/', 1).data);
+	DEBUG(1, "\t2 = %s", string_new_split(str, '/', 2).data);
+	DEBUG(1, "\t100 = %s", string_new_split(str, '/', 100).data);
+	DEBUG(1, "\t-123 = %s", string_new_split(str, '/', -123).data);
+	DEBUG(1, "\t-1 = %s", string_new_split(str, '/', -1).data);
+
+	str = "abc;123;xyz";
+	DEBUG(1, "\nSplitting with `string_new_split()`: \"%s\"", str);
+	DEBUG(1, "\t0 = %s", string_new_split(str, ';', 0).data);
+	DEBUG(1, "\t1 = %s", string_new_split(str, ';', 1).data);
+	DEBUG(1, "\t2 = %s", string_new_split(str, ';', 2).data);
+	DEBUG(1, "\t3 = %s", string_new_split(str, ';', 3).data);
+	DEBUG(1, "\t-1 = %s", string_new_split(str, ';', -1).data);
+
+	str = ".b.c.d..f";
+	DEBUG(1, "\nSplitting with `string_new_split()`: \"%s\"", str);
+	DEBUG(1, "\t0 = %s", string_new_split(str, '.', 0).data);
+	DEBUG(1, "\t1 = %s", string_new_split(str, '.', 1).data);
+	DEBUG(1, "\t2 = %s", string_new_split(str, '.', 2).data);
+	DEBUG(1, "\t3 = %s", string_new_split(str, '.', 3).data);
+	DEBUG(1, "\t4 = %s", string_new_split(str, '.', 4).data);
+	DEBUG(1, "\t5 = %s", string_new_split(str, '.', 5).data);
+	DEBUG(1, "\t15 = %s", string_new_split(str, '.', 15).data);
+	DEBUG(1, "\t-10 = %s", string_new_split(str, '.', -10).data);
+	DEBUG(1, "\t-1 = %s", string_new_split(str, '.', -1).data);
+
+	exit(0);
 	DEBUG(1, " --- Testing VArray ---");
 	struct VArray* arr = varray_new(10, 8);
 	varray_print(arr);
@@ -21,7 +52,6 @@ int main(int agrc, char** argv)
 	DEBUG(1, "%d", *(int*)varray_get(arr, 3));
 	DEBUG(1, "%d", *(int*)varray_get(arr, 4));
 
-	exit(0);
 	DEBUG(1, " --- Testing HTable ---");
 
 	DEBUG(1, "\n - - - - - - - * htable_insert * - - - - - - - ");
