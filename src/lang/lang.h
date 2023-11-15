@@ -4,7 +4,7 @@
 #include "util/string.h"
 
 enum LangType {
-	LANG_INT,
+	LANG_INT = 1,
 	LANG_FLT,
 	LANG_STR,
 	LANG_INT_LITERAL,

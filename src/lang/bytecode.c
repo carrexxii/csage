@@ -1,4 +1,5 @@
 #include "util/htable.h"
+#include "util/varray.h"
 #include "parser.h"
 #include "bytecode.h"
 
@@ -42,7 +43,7 @@ struct ByteCode bytecode_generate(struct AST ast)
 			write_call(&code, node);
 			break;
 		default:
-			ERROR("[LANG] Skipped node [%s]", STRING_OF_NODE(node->type));
+			ERROR("[LANG] Bytecode generator: skipped node [%s]", STRING_OF_NODE(node->type));
 			exit(70);
 		}
 	}
@@ -123,7 +124,7 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 		case AST_FLT: instr.type = LANG_FLT; [[fallthrough]];
 		case AST_STR: instr.type = LANG_STR;
 			i = htable_get(code->lit_table, node->lexeme);
-			if (!i) {
+			if (i == -1) {
 				i = code->litc++;
 				htable_insert(code->lit_table, node->lexeme, i);
 				switch (node->type) {
@@ -138,8 +139,15 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 
 			instr.operand = i;
 			break;
+		case AST_CALL:
+			i = htable_get(code->fun_table, node->lexeme);
+			if (i == -1) {
+				ERROR("[LANG] Bytecode generator: could not find identfier \"%s\" in functions table", node->lexeme.data);
+				exit(70);
+			}
+			break;
 		default:
-			error_expected("expression", node);
+			error_expected("expression (push_expr)", node);
 		}
 	}
 
@@ -180,8 +188,8 @@ inline static void write_call(struct ByteCode* code, struct ASTNode* node)
 		.op = OP_CALL,
 	};
 
-	for (int i = 0; i < node->params.len; i++)
-		push_expr(code, node->params.list[i]);
+	for (int i = 0; i < node->params->len; i++)
+		push_expr(code, varray_get(node->params, i));
 
 	// int i = code->varc++;
 	// htable_insert(code->var_table, node->lexeme, i);
@@ -203,6 +211,6 @@ inline static void write_fun(struct ByteCode* code, struct ASTNode* node)
 
 noreturn static void error_expected(const char* expect, struct ASTNode* node)
 {
-	ERROR("[LANG] Expected %s but got \"%s\"", expect, STRING_OF_NODE(node->type));
+	ERROR("[LANG] Bytecode generator: expected %s but got \"%s\"", expect, STRING_OF_NODE(node->type));
 	exit(70);
 }

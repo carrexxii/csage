@@ -31,10 +31,10 @@ uint find_memory_index(uint type, uint prop);
 #define ubo_new(s)    _ubo_new((s),      __FILE__, __LINE__, __func__)
 #define sbo_new(s)    _sbo_new((s),      __FILE__, __LINE__, __func__)
 
-void buffer_update(struct Buffer buffer, VkDeviceSize size, void* mem);
+void buffer_update(struct Buffer buffer, VkDeviceSize sz, void* mem);
 
-inline static void buffer_map_memory(struct Buffer buffer, VkDeviceSize size, void** mem) {
-	vkMapMemory(gpu, buffer.mem, 0, size, 0, mem);
+inline static void buffer_map_memory(struct Buffer buffer, VkDeviceSize sz, void** mem) {
+	vkMapMemory(gpu, buffer.mem, 0, sz, 0, mem);
 }
 inline static void buffer_unmap_memory(struct Buffer buffer) {
 	vkUnmapMemory(gpu, buffer.mem);

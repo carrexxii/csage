@@ -72,6 +72,8 @@ typedef unsigned int uint;
 typedef  intptr_t  intptr;
 typedef uintptr_t uintptr;
 typedef unsigned char byte;
+typedef  size_t usize;
+typedef ssize_t isize;
 
 typedef thrd_t Thread;
 typedef mtx_t  Mutex;

@@ -1,4 +1,6 @@
+#include "common.h"
 #include "util/string.h"
+#include "util/varray.h"
 #include "lexer.h"
 #include "parser.h"
 
@@ -11,6 +13,7 @@ inline static String match_ident(struct Token** token);
 inline static union LangVal match_literal(struct Token** token, enum ASTType* type);
 
 static struct ASTNode* parse_expr(struct Token** token);
+static struct VArray*  parse_expr_list(struct Token** token, int count);
 static struct ASTNode  parse_assign(struct Token** token);
 static struct ASTNode  parse_call(struct Token** token);
 
@@ -45,7 +48,7 @@ struct AST parser_parse(struct TokenList* tokens)
 		}
 	} while (token < tokens->tokens + tokens->tokenc);
 
-	assert(0 && "Should have returned from TOKEN_EOF");
+	ERROR("Should have returned from TOKEN_EOF, instead have: %s (%d)", STRING_OF_TOKEN(token->type), token->type);
 	return ast;
 }
 
@@ -74,9 +77,12 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 		print_ast_rec(node->paren, spacec + 1);
 		break;
 	case AST_CALL:
-		// fprintf(stderr, "[%s (%s)]\n", STRING_OF_NODE(node->type), node->lexeme.data);
-		for (int i = 0; i < node->params.len; i++)
-			print_ast_rec(node->params.list[i], spacec + 1);
+		for (int i = 0; i < node->params->len; i++) {
+			// DEBUG_VALUE(((struct ASTNode*)varray_get(node->params, i))->expr);
+			// DEBUG_VALUE(varray_get(node->params, i));
+			// DEBUG_VALUE((struct ASTNode*)varray_get(node->params, i));
+			print_ast_rec(varray_get(node->params, i), spacec + 1);
+		}
 		break;
 	case AST_UNARY:
 		print_ast_rec(node->unary.node, spacec + 1);
@@ -106,23 +112,19 @@ inline static struct ASTNode* new_node()
 
 inline static struct ASTNode* new_literal(struct Token** token)
 {
-	struct Token*   tok  = *token;
 	struct ASTNode* node = new_node();
-	node->lexeme  = string_copy(tok->lexeme);
-	node->literal = match_literal(&tok, &node->type);
+	node->lexeme  = string_copy((*token)->lexeme);
+	node->literal = match_literal(token, &node->type);
 
-	*token = tok;
+	// (*token)++; token is consumed by match_literal()
 	return node;
 }
 
 inline static struct ASTNode* new_ident(struct Token** token)
 {
-	struct Token* tok = *token;
-	check_error_internal(tok, TOKEN_IDENT);
-
 	struct ASTNode* node = new_node();
 	node->type   = AST_IDENT;
-	node->lexeme = string_copy(tok->lexeme);
+	node->lexeme = string_copy((*token)->lexeme);
 	
 	(*token)++;
 	return node;
@@ -170,50 +172,56 @@ inline static union LangVal match_literal(struct Token** token, enum ASTType* ty
 
 static struct ASTNode* parse_expr(struct Token** token)
 {
-	struct Token* tok = *token;
 	struct ASTNode* node;
-	switch (tok->type) {
+	switch ((*token)->type) {
 	case TOKEN_NUMBER:
 	case TOKEN_STRING:
-		node = new_literal(&tok);
-		*token = tok;
+		return new_literal(token);
+		break;
+	case TOKEN_IDENT:
+		node = new_node();
+		node->type   = AST_CALL;
+		node->lexeme = string_copy((*token)->lexeme);
+		(*token)++;
+
+		node->params = parse_expr_list(token, 1);
 		return node;
 		break;
 	default:
-		error_expected("expression", tok);
+		error_expected("expression", (*token));
 	}
 
 	return NULL;
 }
 
-// static struct ASTNode parse_assign(struct Token** token)
+static struct VArray* parse_expr_list(struct Token** token, int count)
+{
+	struct VArray* list = varray_new(count, sizeof(struct ASTNode));
+	for (int i = 0; i < count; i++) {
+		if ((*token)->type > TOKEN_VALUE_START && (*token)->type < TOKEN_KEYWORD_END) {
+			varray_push(list, parse_expr(token));
+		} else {
+			error_expected("value for function", *token);
+		}
+	}
+
+	return list;
+}
+
+// static struct ASTNode parse_call(struct Token** token)
 // {
 // 	struct ASTNode node = {
-// 		.type = AST_ASSIGN,
+// 		.type   = AST_CALL,
+// 		.lexeme = string_copy((*token)->lexeme),
 // 	};
+// 	(*token)++;
 
-// 	node.binary.left = new_ident(token);
-// 	node.lexeme = string_copy((*token)->lexeme);
-// 	match_eq(token);
-// 	node.binary.right = parse_expr(token);
+// 	node.params = varray_new(2, sizeof(struct ASTNode));
+// 	node.params->len = 1;
+// 	varray_push(node.params, parse_expr(token));
 
 // 	return node;
 // }
-
-static struct ASTNode parse_call(struct Token** token)
-{
-	struct ASTNode node = {
-		.type   = AST_CALL,
-		.lexeme = string_copy((*token)->lexeme),
-	};
-	(*token)++;
-
-	node.params.len = 1;
-	node.params.list = smalloc(node.params.len*sizeof(struct ASTNode)); // TODO: fix
-	node.params.list[0] = parse_expr(token);
-
-	return node;
-}
 
 static struct ASTNode parse_val(struct Token** token)
 {
@@ -251,19 +259,17 @@ static struct ASTNode parse_var(struct Token** token)
 
 static struct ASTNode parse_fun(struct Token** token)
 {
-	struct Token* tok = *token;
-	check_error_internal(tok, TOKEN_FUN);
-	tok++;
+	check_error_internal(*token, TOKEN_FUN);
+	(*token)++;
 
 	struct ASTNode node = {
 		.type   = AST_FUN,
-		.lexeme = string_copy(match_ident(&tok)),
+		.lexeme = string_copy(match_ident(token)),
 	};
 	// TODO: parse paramter list here
-	match_eq(&tok);
-	node.expr = parse_expr(&tok);
+	match_eq(token);
+	node.expr = parse_expr(token);
 
-	*token = tok;
 	return node;
 }
 
@@ -282,12 +288,12 @@ noreturn static void error_unexpected(const char* type, struct Token* token)
 {
 	ERROR("[LANG] Unexpected %s: \"%s\" on line %d:%d",
 	      type, token->lexeme.data, token->line, token->col);
-	exit(70);
+	exit(1);
 }
 
 noreturn static void error_expected(const char* expect, struct Token* token)
 {
 	ERROR("[LANG] Expected %s but got: \"%s\" on line %d:%d",
 	      expect, token->lexeme.data, token->line, token->col);
-	exit(70);
+	exit(1);
 }

@@ -13,7 +13,7 @@
 #include "font.h"
 
 struct Character {
-	int size[2];
+	int sz[2];
 	int bearing[2];
 	int advance;
 	int offset; /* In the main texture */
@@ -91,8 +91,8 @@ void font_init(VkRenderPass renderpass)
 
 		bitmap = face->glyph->bitmap;
 		characters[i] = (struct Character){
-			.size[0]    = bitmap.width,
-			.size[1]    = bitmap.rows,
+			.sz[0]      = bitmap.width,
+			.sz[1]      = bitmap.rows,
 			.bearing[0] = face->glyph->bitmap_left,
 			.bearing[1] = face->glyph->bitmap_top,
 			.advance    = face->glyph->advance.x,
@@ -146,44 +146,44 @@ int font_render(char* text, float start_x, float start_y, float w)
 	float  x = start_x;
 	float  y = config_window_height - start_y;
 	float* v = verts;
-	float offset, size[2];
+	float offset, sz[2];
 	float char_x, char_y;
 	for (char c = *text; c; c = *++text) {
-		offset     = characters[(int)c].offset;
-		size[0]    = characters[(int)c].size[0];
-		size[1]    = characters[(int)c].size[1];
+		offset = characters[(int)c].offset;
+		sz[0]  = characters[(int)c].sz[0];
+		sz[1]  = characters[(int)c].sz[1];
 
 		char_x = x + characters[(int)c].bearing[0];
-		char_y = y + characters[(int)c].bearing[1] - size[1];
+		char_y = y + characters[(int)c].bearing[1] - sz[1];
 
 		*v++ = char_x;
 		*v++ = char_y;
 		*v++ = offset/atlas_w;
-		*v++ = size[1]/atlas_h;
+		*v++ = sz[1]/atlas_h;
 
-		*v++ = char_x + size[0];
+		*v++ = char_x + sz[0];
 		*v++ = char_y;
-		*v++ = (offset + size[0])/atlas_w;
-		*v++ = size[1]/atlas_h;
+		*v++ = (offset + sz[0])/atlas_w;
+		*v++ = sz[1]/atlas_h;
 
 		*v++ = char_x;
-		*v++ = char_y + size[1];
-		*v++ = offset/atlas_w;
-		*v++ = 0.0;
-
-		*v++ = char_x;
-		*v++ = char_y + size[1];
+		*v++ = char_y + sz[1];
 		*v++ = offset/atlas_w;
 		*v++ = 0.0;
 
-		*v++ = char_x + size[0];
-		*v++ = char_y;
-		*v++ = (offset + size[0])/atlas_w;
-		*v++ = size[1]/atlas_h;
+		*v++ = char_x;
+		*v++ = char_y + sz[1];
+		*v++ = offset/atlas_w;
+		*v++ = 0.0;
 
-		*v++ = char_x + size[0];
-		*v++ = char_y + size[1];
-		*v++ = (offset + size[0])/atlas_w;
+		*v++ = char_x + sz[0];
+		*v++ = char_y;
+		*v++ = (offset + sz[0])/atlas_w;
+		*v++ = sz[1]/atlas_h;
+
+		*v++ = char_x + sz[0];
+		*v++ = char_y + sz[1];
+		*v++ = (offset + sz[0])/atlas_w;
 		*v++ = 0.0;
 
 		x += characters[(int)c].advance >> 6;

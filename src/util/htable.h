@@ -82,13 +82,13 @@ inline static struct HPair* htable_get_pair(struct HTable* htable, String key)
 	return pair;
 }
 
-/* Returns 0 if the key was not found */
+/* Returns -1 if the key was not found */
 inline static int64 htable_get(struct HTable* htable, String key)
 {
 	int i = htable_hash(htable, key);
 	struct HPair* pair = htable_get_pair(htable, key);
 
-	return pair? pair->val: 0;
+	return pair? pair->val: -1;
 }
 
 /* Same as htable_get, but will insert the value if the key is not present */

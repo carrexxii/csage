@@ -2,3 +2,6 @@
 val x = 1
 var y = 2
 fun f = 3
+
+fun main =
+	print "Test"

@@ -1,9 +1,27 @@
 #ifdef TESTING_UTIL
 
+#include "varray.h"
 #include "htable.h"
 
 int main(int agrc, char** argv)
 {
+	DEBUG(1, " --- Testing VArray ---");
+	struct VArray* arr = varray_new(10, 8);
+	varray_print(arr);
+	varray_push(arr, (int[]){ 1 });
+	varray_push(arr, (int[]){ 2 });
+	varray_push(arr, (int[]){ 3 });
+	varray_push(arr, (int[]){ 4 });
+	varray_push(arr, (int[]){ 5 });
+	varray_print(arr);
+
+	DEBUG(1, "%d", *(int*)varray_get(arr, 0));
+	DEBUG(1, "%d", *(int*)varray_get(arr, 1));
+	DEBUG(1, "%d", *(int*)varray_get(arr, 2));
+	DEBUG(1, "%d", *(int*)varray_get(arr, 3));
+	DEBUG(1, "%d", *(int*)varray_get(arr, 4));
+
+	exit(0);
 	DEBUG(1, " --- Testing HTable ---");
 
 	DEBUG(1, "\n - - - - - - - * htable_insert * - - - - - - - ");

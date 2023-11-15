@@ -11,20 +11,20 @@ enum ASTType {
 	AST_FLT = LANG_FLT,
 	AST_STR = LANG_STR,
 	AST_BOOL,
-
 	AST_IDENT,
+
 	AST_VAL,
 	AST_VAR,
 	AST_FUN,
 
-	AST_IDENT_LIST,
+	AST_IDENT_LIST, // ?
 	AST_EXPR_LIST,
 	AST_PAREN,
 	AST_UNARY,
 	AST_BINARY,
 	AST_ASSIGN,
 	AST_CALL,
-	AST_COUNT,
+	AST_TYPE_COUNT,
 };
 
 struct ASTUnaryNode {
@@ -33,10 +33,6 @@ struct ASTUnaryNode {
 struct ASTBinaryNode {
 	struct ASTNode* left;
 	struct ASTNode* right;
-};
-struct ASTList {
-	struct ASTNode** list;
-	int len;
 };
 
 struct ASTNode {
@@ -50,10 +46,11 @@ struct ASTNode {
 		struct ASTNode* paren;
 		struct ASTUnaryNode  unary;
 		struct ASTBinaryNode binary;
-		struct ASTList params;
+		struct VArray* params;
 	};
 };
 
+// TODO: Change arrays to VArrays
 struct AST {
 	struct ASTNode* nodes;
 	intptr nodec;
