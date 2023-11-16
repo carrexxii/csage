@@ -11,14 +11,14 @@ struct VArray {
 	byte data[];
 };
 
-inline static struct VArray* varray_new(intptr itemc, intptr elem_sz);
-inline static void* varray_set(struct VArray* arr, intptr i, void* elem);
-inline static void* varray_get(struct VArray* arr, intptr i);
-inline static int   varray_push(struct VArray* arr, void* data);
-inline static void  varray_resize(struct VArray* arr, intptr new_sz);
+inline static struct VArray* varray_new(isize itemc, isize elem_sz);
+inline static void* varray_set(struct VArray* arr, isize i, void* elem);
+inline static void* varray_get(struct VArray* arr, isize i);
+inline static isize varray_push(struct VArray* arr, void* data);
+inline static void  varray_resize(struct VArray* arr, isize new_sz);
 inline static void  varray_free(struct VArray* arr);
 
-inline static struct VArray* varray_new(intptr itemc, intptr elem_sz)
+inline static struct VArray* varray_new(isize itemc, isize elem_sz)
 {
 	if (itemc < 1) {
 		ERROR("[UTIL] Should not create VArray with < 1 elements");
@@ -34,7 +34,7 @@ inline static struct VArray* varray_new(intptr itemc, intptr elem_sz)
 	return arr;
 }
 
-inline static void* varray_set(struct VArray* arr, intptr i, void* elem)
+inline static void* varray_set(struct VArray* arr, isize i, void* elem)
 {
 	if (i < 0 || i > arr->cap*VARRAY_SIZE_MULTIPLIER || !elem) {
 		ERROR("[UTIL] Error setting value (%p) for varray (len: %ld; cap: %ld, i: %ld)",
@@ -49,19 +49,19 @@ inline static void* varray_set(struct VArray* arr, intptr i, void* elem)
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static void* varray_get(struct VArray* arr, intptr i)
+inline static void* varray_get(struct VArray* arr, isize i)
 {
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static int varray_push(struct VArray* arr, void* data)
+inline static isize varray_push(struct VArray* arr, void* data)
 {
 	varray_set(arr, arr->len, data);
 
 	return arr->len++;
 }
 
-inline static void varray_resize(struct VArray* arr, intptr new_sz)
+inline static void varray_resize(struct VArray* arr, isize new_sz)
 {
 	if (new_sz < 0)
 		arr->cap *= VARRAY_SIZE_MULTIPLIER;

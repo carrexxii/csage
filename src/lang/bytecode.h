@@ -27,23 +27,16 @@ struct Instruction {
 	int16 operand;
 }; static_assert(sizeof(struct Instruction) == 4, "struct Instruction");
 
+// TODO: Option to make copies of the ast arrays/tables
 struct ByteCode {
-	struct Instruction* instrs;
-	int instr_cap;
-	int instrc;
-
-	union LangVal* lits;
-	int lit_cap;
-	int litc;
-
-	int varc;
+	struct VArray* instrs;
+	struct VArray* lits;
+	struct VArray* vars;
 	struct HTable* lit_table;
 	struct HTable* var_table;
-	struct HTable* fun_table;
 };
 
-struct ByteCode bytecode_generate(struct AST ast);
+struct ByteCode bytecode_generate(struct AST* ast);
 void bytecode_print(struct ByteCode code);
-void bytecode_free(struct ByteCode code);
 
 #endif

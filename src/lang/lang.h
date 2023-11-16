@@ -7,7 +7,9 @@ enum LangType {
 	LANG_INT = 1,
 	LANG_FLT,
 	LANG_STR,
+	LANG_BOOL,
 	LANG_INT_LITERAL,
+	LANG_FUN,
 	LANG_TYPE_COUNT,
 };
 
@@ -18,8 +20,9 @@ union LangVal {
 }; static_assert(sizeof(union LangVal) == 8, "union LangVal");
 
 struct LangVar {
-	enum LangType type;
-	union LangVal val;
+	enum LangType  type;
+	union LangVal  val;
+	struct VArray* params;
 };
 
 #endif

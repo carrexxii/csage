@@ -1,6 +1,7 @@
+#include "util/htable.h"
+#include "util/varray.h"
 #include "lang.h"
 #include "bytecode.h"
-#include "util/htable.h"
 #include "vm.h"
 
 noreturn static void error_unknown_instr(struct Instruction instr);
@@ -10,11 +11,12 @@ struct VM vm_load(struct ByteCode code)
 	// int litc_2 = 1u << (uint)log2(code.litc - 1) + 1u;
 
 	struct VM vm;
-	vm.instrs = code.instrs;
-	vm.lits   = code.lits;
-	vm.vars   = smalloc(code.varc*sizeof(union LangVal));
+	// TODO: improve/copy
+	vm.instrs = (struct Instruction*)code.instrs->data;
+	vm.lits   = (union LangVal*)code.lits->data;
+	vm.vars   = smalloc(code.vars->len*sizeof(union LangVal));
 
-	DEBUG(4, "[LANG] Loaded bytecode into vm (%d literals, %d variables)", code.litc, code.varc);
+	DEBUG(4, "[LANG] Loaded bytecode into vm (%ld literals, %ld variables)", code.lits->len, code.vars->len);
 	return vm;
 }
 

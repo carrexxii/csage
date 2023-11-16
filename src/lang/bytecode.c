@@ -16,21 +16,19 @@ inline static void write_call(struct ByteCode* code, struct ASTNode* node);
 
 noreturn static void error_expected(const char* expect, struct ASTNode* node);
 
-struct ByteCode bytecode_generate(struct AST ast)
+struct ByteCode bytecode_generate(struct AST* ast)
 {
 	struct ByteCode code = {
-		.instr_cap = BYTECODE_DEFAULT_SIZE,
-		.lit_cap   = BYTECODE_LITERAL_COUNT,
-		.lit_table = htable_new(BYTECODE_HTABLE_SIZE),
-		.var_table = htable_new(BYTECODE_HTABLE_SIZE),
-		.fun_table = htable_new(BYTECODE_HTABLE_SIZE),
+		.instrs    = varray_new(BYTECODE_DEFAULT_SIZE, sizeof(struct Instruction)),
+		.lits      = ast->lits,
+		.vars      = ast->vars,
+		.lit_table = ast->lit_table,
+		.var_table = ast->var_table,
 	};
-	code.instrs = smalloc(code.instr_cap*sizeof(struct Instruction));
-	code.lits   = smalloc(code.lit_cap*sizeof(union LangVal));
 
 	struct ASTNode* node;
-	for (int n = 0; n < ast.nodec; n++) {
-		node = &ast.nodes[n];
+	for (int n = 0; n < ast->nodec; n++) {
+		node = &ast->nodes[n];
 		switch (node->type) {
 		case AST_VAL:
 		case AST_VAR:
@@ -55,53 +53,31 @@ struct ByteCode bytecode_generate(struct AST ast)
 
 void bytecode_print(struct ByteCode code)
 {
-	fprintf(stderr, "--- ByteCode (%d Instructions) ---\n", code.instrc);
+	fprintf(stderr, "--- ByteCode (%ld Instructions) ---\n", code.instrs->len);
 	fprintf(stderr, "Literals:\n");
-	for (int i = 0; i < code.litc; i++) {
-		fprintf(stderr, "\t[%d]: %ld (%f)", i, code.lits[i].s64, code.lits[i].flt);
+	union LangVal* lit;
+	for (int i = 0; i < code.lits->len; i++) {
+		lit = varray_get(code.lits, i);
+		fprintf(stderr, "\t[%d]: %ld (%f)", i, lit->s64, lit->flt);
 		fprintf(stderr, i % 2? "\n": "\t");
 	}
 	fprintf(stderr, "\n   ----------------------\n");
 
 	fprintf(stderr, "Variables:\n");
-	for (int i = 0; i < code.var_table->cap; i++) {
-		char* v = code.var_table->pairs[i].key.data;
-		if (!v)
-			continue;
-		fprintf(stderr, "\t[%d]: %s%s", i, v, i % 2? "\n": "\t");
+	struct LangVar* var;
+	for (int i = 0; i < code.vars->len; i++) {
+		var = varray_get(code.vars, i);
+		fprintf(stderr, "\t[%d]: %s%s", i, var->val.str->data, i % 2? "\n": "\t");
 	}
 	fprintf(stderr, "\n   ----------------------\n");
 
 	fprintf(stderr, "\n\t  [OP]\t[Operand]\n");
-	struct Instruction instr;
-	for (int i = 0; i < code.instrc; i++) {
-		instr = code.instrs[i];
+	struct Instruction* instr;
+	for (int i = 0; i < code.instrs->len; i++) {
+		instr = varray_get(code.instrs, i);
 		// fprintf(stderr, "%s\t", STRING_OF_OP(instr.op));
-		fprintf(stderr, "[%02d]\t%s\t ", i + 1, instr.op == OP_POP? "OP_POP": instr.op == OP_PUSH? "OP_PUSH": instr.op == OP_CALL? "OP_CALL": instr.op == OP_EOF? "OP_EOF": instr.op == OP_RET? "OP_RET": "<unknown op>");
-		fprintf(stderr, "%d\n", instr.operand);
-	}
-}
-
-void bytecode_free(struct ByteCode code)
-{
-	sfree(code.lits);
-	sfree(code.instrs);
-	htable_free(code.lit_table);
-	htable_free(code.var_table);
-}
-
-/* -------------------------------------------------------------------- */
-
-inline static void check_resize(struct ByteCode* code)
-{
-	if (code->instrc + 1 >= code->instr_cap) {
-		code->instr_cap *= BYTECODE_SIZE_MULTIPLIER;
-		code->instrs = srealloc(code->instrs, code->instr_cap);
-	}
-
-	if (code->litc + 1 >= code->lit_cap) {
-		code->lit_cap *= BYTECODE_SIZE_MULTIPLIER;
-		code->lits = srealloc(code->lits, code->lit_cap);
+		fprintf(stderr, "[%02d]\t%s\t ", i + 1, instr->op == OP_POP? "OP_POP": instr->op == OP_PUSH? "OP_PUSH": instr->op == OP_CALL? "OP_CALL": instr->op == OP_EOF? "OP_EOF": instr->op == OP_RET? "OP_RET": "<unknown op>");
+		fprintf(stderr, "%d\n", instr->operand);
 	}
 }
 
@@ -113,6 +89,7 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 		.op = OP_PUSH,
 	};
 
+	// TODO: Move this to the parser
 	/* Integers that fit in INT16 are added as literals, anything else is added to the literals table */
 	if (node->type == AST_INT && node->literal.s64 <= INT16_MAX && node->literal.s64 >= INT16_MIN) {
 		instr.type    = LANG_INT_LITERAL;
@@ -125,12 +102,11 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 		case AST_STR: instr.type = LANG_STR;
 			i = htable_get(code->lit_table, node->lexeme);
 			if (i == -1) {
-				i = code->litc++;
 				htable_insert(code->lit_table, node->lexeme, i);
 				switch (node->type) {
-				case AST_INT: code->lits[i].s64 = node->literal.s64;              break;
-				case AST_FLT: code->lits[i].flt = node->literal.flt;              break;
-				case AST_STR: code->lits[i].str = string_copy(node->lexeme).data; break;
+				// case AST_INT: code->lits[i].val.s64 = node->literal.s64; break;
+				// case AST_FLT: code->lits[i].val.flt = node->literal.flt; break;
+				// case AST_STR: code->lits[i].val.str = string_new_ptr(node->lexeme.data, node->lexeme.len); break;
 				default:
 					assert(false && "Unreachable");
 				}
@@ -140,7 +116,7 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 			instr.operand = i;
 			break;
 		case AST_CALL:
-			i = htable_get(code->fun_table, node->lexeme);
+			i = htable_get(code->var_table, node->lexeme);
 			if (i == -1) {
 				ERROR("[LANG] Bytecode generator: could not find identifier \"%s\" in functions table", node->lexeme.data);
 				exit(70);
@@ -160,20 +136,18 @@ inline static void pop_var(struct ByteCode* code, String var)
 		.op = OP_POP,
 	};
 
-	int i = htable_get_or_insert(code->var_table, var, code->varc);
-	if (i == code->varc)
-		code->varc++;
-	instr.operand = i;
+	// int i = htable_get_or_insert(code->var_table, var, code->vars->len);
+	// if (i == code->vars->len)
+		// code->varc++;
+	// instr.operand = i;
 
 	write_instr(code, instr);
 }
 
 /* -------------------------------------------------------------------- */
 
-inline static void write_instr(struct ByteCode* code, struct Instruction instr)
-{
-	check_resize(code);
-	code->instrs[code->instrc++] = instr;
+inline static void write_instr(struct ByteCode* code, struct Instruction instr) {
+	varray_push(code->instrs, &instr);
 }
 
 inline static void write_assign(struct ByteCode* code, struct ASTNode* node)
@@ -200,7 +174,7 @@ inline static void write_call(struct ByteCode* code, struct ASTNode* node)
 
 inline static void write_fun(struct ByteCode* code, struct ASTNode* node)
 {
-	htable_insert(code->fun_table, node->lexeme, code->instrc);
+	// htable_insert(code->var_table, node->lexeme, code->instrc);
 
 	push_expr(code, node->expr);
 

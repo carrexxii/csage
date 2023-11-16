@@ -6,20 +6,17 @@
 #include "parser.h"
 
 inline static struct ASTNode* new_node();
-inline static struct LangVar new_literal(struct Token tok);
+inline static struct LangVar new_literal(struct AST* ast, struct Token tok);
 
-inline static void match_eq(struct Tokenizer* tknz);
-inline static String match_ident(struct Tokenizer* tknz);
-inline static struct LangVar match_literal(struct Tokenizer* tknz);
+inline static void match_eq(struct AST* ast);
+inline static String match_ident(struct AST* ast);
+inline static struct LangVar match_literal(struct AST* ast);
 
-static struct ASTNode* parse_expr(struct Tokenizer* tknz);
-static struct VArray*  parse_expr_list(struct Tokenizer* tknz, isize count);
-static struct ASTNode  parse_call(struct Tokenizer* tknz);
-
-static struct ASTNode parse_assign(struct Tokenizer* tknz, enum ASTType type);
-static struct ASTNode parse_val(struct Tokenizer* tknz);
-static struct ASTNode parse_var(struct Tokenizer* tknz);
-static struct ASTNode parse_fun(struct Tokenizer* tknz);
+static struct ASTNode* parse_expr(struct AST* ast);
+static struct VArray*  parse_expr_list(struct AST* ast, isize count);
+static struct ASTNode  parse_call(struct AST* ast);
+static struct ASTNode  parse_assign(struct AST* ast, enum ASTType type);
+static struct ASTNode  parse_fun(struct AST* ast);
 
 #define check_error_internal(_tok, _type) _check_error_internal(_tok, _type, __func__)
 inline static void _check_error_internal(struct Token token, enum TokenType type, const char* fn);
@@ -30,22 +27,23 @@ struct AST parser_parse(struct Tokenizer tknz)
 {
 	intptr max_expr = 10;
 	struct AST ast = {
+		.tknz  = &tknz,
 		.nodec = 0,
 		.nodes = smalloc(max_expr*sizeof(struct ASTNode)),
 
-		.lits = varray_new(PARSER_DEFAULT_LITERAL_COUNT, sizeof(struct LangVar)),
+		.lits = varray_new(PARSER_DEFAULT_LITERAL_COUNT , sizeof(struct LangVar)),
+		.vars = varray_new(PARSER_DEFAULT_VARIABLE_COUNT, sizeof(struct LangVar)),
 		.lit_table = htable_new(PARSER_DEFAULT_LITERAL_COUNT),
 		.var_table = htable_new(PARSER_DEFAULT_VARIABLE_COUNT),
-		.fun_table = htable_new(PARSER_DEFAULT_FUNCTION_COUNT),
 	};
 
 	struct Token tok;
 	while (1) {
 		tok = lexer_next(&tknz);
 		switch (tok.type) {
-		case TOKEN_VAL: ast.nodes[ast.nodec++] = parse_assign(&tknz, AST_VAL); break;
-		case TOKEN_VAR: ast.nodes[ast.nodec++] = parse_assign(&tknz, AST_VAR); break;
-		case TOKEN_FUN: ast.nodes[ast.nodec++] = parse_fun(&tknz); break;
+		case TOKEN_VAL: ast.nodes[ast.nodec++] = parse_assign(&ast, AST_VAL); break;
+		case TOKEN_VAR: ast.nodes[ast.nodec++] = parse_assign(&ast, AST_VAR); break;
+		case TOKEN_FUN: ast.nodes[ast.nodec++] = parse_fun(&ast); break;
 		case TOKEN_EOF:
 			return ast;
 		default:
@@ -126,7 +124,7 @@ inline static struct ASTNode* new_node()
 
 /* -------------------------------------------------------------------- */
 
-inline static struct ASTNode* new_ident(struct Token tok)
+inline static struct ASTNode* new_ident(struct AST* ast, struct Token tok)
 {
 	struct ASTNode* node = new_node();
 	node->type   = AST_IDENT;
@@ -135,41 +133,68 @@ inline static struct ASTNode* new_ident(struct Token tok)
 	return node;
 }
 
-inline static struct LangVar new_literal(struct Token tok)
+inline static struct LangVar new_literal(struct AST* ast, struct Token tok)
 {
-	if (tok.type == TOKEN_NUMBER) {
-		if (string_contains(tok.lexeme, '.') != -1)
-			return (struct LangVar){
-				.type = LANG_FLT,
-				.val  = atof(tok.lexeme.data),
-			};
-		else
-			return (struct LangVar){
-				.type = LANG_INT,
-				.val  = atoi(tok.lexeme.data),
-			};
-	} else if (tok.type == TOKEN_STRING) {
+	int i = htable_get(ast->lit_table, tok.lexeme);
+	if (i != -1) {
+		struct LangVar* var = varray_get(ast->lits, i);
 		return (struct LangVar){
-			.type = LANG_STR,
-			.val  = (union LangVal){ .str = string_new_ptr(tok.lexeme.data, tok.lexeme.len) },
+			.type    = var->type,
+			.val.s64 = i,
+		};
+	}
+
+	struct LangVar lit;
+	if (tok.type == TOKEN_NUMBER) {
+		/* Floats */
+		if (string_contains(tok.lexeme, '.') != -1) {
+			lit = (struct LangVar){
+				.type    = LANG_FLT,
+				.val.flt = atof(tok.lexeme.data),
+			};
+		/* Integers */
+		} else {
+			int64 val = atoll(tok.lexeme.data);
+			lit = (struct LangVar){
+				.type    = (val <= INT16_MAX && val >= INT16_MIN)? LANG_INT_LITERAL: LANG_INT,
+				.val.s64 = val,
+			};
+		}
+	} else if (tok.type == TOKEN_STRING) {
+		lit = (struct LangVar){
+			.type    = LANG_STR,
+			.val.str = string_new_ptr(tok.lexeme.data, tok.lexeme.len),
 		};
 	} else {
 		error_expected("literal value", tok);
+	}
+
+	/* Integers that fit into INT16 are added as literals, anything else is added to the literals table */
+	if (lit.type != LANG_INT_LITERAL) {
+		i = ast->lits->len;
+		htable_insert(ast->lit_table, tok.lexeme, i);
+		varray_push(ast->lits, &lit);
+		return (struct LangVar){
+			.type = lit.type,
+			.val  = i,
+		};
+	} else {
+		return lit;
 	}
 }
 
 /* -------------------------------------------------------------------- */
 
-inline static void match_eq(struct Tokenizer* tknz)
+inline static void match_eq(struct AST* ast)
 {
-	struct Token tok = lexer_next(tknz);
+	struct Token tok = lexer_next(ast->tknz);
 	if(strncmp(tok.lexeme.data, "=", 1))
 		error_expected("an equals (=)", tok);
 }
 
-inline static String match_ident(struct Tokenizer* tknz)
+inline static String match_ident(struct AST* ast)
 {
-	struct Token tok = lexer_next(tknz);
+	struct Token tok = lexer_next(ast->tknz);
 	if (tok.type != TOKEN_IDENT)
 		error_expected("identifier", tok);
 	return tok.lexeme;
@@ -177,14 +202,14 @@ inline static String match_ident(struct Tokenizer* tknz)
 
 /* -------------------------------------------------------------------- */
 
-static struct ASTNode* parse_expr(struct Tokenizer* tknz)
+static struct ASTNode* parse_expr(struct AST* ast)
 {
-	struct Token tok = lexer_next(tknz);
+	struct Token tok = lexer_next(ast->tknz);
 	struct ASTNode* node = new_node();
 	switch (tok.type) {
 	case TOKEN_NUMBER:
 	case TOKEN_STRING:
-		struct LangVar lit = new_literal(tok);
+		struct LangVar lit = new_literal(ast, tok);
 		node->type   = (enum ASTType)lit.type;
 		node->lexeme = string_copy(tok.lexeme);
 		return node;
@@ -192,7 +217,7 @@ static struct ASTNode* parse_expr(struct Tokenizer* tknz)
 		node->type   = AST_CALL;
 		node->lexeme = string_copy(tok.lexeme);
 
-		node->params = parse_expr_list(tknz, 1); // TODO: find # of params from tables
+		node->params = parse_expr_list(ast, 1); // TODO: find # of params from tables
 		return node;
 		break;
 	default:
@@ -202,40 +227,50 @@ static struct ASTNode* parse_expr(struct Tokenizer* tknz)
 	return NULL;
 }
 
-static struct VArray* parse_expr_list(struct Tokenizer* tknz, isize count)
+static struct VArray* parse_expr_list(struct AST* ast, isize count)
 {
 	if (count <= 0)
 		ERROR("[LANG] Passed %ld to `parse_expr_list()`", count);
 
 	struct VArray* list = varray_new(count, sizeof(struct ASTNode));
 	for (int i = 0; i < count; i++) {
-		varray_push(list, parse_expr(tknz));
+		varray_push(list, parse_expr(ast));
 	}
 
 	return list;
 }
 
-static struct ASTNode parse_assign(struct Tokenizer* tknz, enum ASTType type)
+static struct ASTNode parse_assign(struct AST* ast, enum ASTType type)
 {
 	struct ASTNode node = {
 		.type   = type,
-		.lexeme = string_copy(match_ident(tknz))
+		.lexeme = string_copy(match_ident(ast))
 	};
-	match_eq(tknz);
-	node.expr = parse_expr(tknz);
+	match_eq(ast);
+	node.expr = parse_expr(ast);
 
 	return node;
 }
 
-static struct ASTNode parse_fun(struct Tokenizer* tknz)
+static struct ASTNode parse_fun(struct AST* ast)
 {
 	struct ASTNode node = {
 		.type   = AST_FUN,
-		.lexeme = string_copy(match_ident(tknz)),
+		.lexeme = string_copy(match_ident(ast)),
 	};
 	// TODO: parse paramter list here
-	match_eq(tknz);
-	node.expr = parse_expr(tknz);
+	match_eq(ast);
+	node.expr = parse_expr(ast);
+
+	if (htable_get(ast->var_table, node.lexeme) != -1)
+		ERROR("[LANG] Identifier \"%s\" already exists", node.lexeme.data);
+	htable_insert(ast->var_table, node.lexeme,
+		varray_push(ast->vars, &(struct LangVar){
+			.type   = LANG_FUN,
+			.val    = (union LangVal){ .str = &node.lexeme },
+			.params = NULL,
+		})
+	);
 
 	return node;
 }

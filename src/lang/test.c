@@ -21,17 +21,15 @@ int main(int argc, char** argv)
 	DEBUG(1, " - - - - - - - - - AST - - - - - - - - - - - - ");
 	parser_print_ast(ast);
 	DEBUG(1, " - - - - - - - - - ByteCode - - - - - - - - - - ");
-	struct ByteCode code = bytecode_generate(ast);
+	struct ByteCode code = bytecode_generate(&ast);
 	bytecode_print(code);
 	DEBUG(1, " - - - - - - - - - VM - - - - - - - - - - ");
 	struct VM vm = vm_load(code);
+	exit(0);
 	vm_run(vm);
 	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
 
 	// lang_repl();
-
-	bytecode_free(code);
-	vm_free(vm);
 }
 
 #endif /* TESTING_LANG */

@@ -11,10 +11,11 @@
 enum ASTType {
 	AST_NONE = 0,
 
-	AST_INT = LANG_INT,
-	AST_FLT = LANG_FLT,
-	AST_STR = LANG_STR,
-	AST_BOOL,
+	AST_INT         = LANG_INT,
+	AST_FLT         = LANG_FLT,
+	AST_STR         = LANG_STR,
+	AST_BOOL        = LANG_BOOL,
+	AST_INT_LITERAL = LANG_INT_LITERAL,
 	AST_IDENT,
 
 	AST_VAL,
@@ -38,10 +39,6 @@ struct ASTBinaryNode {
 	struct ASTNode* left;
 	struct ASTNode* right;
 };
-// struct ASTFunction {
-// 	struct VArray* params;
-// 	struct VArray* symbols;
-// };
 
 struct ASTNode {
 	String lexeme;
@@ -65,9 +62,9 @@ struct AST {
 	isize nodec;
 
 	struct VArray* lits;
+	struct VArray* vars;
 	struct HTable* lit_table;
 	struct HTable* var_table;
-	struct HTable* fun_table;
 
 	struct Tokenizer* tknz;
 };
@@ -76,8 +73,8 @@ struct AST parser_parse(struct Tokenizer tknz);
 void parser_print_ast(struct AST ast);
 
 inline static bool token_is_terminal(enum ASTType type) {
-	return type == AST_INT  || type == AST_FLT || type == AST_STR ||
-	       type == AST_BOOL || type == AST_IDENT;
+	return type == AST_INT  || type == AST_FLT         || type == AST_STR ||
+	       type == AST_BOOL || type == AST_INT_LITERAL || type == AST_IDENT;
 }
 
 #define STRING_OF_NODE(_e0) \
@@ -85,6 +82,7 @@ inline static bool token_is_terminal(enum ASTType type) {
 	(_e0) == AST_STR?       "AST_STR":       (_e0) == AST_BOOL?   "AST_BOOL":   (_e0) == AST_IDENT? "AST_IDENT": \
 	(_e0) == AST_EXPR_LIST? "AST_EXPR_LIST": (_e0) == AST_PAREN?  "AST_PAREN":  (_e0) == AST_UNARY? "AST_UNARY": \
 	(_e0) == AST_BINARY?    "AST_BINARY":    (_e0) == AST_ASSIGN? "AST_ASSIGN": (_e0) == AST_CALL?  "AST_CALL":  \
+	(_e0) == AST_INT_LITERAL? "AST_INT_LITERAL": \
 	"<Unknown value for enum \"ASTType\">"
 
 #endif
