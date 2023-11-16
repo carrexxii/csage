@@ -57,7 +57,7 @@ void path_new(struct Path* path)
 		current_node = *(struct PathNode*)minheap_pop(&open_nodes);
 		closed_nodes[closed_nodec++] = current_node;
 		if (!ivec3s_eq(current_node.pos, end)) {
-			for (int i = 0; i < (int)ARRAY_LEN(directions); i++) {
+			for (int i = 0; i < (int)ARRAY_SIZE(directions); i++) {
 				new_node.pos = ivec3s_add(directions[i], current_node.pos);
 
 				/* Skip if the cell is either map-blocked or already in closed_nodes */

@@ -1,13 +1,29 @@
 #include "string.h"
 
-String string_new(char* src, intptr len)
+String string_new(char* src, isize len)
 {
 	String str = {
 		.data = smalloc(len + 1),
-		.len  = len > 0? len: (intptr)strlen(src),
+		.len  = len > 0? len: strlen(src),
 	};
 	memcpy(str.data, src, str.len);
 	str.data[str.len] = '\0';
+
+	return str;
+}
+
+String* string_new_ptr(char* src, isize len)
+{
+	// TODO:
+	// String* str = smalloc(sizeof(String) + len + 1);
+	// string_new(src, len, str->data);
+	// return str;
+
+	String* str = smalloc(sizeof(String) + len + 1);
+	str->data = (void*)(str + 1);
+	str->len = len > 0? len: strlen(src);
+	memcpy(str->data, src, str->len);
+	str->data[str->len] = '\0';
 
 	return str;
 }

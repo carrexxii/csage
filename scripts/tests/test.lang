@@ -1,14 +1,5 @@
-(* c1 *)
-val x = 1.2
-val w = (1)
-var y = (2) (* c2 *)
-fun f = 3(* c3 *)
-fun g = (3)(* c3 *)
-var a=1+2(*comment*)
+val x = 1
+fun f = 3
 
-(* c4 *)
-  (* c5 *)
 fun main =
 	print "Test"
-
-(* c6 *)

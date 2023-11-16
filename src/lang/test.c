@@ -12,28 +12,26 @@ int main(int argc, char** argv)
 	// for (int i = 0; i < tokens->tokenc; i++)
 		// print_token(tokens->tokens[i]);
 	struct Tokenizer tknz = lexer_load_file("tests/test.lang");
-	struct Token tok;
-	while ((tok = lexer_next(&tknz)).type != TOKEN_EOF)
-		print_token(tok);
-	print_token(tok);
-	exit(0);
+	// struct Token tok;
+	// while ((tok = lexer_next(&tknz)).type != TOKEN_EOF)
+	// 	print_token(tok);
+	// print_token(tok);
 	DEBUG(1, " - - - - - - - - - Parser - - - - - - - - - - - ");
-	// struct AST ast = parser_parse(tokens);
+	struct AST ast = parser_parse(tknz);
 	DEBUG(1, " - - - - - - - - - AST - - - - - - - - - - - - ");
-	// parser_print_ast(ast);
+	parser_print_ast(ast);
 	DEBUG(1, " - - - - - - - - - ByteCode - - - - - - - - - - ");
-	// struct ByteCode code = bytecode_generate(ast);
-	// bytecode_print(code);
+	struct ByteCode code = bytecode_generate(ast);
+	bytecode_print(code);
 	DEBUG(1, " - - - - - - - - - VM - - - - - - - - - - ");
-	// struct VM vm = vm_load(code);
-	// vm_run(vm);
+	struct VM vm = vm_load(code);
+	vm_run(vm);
 	DEBUG(1, " - - - - - - - - - - - - - - - - - - - ");
 
 	// lang_repl();
 
-	// bytecode_free(code);
-	// vm_free(vm);
-	// sfree(tokens);
+	bytecode_free(code);
+	vm_free(vm);
 }
 
 #endif /* TESTING_LANG */

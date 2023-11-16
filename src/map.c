@@ -71,7 +71,7 @@ void map_init(VkRenderPass render_pass)
 		.fshader    = create_shader(SHADER_DIR "map.frag"),
 		.vertbindc  = 1,
 		.vertbinds  = vert_binds,
-		.vertattrc  = ARRAY_LEN(vertex_attrs),
+		.vertattrc  = ARRAY_SIZE(vertex_attrs),
 		.vertattrs  = vertex_attrs,
 		.uboc       = 2,
 		.ubos       = ubo_bufs,

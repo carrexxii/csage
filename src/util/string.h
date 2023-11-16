@@ -3,8 +3,8 @@
 
 // TODO: Add an allocator parameter for creating strings
 typedef struct {
-	intptr len;
-	char*  data;
+	isize len;
+	char* data;
 } String;
 
 #define STRING(x) (String){ .data = x, .len = sizeof(x) }
@@ -18,10 +18,11 @@ typedef struct { char data[32]; } String32;
 typedef struct { char data[64]; } String64;
 
 // TODO: Add allocator parameters
-String string_new(char* src, intptr len);
-String string_new_split(char* src, char sep, int index);
-String string_copy(String src);
-int    string_contains(String str, char c);
+String  string_new(char* src, isize len);
+String* string_new_ptr(char* src, isize len);
+String  string_new_split(char* src, char sep, int index);
+String  string_copy(String src);
+int     string_contains(String str, char c);
 
 bool starts_with(char* restrict str, char* restrict start);
 void file_extension(char* restrict file, char* restrict name, char* restrict ext);

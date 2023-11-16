@@ -92,6 +92,10 @@ enum Direction {
 };
 
 #define EXPR(x) ({ x })
+#define LAMBDA(type, body) EXPR( \
+		type _ body              \
+		_;                       \
+	)
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
@@ -99,7 +103,7 @@ enum Direction {
 #endif
 #define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
 #define CLAMP(a, b, c)   do { ((a) = (a) < (b)? (b): (a) > (c)? (c): (a)); } while (0)
-#define ARRAY_LEN(a)     (sizeof(a) / sizeof(a[0]))
+#define ARRAY_SIZE(a)    (sizeof(a) / sizeof(a[0]))
 #define DIV_CEIL(a, b)   (((a) + (b) - 1) / (b))
 #define AVERAGE(a, b)    (((a) + (b)) / 2)
 

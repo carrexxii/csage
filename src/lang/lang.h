@@ -12,12 +12,12 @@ enum LangType {
 };
 
 union LangVal {
-	int64  s64;
-	double flt;
-	char*  str;
+	int64   s64;
+	double  flt;
+	String* str;
 }; static_assert(sizeof(union LangVal) == 8, "union LangVal");
 
-struct LangValTagged {
+struct LangVar {
 	enum LangType type;
 	union LangVal val;
 };

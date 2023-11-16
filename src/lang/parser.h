@@ -62,17 +62,17 @@ struct ASTNode {
 // TODO: Change arrays to VArrays
 struct AST {
 	struct ASTNode* nodes;
-	intptr nodec;
+	isize nodec;
 
 	struct VArray* lits;
 	struct HTable* lit_table;
 	struct HTable* var_table;
 	struct HTable* fun_table;
 
-	struct Tokenizer* tokens;
+	struct Tokenizer* tknz;
 };
 
-struct AST parser_parse(struct Tokenizer* tknz);
+struct AST parser_parse(struct Tokenizer tknz);
 void parser_print_ast(struct AST ast);
 
 inline static bool token_is_terminal(enum ASTType type) {

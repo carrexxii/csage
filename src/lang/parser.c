@@ -6,55 +6,54 @@
 #include "parser.h"
 
 inline static struct ASTNode* new_node();
-inline static struct ASTNode* new_literal(struct Token** token);
-inline static struct ASTNode* new_ident(struct Token** token);
+inline static struct LangVar new_literal(struct Token tok);
 
-inline static void   match_eq(struct Token** token);
-inline static String match_ident(struct Token** token);
-inline static union LangVal match_literal(struct Token** token, enum ASTType* type);
+inline static void match_eq(struct Tokenizer* tknz);
+inline static String match_ident(struct Tokenizer* tknz);
+inline static struct LangVar match_literal(struct Tokenizer* tknz);
 
-static struct ASTNode* parse_expr(struct Token** token);
-static struct VArray*  parse_expr_list(struct Token** token, int count);
-static struct ASTNode  parse_assign(struct Token** token);
-static struct ASTNode  parse_call(struct Token** token);
+static struct ASTNode* parse_expr(struct Tokenizer* tknz);
+static struct VArray*  parse_expr_list(struct Tokenizer* tknz, isize count);
+static struct ASTNode  parse_call(struct Tokenizer* tknz);
 
-static struct ASTNode parse_val(struct Token** token);
-static struct ASTNode parse_var(struct Token** token);
-static struct ASTNode parse_fun(struct Token** token);
+static struct ASTNode parse_assign(struct Tokenizer* tknz, enum ASTType type);
+static struct ASTNode parse_val(struct Tokenizer* tknz);
+static struct ASTNode parse_var(struct Tokenizer* tknz);
+static struct ASTNode parse_fun(struct Tokenizer* tknz);
 
 #define check_error_internal(_tok, _type) _check_error_internal(_tok, _type, __func__)
-inline static void _check_error_internal(struct Token* token, enum TokenType type, const char* fn);
-noreturn static void error_unexpected(const char* type, struct Token* token);
-noreturn static void error_expected(const char* expect, struct Token* token);
+inline static void _check_error_internal(struct Token token, enum TokenType type, const char* fn);
+noreturn static void error_unexpected(const char* type, struct Token token);
+noreturn static void error_expected(const char* expect, struct Token token);
 
-struct AST parser_parse(struct Tokenizer* tknz)
+struct AST parser_parse(struct Tokenizer tknz)
 {
 	intptr max_expr = 10;
 	struct AST ast = {
 		.nodec = 0,
 		.nodes = smalloc(max_expr*sizeof(struct ASTNode)),
 
-		.lits = varray_new(PARSER_DEFAULT_LITERAL_COUNT, sizeof(struct LangValTagged)),
+		.lits = varray_new(PARSER_DEFAULT_LITERAL_COUNT, sizeof(struct LangVar)),
 		.lit_table = htable_new(PARSER_DEFAULT_LITERAL_COUNT),
 		.var_table = htable_new(PARSER_DEFAULT_VARIABLE_COUNT),
 		.fun_table = htable_new(PARSER_DEFAULT_FUNCTION_COUNT),
 	};
 
-	struct Token* token = tokens->tokens;
-	do {
-		switch (token->type) {
-		case TOKEN_VAL: ast.nodes[ast.nodec++] = parse_val(&token); break;
-		case TOKEN_VAR: ast.nodes[ast.nodec++] = parse_var(&token); break;
-		case TOKEN_FUN: ast.nodes[ast.nodec++] = parse_fun(&token); break;
+	struct Token tok;
+	while (1) {
+		tok = lexer_next(&tknz);
+		switch (tok.type) {
+		case TOKEN_VAL: ast.nodes[ast.nodec++] = parse_assign(&tknz, AST_VAL); break;
+		case TOKEN_VAR: ast.nodes[ast.nodec++] = parse_assign(&tknz, AST_VAR); break;
+		case TOKEN_FUN: ast.nodes[ast.nodec++] = parse_fun(&tknz); break;
 		case TOKEN_EOF:
 			return ast;
 		default:
-			ERROR("[LANG] Unhandled token: [%s]:%d:%d", STRING_OF_TOKEN(token->type), token->line, token->col);
+			ERROR("[LANG] Unhandled token: [%s]:%d:%d", STRING_OF_TOKEN(tok.type), tok.line, tok.col);
 			exit(70);
 		}
-	} while (token < tokens->tokens + tokens->tokenc);
+	}
 
-	ERROR("Should have returned from TOKEN_EOF, instead have: %s (%d)", STRING_OF_TOKEN(token->type), token->type);
 	return ast;
 }
 
@@ -127,61 +126,33 @@ inline static struct ASTNode* new_node()
 
 /* -------------------------------------------------------------------- */
 
-inline static struct ASTNode* new_literal(struct Token** token)
-{
-	struct ASTNode* node = new_node();
-	node->lexeme  = string_copy((*token)->lexeme);
-	node->literal = match_literal(token, &node->type);
-
-
-
-	// (*token)++; token is consumed by match_literal()
-	return node;
-}
-
-inline static struct ASTNode* new_ident(struct Token** token)
+inline static struct ASTNode* new_ident(struct Token tok)
 {
 	struct ASTNode* node = new_node();
 	node->type   = AST_IDENT;
-	node->lexeme = string_copy((*token)->lexeme);
-	
-	(*token)++;
+	node->lexeme = string_copy(tok.lexeme);
+
 	return node;
 }
 
-/* -------------------------------------------------------------------- */
-
-inline static void match_eq(struct Token** token)
+inline static struct LangVar new_literal(struct Token tok)
 {
-	if(strncmp((*token)->lexeme.data, "=", 1))
-		error_expected("an equals (=)", *token);
-	(*token)++;
-}
-
-inline static String match_ident(struct Token** token)
-{
-	if ((*token)->type != TOKEN_IDENT)
-		error_expected("identifier", *token);
-	return ((*token)++)->lexeme;
-}
-
-inline static union LangVal match_literal(struct Token** token, enum ASTType* type)
-{
-	struct Token* tok = *token;
-	if (tok->type == TOKEN_NUMBER) {
-		if (string_contains(tok->lexeme, '.') != -1) {
-			*type = AST_FLT;
-			(*token)++;
-			return (union LangVal){ .flt = atof(tok->lexeme.data) };
-		} else {
-			*type = AST_INT;
-			(*token)++;
-			return (union LangVal){ .s64 = atoi(tok->lexeme.data) };
-		}
-	} else if (tok->type == TOKEN_STRING) {
-		*type = AST_STR;
-		(*token)++;
-		return (union LangVal){ .str = tok->lexeme.data };
+	if (tok.type == TOKEN_NUMBER) {
+		if (string_contains(tok.lexeme, '.') != -1)
+			return (struct LangVar){
+				.type = LANG_FLT,
+				.val  = atof(tok.lexeme.data),
+			};
+		else
+			return (struct LangVar){
+				.type = LANG_INT,
+				.val  = atoi(tok.lexeme.data),
+			};
+	} else if (tok.type == TOKEN_STRING) {
+		return (struct LangVar){
+			.type = LANG_STR,
+			.val  = (union LangVal){ .str = string_new_ptr(tok.lexeme.data, tok.lexeme.len) },
+		};
 	} else {
 		error_expected("literal value", tok);
 	}
@@ -189,115 +160,103 @@ inline static union LangVal match_literal(struct Token** token, enum ASTType* ty
 
 /* -------------------------------------------------------------------- */
 
-static struct ASTNode* parse_expr(struct Token** token)
+inline static void match_eq(struct Tokenizer* tknz)
 {
-	struct ASTNode* node;
-	switch ((*token)->type) {
+	struct Token tok = lexer_next(tknz);
+	if(strncmp(tok.lexeme.data, "=", 1))
+		error_expected("an equals (=)", tok);
+}
+
+inline static String match_ident(struct Tokenizer* tknz)
+{
+	struct Token tok = lexer_next(tknz);
+	if (tok.type != TOKEN_IDENT)
+		error_expected("identifier", tok);
+	return tok.lexeme;
+}
+
+/* -------------------------------------------------------------------- */
+
+static struct ASTNode* parse_expr(struct Tokenizer* tknz)
+{
+	struct Token tok = lexer_next(tknz);
+	struct ASTNode* node = new_node();
+	switch (tok.type) {
 	case TOKEN_NUMBER:
 	case TOKEN_STRING:
-		return new_literal(token);
-		break;
+		struct LangVar lit = new_literal(tok);
+		node->type   = (enum ASTType)lit.type;
+		node->lexeme = string_copy(tok.lexeme);
+		return node;
 	case TOKEN_IDENT:
-		node = new_node();
 		node->type   = AST_CALL;
-		node->lexeme = string_copy((*token)->lexeme);
-		(*token)++;
+		node->lexeme = string_copy(tok.lexeme);
 
-		node->params = parse_expr_list(token, 1);
+		node->params = parse_expr_list(tknz, 1); // TODO: find # of params from tables
 		return node;
 		break;
 	default:
-		error_expected("expression", (*token));
+		error_expected("expression", tok);
 	}
 
 	return NULL;
 }
 
-static struct VArray* parse_expr_list(struct Token** token, int count)
+static struct VArray* parse_expr_list(struct Tokenizer* tknz, isize count)
 {
+	if (count <= 0)
+		ERROR("[LANG] Passed %ld to `parse_expr_list()`", count);
+
 	struct VArray* list = varray_new(count, sizeof(struct ASTNode));
 	for (int i = 0; i < count; i++) {
-		if ((*token)->type > TOKEN_VALUE_START && (*token)->type < TOKEN_KEYWORD_END) {
-			varray_push(list, parse_expr(token));
-		} else {
-			error_expected("value for function", *token);
-		}
+		varray_push(list, parse_expr(tknz));
 	}
 
 	return list;
 }
 
-static struct ASTNode parse_val(struct Token** token)
+static struct ASTNode parse_assign(struct Tokenizer* tknz, enum ASTType type)
 {
-	struct Token* tok = *token;
-	check_error_internal(tok, TOKEN_VAL);
-	tok++;
-
 	struct ASTNode node = {
-		.type   = AST_VAL,
-		.lexeme = string_copy(match_ident(&tok))
+		.type   = type,
+		.lexeme = string_copy(match_ident(tknz))
 	};
-	match_eq(&tok);
-	node.expr = parse_expr(&tok);
+	match_eq(tknz);
+	node.expr = parse_expr(tknz);
 
-	*token = tok;
 	return node;
 }
 
-static struct ASTNode parse_var(struct Token** token)
+static struct ASTNode parse_fun(struct Tokenizer* tknz)
 {
-	struct Token* tok = *token;
-	check_error_internal(tok, TOKEN_VAR);
-	tok++;
-
-	struct ASTNode node = {
-		.type   = AST_VAR,
-		.lexeme = string_copy(match_ident(&tok))
-	};
-	match_eq(&tok);
-	node.expr = parse_expr(&tok);
-
-	*token = tok;
-	return node;
-}
-
-static struct ASTNode parse_fun(struct Token** token)
-{
-	check_error_internal(*token, TOKEN_FUN);
-	(*token)++;
-
 	struct ASTNode node = {
 		.type   = AST_FUN,
-		.lexeme = string_copy(match_ident(token)),
+		.lexeme = string_copy(match_ident(tknz)),
 	};
 	// TODO: parse paramter list here
-	match_eq(token);
-	node.expr = parse_expr(token);
+	match_eq(tknz);
+	node.expr = parse_expr(tknz);
 
 	return node;
 }
 
 /* -------------------------------------------------------------------- */
 
-inline static void _check_error_internal(struct Token* token, enum TokenType type, const char* fn)
+inline static void _check_error_internal(struct Token token, enum TokenType type, const char* fn)
 {
-	if (token->type != type) {
+	if (token.type != type) {
 		ERROR("[LANG] %s should not be called with any other token than %s = %d (got: %s = %d)",
-		      fn, STRING_OF_TOKEN(type), type, STRING_OF_TOKEN(token->type), token->type);
+		      fn, STRING_OF_TOKEN(type), type, STRING_OF_TOKEN(token.type), token.type);
 		exit(70);
 	}
 }
 
-noreturn static void error_unexpected(const char* type, struct Token* token)
-{
-	ERROR("[LANG] Unexpected %s: \"%s\" on line %d:%d",
-	      type, token->lexeme.data, token->line, token->col);
+noreturn static void error_unexpected(const char* type, struct Token token) {
+	ERROR("[LANG] Unexpected %s: \"%s\" on line %d:%d", type, token.lexeme.data, token.line, token.col);
 	exit(1);
 }
 
-noreturn static void error_expected(const char* expect, struct Token* token)
-{
-	ERROR("[LANG] Expected %s but got: \"%s\" on line %d:%d",
-	      expect, token->lexeme.data, token->line, token->col);
+noreturn static void error_expected(const char* expect, struct Token token) {
+	ERROR("[LANG] Expected %s but got: \"%s\" on line %d:%d", expect, token.lexeme.data, token.line, token.col);
 	exit(1);
 }

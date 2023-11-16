@@ -89,11 +89,11 @@ void models_init(VkRenderPass render_pass)
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "model.vert"),
 		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc  = ARRAY_LEN(vertex_binds),
+		.vertbindc  = ARRAY_SIZE(vertex_binds),
 		.vertbinds  = vertex_binds,
-		.vertattrc  = ARRAY_LEN(vertex_attrs),
+		.vertattrc  = ARRAY_SIZE(vertex_attrs),
 		.vertattrs  = vertex_attrs,
-		.uboc       = ARRAY_LEN(ubo_bufs),
+		.uboc       = ARRAY_SIZE(ubo_bufs),
 		.ubos       = ubo_bufs,
 		.sbo        = &sbo_buf,
 		.sbosz      = MAX_MODELS*sizeof(mat4),
@@ -105,9 +105,9 @@ void models_init(VkRenderPass render_pass)
 	pipeln_static = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "model_static.vert"),
 		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc  = ARRAY_LEN(vertex_binds) - 2,
+		.vertbindc  = ARRAY_SIZE(vertex_binds) - 2,
 		.vertbinds  = vertex_binds,
-		.vertattrc  = ARRAY_LEN(vertex_attrs) - 2,
+		.vertattrc  = ARRAY_SIZE(vertex_attrs) - 2,
 		.vertattrs  = vertex_attrs,
 		.uboc       = 2,
 		.ubos       = ubo_bufs,
@@ -214,7 +214,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			push_constants.timer     = model->timer/3.0;
 			// DEBUG(1, "[%d Animated] Drawing %d vertices", i, models[i].meshes[m].vertc);
 
-			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_LEN(vertex_attrs), (VkBuffer[]){ mesh->vbos[0].buf,
+			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs), (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
 			                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
@@ -236,7 +236,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			push_constants.materiali = mesh->materiali;
 			// DEBUG(1, "[%d Static] Drawing %d vertices", i, models[i].meshes[m].indc);
 
-			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_LEN(vertex_attrs) - 2, (VkBuffer[]){ mesh->vbos[0].buf,
+			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs) - 2, (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, sizeof(VkBuffer), sizeof(VkBuffer[2]) });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.pushstages, 0, pipeln_static.pushsz, &push_constants);
@@ -249,7 +249,7 @@ void model_free(ID model_id)
 {
 	struct Model* model = &models[model_id];
 	for (int i = 0; i < model->meshc; i++) {
-		for (int j = 0; j < (int)ARRAY_LEN(model->meshes[i].vbos); j++)
+		for (int j = 0; j < (int)ARRAY_SIZE(model->meshes[i].vbos); j++)
 			vbo_free(&model->meshes[i].vbos[j]);
 		ibo_free(&model->meshes[i].ibo);
 	}
