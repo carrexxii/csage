@@ -1,5 +1,6 @@
 val x = 1
+val y = 100000
 fun f = 3
 
 fun main =
-	print "Test"
+	123 (* print "Test" *)

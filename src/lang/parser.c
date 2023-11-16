@@ -1,7 +1,7 @@
-#include "lang/lang.h"
 #include "util/string.h"
 #include "util/varray.h"
 #include "util/htable.h"
+#include "lang.h"
 #include "lexer.h"
 #include "parser.h"
 
@@ -80,12 +80,8 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 		print_ast_rec(node->paren, spacec + 1);
 		break;
 	case AST_CALL:
-		for (int i = 0; i < node->params->len; i++) {
-			// DEBUG_VALUE(((struct ASTNode*)varray_get(node->params, i))->expr);
-			// DEBUG_VALUE(varray_get(node->params, i));
-			// DEBUG_VALUE((struct ASTNode*)varray_get(node->params, i));
+		for (int i = 0; i < node->params->len; i++)
 			print_ast_rec(varray_get(node->params, i), spacec + 1);
-		}
 		break;
 	case AST_UNARY:
 		print_ast_rec(node->unary.node, spacec + 1);
@@ -97,16 +93,31 @@ static void print_ast_rec(struct ASTNode* node, int spacec)
 
 void parser_print_ast(struct AST ast)
 {
-	struct HPair* pair;
+	struct LangVar* var;
 	printf("Literals:\n");
-	for (int i = 0; i < ast.lit_table->cap; i++) {
-		pair = &ast.lit_table->pairs[i];
-		if (pair->key.data)
-			printf("\t%s: %ld\n", pair->key.data, pair->val);
+	for (int i = 0; i < ast.lits->len; i++) {
+		var = varray_get(ast.lits, i);
+		switch (var->type) {
+		case LANG_INT: printf("\t[%d]: %ld" , i, var->val.s64);       break;
+		case LANG_FLT: printf("\t[%d]: %.3f", i, var->val.flt);       break;
+		case LANG_STR: printf("\t[%d]: %s"  , i, var->val.str->data); break;
+		default:
+			ERROR("[LANG] Literal should not have type %s (%d)", STRING_OF_TYPE(var->type), var->type);
+		}
+		printf("%s", (i + 1) % 4? "\t": "\n");
 	}
 
-	printf("Variables:\n");
-	printf("Functions:\n");
+	printf("\nVariables:\n");
+	struct HPair pair;
+	int lnc = 1;
+	for (int i = 0; i < ast.var_table->cap; i++) {
+		pair = ast.var_table->pairs[i];
+		if (pair.key.data) {
+			var = varray_get(ast.vars, pair.val);
+			printf("\t[%d]: %s ([%s (%d)]: %ld)", i, pair.key.data, STRING_OF_TYPE(var->type), var->type, var->val.s64);
+			printf("%s", lnc++ % 4? "\t": "\n");
+		}
+	}
 
 	struct ASTNode* node;
 	for (int n = 0; n < ast.nodec; n++) {
@@ -210,13 +221,13 @@ static struct ASTNode* parse_expr(struct AST* ast)
 	case TOKEN_NUMBER:
 	case TOKEN_STRING:
 		struct LangVar lit = new_literal(ast, tok);
-		node->type   = (enum ASTType)lit.type;
-		node->lexeme = string_copy(tok.lexeme);
+		node->type    = (enum ASTType)lit.type;
+		node->literal = lit.val;
+		node->lexeme  = string_copy(tok.lexeme);
 		return node;
 	case TOKEN_IDENT:
 		node->type   = AST_CALL;
 		node->lexeme = string_copy(tok.lexeme);
-
 		node->params = parse_expr_list(ast, 1); // TODO: find # of params from tables
 		return node;
 		break;
@@ -249,6 +260,16 @@ static struct ASTNode parse_assign(struct AST* ast, enum ASTType type)
 	match_eq(ast);
 	node.expr = parse_expr(ast);
 
+	if (htable_get(ast->var_table, node.lexeme) != -1)
+		ERROR("[LANG] Identifier \"%s\" already exists", node.lexeme.data);
+	htable_insert(ast->var_table, node.lexeme,
+		varray_push(ast->vars, &(struct LangVar){
+			.type   = LANG_VAR,
+			.val    = ast->vars->len,
+			.params = NULL,
+		})
+	);
+
 	return node;
 }
 
@@ -267,7 +288,7 @@ static struct ASTNode parse_fun(struct AST* ast)
 	htable_insert(ast->var_table, node.lexeme,
 		varray_push(ast->vars, &(struct LangVar){
 			.type   = LANG_FUN,
-			.val    = (union LangVal){ .str = &node.lexeme },
+			.val    = ast->vars->len,
 			.params = NULL,
 		})
 	);

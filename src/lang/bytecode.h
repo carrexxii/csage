@@ -39,4 +39,10 @@ struct ByteCode {
 struct ByteCode bytecode_generate(struct AST* ast);
 void bytecode_print(struct ByteCode code);
 
+#define STRING_OF_OP(_e0) \
+	(_e0) == OP_NOOP? "OP_NOOP": (_e0) == OP_PUSH? "OP_PUSH": \
+	(_e0) == OP_POP?  "OP_POP":  (_e0) == OP_CALL? "OP_CALL": \
+	(_e0) == OP_RET?  "OP_RET":  (_e0) == OP_EOF?  "OP_EOF":  \
+	"<Unknown value for enum \"ByteCodeOp\">"
+
 #endif
