@@ -3,6 +3,9 @@
 
 #include "util/string.h"
 
+#define LEXER_MAX_STRING_LEN 1024
+#define LEXER_MAX_IDENT_LEN  64
+
 enum TokenType {
 	TOKEN_NONE,
 	TOKEN_EOF,
@@ -34,21 +37,16 @@ struct Token {
 	int col;
 };
 
-struct TokenList {
-	intptr tokenc;
-	struct Token tokens[];
-};
-
 struct Tokenizer {
 	FILE*  file;
 	String file_name;
-	// char*  cursor;
+	int line;
+	int col;
 };
 
 struct Tokenizer lexer_load_file(char* text);
+struct Token lexer_next(struct Tokenizer* tokenizer);
 
-struct TokenList* lexer_tokenize(char* restrict text);
-struct TokenList* lexer_load(char* restrict fname);
 void print_token(struct Token token);
 
 #define STRING_OF_TOKEN(_e0) \

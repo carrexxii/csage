@@ -27,7 +27,7 @@ inline static void _check_error_internal(struct Token* token, enum TokenType typ
 noreturn static void error_unexpected(const char* type, struct Token* token);
 noreturn static void error_expected(const char* expect, struct Token* token);
 
-struct AST parser_parse(struct TokenList* tokens)
+struct AST parser_parse(struct Tokenizer* tknz)
 {
 	intptr max_expr = 10;
 	struct AST ast = {
@@ -133,7 +133,7 @@ inline static struct ASTNode* new_literal(struct Token** token)
 	node->lexeme  = string_copy((*token)->lexeme);
 	node->literal = match_literal(token, &node->type);
 
-	
+
 
 	// (*token)++; token is consumed by match_literal()
 	return node;

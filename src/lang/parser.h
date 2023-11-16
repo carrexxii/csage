@@ -72,7 +72,7 @@ struct AST {
 	struct Tokenizer* tokens;
 };
 
-struct AST parser_parse(struct TokenList* tokens);
+struct AST parser_parse(struct Tokenizer* tknz);
 void parser_print_ast(struct AST ast);
 
 inline static bool token_is_terminal(enum ASTType type) {

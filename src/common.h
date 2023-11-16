@@ -16,6 +16,7 @@
 #include <math.h>
 #include <fenv.h>
 #include <ctype.h>
+#include <errno.h>
 
 #if defined __STDC_NO_ATOMICS__ || defined __STDC_NO_THREADS__
 	#error "Both C11 threads and atomics are required"
@@ -90,6 +91,8 @@ enum Direction {
 	DIRECTION_BACKWARDS = 0x20,
 };
 
+#define EXPR(x) ({ x })
+
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
 #define MAX(a, b) ((a) > (b)? (a): (b))
@@ -155,17 +158,17 @@ enum Direction {
 				fprintf(stderr, "\n" TERM_NORMAL);                       \
 			}                                                             \
 		} while (0)
-#define DEBUG_VALUE(x) do {                                                            \
-			fprintf(stderr, _Generic((x),                                               \
-			         char: "Char: %c\n",                   signed char: "SChar: %hhd\n", \
-			        _Bool: "Bool: %d\n",                 unsigned char: "UChar: %hhu\n",  \
-			    short int: "Short: %hd\n",          unsigned short int: "UShort: %hu\n",   \
-			          int: "Int: %d\n",                   unsigned int: "UInt: %u\n",       \
-			     long int: "Long: %ld\n",            unsigned long int: "ULong: %lu\n",      \
-			long long int: "Long Long: %lld\n", unsigned long long int: "ULong Long: %llu\n", \
-			        float: "Float: %g\n",                       double: "Double: %g\n",        \
-			  long double: "Long Double: %lg\n",                 char*: "Char*: %s\n",          \
-			  default: "<unknown or pointer type>%p\n"), (x));                                   \
+#define DEBUG_VALUE(x) do {                                                                \
+			fprintf(stderr, _Generic((x),                                                   \
+			         char: "Char: \"%c\"\n",               signed char: "SChar: \"%hhd\"\n", \
+			        _Bool: "Bool: %d\n",                 unsigned char: "UChar: \"%hhu\"\n",  \
+			    short int: "Short: %hd\n",          unsigned short int: "UShort: %hu\n",       \
+			          int: "Int: %d\n",                   unsigned int: "UInt: %u\n",           \
+			     long int: "Long: %ld\n",            unsigned long int: "ULong: %lu\n",          \
+			long long int: "Long Long: %lld\n", unsigned long long int: "ULong Long: %llu\n",     \
+			        float: "Float: %g\n",                       double: "Double: %g\n",            \
+			  long double: "Long Double: %lg\n",                 char*: "Char*: \"%s\"\n",          \
+			  default: "<unknown or pointer type>%p\n"), (x));                                       \
 		} while (0)
 #define ERROR(...) do {                                   \
 			fprintf(stderr, TERM_RED);                     \

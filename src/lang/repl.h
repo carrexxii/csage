@@ -8,7 +8,7 @@
 inline static void lang_repl() {
 	char line[REPL_BUFFER_SIZE];
 	while (fgets(line, REPL_BUFFER_SIZE, stdin) && *line != '\n') {
-		lexer_tokenize(line);
+		// lexer_tokenize(line);
 	}
 }
 

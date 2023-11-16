@@ -2,112 +2,74 @@
 #include "util/string.h"
 #include "lexer.h"
 
+#define NEXT() EXPR(         \
+		tknz->col++;          \
+		c = fgetc(tknz->file); \
+	)
+#define BACK(c) EXPR(        \
+		tknz->col--;          \
+		ungetc(c, tknz->file); \
+	)
+#define TOKEN(t, l, len) (struct Token){ \
+		.type   = t,                     \
+		.lexeme = l,                     \
+		.line   = tknz->line,            \
+		.col    = tknz->col - len        \
+	}
 #define LEXER_BUFFER_SIZE      1024
 #define LEXER_TOKEN_MULTIPLIER 2
 #define LEXER_SYMBOLS          "-=_+[]{};':\"\\|,.<>/?`~!@#$%^&*()"
 
 noreturn static void error_unhandled(char c);
 
-inline static int read_number(char* text);
-inline static int read_string(char* text);
-inline static int read_ident(char* text);
-inline static int read_keyword(char* text, enum TokenType* type);
-inline static int read_symbol(char* text);
+inline static char skip_whitespace(struct Tokenizer* tknz, char c);
+inline static char skip_comment(struct Tokenizer* tknz, char c);
 
-struct Tokenizer lexer_load_file(char* path)
-{
-	// struct Tokenizer tokenizer;
-	// tokenizer.file = file_open(path);
-	// tokenizer.file_name = string_new_split(path, '/', -1);
-	// tokenizer.cursor = NULL;
-}
+inline static struct Token read_number(struct Tokenizer* tknz, char c);
+inline static struct Token read_string(struct Tokenizer* tknz, char c);
+inline static struct Token read_ident(struct Tokenizer* tknz, char c);
+inline static struct Token read_keyword(struct Tokenizer* tknz, char c);
+inline static struct Token read_symbol(struct Tokenizer* tknz, char c);
+inline static bool can_match(char c1, char c2);
 
-struct TokenList* lexer_tokenize(char* text)
-{
-	intptr max_tokens = 1024;
-	struct TokenList* tokens = smalloc(sizeof(struct TokenList) + max_tokens*sizeof(struct Token));
-	tokens->tokenc = 0;
-
-	struct Token* token;
-	char* line_start = text;
-	int line = 1;
-	int len;
-	char c;
-	do {
-		if (tokens->tokenc >= max_tokens) {
-			max_tokens *= LEXER_TOKEN_MULTIPLIER;
-			tokens = srealloc(tokens, sizeof(struct TokenList) + max_tokens*sizeof(struct Token));
-		}
-
-		c = *text;
-		len = 1;
-		if (isspace(c)) {
-			text++;
-			if (c == '\n') {
-				line++;
-				line_start = text;
-			}
-			continue;
-		}
-
-		token = &tokens->tokens[tokens->tokenc++];
-		if (c == '(' &&  *(text + 1) == '*') {
-			text += 2;
-			while (*text != '*' &&  *(text + 1) != ')')
-				text++;
-			text += 2;
-			len = 0;
-			tokens->tokenc--;
-		} else if (isdigit(c)) {
-			len = read_number(text);
-			token->type = TOKEN_NUMBER;
-		} else if (c == '"') {
-			len = read_string(text);
-			token->type = TOKEN_STRING;
-		} else if (isalpha(c) || c == '_') {
-			len = read_keyword(text, &token->type);
-			if (token->type == TOKEN_NONE) {
-				len = read_ident(text);
-				token->type = TOKEN_IDENT;
-			}
-		} else if (isgraph(c)) {
-			len = read_symbol(text);
-			token->type = TOKEN_SYMBOL;
-		} else {
-			error_unhandled(*text);
-		}
-
-		// TODO: cleanup
-		if (len == -1) {
-			ERROR("[LANG] Line: %d", line);
-			return NULL;
-		}
-
-		if (len) { /* In case of a comment */
-			token->lexeme = string_new(text, len);
-			token->line   = line;
-			token->col    = text - line_start + 1;
-			text += len;
-		}
-	} while (*text);
-
-	tokens->tokens[tokens->tokenc++] = (struct Token){
-		.type = TOKEN_EOF,
-		.line = line,
-	};
-
-	return tokens;
-}
-
-struct TokenList* lexer_load(char* fname)
+struct Tokenizer lexer_load_file(char* fname)
 {
 	String64 path;
 	snprintf(path.data, sizeof(path), SCRIPT_PATH "%s", fname);
-	char* text = file_load(path.data);
-	struct TokenList* tokens = lexer_tokenize(text);
+	struct Tokenizer tokenizer = {
+		.file      = file_open(path.data, "r"),
+		.file_name = string_new_split(path.data, '/', -1),
+		.line      = 1,
+		.col       = 1,
+	};
 
-	sfree(text);
-	return tokens;
+	DEBUG(2, "[LANG] Created new tokenizer from file \"%s\"", fname);
+	return tokenizer;
+}
+
+struct Token lexer_next(struct Tokenizer* tknz)
+{
+	char c;
+	NEXT();
+	while (1) {
+		if (isspace(c))
+			c = skip_whitespace(tknz, c);
+		if (c == '(')
+			c = skip_comment(tknz, c);
+
+		if (isdigit(c))
+			return read_number(tknz, c);
+		else if (c == '"')
+			return read_string(tknz, c);
+		else if (isalpha(c) || c == '_')
+			return read_ident(tknz, c);
+		else if (isgraph(c))
+			return read_symbol(tknz, c);
+		else if (c == EOF) {
+			fclose(tknz->file);
+			return TOKEN(TOKEN_EOF, (String){ 0 }, 0);
+		}
+	}
 }
 
 void print_token(struct Token token)
@@ -115,85 +77,119 @@ void print_token(struct Token token)
 	fprintf(stderr, "%s \t %s on line %d, col %d\n", token.lexeme.data, STRING_OF_TOKEN(token.type), token.line, token.col);
 }
 
-inline static int read_number(char* text)
+/* -------------------------------------------------------------------- */
+
+inline static char skip_whitespace(struct Tokenizer* tknz, char c)
 {
+	while (isspace(c)) {
+		if (c == '\n') {
+			tknz->line++;
+			tknz->col = 1;
+		}
+		NEXT();
+	}
+
+	return c;
+}
+
+inline static char skip_comment(struct Tokenizer* tknz, char c)
+{
+	if (c == '(' && NEXT() == '*')
+		while (1)
+			if (NEXT() == '*' && NEXT() == ')')
+				return NEXT();
+
+	BACK(c);
+	return '(';
+}
+
+inline static struct Token read_number(struct Tokenizer* tknz, char c)
+{
+	char buf[64];
 	int len = 0;
 	bool dp = false;
-	while (isdigit(*text) || (*text == '.' && !dp)) {
-		if (*text == '.')
-			dp = true;
-		len++;
-		text++;
+	while (isdigit(c) || c == '.') {
+		if (c == '.')
+			if (!(dp = !dp))
+				ERROR("[LANG] Multiple decimal places in number");
+		buf[len++] = c;
+		NEXT();
 	}
 
-	return len;
+	BACK(c);
+	return TOKEN(TOKEN_NUMBER, string_new(buf, len), len);
 }
 
-inline static int read_string(char* text)
+inline static struct Token read_string(struct Tokenizer* tknz, char c)
 {
-	int len = 1;
-	text++;
-	while (*text != '"') {
-		if (*text == '\n') {
-			ERROR("Expected end of string before end of line");
-			return -1;
+	char buf[LEXER_MAX_STRING_LEN];
+	int len = 0;
+	NEXT();
+	while (c != '"') {
+		if (c == '\n') {
+			ERROR("[LANG] Expected end of string before end of line");
+			exit(1);
 		}
-		len++;
-		text++;
+		buf[len++] = c;
+		NEXT();
 	}
 
-	return len + 1;
+	return TOKEN(TOKEN_STRING, string_new(buf, len), len);
 }
 
-inline static int read_ident(char* text)
+#define CHECK(t, l)                                             \
+	if (len == sizeof(l) - 1 && !strncmp(buf, l, sizeof(l) - 1)) \
+		return TOKEN(t, STRING(l), len);
+inline static struct Token read_ident(struct Tokenizer* tknz, char c)
 {
-	int len = 1;
-	text++;
-	while (isalnum(*text) || *text == '_') {
-		len++;
-		text++;
+	char buf[LEXER_MAX_IDENT_LEN];
+	int len = 0;
+	while (isalnum(c) || c == '_') {
+		buf[len++] = c;
+		NEXT();
 	}
 
-	return len;
+	BACK(c);
+	CHECK(TOKEN_VAL , "val");
+	CHECK(TOKEN_VAR , "var");
+	CHECK(TOKEN_LET , "let");
+	CHECK(TOKEN_IN  , "in");
+	CHECK(TOKEN_FUN , "fun");
+	CHECK(TOKEN_IF  , "if");
+	CHECK(TOKEN_THEN, "then");
+	CHECK(TOKEN_ELSE, "else");
+	CHECK(TOKEN_OF  , "of");
+	return TOKEN(TOKEN_IDENT, string_new(buf, len), len);
 }
 
-#define check(_v, _t)                        \
-	if (!strncmp(text, _v, sizeof(_v) - 1)) { \
-		*type = _t;                            \
-		return sizeof(_v) - 1;                  \
-	}
-inline static int read_keyword(char* text, enum TokenType* type)
+inline static struct Token read_symbol(struct Tokenizer* tknz, char c)
 {
-	check("val" , TOKEN_VAL);
-	check("var" , TOKEN_VAR);
-	check("let" , TOKEN_LET);
-	check("in"  , TOKEN_IN);
-	check("fun" , TOKEN_FUN);
-	check("if"  , TOKEN_IF);
-	check("then", TOKEN_THEN);
-	check("else", TOKEN_ELSE);
-	check("of"  , TOKEN_OF);
-
-	*type = TOKEN_NONE;
-	return 0;
-}
-#undef check
-
-inline static int read_symbol(char* text)
-{
+	char buf[8];
 	int len = 0;
 	do {
-		if (isspace(*text) || isalnum(*text))
-            break;
-		len++;
-		text++;
+		if (isspace(c) || isalnum(c)) {
+			BACK(c);
+			break;
+		} else if (len && !can_match(c, buf[len - 1])) {
+			BACK(c);
+			break;
+		}
+
+		buf[len++] = c;
+		NEXT();
 	} while (1);
 
-	return len;
+	return TOKEN(TOKEN_SYMBOL, string_new(buf, len), len);
 }
+
+inline static bool can_match(char c1, char c2) {
+	return (c1 == ')' && c2 == '(');
+}
+
+/* -------------------------------------------------------------------- */
 
 noreturn static void error_unhandled(char c)
 {
-	ERROR("[LANG] Error handling character: \"%c\"", c);
+	ERROR("[LANG] Error handling character: \"%c\" (%d)", c, c);
 	exit(1);
 }
