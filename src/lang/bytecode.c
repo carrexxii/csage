@@ -46,7 +46,11 @@ struct ByteCode bytecode_generate(struct AST* ast)
 		}
 	}
 
-	write_instr(&code, (struct Instruction){ .op = OP_EOF });
+	intptr i = htable_get(code.var_table, STRING("main"));
+	if (i >= 0)
+		code.entry = *(intptr*)varray_get(code.vars, i);
+	else
+		ERROR("[LANG] Failed to find \"main\" for entry point");
 
 	return code;
 }
@@ -57,9 +61,11 @@ void bytecode_print(struct ByteCode code)
 	struct Instruction* instr;
 	for (int i = 0; i < code.instrs->len; i++) {
 		instr = varray_get(code.instrs, i);
-		printf("[%02d]\t%s\t ", i + 1, STRING_OF_OP(instr->op));
-		// fprintf(stderr, "[%02d]\t%s\t ", i + 1, instr->op == OP_POP? "OP_POP": instr->op == OP_PUSH? "OP_PUSH": instr->op == OP_CALL? "OP_CALL": instr->op == OP_EOF? "OP_EOF": instr->op == OP_RET? "OP_RET": "<unknown op>");
-		printf("%d\n", instr->operand);
+		printf("[%02d]\t%s\t ", i, STRING_OF_OP(instr->op));
+		printf("%d", instr->operand);
+		if (instr->op == OP_CALL)
+			printf(" -> %ld", *(int64*)varray_get(code.vars, instr->operand));
+		printf("\n");
 	}
 }
 
@@ -134,11 +140,14 @@ inline static void write_call(struct ByteCode* code, struct ASTNode* node)
 
 inline static void write_fun(struct ByteCode* code, struct ASTNode* node)
 {
-	// htable_insert(code->var_table, node->lexeme, code->instrc);
+	varray_set(code->vars, htable_get(code->var_table, node->lexeme), &code->instrs->len);
 
 	push_expr(code, node->expr);
 
-	write_instr(code, (struct Instruction){ .op = OP_RET });
+	if (strncmp(node->lexeme.data, "main", node->lexeme.len))
+		write_instr(code, (struct Instruction){ .op = OP_RET });
+	else
+		write_instr(code, (struct Instruction){ .op = OP_EOF });
 }
 
 /* -------------------------------------------------------------------- */

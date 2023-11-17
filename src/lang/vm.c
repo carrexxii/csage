@@ -6,17 +6,19 @@
 
 noreturn static void error_unknown_instr(struct Instruction instr);
 
-struct VM vm_load(struct ByteCode code)
+struct VM vm_load(struct ByteCode* code)
 {
 	// int litc_2 = 1u << (uint)log2(code.litc - 1) + 1u;
 
 	struct VM vm;
 	// TODO: improve/copy
-	vm.instrs = (struct Instruction*)code.instrs->data;
-	vm.lits   = (union LangVal*)code.lits->data;
-	vm.vars   = smalloc(code.vars->len*sizeof(union LangVal));
+	vm.instrs = (struct Instruction*)code->instrs->data;
+	vm.lits   = code->lits;
+	vm.vars   = code->vars;
+	vm.entry  = code->entry;
 
-	DEBUG(4, "[LANG] Loaded bytecode into vm (%ld literals, %ld variables)", code.lits->len, code.vars->len);
+	DEBUG(4, "[LANG] Loaded %ld bytecode instructions into vm (%ld literals, %ld variables)\n\tEntry point: %ld",
+	      code->instrs->len, code->lits->len, code->vars->len, code->entry);
 	return vm;
 }
 
@@ -35,11 +37,14 @@ void vm_run(struct VM vm)
 		[OP_RET]  = &&op_ret,
 		[OP_EOF]  = &&op_eof,
 	};
+	static_assert(OP_CODE_MAX == 6, "`op_labels` needs to be updated");
 
-	union LangVal* stack = smalloc(VM_STACK_SIZE);
+	int64* stack = smalloc(VM_STACK_SIZE);
 	register intptr sp = 0;
-	register intptr ip = 0;
+	register intptr fp = 0;
+	register intptr ip = vm.entry;
 	register struct Instruction ci;
+
 	next();
 
 op_noop:
@@ -47,34 +52,37 @@ op_noop:
 
 op_push:
 	if (ci.type == LANG_INT_LITERAL)
-		stack[sp].s64 = ci.operand;
-	else
-		stack[sp] = vm.lits[ci.operand];
+		stack[sp] = ci.operand;
+	// else
+		// stack[sp] = varray_get(vm.lits, ci.operand);
 	sp++;
 	next();
 
 op_pop:
-	vm.vars[ci.operand] = stack[--sp];
+	varray_set(vm.vars, ci.operand, &stack[--sp]);
 	next();
 
+/* Calling:
+ * - Push the current instruction onto the stack (for returning)
+ * - Save the stack pointer into the frame pointer (Gets reset when we return)
+ * - Set the instruction pointer to the called address
+ */
 op_call:
-	if (ci.operand == 0xFF)
-		printf("%ld\n", stack[--sp].s64);
-	stack[sp++] = (union LangVal){ .s64 = ip };
-	ip = ci.operand;
+	stack[sp++] = ip;
+	fp = sp;
+
+	ip = *(int64*)varray_get(vm.vars, ci.operand);
 	next();
 
+/* Returning:
+ * - Reset the stack pointer back to the start of the stack frame
+ * - Get the return address from the top of the stack
+ */
 op_ret:
-	ip = stack[--sp].s64;
+	sp = fp - 1;
+	ip = stack[sp];
 	next();
 
 op_eof:
 	sfree(stack);
-}
-#undef next
-
-void vm_free(struct VM vm)
-{
-	sfree(vm.vars);
-	// sfree(vm.lits);
 }

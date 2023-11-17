@@ -34,6 +34,7 @@ struct ByteCode {
 	struct VArray* vars;
 	struct HTable* lit_table;
 	struct HTable* var_table;
+	intptr entry;
 };
 
 struct ByteCode bytecode_generate(struct AST* ast);

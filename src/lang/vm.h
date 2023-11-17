@@ -9,12 +9,12 @@
 struct VM {
 	struct Instruction* instrs;
 	// TODO: copy the bytecode's hashtable for variables for the repl?
-	union LangVal* vars;
-	union LangVal* lits;
+	struct VArray* vars;
+	struct VArray* lits;
+	intptr entry;
 };
 
-struct VM vm_load(struct ByteCode code);
+struct VM vm_load(struct ByteCode* code);
 void vm_run(struct VM vm);
-void vm_free(struct VM vm);
 
 #endif

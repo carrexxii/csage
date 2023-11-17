@@ -3,4 +3,4 @@ val y = 100000
 fun f = 3
 
 fun main =
-	123 (* print "Test" *)
+	f 0 (* print "Test" *)
