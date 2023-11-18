@@ -2,9 +2,26 @@
 
 #include "varray.h"
 #include "htable.h"
+#include "arena.h"
 
-int main(int agrc, char** argv)
+int main()
 {
+	DEBUG(1, " --- Testing Arena ---");
+	struct Arena* a1 = arena_new(128, 0);
+	struct Arena* a2 = arena_new(299, ARENA_RESIZEABLE);
+	struct Arena* a3 = arena_new(64, 0);
+	assert(arena_alloc(a1, 64));
+	assert(arena_alloc(a1, 30));
+	assert(!arena_alloc(a1, 36));
+	assert(!arena_alloc(a1, 64));
+	arena_reset(a1);
+	assert(arena_alloc(a1, 128));
+
+	assert(arena_alloc(a2, 100));
+	assert(arena_alloc(a2, 150));
+	assert(arena_alloc(a2, 200));
+	exit(0);
+
 	DEBUG(1, " --- Testing String ---");
 	char* str = "some/file/path.txt";
 	DEBUG(1, "Splitting with `string_new_split()`: \"%s\"", str);
@@ -35,7 +52,6 @@ int main(int agrc, char** argv)
 	DEBUG(1, "\t-10 = %s", string_new_split(str, '.', -10).data);
 	DEBUG(1, "\t-1 = %s", string_new_split(str, '.', -1).data);
 
-	exit(0);
 	DEBUG(1, " --- Testing VArray ---");
 	struct VArray* arr = varray_new(10, 8);
 	varray_print(arr);

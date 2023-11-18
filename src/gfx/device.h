@@ -19,7 +19,7 @@ extern struct QueueFamilyIndices {
 } qinds;
 
 void device_init_physical(VkInstance inst, VkSurfaceKHR surf);
-void device_init_logical(VkInstance inst, VkSurfaceKHR surf);
+void device_init_logical(VkSurfaceKHR surf);
 void device_free();
 
 #endif

@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "entities/entity.h"
 #include "entities/pathfinding.h"
+#include "util/arena.h"
 #include "input.h"
 #include "map.h"
 
@@ -10,6 +11,8 @@ static EntityID e1;
 
 static bool path_to_mouse(int type, bool kdown, int x, int y)
 {
+	(void)type;
+	(void)kdown;
 	vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
 
 	struct Path path = {.start = (ivec3s){ 0, 0, 0 }, .end = (ivec3s){ screen.x, screen.y, 0 }};
@@ -20,6 +23,7 @@ static bool path_to_mouse(int type, bool kdown, int x, int y)
 
 static bool move_to_mouse(int type, bool kdown, int x, int y)
 {
+	(void)type;
 	if (kdown) {
 		vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
 		entity_path_to(e1, (ivec3s){ screen.x, screen.y, 0 });
@@ -28,7 +32,7 @@ static bool move_to_mouse(int type, bool kdown, int x, int y)
 	return true;
 }
 
-void test_init()
+static void test_init()
 {
 	map_new((ivec3s){ 64, 64, 16 });
 

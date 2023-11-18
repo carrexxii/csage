@@ -49,8 +49,7 @@ inline static uint htable_hash(struct HTable* htable, String str)
 
 inline static struct HPair* htable_insert(struct HTable* htable, String key, int64 val)
 {
-	int i = htable_hash(htable, key);
-	struct HPair* pair = &htable->pairs[i];
+	struct HPair* pair = &htable->pairs[htable_hash(htable, key)];
 	/* Only search through the list if first slot is not available */
 	if (pair->key.data) {
 		do {
@@ -76,8 +75,7 @@ inline static struct HPair* htable_insert(struct HTable* htable, String key, int
 /* Returns NULL if the key was not found */
 inline static struct HPair* htable_get_pair(struct HTable* htable, String key)
 {
-	int i = htable_hash(htable, key);
-	struct HPair* pair = &htable->pairs[i];
+	struct HPair* pair = &htable->pairs[htable_hash(htable, key)];
 	if (!pair->key.len)
 		return NULL;
 
@@ -91,28 +89,23 @@ inline static struct HPair* htable_get_pair(struct HTable* htable, String key)
 }
 
 /* Returns -1 if the key was not found */
-inline static int64 htable_get(struct HTable* htable, String key)
-{
-	int i = htable_hash(htable, key);
+inline static int64 htable_get(struct HTable* htable, String key) {
 	struct HPair* pair = htable_get_pair(htable, key);
-
-	return pair? pair->val: -1;
+	return pair? pair->val
+	           : -1;
 }
 
 /* Same as htable_get, but will insert the value if the key is not present */
-inline static int64 htable_get_or_insert(struct HTable* htable, String key, int64 val)
-{
-	int i = htable_hash(htable, key);
+inline static int64 htable_get_or_insert(struct HTable* htable, String key, int64 val) {
 	struct HPair* pair = htable_get_pair(htable, key);
-
-	return pair? pair->val: htable_insert(htable, key, val)->val;
+	return pair? pair->val
+	           : htable_insert(htable, key, val)->val;
 }
 
 /* Returns 0 if the value was set or -1 if the key was not found */
 inline static int htable_set(struct HTable* htable, String key, int64 val)
 {
 	// TODO: This should insert if its not there (ie, combine with htable_insert())
-	int i = htable_hash(htable, key);
 	struct HPair* pair = htable_get_pair(htable, key);
 	if (pair)
 		pair->val = val;

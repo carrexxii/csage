@@ -31,7 +31,7 @@ static struct {
 static VkRenderPass     render_pass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
-static struct Pipeline  pipeln;
+// static struct Pipeline  pipeln;
 
 void renderer_init()
 {

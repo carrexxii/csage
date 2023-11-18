@@ -84,7 +84,7 @@ struct Model {
 };
 
 void models_init(VkRenderPass render_pass);
-struct Model* model_new(char* path, bool keep_verts);
+struct Model* model_new(char* path);
 void models_update();
 void models_record_commands(VkCommandBuffer cmd_buf);
 void model_free(ID model_id);

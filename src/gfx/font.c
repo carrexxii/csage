@@ -141,6 +141,7 @@ void font_init(VkRenderPass renderpass)
 
 int font_render(char* text, float start_x, float start_y, float w)
 {
+	(void)w; // TODO: width/multi-line rendering
 	int len = strlen(text);
 	float* verts = smalloc(6*sizeof(float[4])*len);
 	float  x = start_x;

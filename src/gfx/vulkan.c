@@ -19,6 +19,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL
 debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type, uint64 obj,
 		 uintptr location, int32 msg_code, const char* layer_prefix, const char* msg, void* user_data)
 {
+	(void)user_data;
 	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"",
 		  layer_prefix, STRING_DEBUG_REPORT(flags), obj,
 		  STRING_DEBUG_REPORT_OBJECT(obj_type), location, msg_code, msg);
@@ -103,7 +104,7 @@ void init_vulkan(SDL_Window* win)
 		ERROR("[VK] SDL failed to create a surface (%s)", SDL_GetError());
 
 	device_init_physical(instance, surface);
-	device_init_logical(instance, surface);
+	device_init_logical(surface);
 }
 
 VkShaderModule create_shader(char* restrict path)

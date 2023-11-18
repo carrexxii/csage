@@ -110,6 +110,7 @@ void init_input()
 
 noreturn void quit_cb(bool kdown)
 {
+	(void)kdown;
 	DEBUG(1, "/------------------------------\\");
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");

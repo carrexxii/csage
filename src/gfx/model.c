@@ -124,7 +124,7 @@ inline static int float_compare(const void* restrict f1, const void* restrict f2
 }
 
 // TODO: this doesnt work properly for removing elements
-struct Model* model_new(char* path, bool keep_verts)
+struct Model* model_new(char* path)
 {
 	struct Model* model = &models[modelc++];
 
@@ -272,8 +272,8 @@ static void load_materials(struct Model* model, cgltf_data* data)
 		ERROR("[GFX] Model has %d materials. MAX_MATERIALS is set to %d", model->materialc, MAX_MATERIALS);
 
 	cgltf_material*     material;
-	cgltf_image*        img;
-	cgltf_texture_view* texture;
+	// cgltf_image*        img;
+	// cgltf_texture_view* texture;
 	for (int m = 0; m < (int)data->materials_count; m++) {
 		material = &data->materials[m];
 		if (material->has_pbr_metallic_roughness) {
@@ -514,15 +514,15 @@ static void load_animations(struct Model* model, cgltf_data* data)
 	model->animations = smalloc(model->animationc*sizeof(struct Animation));
 	DEBUG(1, "Animations: %d", model->animationc);
 
-	struct {
-		cgltf_animation_path_type type;
-		cgltf_animation_channel*  channel;
-	}* transforms;
+	// struct {
+	// 	cgltf_animation_path_type type;
+	// 	cgltf_animation_channel*  channel;
+	// }* transforms;
 	cgltf_animation*         animation;
 	cgltf_animation_channel* channel;
 	cgltf_animation_sampler* sampler;
-	cgltf_accessor*          input;
-	cgltf_accessor*          output;
+	// cgltf_accessor*          input;
+	// cgltf_accessor*          output;
 	cgltf_skin* skin = &data->skins[0];
 	for (int a = 0; a < (int)data->animations_count; a++) {
 		animation = &data->animations[a];

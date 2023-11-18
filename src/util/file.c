@@ -26,7 +26,7 @@ intptr file_size(FILE* file)
 	return sz;
 }
 
-char* const file_loadf(FILE* file)
+char* file_loadf(FILE* file)
 {
 	intptr sz = file_size(file);
 	char* const buf = smalloc(sz + 1);

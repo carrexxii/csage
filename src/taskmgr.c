@@ -83,6 +83,7 @@ static bool get_task()
 
 static int thread_loop(void* data)
 {
+	(void)data; // TODO
 	while (1)
 		if (get_task())
 			thrd_sleep(&(struct timespec){ .tv_nsec=10000 }, NULL);

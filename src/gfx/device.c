@@ -48,7 +48,7 @@ void device_init_physical(VkInstance inst, VkSurfaceKHR surf)
 		DEBUG(3, "[VK] Created physical device (rating: %d)", maxrating);
 }
 
-void device_init_logical(VkInstance inst, VkSurfaceKHR surf)
+void device_init_logical(VkSurfaceKHR surf)
 {
 	set_queue_indices(physicalgpu, surf);
 	const uint devqic = 2;

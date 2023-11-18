@@ -32,7 +32,8 @@ void image_init()
 	create_sampler(&sampler);
 }
 
-void image_new(uint32 w, uint32 h, VkFormat fmt, VkImageAspectFlags asp)
+// TODO: is this used???
+void image_new(uint32 w, uint32 h, VkFormat fmt)
 {
 	/* IMPROVEMENT: caching */
 	VkImageCreateInfo imgi = {

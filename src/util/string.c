@@ -34,7 +34,6 @@ String* string_new_ptr(char* src, isize len)
 String string_new_split(char* src, char sep, int index)
 {
 	index = index == -1? INT_MAX: index;
-	String str;
 
 	char* start = src;
 	int sepc = 0;
@@ -59,14 +58,12 @@ String string_new_split(char* src, char sep, int index)
 	return string_new(start, 0);
 }
 
-String string_copy(String src)
-{
+String string_copy(String src) {
 	return string_new(src.data, src.len);
 }
 
 int string_contains(String str, char c)
 {
-	char* s = str.data;
 	for (int i = 0; i < str.len; i++)
 		if (str.data[i] == c)
 			return i;

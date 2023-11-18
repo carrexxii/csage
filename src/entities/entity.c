@@ -45,7 +45,7 @@ void entities_init()
 
 EntityID entity_new(vec3s pos, char* model_path)
 {
-	struct Model* model = model_new(model_path, false);
+	struct Model* model = model_new(model_path);
 	struct Body body = {
 		.pos     = pos,
 		.facing  = (vec3s){ 1.0, 0.0, 0.0 },
@@ -105,7 +105,6 @@ void entities_update()
 // TODO: Probably move this into the body update?
 static void entity_update_transforms(SBO sbo_buf)
 {
-	mat4* transform;
 	mat4 trans;
 	struct Body* body = (struct Body*)bodies->data;
 	for (int i = 0; i <= bodies->len; body++, i++) {

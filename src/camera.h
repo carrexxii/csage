@@ -26,8 +26,4 @@ static void camera_move_left_cb(bool kdown)  { if (kdown) camdir |= DIRECTION_LE
 static void camera_zoom_in_cb(bool kdown)    { if (kdown) camdir |= DIRECTION_FORWARDS;  else camdir &= ~DIRECTION_FORWARDS;  }
 static void camera_zoom_out_cb(bool kdown)   { if (kdown) camdir |= DIRECTION_BACKWARDS; else camdir &= ~DIRECTION_BACKWARDS; }
 
-inline static void camera_zlvl_up_cb(bool kdown)   { zoom += 1; CLAMP(zoom, 0, CAMERA_MAX_ZOOM); }
-inline static void camera_zlvl_down_cb(bool kdown) { zoom -= 1; CLAMP(zoom, 0, CAMERA_MIN_ZOOM); }
-
-
 #endif

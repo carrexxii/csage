@@ -135,15 +135,6 @@ inline static struct ASTNode* new_node()
 
 /* -------------------------------------------------------------------- */
 
-inline static struct ASTNode* new_ident(struct AST* ast, struct Token tok)
-{
-	struct ASTNode* node = new_node();
-	node->type   = AST_IDENT;
-	node->lexeme = string_copy(tok.lexeme);
-
-	return node;
-}
-
 inline static struct LangVar new_literal(struct AST* ast, struct Token tok)
 {
 	int i = htable_get(ast->lit_table, tok.lexeme);
