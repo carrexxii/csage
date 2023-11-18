@@ -32,6 +32,12 @@ int main(int argc, char** argv)
 
 	init_sdl();
 
+	DEBUG(1, "[INFO] Platform: %s", SDL_GetPlatform());
+	DEBUG(1, "[INFO] CPU info:");
+	DEBUG(1, "\tLogical cores: %d", SDL_GetCPUCount());
+	DEBUG(1, "\tL1 Cache Line: %dB", SDL_GetCPUCacheLineSize());
+	DEBUG(1, "\tRAM          : %.1fGB", SDL_GetSystemRAM()/1024.0);
+
 	uint32 vkversion;
 	vkEnumerateInstanceVersion(&vkversion);
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),

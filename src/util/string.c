@@ -4,7 +4,7 @@ String string_new(char* src, isize len)
 {
 	String str = {
 		.data = smalloc(len + 1),
-		.len  = len > 0? len: strlen(src),
+		.len  = len > 0? len: (isize)strlen(src),
 	};
 	memcpy(str.data, src, str.len);
 	str.data[str.len] = '\0';
@@ -21,7 +21,7 @@ String* string_new_ptr(char* src, isize len)
 
 	String* str = smalloc(sizeof(String) + len + 1);
 	str->data = (void*)(str + 1);
-	str->len = len > 0? len: strlen(src);
+	str->len = len > 0? len: (isize)strlen(src);
 	memcpy(str->data, src, str->len);
 	str->data[str->len] = '\0';
 
