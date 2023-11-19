@@ -53,10 +53,6 @@ void ui_init(VkRenderPass renderpass)
 	DEBUG(2, "[UI] Initialized UI:\n\tArena size: %d", UI_ARENA_DEFAULT_SIZE);
 }
 
-bool ui_is_valid_rect(Rect rect) {
-	return BETWEEN(rect.w, 0, global_config.winw) && BETWEEN(rect.h, 0, global_config.winh);
-}
-
 void ui_build()
 {
 	for (int i = 0; i < ui_objc; i++)

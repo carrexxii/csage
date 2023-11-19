@@ -8,6 +8,7 @@
 
 #define UI_MAX_OBJECTS        64
 #define UI_ARENA_DEFAULT_SIZE 4096
+#define UI_BASE_Z_LEVEL       2
 
 enum UIObjectType {
 	UI_NONE,
@@ -28,7 +29,7 @@ struct UIObject {
 	int8  z_lvl;
 	void* data;
 
-	Rect rect;
+	struct Rect rect;
 	struct UIState  state;
 	struct UIStyle* style;
 };
@@ -56,9 +57,16 @@ struct UIStyle {
 };
 
 static struct UIStyle default_style = {
-	.title = NULL,
-	.bg = 0xFF222222,
-	.fg = 0xFFCCCCCC,
+	.title  = NULL,
+	.margin = 10,
+	.bg = 0x0000FFFF,
+	.fg = 0xCCCCCCFF,
+};
+static struct UIStyle test_style = {
+	.title  = NULL,
+	.margin = 10,
+	.bg = 0xFF00FFFF,
+	.fg = 0xDDDDDDFF,
 };
 extern struct Arena* ui_arena;
 extern struct UIContext ui_context;

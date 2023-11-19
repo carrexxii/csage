@@ -9,7 +9,7 @@ struct Container {
 	usize vertc;
 };
 
-int  container_new(Rect rect, struct UIStyle* style, int parent);
+int  container_new(struct Rect rect, struct UIStyle* style, int parent);
 void container_build(struct UIObject* obj);
 
 #endif

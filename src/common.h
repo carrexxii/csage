@@ -94,10 +94,10 @@ enum Direction {
 };
 
 union Colour {
-	uint32 rgba;
-	struct { uint8 r, g, b, a; };
+	uint32 abgr;
+	struct { uint8 a, b, g, r; };
 };
-#define COLOUR_TO_VEC(c) (float[4]){ c.r, c.g, c.b, c.a }
+#define COLOUR_TO_VEC(c) (float[4]){ c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f }
 
 #define EXPR(x) ({ x })
 #define LAMBDA(type, body) EXPR( \

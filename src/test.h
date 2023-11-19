@@ -42,6 +42,9 @@ static void test_init()
 	// input_register_mouse(MOUSE_DRAG, path_to_mouse);
 	input_register_mouse(MOUSE_RIGHT, move_to_mouse);
 
-	int c = container_new(RECT(0, 0, 50, 50), NULL, -1);
+	int c1 = container_new(RECT(0.0, 0.0, 0.5, 0.5), NULL, -1);
+	int c2 = container_new(RECT(0.5, 0.5, 0.5, 0.5), NULL, -1);
+	int c3 = container_new(RECT(0.5, 0.5, 0.5, 0.4), &test_style, c1);
+	// int c4 = container_new(0.3, 0.3, LAYOUT_VERTICAL, NULL, -1);
 	ui_build();
 }

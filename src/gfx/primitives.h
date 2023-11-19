@@ -1,7 +1,7 @@
 #ifndef GFX_PRIMITIVES_H
 #define GFX_PRIMITIVES_H
 
-#define EXPAND_COLOUR(x) x.r, x.g, x.b, x.a
+#define EXPAND_COLOUR(x) x.r/255.0f, x.g/255.0f, x.b/255.0f, x.a/255.0f
 
 // TODO: Change to vec type
 inline static void quad_points(float* points, Rect rect, float z, union Colour colour)
