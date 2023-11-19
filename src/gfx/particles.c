@@ -20,12 +20,12 @@ static struct ParticlePool pools[MAX_PARTICLE_POOLS];
 static int poolc;
 
 /* -------------------------------------------------------------------- */
-static VkVertexInputBindingDescription streamvertbinds = {
+static VkVertexInputBindingDescription streamvert_binds = {
 	.binding   = 0,
 	.stride    = SIZEOF_PARTICLE_VERTEX, /* xyuv */
 	.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
 };
-static VkVertexInputAttributeDescription streamvertattrs[] = {
+static VkVertexInputAttributeDescription streamvert_attrs[] = {
 	/* xy */
 	{ .binding  = 0,
 	  .location = 0,
@@ -47,10 +47,10 @@ void particles_init(VkRenderPass renderpass)
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "particle.vert"),
 		.fshader    = create_shader(SHADER_DIR "particle.frag"),
-		.vertbindc  = 1,
-		.vertbinds  = &streamvertbinds,
-		.vertattrc  = 2,
-		.vertattrs  = streamvertattrs,
+		.vert_bindc  = 1,
+		.vert_binds  = &streamvert_binds,
+		.vert_attrc  = 2,
+		.vert_attrs  = streamvert_attrs,
 		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
 		.pushsz     = sizeof(float),
 		.uboc       = 2,
@@ -115,7 +115,7 @@ void particles_update()
 					.s[1] = pool->start_pos[1],
 				};
 			} else {
-				pool->timer += dt_ms;
+				pool->timer += DT_MS;
 			}
 		}
 		for (int j = 0; j < MAX_PARTICLES_PER_POOL; j++) {
@@ -123,9 +123,9 @@ void particles_update()
 				continue;
 			pool->particles[j].v[0] *= PARTICLE_DAMPNER;
 			pool->particles[j].v[1] *= PARTICLE_DAMPNER;
-			pool->particles[j].s[0] += pool->particles[j].v[0]*dt;
-			pool->particles[j].s[1] += pool->particles[j].v[1]*dt;
-			pool->particles[j].life -= dt_ms;
+			pool->particles[j].s[0] += pool->particles[j].v[0]*DT;
+			pool->particles[j].s[1] += pool->particles[j].v[1]*DT;
+			pool->particles[j].life -= DT_MS;
 		}
 	}
 }

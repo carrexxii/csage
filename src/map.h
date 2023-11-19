@@ -21,7 +21,7 @@ struct VoxelBlock {
 	struct Voxel voxels[MAP_BLOCK_DEPTH][MAP_BLOCK_HEIGHT][MAP_BLOCK_WIDTH];
 };
 
-void map_init(VkRenderPass render_pass);
+void map_init(VkRenderPass renderpass);
 void map_new(ivec3s dim);
 int  map_highlight_area(ivec4s area);
 void map_clear_highlight();

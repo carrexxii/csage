@@ -61,7 +61,7 @@ static int blockc;
 static ivec4s selections[MAP_MAX_SELECTIONS];
 static int    selectionc;
 
-void map_init(VkRenderPass render_pass)
+void map_init(VkRenderPass renderpass)
 {
 	map_data.block_size = (ivec4s){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH };
 	ubo_bufs[0] = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
@@ -69,16 +69,16 @@ void map_init(VkRenderPass render_pass)
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "map.vert"),
 		.fshader    = create_shader(SHADER_DIR "map.frag"),
-		.vertbindc  = 1,
-		.vertbinds  = vert_binds,
-		.vertattrc  = ARRAY_SIZE(vertex_attrs),
-		.vertattrs  = vertex_attrs,
+		.vert_bindc  = 1,
+		.vert_binds  = vert_binds,
+		.vert_attrc  = ARRAY_SIZE(vertex_attrs),
+		.vert_attrs  = vertex_attrs,
 		.uboc       = 2,
 		.ubos       = ubo_bufs,
 		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
 		.pushsz     = sizeof(int), /* Index of the current block being drawn */
 	};
-	pipeln_init(&pipeln, render_pass);
+	pipeln_init(&pipeln, renderpass);
 	DEBUG(3, "[MAP] Map initialized. Block dimensions are set to: %dx%dx%d",
 	      MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
 }

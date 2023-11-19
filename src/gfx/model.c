@@ -79,7 +79,7 @@ static intptr modelc = 0;
 static UBO ubo_bufs[3];
 static SBO sbo_buf;
 
-void models_init(VkRenderPass render_pass)
+void models_init(VkRenderPass renderpass)
 {
 	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
 	ubo_bufs[0] = ubo_new(sizeof(mat4));                           /* Camera matrix */
@@ -89,10 +89,10 @@ void models_init(VkRenderPass render_pass)
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "model.vert"),
 		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc  = ARRAY_SIZE(vertex_binds),
-		.vertbinds  = vertex_binds,
-		.vertattrc  = ARRAY_SIZE(vertex_attrs),
-		.vertattrs  = vertex_attrs,
+		.vert_bindc  = ARRAY_SIZE(vertex_binds),
+		.vert_binds  = vertex_binds,
+		.vert_attrc  = ARRAY_SIZE(vertex_attrs),
+		.vert_attrs  = vertex_attrs,
 		.uboc       = ARRAY_SIZE(ubo_bufs),
 		.ubos       = ubo_bufs,
 		.sbo        = &sbo_buf,
@@ -100,15 +100,15 @@ void models_init(VkRenderPass render_pass)
 		.pushstages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 		.pushsz     = sizeof(struct PushConstants),
 	};
-	pipeln_init(&pipeln, render_pass);
+	pipeln_init(&pipeln, renderpass);
 
 	pipeln_static = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "model_static.vert"),
 		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vertbindc  = ARRAY_SIZE(vertex_binds) - 2,
-		.vertbinds  = vertex_binds,
-		.vertattrc  = ARRAY_SIZE(vertex_attrs) - 2,
-		.vertattrs  = vertex_attrs,
+		.vert_bindc  = ARRAY_SIZE(vertex_binds) - 2,
+		.vert_binds  = vertex_binds,
+		.vert_attrc  = ARRAY_SIZE(vertex_attrs) - 2,
+		.vert_attrs  = vertex_attrs,
 		.uboc       = 2,
 		.ubos       = ubo_bufs,
 		.sbo        = &sbo_buf,
@@ -116,7 +116,7 @@ void models_init(VkRenderPass render_pass)
 		.pushstages = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.pushsz     = sizeof(struct PushConstants),
 	};
-	pipeln_init(&pipeln_static, render_pass);
+	pipeln_init(&pipeln_static, renderpass);
 }
 
 inline static int float_compare(const void* restrict f1, const void* restrict f2) {
@@ -169,27 +169,27 @@ struct Model* model_new(char* path)
 
 void models_update()
 {
-	struct Model*     model;
-	struct Animation* animation;
-	for (int m = 0; m < modelc; m++) {
-		model     = &models[m];
-		animation = &model->animations[model->current_animation];
-		model->timer += dt;
-		if (model->timer >= animation->times[animation->current_frame])
-			animation->current_frame++;
+	// struct Model*     model;
+	// struct Animation* animation;
+	// for (int m = 0; m < modelc; m++) {
+	// 	model     = &models[m];
+	// 	animation = &model->animations[model->current_animation];
+	// 	model->timer += DT;
+	// 	if (model->timer >= animation->times[animation->current_frame])
+	// 		animation->current_frame++;
 
-		if (animation->current_frame >= animation->framec) {
-			animation->current_frame = 0;
-			model->timer = 0;
-		}
-	}
+	// 	if (animation->current_frame >= animation->framec) {
+	// 		animation->current_frame = 0;
+	// 		model->timer = 0;
+	// 	}
+	// }
 }
 
 void models_record_commands(VkCommandBuffer cmd_buf)
 {
 	struct Model*     model;
 	struct Mesh*      mesh;
-	struct Animation* animation;
+	// struct Animation* animation;
 
 	mat4 vp;
 	camera_get_vp(vp);
@@ -202,12 +202,12 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 	for (int i = 0; i < modelc; i++) {
 		model     = &models[i];
-		animation = &model->animations[model->current_animation];
+		// animation = &model->animations[model->current_animation];
 		if (!model->skin)
 			continue;
-		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
-		buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform),
-		              animation->frames[animation->current_frame].transforms);
+		// buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
+		// buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform),
+		//               animation->frames[animation->current_frame].transforms);
 		for (int m = 0; m < models[i].meshc; m++) {
 			mesh = &model->meshes[m];
 			push_constants.materiali = mesh->materiali;
@@ -366,11 +366,11 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 							joint_ids[4*v + 2] = vert8[i + 2];
 							joint_ids[4*v + 3] = vert8[i + 3];
 							i += (int)(attr->stride/sizeof(int8));
-							DEBUG_VALUE(joint_ids[4*v + 0]);
-							DEBUG_VALUE(joint_ids[4*v + 1]);
-							DEBUG_VALUE(joint_ids[4*v + 2]);
-							DEBUG_VALUE(joint_ids[4*v + 3]);
-							DEBUG(1, " ");
+							// DEBUG_VALUE(joint_ids[4*v + 0]);
+							// DEBUG_VALUE(joint_ids[4*v + 1]);
+							// DEBUG_VALUE(joint_ids[4*v + 2]);
+							// DEBUG_VALUE(joint_ids[4*v + 3]);
+							// DEBUG(1, " ");
 							break;
 						case cgltf_attribute_type_weights:
 							joint_weights[4*v + 0] = vert[i + 0];
@@ -378,11 +378,11 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 							joint_weights[4*v + 2] = vert[i + 2];
 							joint_weights[4*v + 3] = vert[i + 3];
 							i += (int)(attr->stride/sizeof(float));
-							DEBUG_VALUE(joint_weights[4*v + 0]);
-							DEBUG_VALUE(joint_weights[4*v + 1]);
-							DEBUG_VALUE(joint_weights[4*v + 2]);
-							DEBUG_VALUE(joint_weights[4*v + 3]);
-							DEBUG(1, " ");
+							// DEBUG_VALUE(joint_weights[4*v + 0]);
+							// DEBUG_VALUE(joint_weights[4*v + 1]);
+							// DEBUG_VALUE(joint_weights[4*v + 2]);
+							// DEBUG_VALUE(joint_weights[4*v + 3]);
+							// DEBUG(1, " ");
 							break;
 						default:
 							ERROR("[GFX] Invalid attribute type: %d", prim->attributes[a].type);
@@ -509,10 +509,10 @@ static void load_skin(struct Model* model, cgltf_data* data)
 
 static void load_animations(struct Model* model, cgltf_data* data)
 {
-	DEBUG(1, "\n-------------------------------------------------------------------------------");
+	// DEBUG(1, "\n-------------------------------------------------------------------------------");
 	model->animationc = data->animations_count;
 	model->animations = smalloc(model->animationc*sizeof(struct Animation));
-	DEBUG(1, "Animations: %d", model->animationc);
+	// DEBUG(1, "Animations: %d", model->animationc);
 
 	// struct {
 	// 	cgltf_animation_path_type type;
@@ -528,7 +528,7 @@ static void load_animations(struct Model* model, cgltf_data* data)
 		animation = &data->animations[a];
 		assert(animation->samplers_count == animation->channels_count);
 		strncpy(model->animations[a].name, animation->name, MAX_NAME_LENGTH);
-		DEBUG(1, " *** %s *** channels: %lu; samplers: %lu", model->animations[a].name, animation->channels_count, animation->samplers_count);
+		// DEBUG(1, " *** %s *** channels: %lu; samplers: %lu", model->animations[a].name, animation->channels_count, animation->samplers_count);
 
 		// TODO: calculate the number of joints modifies
 		/* First calculate the number of frames to be allocated for */
@@ -555,7 +555,7 @@ static void load_animations(struct Model* model, cgltf_data* data)
 				goto skip_animation;
 		}
 
-		DEBUG(1, "Animation %d of %d has %d frames", a + 1, model->animationc, framec);
+		// DEBUG(1, "Animation %d of %d has %d frames", a + 1, model->animationc, framec);
 
 		model->animations[a].framec = framec;
 		model->animations[a].frames = smalloc(framec*sizeof(struct AnimationFrame) + framec*sizeof(float));
@@ -566,10 +566,10 @@ static void load_animations(struct Model* model, cgltf_data* data)
 		// TODO: own sorting function
 		memcpy(model->animations[a].times, times, framec*sizeof(float));
 		qsort(model->animations[a].times, model->animations[a].framec, sizeof(float), float_compare);
-		fprintf(stderr, "Frame times: ");
-		for (int t = 0; t < model->animations[a].framec; t++)
-			fprintf(stderr, "%f, ", model->animations[a].times[t]);
-		fprintf(stderr, "\n");
+		// fprintf(stderr, "Frame times: ");
+		// for (int t = 0; t < model->animations[a].framec; t++)
+		// 	fprintf(stderr, "%f, ", model->animations[a].times[t]);
+		// fprintf(stderr, "\n");
 
 		/* Load the actual tranforms */
 		struct AnimationFrame* frame;

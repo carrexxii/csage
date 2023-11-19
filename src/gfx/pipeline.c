@@ -29,10 +29,10 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 
 	VkPipelineVertexInputStateCreateInfo vinci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-		.pVertexBindingDescriptions      = pipeln->vertbinds,
-		.vertexBindingDescriptionCount   = pipeln->vertbindc,
-		.pVertexAttributeDescriptions    = pipeln->vertattrs,
-		.vertexAttributeDescriptionCount = pipeln->vertattrc,
+		.pVertexBindingDescriptions      = pipeln->vert_binds,
+		.vertexBindingDescriptionCount   = pipeln->vert_bindc,
+		.pVertexAttributeDescriptions    = pipeln->vert_attrs,
+		.vertexAttributeDescriptionCount = pipeln->vert_attrc,
 	};
 	VkPipelineInputAssemblyStateCreateInfo inassci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,

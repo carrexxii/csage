@@ -1,7 +1,10 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-extern uint config_window_width;
-extern uint config_window_height;
+struct GlobalConfig {
+	int winw;
+	int winh;
+};
+extern struct GlobalConfig global_config;
 
 #endif

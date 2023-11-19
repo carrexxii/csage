@@ -83,7 +83,7 @@ struct Model {
 	float timer;
 };
 
-void models_init(VkRenderPass render_pass);
+void models_init(VkRenderPass renderpass);
 struct Model* model_new(char* path);
 void models_update();
 void models_record_commands(VkCommandBuffer cmd_buf);

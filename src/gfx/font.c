@@ -1,6 +1,3 @@
-#include "common.h"
-#include "gfx/buffers.h"
-#include <cglm/cam.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -9,6 +6,7 @@
 #include "config.h"
 #include "util/varray.h"
 #include "vulkan.h"
+#include "gfx/buffers.h"
 #include "texture.h"
 #include "font.h"
 
@@ -36,7 +34,7 @@ static VkVertexInputBindingDescription fontvertbind = {
 	.stride    = SIZEOF_FONT_VERTEX, /* xyuv */
 	.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
 };
-static VkVertexInputAttributeDescription fontvertattrs[] = {
+static VkVertexInputAttributeDescription fontvert_attrs[] = {
 	{ .binding  = 0,
 	  .location = 0,
 	  .format   = VK_FORMAT_R32G32_SFLOAT, /* xy */
@@ -121,10 +119,10 @@ void font_init(VkRenderPass renderpass)
 	pipeln = (struct Pipeline){
 		.vshader   = create_shader(SHADER_DIR "font.vert"),
 		.fshader   = create_shader(SHADER_DIR "font.frag"),
-		.vertbindc = 1,
-		.vertbinds = &fontvertbind,
-		.vertattrc = 2,
-		.vertattrs = fontvertattrs,
+		.vert_bindc = 1,
+		.vert_binds = &fontvertbind,
+		.vert_attrc = 2,
+		.vert_attrs = fontvert_attrs,
 		.texturec  = 1,
 		.textures  = &atlas,
 		.uboc      = 1,
@@ -135,7 +133,7 @@ void font_init(VkRenderPass renderpass)
 	pipeln_init(&pipeln, renderpass);
 
 	mat4 proj;
-	glm_ortho(0.0, config_window_width, config_window_height, 0.0, 0.0, 1.0, proj);
+	glm_ortho(0.0, global_config.winw, global_config.winh, 0.0, 0.0, 1.0, proj);
 	buffer_update(ubo_buf, sizeof(mat4), proj);
 }
 
@@ -145,7 +143,7 @@ int font_render(char* text, float start_x, float start_y, float w)
 	int len = strlen(text);
 	float* verts = smalloc(6*sizeof(float[4])*len);
 	float  x = start_x;
-	float  y = config_window_height - start_y;
+	float  y = global_config.winh - start_y;
 	float* v = verts;
 	float offset, sz[2];
 	float char_x, char_y;

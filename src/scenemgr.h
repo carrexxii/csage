@@ -2,10 +2,11 @@
 #define SCENEMGR_H
 
 enum SceneName {
+	SCENE_NONE,
+	SCENE_MAINMENU,
 	SCENE_MENU,
 	SCENE_GAME,
 	SCENE_EDITOR,
-	SCENE_MENUBACKGROUND,
 };
 
 enum SceneType {
@@ -15,9 +16,9 @@ enum SceneType {
 };
 
 struct Scene {
+	enum SceneType type;
 	void (*update)(void);
 	void (*draw)(void);
-	enum SceneType type;
 };
 
 void scenemgr_init();

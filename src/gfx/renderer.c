@@ -11,6 +11,7 @@
 #include "swapchain.h"
 #include "camera.h"
 #include "font.h"
+#include "ui/ui.h"
 #include "map.h"
 #include "renderer.h"
 
@@ -28,14 +29,14 @@ static struct {
 	VkFence frames[FRAMES_IN_FLIGHT];
 } fences;
 
-static VkRenderPass     render_pass;
+static VkRenderPass     renderpass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
 // static struct Pipeline  pipeln;
 
 void renderer_init()
 {
-	swapchain_init(surface, config_window_width, config_window_height);
+	swapchain_init(surface, global_config.winw, global_config.winh);
 
 	VkAttachmentDescription colourdesc = {
 		.format         = surfacefmt.format,
@@ -95,7 +96,7 @@ void renderer_init()
 		.dependencyCount = 1,
 		.pDependencies   = &subpassdep,
 	};
-	if (vkCreateRenderPass(gpu, &renpassi, NULL, &render_pass) != VK_SUCCESS)
+	if (vkCreateRenderPass(gpu, &renpassi, NULL, &renderpass) != VK_SUCCESS)
 		ERROR("[VK] Failed to create render pass");
 	else
 		DEBUG(1, "[VK] Created render pass");
@@ -104,10 +105,11 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	models_init(render_pass);
-	font_init(render_pass);
-	particles_init(render_pass);
-	map_init(render_pass);
+	ui_init(renderpass);
+	models_init(renderpass);
+	font_init(renderpass);
+	particles_init(renderpass);
+	map_init(renderpass);
 }
 
 void renderer_draw()
@@ -171,12 +173,13 @@ void renderer_free()
 	for (uint i = 0; i < swapchainimgc; i++)
 		vkDestroyFramebuffer(gpu, frame_bufs[i], NULL);
 
+	ui_free();
 	models_free();
 	font_free();
 	particles_free();
 
 	DEBUG(3, "[VK] Destroying render pass...");
-	vkDestroyRenderPass(gpu, render_pass, NULL);
+	vkDestroyRenderPass(gpu, renderpass, NULL);
 
 	free(frame_bufs);
 	free(cmd_bufs);
@@ -187,18 +190,18 @@ void renderer_free()
  */
 static void record_commands(int imgi)
 {
-	VkCommandBuffer cmdbuf = cmd_bufs[frame];
+	VkCommandBuffer cmd_buf = cmd_bufs[frame];
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 		.pInheritanceInfo = NULL,
 	};
-	if (vkBeginCommandBuffer(cmdbuf, &begini) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(cmd_buf, &begini) != VK_SUCCESS)
 		ERROR("[VK] Failed to begin command buffer for image %u", imgi);
 
-	VkRenderPassBeginInfo render_passi = {
+	VkRenderPassBeginInfo renderpassi = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderPass      = render_pass,
+		.renderPass      = renderpass,
 		.framebuffer     = frame_bufs[imgi],
 		.clearValueCount = 2,
 		.pClearValues    = (VkClearValue[]){
@@ -211,15 +214,16 @@ static void record_commands(int imgi)
 		},
 	};
 
-	vkCmdBeginRenderPass(cmdbuf, &render_passi, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(cmd_buf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
-	font_record_commands(cmdbuf);
-	map_record_commands(cmdbuf);
-	models_record_commands(cmdbuf);
-	particles_record_commands(cmdbuf);
+	ui_record_commands(cmd_buf);
+	font_record_commands(cmd_buf);
+	map_record_commands(cmd_buf);
+	models_record_commands(cmd_buf);
+	particles_record_commands(cmd_buf);
 
-	vkCmdEndRenderPass(cmdbuf);
-	if (vkEndCommandBuffer(cmdbuf) != VK_SUCCESS)
+	vkCmdEndRenderPass(cmd_buf);
+	if (vkEndCommandBuffer(cmd_buf) != VK_SUCCESS)
 		ERROR("[VK] Failed to record comand buffer");
 }
 
@@ -229,7 +233,7 @@ static void create_framebuffers()
 	for (uint i = 0; i < swapchainimgc; i++) {
 		VkFramebufferCreateInfo framebufi = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-			.renderPass      = render_pass,
+			.renderPass      = renderpass,
 			.attachmentCount = 2,
 			.pAttachments    = (VkImageView[]){ swapchainimgviews[i], depthview },
 			.width           = swapchainext.width,

@@ -31,14 +31,16 @@
 	#include <io.h>
 #endif
 
+#include <SDL2/SDL_log.h>
+
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #define CGLM_DEFINE_PRINTS
 #define CGLM_OMIT_NS_FROM_STRUCT_API
 #include "cglm/struct.h"
 
-#define fps                      50.0
-#define dt                       (1.0/fps)
-#define dt_ms                    (dt*1000.0)
+#define FPS                      50.0
+#define DT                       (1.0/FPS)
+#define DT_MS                    (DT*1000.0)
 #define DEBUG_MALLOC_MIN         (128*1024)
 
 #define FONT_PATH    "data/font.ttf"
@@ -90,6 +92,12 @@ enum Direction {
 	DIRECTION_FORWARDS  = 0x10,
 	DIRECTION_BACKWARDS = 0x20,
 };
+
+union Colour {
+	uint32 rgba;
+	struct { uint8 r, g, b, a; };
+};
+#define COLOUR_TO_VEC(c) (float[4]){ c.r, c.g, c.b, c.a }
 
 #define EXPR(x) ({ x })
 #define LAMBDA(type, body) EXPR( \

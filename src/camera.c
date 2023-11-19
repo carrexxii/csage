@@ -8,8 +8,8 @@ mat4 camview = GLM_MAT4_IDENTITY_INIT;
 vec3 campos  = { 0.0, 0.0, 0.0 };
 float zoom   = 100.0;
 enum Direction camdir = 0;
-static float panspeed  = 6.0 * dt;
-static float zoomspeed = 100.0 * dt;
+static float panspeed  = 6.0*DT;
+static float zoomspeed = 100.0*DT;
 
 void camera_init()
 {
@@ -33,8 +33,8 @@ struct Ray camera_get_mouse_ray(float x, float y)
 	camera_get_vp(vp);
 
 	vec3 p1, p2;
-	glm_unproject((vec3){ x, y, 0.0 }, vp, (float[]){ 0.0, 0.0, config_window_width, config_window_height }, p1);
-	glm_unproject((vec3){ x, y, 1.0 }, vp, (float[]){ 0.0, 0.0, config_window_width, config_window_height }, p2);
+	glm_unproject((vec3){ x, y, 0.0 }, vp, (float[]){ 0.0, 0.0, global_config.winw, global_config.winh }, p1);
+	glm_unproject((vec3){ x, y, 1.0 }, vp, (float[]){ 0.0, 0.0, global_config.winw, global_config.winh }, p2);
 
 	return ray_from_points(p1, p2);
 }
@@ -49,8 +49,8 @@ vec2s camera_get_map_point(struct Ray ray)
 
 void camera_set_perspective()
 {
-	glm_ortho((float)config_window_width/zoom , -(float)config_window_width/zoom,
-	          (float)config_window_height/zoom, -(float)config_window_height/zoom, 1000.0, -16.0, camproj);
+	glm_ortho((float)global_config.winw/zoom , -(float)global_config.winw/zoom,
+	          (float)global_config.winh/zoom, -(float)global_config.winh/zoom, 1000.0, -16.0, camproj);
 }
 
 void camera_update()

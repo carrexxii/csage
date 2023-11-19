@@ -6,6 +6,7 @@
 #include "util/arena.h"
 #include "input.h"
 #include "map.h"
+#include "gfx/ui/ui.h"
 
 static EntityID e1;
 
@@ -40,4 +41,7 @@ static void test_init()
 
 	// input_register_mouse(MOUSE_DRAG, path_to_mouse);
 	input_register_mouse(MOUSE_RIGHT, move_to_mouse);
+
+	int c = container_new(RECT(0, 0, 50, 50), NULL, -1);
+	ui_build();
 }

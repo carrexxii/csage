@@ -31,14 +31,14 @@
 
 #define VK_GET_EXT(var, ext) \
 	PFN_##ext var = (PFN_##ext)vkGetInstanceProcAddr(instance, #ext)
-#define STRING_DEVICE_TYPE(x)                                          \
+#define STRING_DEVICE_TYPE(x)                                         \
 	((x) == VK_PHYSICAL_DEVICE_TYPE_OTHER         ? "Other"         : \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU? "Integrated gpu": \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU  ? "Discrete gpu"  : \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU   ? "Virtual gpu"   : \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_CPU           ? "CPU"           : \
 	 "Unknown")
-#define STRING_QUEUE_BIT(x)                                 \
+#define STRING_QUEUE_BIT(x)                                \
 	((x) == VK_QUEUE_GRAPHICS_BIT      ? "Graphics"      : \
 	 (x) == VK_QUEUE_COMPUTE_BIT       ? "Compute"       : \
 	 (x) == VK_QUEUE_TRANSFER_BIT      ? "Transfer"      : \
@@ -48,7 +48,7 @@
 	 (x) == 0x0000000F? "Generic (unprotected)"          : \
 	 (x) == 0x0000001F? "Generic (protected)"            : \
 	 "Other combination")
-#define STRING_PRESENT_MODE(x)                                                       \
+#define STRING_PRESENT_MODE(x)                                                      \
 	((x) == VK_PRESENT_MODE_IMMEDIATE_KHR                ? "Immediate"            : \
 	 (x) == VK_PRESENT_MODE_MAILBOX_KHR                  ? "Mailbox"              : \
 	 (x) == VK_PRESENT_MODE_FIFO_KHR                     ? "FIFO"                 : \
@@ -56,14 +56,14 @@
 	 (x) == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR    ? "Shared demand refresh": \
 	 (x) == VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR? "Shared cont. refresh" : \
 	 "Unknown")
-#define STRING_DEBUG_REPORT(x)                                                   \
+#define STRING_DEBUG_REPORT(x)                                                  \
 	((x) == VK_DEBUG_REPORT_INFORMATION_BIT_EXT        ? "Information"        : \
 	 (x) == VK_DEBUG_REPORT_WARNING_BIT_EXT            ? "Warning"            : \
 	 (x) == VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT? "Performance Warning": \
 	 (x) == VK_DEBUG_REPORT_ERROR_BIT_EXT              ? "Error"              : \
 	 (x) == VK_DEBUG_REPORT_DEBUG_BIT_EXT              ? "Debug"              : \
 	 "Unknown")
-#define STRING_DEBUG_REPORT_OBJECT(x)                                                                                \
+#define STRING_DEBUG_REPORT_OBJECT(x)                                                                         \
 	((x) == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT                       ? "Unknown"                       : \
 	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT                      ? "Instance"                      : \
 	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT               ? "Physical Device"               : \
@@ -140,7 +140,7 @@
          
 void           init_vulkan(SDL_Window* window);
 VkShaderModule create_shader(char* restrict file);
-void           free_vulkan();
+void           free_vulkan(void);
 
 extern VkInstance   instance;
 extern VkSurfaceKHR surface;

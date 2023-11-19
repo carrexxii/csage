@@ -1,6 +1,11 @@
 #ifndef UTIL_MATHS_H
 #define UTIL_MATHS_H
 
+#define RECT(x, y, w, h) (Rect){ x, y, w, h }
+typedef struct Rect {
+	float x, y, w, h;
+} Rect;
+
 struct Transform {
 	vec4s rotation;
 	vec3s translation;

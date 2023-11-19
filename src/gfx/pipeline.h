@@ -21,10 +21,10 @@ struct Pipeline {
 	/* Caller-defined values */
 	VkPrimitiveTopology topology;
 	struct {
-		int vertbindc;
-		int vertattrc;
-		VkVertexInputBindingDescription*   vertbinds;
-		VkVertexInputAttributeDescription* vertattrs;
+		int vert_bindc;
+		int vert_attrc;
+		VkVertexInputBindingDescription*   vert_binds;
+		VkVertexInputAttributeDescription* vert_attrs;
 	};
 	VkShaderModule  vshader;
 	VkShaderModule tcshader;

@@ -1,15 +1,15 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
 #include "config.h"
 #include "taskmgr.h"
 #include "gfx/vulkan.h"
 #include "gfx/renderer.h"
+#include "gfx/ui/ui.h"
 #include "camera.h"
 #include "input.h"
 #include "entities/entity.h"
+#include "scenemgr.h"
 
 #include "gfx/particles.h"
 #include "test.h"
@@ -18,17 +18,19 @@ void init_sdl();
 void init_input();
 noreturn void quit_cb(bool kdown);
 
+struct GlobalConfig global_config;
 SDL_Renderer* renderer;
 SDL_Window*   window;
-
-uint config_window_width  = 1280;
-uint config_window_height = 720;
 
 #ifndef TESTING
 int main(int argc, char** argv)
 {
 	for (int i = 0; i < argc; i++)
 		printf("%s\n", argv[i]);
+
+	// TODO
+	global_config.winw = 1280;
+	global_config.winh = 720;
 
 	init_sdl();
 
@@ -51,28 +53,9 @@ int main(int argc, char** argv)
 
 	srand(SDL_GetTicks64());
 
-	taskmgr_init();
-	taskmgr_add_task(camera_update);
-	taskmgr_add_task(particles_update);
-	taskmgr_add_task(entities_update);
-	taskmgr_add_task(models_update);
-
 	test_init();
-
-	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
-	           "--------------------------------------", SDL_GetTicks64());
-	uint64 delta, newtime, oldtime = 0.0, accum = 0.0;
-	while (!input_check()) {
-		newtime = SDL_GetTicks64();
-		delta   = newtime - oldtime;
-		oldtime = newtime;
-		accum  += delta;
-		while (accum >= dt_ms) {
-			while (!taskmgr_reset());
-			accum -= dt_ms;
-		}
-		renderer_draw();
-	}
+	scenemgr_init();
+	scenemgr_loop();
 
 	return 0;
 }
@@ -90,7 +73,7 @@ void init_sdl()
 		DEBUG(1, "[INIT] Initialized SDL");
 
 	window = SDL_CreateWindow("CSage", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-	                          config_window_width, config_window_height, SDL_WINDOW_VULKAN);
+	                          global_config.winw, global_config.winh, SDL_WINDOW_VULKAN);
 	if (!window)
 		ERROR("[INIT] Failed to create window (%s)", SDL_GetError());
 	else
