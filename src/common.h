@@ -100,10 +100,12 @@ union Colour {
 #define COLOUR_TO_VEC(c) (float[4]){ c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f }
 
 #define EXPR(x) ({ x })
-#define LAMBDA(type, body) EXPR( \
-		type _ body              \
-		_;                       \
+#define LAMBDA(type, args, body) EXPR( \
+		type _(args) {                 \
+			body                       \
+		} _;                           \
 	)
+#define LAMBDAV(body) LAMBDA(void, void, body)
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))

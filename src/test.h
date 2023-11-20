@@ -35,13 +35,11 @@ static bool move_to_mouse(int type, bool kdown, int x, int y)
 
 static void test_init()
 {
+	input_register(SDL_KEYDOWN, SDLK_ESCAPE, quit);
+
 	map_new((ivec3s){ 64, 64, 16 });
 
 	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "cube.glb");
-
-	// input_register_mouse(MOUSE_DRAG, path_to_mouse);
-	input_register_mouse(MOUSE_RIGHT, move_to_mouse);
-
 
 	struct UIStyle test_style = {
 		.title  = NULL,

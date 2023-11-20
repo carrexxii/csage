@@ -3,33 +3,23 @@
 
 #include <SDL2/SDL.h>
 
-#define MAX_INPUT_CALLBACKS 16
-#define MOUSE_EVENT_COUNT   MOUSE_INVALID
-#define MAX_CALLBACKS_PER_MOUSE_BUTTON 5
+#define MAX_EVENT_CALLBACKS 64
 
-enum MouseInput {
-	MOUSE_LEFT,
-	MOUSE_RIGHT,
-	MOUSE_MIDDLE,
-	MOUSE_DRAG,
-	MOUSE_INVALID,
-	MOUSE_NONE,
+/* !! Does not match with `SDL_BUTTON_*` values */
+enum MouseMask {
+	MOUSE_MASK_NONE       = 0x00,
+	MOUSE_MASK_LEFT       = 0x01,
+	MOUSE_MASK_RIGHT      = 0x02,
+	MOUSE_MASK_MIDDLE     = 0x04,
+	MOUSE_MASK_MOUSE_DRAG = 0x08,
 };
 
-struct KeyboardCallback {
-	void (*fn)(bool);
-	int  key;
-	bool onkeydown;
-	bool onkeyup;
-};
+void input_poll(void);
+void input_register(SDL_EventType type, SDL_Keycode key, void (*fn)(void));
+void input_deregister(SDL_EventType type, SDL_Keycode key, void (*fn)(void));
 
-bool input_check();
-void input_register_key(struct KeyboardCallback cb);
-/* Mouse inputs will keep a list of functions registered for each key.
- * The functions will be called in order - stopping if one of them returns `true`.
- * ie - a function returning `false` means that we proceed to the next callback.
- */
-void input_register_mouse(enum MouseInput btn, bool (*fn)(int, bool, int, int));
+extern int mouse_x;
+extern int mouse_y;
 
 #endif
 

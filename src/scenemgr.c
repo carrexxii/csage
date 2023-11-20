@@ -22,6 +22,7 @@ void scenemgr_init()
 {
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
+	taskmgr_add_task(ui_update);
 	taskmgr_add_task(particles_update);
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
@@ -29,12 +30,13 @@ void scenemgr_init()
 	current_scene = SCENE_GAME;
 }
 
-void scenemgr_loop()
+noreturn void scenemgr_loop()
 {
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks64());
 	uint64 dt, nt, ot = 0.0, acc = 0.0;
-	while (!input_check()) {
+	while (1) {
+		input_poll();
 		nt = SDL_GetTicks64();
 		dt = nt - ot;
 		ot = nt;

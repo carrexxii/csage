@@ -22,6 +22,6 @@ struct Scene {
 };
 
 void scenemgr_init();
-void scenemgr_loop();
+noreturn void scenemgr_loop();
 
 #endif

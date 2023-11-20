@@ -5,6 +5,9 @@ struct GlobalConfig {
 	int winw;
 	int winh;
 };
+
+noreturn void quit();
+
 extern struct GlobalConfig global_config;
 
 #endif

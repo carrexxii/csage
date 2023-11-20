@@ -1,6 +1,7 @@
 #include "vulkan/vulkan.h"
 
 #include "config.h"
+#include "input.h"
 #include "util/arena.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
@@ -30,6 +31,8 @@ struct Arena*    ui_arena;
 struct UIObject* ui_objs[UI_MAX_OBJECTS];
 int ui_objc;
 
+static enum MouseMask mouse_state;
+
 void ui_init(VkRenderPass renderpass)
 {
 	pipeln = (struct Pipeline){
@@ -45,6 +48,9 @@ void ui_init(VkRenderPass renderpass)
 	pipeln_init(&pipeln, renderpass);
 
 	ui_arena = arena_new(UI_ARENA_DEFAULT_SIZE, ARENA_RESIZEABLE);
+
+	input_register(SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LEFT, LAMBDA(void, void, mouse_state |=  MOUSE_MASK_LEFT;));
+	input_register(SDL_MOUSEBUTTONUP  , SDL_BUTTON_LEFT, LAMBDA(void, void, mouse_state &= ~MOUSE_MASK_LEFT;));
 
 	DEBUG(2, "[UI] Initialized UI:\n\tArena size: %d", UI_ARENA_DEFAULT_SIZE);
 }
@@ -89,6 +95,12 @@ Rect ui_build_rect(struct UIObject* obj, bool absolute_sz)
 	            start_y + obj->rect.y*scale_y + margin_y,
 	            absolute_sz? obj->rect.w/global_config.winw: obj->rect.w*scale_x - 2.0f*margin_x,
 	            absolute_sz? obj->rect.h/global_config.winh: obj->rect.h*scale_y - 2.0f*margin_y);
+}
+
+void ui_update()
+{
+	if (mouse_state & MOUSE_MASK_LEFT)
+		DEBUG(1, "%d, %d", mouse_x, mouse_y);
 }
 
 void ui_record_commands(VkCommandBuffer cmd_buf)

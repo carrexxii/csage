@@ -15,8 +15,6 @@
 #include "test.h"
 
 void init_sdl();
-void init_input();
-noreturn void quit_cb(bool kdown);
 
 struct GlobalConfig global_config;
 SDL_Renderer* renderer;
@@ -45,7 +43,6 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
-	init_input();
 	init_vulkan(window);
 	renderer_init();
 	camera_init();
@@ -80,20 +77,8 @@ void init_sdl()
 		DEBUG(1, "[INIT] Created window");
 }
 
-void init_input()
+noreturn void quit()
 {
-	input_register_key((struct KeyboardCallback){ .key = SDLK_ESCAPE  , .fn = quit_cb, .onkeydown = true });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_RIGHT   , .fn = camera_move_right_cb, .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_LEFT    , .fn = camera_move_left_cb , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_UP      , .fn = camera_move_up_cb   , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_DOWN    , .fn = camera_move_down_cb , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_PAGEUP  , .fn = camera_zoom_in_cb   , .onkeydown = true, .onkeyup = true, });
-	input_register_key((struct KeyboardCallback){ .key = SDLK_PAGEDOWN, .fn = camera_zoom_out_cb  , .onkeydown = true, .onkeyup = true, });
-}
-
-noreturn void quit_cb(bool kdown)
-{
-	(void)kdown;
 	DEBUG(1, "/------------------------------\\");
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");

@@ -5,6 +5,7 @@
 
 #include "util/string.h"
 #include "gfx/buffers.h"
+#include "input.h"
 
 #define UI_MAX_OBJECTS        64
 #define UI_ARENA_DEFAULT_SIZE 4096
@@ -35,17 +36,9 @@ struct UIObject {
 	struct UIStyle* style;
 };
 
-enum MouseState {
-	MOUSE_STATE_NONE       = 0x00,
-	MOUSE_STATE_LMB_DOWN   = 0x01,
-	MOUSE_STATE_RMB_DOWN   = 0x02,
-	MOUSE_STATE_MMB_DOWN   = 0x04,
-	MOUSE_STATE_MOUSE_DRAG = 0x08,
-};
-
 // TODO: Text buffering
 struct UIContext {
-	enum MouseState mouse_state;
+	enum MouseMask mouse_state;
 	vec2 mouse_pos;
 };
 
@@ -84,6 +77,7 @@ extern int ui_objc;
 void ui_init(VkRenderPass renderpass);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
+void ui_update(void);
 void ui_record_commands(VkCommandBuffer cmd_buf);
 void ui_free(void);
 
