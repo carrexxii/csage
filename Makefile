@@ -10,7 +10,7 @@ OBJDIR    = ./obj
 SHADERDIR = ./shaders
 LIBDIR    = ./lib
 
-COMPILE_WITH = -DDEBUG_LEVEL=3
+COMPILE_WITH = -DDEBUG_LEVEL=5
 
 WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict        \
            -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration \

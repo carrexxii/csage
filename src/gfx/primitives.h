@@ -10,8 +10,10 @@ inline static void quad_points(float* points, Rect rect, float z, union Colour c
 		rect.x         , rect.y         , z, EXPAND_COLOUR(colour),
 		rect.x         , rect.y + rect.h, z, EXPAND_COLOUR(colour),
 		rect.x + rect.w, rect.y         , z, EXPAND_COLOUR(colour),
+		rect.x         , rect.y + rect.h, z, EXPAND_COLOUR(colour),
 		rect.x + rect.w, rect.y + rect.h, z, EXPAND_COLOUR(colour),
-	}, sizeof(float[4*7]));
+		rect.x + rect.w, rect.y         , z, EXPAND_COLOUR(colour),
+	}, sizeof(float[6*7]));
 }
 
 #endif

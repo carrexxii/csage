@@ -17,12 +17,6 @@ struct Character {
 	int offset; /* In the main texture */
 };
 
-struct TextObject {
-	VBO  vbo;
-	uint vertc;
-	bool active;
-};
-
 /* -------------------------------------------------------------------- */
 #define SIZEOF_FONT_VERTEX sizeof(float[4])
 

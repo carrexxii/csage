@@ -5,14 +5,11 @@
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "ui.h"
-#include <vulkan/vulkan_core.h>
-
-#define SIZEOF_UI_VERTEX sizeof(float[7])
 
 static struct Pipeline pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
-	  .stride    = SIZEOF_UI_VERTEX, /* xyzrgba */
+	  .stride    = UI_VERTEX_SIZE, /* xyzrgba */
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
 };
 static VkVertexInputAttributeDescription vert_attrs[] = {
@@ -44,7 +41,6 @@ void ui_init(VkRenderPass renderpass)
 		.vert_attrc      = 2,
 		.vert_attrs      = vert_attrs,
 		.enable_blending = false,
-		.topology        = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
 	};
 	pipeln_init(&pipeln, renderpass);
 
@@ -56,7 +52,43 @@ void ui_init(VkRenderPass renderpass)
 void ui_build()
 {
 	for (int i = 0; i < ui_objc; i++)
-		container_build(ui_objs[i]);
+		if (ui_objs[i]->type != UI_CONTAINER)
+			button_build(ui_objs[i]);
+	for (int i = 0; i < ui_objc; i++)
+		if (ui_objs[i]->type == UI_CONTAINER)
+			container_build(ui_objs[i]);
+}
+
+Rect ui_build_rect(struct UIObject* obj, bool absolute_sz)
+{
+	float margin_x = (float)obj->style->margin / global_config.winw;
+	float margin_y = (float)obj->style->margin / global_config.winh;
+
+	float start_x, start_y;
+	float scale_x, scale_y;
+	if (obj->parent != -1) {
+		struct Rect parent_rect = ui_objs[obj->parent]->rect;
+		float parent_margin = ui_objs[obj->parent]->style->margin;
+		if (absolute_sz) {
+			start_x = parent_rect.x + (parent_margin + margin_x)/global_config.winw;
+			start_y = parent_rect.y + (parent_margin + margin_y)/global_config.winh;
+		} else {
+			start_x = parent_rect.x + parent_margin + margin_x;
+			start_y = parent_rect.y + parent_margin + margin_y;
+		}
+		scale_x = parent_rect.w - 2.0f*margin_x;
+		scale_y = parent_rect.h - 2.0f*margin_y;
+	} else {
+		start_x = 0.0f;
+		start_y = 0.0f;
+		scale_x = 1.0f;
+		scale_y = 1.0f;
+	}
+
+	return RECT(start_x + obj->rect.x*scale_x + margin_x,
+	            start_y + obj->rect.y*scale_y + margin_y,
+	            absolute_sz? obj->rect.w/global_config.winw: obj->rect.w*scale_x - 2.0f*margin_x,
+	            absolute_sz? obj->rect.h/global_config.winh: obj->rect.h*scale_y - 2.0f*margin_y);
 }
 
 void ui_record_commands(VkCommandBuffer cmd_buf)
@@ -65,6 +97,8 @@ void ui_record_commands(VkCommandBuffer cmd_buf)
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 	struct Container* container;
 	for (int i = 0; i < ui_objc; i++) {
+		if (ui_objs[i]->type != UI_CONTAINER)
+			continue;
 		container = ui_objs[i]->data;
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &container->vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, container->vertc, 1, 0, i);
@@ -74,6 +108,7 @@ void ui_record_commands(VkCommandBuffer cmd_buf)
 void ui_free()
 {
 	for (int i = 0; i < ui_objc; i++)
-		vbo_free(&((struct Container*)ui_objs[i]->data)->vbo);
+		if (ui_objs[i]->type == UI_CONTAINER)
+			vbo_free(&((struct Container*)ui_objs[i]->data)->vbo);
 	pipeln_free(&pipeln);
 }

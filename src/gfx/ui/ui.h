@@ -9,6 +9,7 @@
 #define UI_MAX_OBJECTS        64
 #define UI_ARENA_DEFAULT_SIZE 4096
 #define UI_BASE_Z_LEVEL       2
+#define UI_VERTEX_SIZE        sizeof(float[7])
 
 enum UIObjectType {
 	UI_NONE,
@@ -56,17 +57,17 @@ struct UIStyle {
 	union Colour fg;
 };
 
-static struct UIStyle default_style = {
+static struct UIStyle default_container_style = {
 	.title  = NULL,
 	.margin = 10,
-	.bg = 0x0000FFFF,
+	.bg = 0x292929FF,
 	.fg = 0xCCCCCCFF,
 };
-static struct UIStyle test_style = {
+static struct UIStyle default_button_style = {
 	.title  = NULL,
 	.margin = 10,
-	.bg = 0xFF00FFFF,
-	.fg = 0xDDDDDDFF,
+	.bg = 0xFF0000FF,
+	.fg = 0xCCCCCCFF,
 };
 extern struct Arena* ui_arena;
 extern struct UIContext ui_context;
@@ -74,13 +75,18 @@ extern struct UIObject* ui_objs[UI_MAX_OBJECTS];
 extern int ui_objc;
 
 #include "container.h"
+#include "button.h"
 
 /* -------------------------------------------------------------------- */
 
 void ui_init(VkRenderPass renderpass);
-bool ui_is_valid_rect(Rect rect);
 void ui_build(void);
+Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
 void ui_record_commands(VkCommandBuffer cmd_buf);
 void ui_free(void);
+
+inline static bool ui_is_valid_obj(int obji) {
+	return obji >= 0 && obji < ui_objc;
+}
 
 #endif

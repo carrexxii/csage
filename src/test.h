@@ -42,9 +42,16 @@ static void test_init()
 	// input_register_mouse(MOUSE_DRAG, path_to_mouse);
 	input_register_mouse(MOUSE_RIGHT, move_to_mouse);
 
+
+	struct UIStyle test_style = {
+		.title  = NULL,
+		.margin = 10,
+		.bg = 0xFF00FFFF,
+		.fg = 0xDDDDDDFF,
+	};
 	int c1 = container_new(RECT(0.0, 0.0, 0.5, 0.5), NULL, -1);
-	int c2 = container_new(RECT(0.5, 0.5, 0.5, 0.5), NULL, -1);
-	int c3 = container_new(RECT(0.5, 0.5, 0.5, 0.4), &test_style, c1);
-	// int c4 = container_new(0.3, 0.3, LAYOUT_VERTICAL, NULL, -1);
+	// int c2 = container_new(RECT(0.5, 0.5, 0.5, 0.5), NULL, -1);
+	// int c3 = container_new(RECT(0.5, 0.5, 0.5, 0.4), &test_style, c1);
+	int b1 = button_new(RECT(0.0, 0.0, 100.0, 40.0), NULL, c1);
 	ui_build();
 }
