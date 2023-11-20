@@ -196,7 +196,7 @@ static void record_commands(int imgi)
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 		.pInheritanceInfo = NULL,
 	};
-	if (vkBeginCommandBuffer(cmd_buf, &begini) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(cmd_buf, &begini))
 		ERROR("[VK] Failed to begin command buffer for image %u", imgi);
 
 	VkRenderPassBeginInfo renderpassi = {
@@ -205,7 +205,7 @@ static void record_commands(int imgi)
 		.framebuffer     = frame_bufs[imgi],
 		.clearValueCount = 2,
 		.pClearValues    = (VkClearValue[]){
-			(VkClearValue){ .color = { 0.1, 0.1, 0.28, 1.0 } },
+			(VkClearValue){ .color = { 0.1, 0.1, 0.28, 0.0 } },
 			(VkClearValue){ .depthStencil = { 1.0, 0 } },
 		},
 		.renderArea = {
@@ -216,11 +216,11 @@ static void record_commands(int imgi)
 
 	vkCmdBeginRenderPass(cmd_buf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
-	ui_record_commands(cmd_buf);
-	font_record_commands(cmd_buf);
 	map_record_commands(cmd_buf);
 	models_record_commands(cmd_buf);
 	particles_record_commands(cmd_buf);
+	ui_record_commands(cmd_buf);
+	font_record_commands(cmd_buf);
 
 	vkCmdEndRenderPass(cmd_buf);
 	if (vkEndCommandBuffer(cmd_buf) != VK_SUCCESS)

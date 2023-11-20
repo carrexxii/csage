@@ -28,7 +28,7 @@ struct UIObject {
 	int parent;
 	enum UIObjectType type;
 	int8  z_lvl;
-	void* data;
+	void* data; // TODO: Maybe make this a union?
 
 	struct Rect rect;
 	struct UIState  state;
@@ -58,14 +58,16 @@ struct UIStyle {
 };
 
 static struct UIStyle default_container_style = {
-	.title  = NULL,
-	.margin = 10,
+	.title   = NULL,
+	.margin  = 10,
+	.padding = 10,
 	.bg = 0x292929FF,
 	.fg = 0xCCCCCCFF,
 };
 static struct UIStyle default_button_style = {
-	.title  = NULL,
-	.margin = 10,
+	.title   = NULL,
+	.margin  = 10,
+	.padding = 10,
 	.bg = 0xFF0000FF,
 	.fg = 0xCCCCCCFF,
 };

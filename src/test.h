@@ -52,6 +52,6 @@ static void test_init()
 	int c1 = container_new(RECT(0.0, 0.0, 0.5, 0.5), NULL, -1);
 	// int c2 = container_new(RECT(0.5, 0.5, 0.5, 0.5), NULL, -1);
 	// int c3 = container_new(RECT(0.5, 0.5, 0.5, 0.4), &test_style, c1);
-	int b1 = button_new(RECT(0.0, 0.0, 100.0, 40.0), NULL, c1);
+	int b1 = button_new("Hello", RECT(0.0, 0.0, 100.0, 40.0), NULL, c1);
 	ui_build();
 }

@@ -4,6 +4,7 @@
 #include "vulkan/vulkan.h"
 
 #include "config.h"
+#include "util/string.h"
 #include "util/varray.h"
 #include "vulkan.h"
 #include "gfx/buffers.h"
@@ -131,17 +132,18 @@ void font_init(VkRenderPass renderpass)
 	buffer_update(ubo_buf, sizeof(mat4), proj);
 }
 
-int font_render(char* text, float start_x, float start_y, float w)
+int font_render(String text, float start_x, float start_y, float z, float w)
 {
 	(void)w; // TODO: width/multi-line rendering
-	int len = strlen(text);
-	float* verts = smalloc(6*sizeof(float[4])*len);
-	float  x = start_x;
-	float  y = global_config.winh - start_y;
+	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*text.len);
+	float  x = start_x*global_config.winw;
+	float  y = global_config.winh*(1.0f - start_y);
 	float* v = verts;
 	float offset, sz[2];
 	float char_x, char_y;
-	for (char c = *text; c; c = *++text) {
+	char c;
+	for (int i = 0; i < text.len; i++) {
+		c = text.data[i];
 		offset = characters[(int)c].offset;
 		sz[0]  = characters[(int)c].sz[0];
 		sz[1]  = characters[(int)c].sz[1];
@@ -182,12 +184,15 @@ int font_render(char* text, float start_x, float start_y, float w)
 		x += characters[(int)c].advance >> 6;
 	}
 
-	text_objs[text_objc].active = true;
-	text_objs[text_objc].vertc  = 6*len;
-	text_objs[text_objc].vbo = vbo_new(text_objs[text_objc].vertc*sizeof(float[4]), verts);
+	text_objs[text_objc] = (struct TextObject){
+		.active = true,
+		.vertc  = 6*text.len,
+		.vbo    = vbo_new(6*text.len*SIZEOF_FONT_VERTEX, verts),
+		.z_lvl  = z,
+	};
 
+	DEBUG(4, "[GFX] Created new text object for \"%s\" at (%.2f, %.2f, %.2f)", text.data, start_x, start_y, z);
 	free(verts);
-
 	return text_objc++;
 }
 

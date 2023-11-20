@@ -1,5 +1,4 @@
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include "vulkan.h"
 #include "device.h"
@@ -112,26 +111,26 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 void image_new_depth_image()
 {
 	VkImageCreateInfo imgi = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0,
+		.sType  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.pNext  = NULL,
+		.flags  = 0,
 		.format = VK_FORMAT_D16_UNORM,
 		.extent = (VkExtent3D){
-			.width = swapchainext.width,
+			.width  = swapchainext.width,
 			.height = swapchainext.height,
-			.depth = 1,
+			.depth  = 1,
 		},
-		.imageType = VK_IMAGE_TYPE_2D,
-		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.imageType     = VK_IMAGE_TYPE_2D,
+		.tiling        = VK_IMAGE_TILING_OPTIMAL,
+		.sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.mipLevels = 1,
-		.arrayLayers = 1,
+		.mipLevels     = 1,
+		.arrayLayers   = 1,
 		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
 		         VK_IMAGE_USAGE_SAMPLED_BIT,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = NULL,
+		.pQueueFamilyIndices   = NULL,
 	};
 	if (vkCreateImage(gpu, &imgi, NULL, &depthimg) != VK_SUCCESS)
 		ERROR("[VK] Failed to create depth image");
@@ -142,7 +141,7 @@ void image_new_depth_image()
 	vkGetImageMemoryRequirements(gpu, depthimg, &memreq);
 	VkMemoryAllocateInfo alloci = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize = memreq.size,
+		.allocationSize  = memreq.size,
 		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
 	if (vkAllocateMemory(gpu, &alloci, NULL, &depthmem) != VK_SUCCESS)
@@ -152,10 +151,10 @@ void image_new_depth_image()
 	/* IMPROVEMENT: generalize into create_image_view */
 	/* image view */
 	VkImageViewCreateInfo viewi = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.image = depthimg,
-		.format = VK_FORMAT_D16_UNORM,
+		.image    = depthimg,
+		.format   = VK_FORMAT_D16_UNORM,
 		.components = {
 			.r = VK_COMPONENT_SWIZZLE_IDENTITY,
 			.g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -163,11 +162,11 @@ void image_new_depth_image()
 			.a = VK_COMPONENT_SWIZZLE_IDENTITY,
 		},
 		.subresourceRange = {
-			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-			.baseMipLevel = 0,
-			.levelCount = 1,
+			.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT,
+			.baseMipLevel   = 0,
+			.levelCount     = 1,
 			.baseArrayLayer = 0,
-			.layerCount = 1,
+			.layerCount     = 1,
 		},
 	};
 	if (vkCreateImageView(gpu, &viewi, NULL, &depthview) != VK_SUCCESS)
@@ -185,11 +184,11 @@ void image_new_depth_image()
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.image = depthimg,
 		.subresourceRange = {
-			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-			.baseMipLevel = 0,
-			.levelCount = 1,
+			.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT,
+			.baseMipLevel   = 0,
+			.levelCount     = 1,
 			.baseArrayLayer = 0,
-			.layerCount = 1,
+			.layerCount     = 1,
 		},
 		.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
 		.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -309,12 +308,12 @@ static void create_sampler(VkSampler* samp)
 		.mipLodBias       = 0.0,
 		.minLod           = 0.0,
 		.maxLod           = 0.0,
-		.anisotropyEnable = VK_FALSE,
+		.anisotropyEnable = false,
 		.maxAnisotropy    = 1,
-		.compareEnable    = VK_FALSE,
+		.compareEnable    = false,
 		.compareOp        = VK_COMPARE_OP_ALWAYS,
 		.borderColor      = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-		.unnormalizedCoordinates = VK_FALSE,
+		.unnormalizedCoordinates = false,
 	};
 	if (vkCreateSampler(gpu, &spli, NULL, samp) != VK_SUCCESS)
 		ERROR("[VK] Failed to create sampler");

@@ -3,18 +3,20 @@
 
 #include "vulkan/vulkan.h"
 
+#include "util/string.h"
 #include "buffers.h"
 
 #define FONT_MAX_TEXT_OBJECTS 128
 
 struct TextObject {
-	VBO  vbo;
-	uint vertc;
-	bool active;
+	VBO   vbo;
+	int   vertc;
+	float z_lvl;
+	bool  active;
 };
 
 void font_init(VkRenderPass renderpass);
-int  font_render(char* text, float start_x, float start_y, float w);
+int  font_render(String text, float start_x, float start_y, float z, float w);
 void font_record_commands(VkCommandBuffer cmdbuf);
 void font_free();
 

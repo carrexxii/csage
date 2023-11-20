@@ -22,7 +22,7 @@ inline static void update_img_dset(VkWriteDescriptorSet* dwriteset, VkDescriptor
                                    VkDescriptorImageInfo* dimgi, uintptr binding);
 static void update_dsets(struct Pipeline* pipeln);
 
-void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
+void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 {
 	VkPipelineShaderStageCreateInfo stagesci[5];
 	int stagec = init_shaders(pipeln, stagesci);
@@ -83,13 +83,23 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 	VkPipelineColorBlendAttachmentState blendattachs = {
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
 						  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-		.blendEnable  = pipeln->enable_blending,
-		.colorBlendOp = VK_BLEND_OP_ADD,
-		.alphaBlendOp = VK_BLEND_OP_ADD,
-		.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-		.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA,
-		.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-		.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+		// .blendEnable  = pipeln->enable_blending,
+		.blendEnable  = true,
+
+		// .colorBlendOp        = VK_BLEND_OP_ADD,
+		// .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+		// .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+
+		// .alphaBlendOp        = VK_BLEND_OP_ADD,
+		// .srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+		// .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+
+.srcColorBlendFactor=VK_BLEND_FACTOR_SRC_ALPHA,
+.dstColorBlendFactor=VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+.colorBlendOp=VK_BLEND_OP_ADD,
+.srcAlphaBlendFactor=VK_BLEND_FACTOR_ONE,
+.dstAlphaBlendFactor=VK_BLEND_FACTOR_ZERO,
+.alphaBlendOp=VK_BLEND_OP_ADD
 	};
 	VkPipelineColorBlendStateCreateInfo blendsci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
@@ -141,7 +151,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass)
 		.pColorBlendState    = &blendsci,
 		.pDynamicState       = NULL,
 		.layout              = pipeln->layout,
-		.renderPass          = renpass,
+		.renderPass          = renderpass,
 		.subpass             = 0,
 		.basePipelineHandle  = NULL,
 		.basePipelineIndex   = -1,
