@@ -1,10 +1,10 @@
-#ifndef GFX_FONT_H
-#define GFX_FONT_H
+#ifndef UI_FONT_H
+#define UI_FONT_H
 
 #include "vulkan/vulkan.h"
 
 #include "util/string.h"
-#include "buffers.h"
+#include "gfx/buffers.h"
 
 #define FONT_MAX_TEXT_OBJECTS 128
 

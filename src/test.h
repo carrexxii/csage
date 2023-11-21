@@ -1,5 +1,5 @@
 #include "config.h"
-#include "gfx/font.h"
+#include "gfx/ui/font.h"
 #include "camera.h"
 #include "entities/entity.h"
 #include "entities/pathfinding.h"

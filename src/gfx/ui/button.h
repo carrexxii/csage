@@ -3,7 +3,6 @@
 
 #include "util/string.h"
 #include "util/varray.h"
-#include "gfx/font.h"
 
 struct UIObject;
 struct UIStyle;

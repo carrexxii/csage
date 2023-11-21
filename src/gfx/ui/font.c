@@ -6,9 +6,9 @@
 #include "config.h"
 #include "util/string.h"
 #include "util/varray.h"
-#include "vulkan.h"
+#include "gfx/vulkan.h"
 #include "gfx/buffers.h"
-#include "texture.h"
+#include "gfx/texture.h"
 #include "font.h"
 
 struct Character {

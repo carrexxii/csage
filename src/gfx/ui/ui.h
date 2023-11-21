@@ -6,6 +6,7 @@
 #include "util/string.h"
 #include "gfx/buffers.h"
 #include "input.h"
+#include "font.h"
 #include "container.h"
 #include "button.h"
 
