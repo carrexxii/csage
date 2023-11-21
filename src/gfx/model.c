@@ -391,19 +391,19 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 				}
 				switch(prim->attributes[a].type) {
 					case cgltf_attribute_type_position:
-						models->meshes[m].vbos[0] = vbo_new(attr->count*sizeof(float[3]), verts);
+						models->meshes[m].vbos[0] = vbo_new(attr->count*sizeof(float[3]), verts, false);
 						break;
 					case cgltf_attribute_type_normal:
-						models->meshes[m].vbos[1] = vbo_new(attr->count*sizeof(float[3]), normals);
+						models->meshes[m].vbos[1] = vbo_new(attr->count*sizeof(float[3]), normals, false);
 						break;
 					case cgltf_attribute_type_texcoord:
-						models->meshes[m].vbos[2] = vbo_new(attr->count*sizeof(float[2]), uvs);
+						models->meshes[m].vbos[2] = vbo_new(attr->count*sizeof(float[2]), uvs, false);
 						break;
 					case cgltf_attribute_type_joints:
-						models->meshes[m].vbos[3] = vbo_new(attr->count*sizeof(int8[4]), verts);
+						models->meshes[m].vbos[3] = vbo_new(attr->count*sizeof(int8[4]), verts, false);
 						break;
 					case cgltf_attribute_type_weights:
-						models->meshes[m].vbos[4] = vbo_new(attr->count*sizeof(float[4]), verts);
+						models->meshes[m].vbos[4] = vbo_new(attr->count*sizeof(float[4]), verts, false);
 						break;
 					default:
 						continue;

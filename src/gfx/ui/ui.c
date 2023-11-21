@@ -2,7 +2,7 @@
 
 #include "config.h"
 #include "input.h"
-#include "util/arena.h"
+#include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "ui.h"
@@ -27,9 +27,9 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 /* -------------------------------------------------------------------- */
 
 struct UIContext ui_context;
-struct Arena*    ui_arena;
-struct UIObject* ui_objs[UI_MAX_OBJECTS];
-int ui_objc;
+struct VArray*   ui_objs;
+struct UIObject  ui_containers[UI_MAX_TOP_LEVEL_CONTAINERS];
+int ui_containerc = 0;
 
 static enum MouseMask mouse_state;
 
@@ -43,84 +43,100 @@ void ui_init(VkRenderPass renderpass)
 		.vert_binds      = vert_binds,
 		.vert_attrc      = 2,
 		.vert_attrs      = vert_attrs,
-		.enable_blending = false,
 	};
 	pipeln_init(&pipeln, renderpass);
 
-	ui_arena = arena_new(UI_ARENA_DEFAULT_SIZE, ARENA_RESIZEABLE);
+	ui_objs = varray_new(UI_DEFAULT_OBJECT_COUNT, sizeof(struct UIObject));
 
 	input_register(SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LEFT, LAMBDA(void, void, mouse_state |=  MOUSE_MASK_LEFT;));
 	input_register(SDL_MOUSEBUTTONUP  , SDL_BUTTON_LEFT, LAMBDA(void, void, mouse_state &= ~MOUSE_MASK_LEFT;));
 
-	DEBUG(2, "[UI] Initialized UI:\n\tArena size: %d", UI_ARENA_DEFAULT_SIZE);
+	DEBUG(2, "[UI] Initialized UI");
 }
 
-void ui_build()
-{
-	for (int i = 0; i < ui_objc; i++)
-		if (ui_objs[i]->type != UI_CONTAINER)
-			button_build(ui_objs[i]);
-	for (int i = 0; i < ui_objc; i++)
-		if (ui_objs[i]->type == UI_CONTAINER)
-			container_build(ui_objs[i]);
+struct UIObject* ui_alloc_object() {
+	return varray_get(ui_objs, ui_objs->len++);
+}
+String ui_alloc_string(char* text, isize len) {
+	return string_new(text, len);
+}
+
+void ui_build() {
+	for (int i = 0; i < ui_containerc; i++)
+		container_build(&ui_containers[i]);
 }
 
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz)
 {
-	float margin_x = (float)obj->style->margin / global_config.winw;
-	float margin_y = (float)obj->style->margin / global_config.winh;
-
 	float start_x, start_y;
 	float scale_x, scale_y;
-	if (obj->parent != -1) {
-		struct Rect parent_rect = ui_objs[obj->parent]->rect;
-		float parent_margin = ui_objs[obj->parent]->style->margin;
+	struct UIObject* parent = obj->parent;
+	if (parent) {
 		if (absolute_sz) {
-			start_x = parent_rect.x + (parent_margin + margin_x)/global_config.winw;
-			start_y = parent_rect.y + (parent_margin + margin_y)/global_config.winh;
+			start_x = parent->rect.x + parent->rect.w/2.0f - obj->rect.w/global_config.winw;
+			start_y = parent->rect.y - parent->rect.h/2.0f - obj->rect.h/global_config.winh;
+			scale_x = parent->rect.w/2.0f - obj->rect.w/global_config.winw;
+			scale_y = parent->rect.h/2.0f - obj->rect.h/global_config.winh;
 		} else {
-			start_x = parent_rect.x + parent_margin + margin_x;
-			start_y = parent_rect.y + parent_margin + margin_y;
+			// TODO + the return
+			start_x = 0.0f;
+			start_y = -1.0f;
+			scale_x = 1.0f;
+			scale_y = 1.0f;
 		}
-		scale_x = parent_rect.w - 2.0f*margin_x;
-		scale_y = parent_rect.h - 2.0f*margin_y;
 	} else {
 		start_x = 0.0f;
-		start_y = 0.0f;
+		start_y = -1.0f;
 		scale_x = 1.0f;
 		scale_y = 1.0f;
 	}
 
-	return RECT(start_x + obj->rect.x*scale_x + margin_x,
-	            start_y + obj->rect.y*scale_y + margin_y,
-	            absolute_sz? obj->rect.w/global_config.winw: obj->rect.w*scale_x - 2.0f*margin_x,
-	            absolute_sz? obj->rect.h/global_config.winh: obj->rect.h*scale_y - 2.0f*margin_y);
+	return RECT(start_x + obj->rect.x*scale_x,
+	            start_y + obj->rect.y*scale_y,
+	            absolute_sz? 2.0f*obj->rect.w/global_config.winw: obj->rect.w*scale_x,
+	            absolute_sz? 2.0f*obj->rect.h/global_config.winh: obj->rect.h*scale_y);
 }
 
 void ui_update()
 {
-	if (mouse_state & MOUSE_MASK_LEFT)
-		DEBUG(1, "%d, %d", mouse_x, mouse_y);
+	bool update_ui = false;
+	bool prev_state;
+	float mx = (float)mouse_x / global_config.winw;
+	float my = (float)mouse_y / global_config.winh;
+	struct UIObject* obj;
+	struct UIObject* cont;
+	for (int i = 0; i < ui_containerc; i++) {
+		cont = &ui_containers[i];
+		for (int j = 0; j < cont->container.objs->len; j++) {
+			obj = varray_get(cont->container.objs, j);
+			prev_state = obj->state.hover;
+			obj->state.hover = (mx >= obj->screen_rect.x && mx <= obj->screen_rect.x + obj->screen_rect.w) &&
+			                   (my >= obj->screen_rect.y && my <= obj->screen_rect.y + obj->screen_rect.h);
+			if (obj->state.hover != prev_state) {
+				button_on_hover(obj);
+				update_ui = true;
+			}
+		}
+	}
+
+	if (update_ui)
+		ui_build();
 }
 
 void ui_record_commands(VkCommandBuffer cmd_buf)
 {
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
-	struct Container* container;
-	for (int i = 0; i < ui_objc; i++) {
-		if (ui_objs[i]->type != UI_CONTAINER)
-			continue;
-		container = ui_objs[i]->data;
-		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &container->vbo.buf, (VkDeviceSize[]){ 0 });
-		vkCmdDraw(cmd_buf, container->vertc, 1, 0, i);
+	for (int i = 0; i < ui_containerc; i++) {
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &ui_containers[i].container.vbo.buf, (VkDeviceSize[]){ 0 });
+		vkCmdDraw(cmd_buf, ui_containers[i].container.verts->len, 1, 0, i);
 	}
 }
 
 void ui_free()
 {
-	for (int i = 0; i < ui_objc; i++)
-		if (ui_objs[i]->type == UI_CONTAINER)
-			vbo_free(&((struct Container*)ui_objs[i]->data)->vbo);
+	varray_free(ui_objs);
+	for (int i = 0; i < ui_containerc; i++)
+		container_free(&ui_containers[i]);
 	pipeln_free(&pipeln);
 }

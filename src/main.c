@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 	test_init();
 	scenemgr_init();
 	scenemgr_loop();
-
+ 
 	return 0;
 }
 #endif /* TESTING */

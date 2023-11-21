@@ -9,6 +9,6 @@ void main()
 {
 	Fcolour = Vcolour;
 
-	gl_Position = vec4(2.0*Vpos - vec3(1.0, 1.0, 0.0), 1.0);
-	gl_Position.z = 1.0 / gl_Position.z;
+	gl_Position = vec4(Vpos.xy, 1.0/Vpos.z, 1.0);
+	gl_Position.y *= -1.0;
 }

@@ -121,7 +121,7 @@ void map_new(ivec3s dim)
 			}
 		}
 	}
-	vbo_buf = vbo_new(vert_size, verts);
+	vbo_buf = vbo_new(vert_size, verts, false);
 	free(verts);
 
 	ibo_bufs = scalloc(blockc, sizeof(IBO));

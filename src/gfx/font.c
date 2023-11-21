@@ -22,14 +22,12 @@ struct Character {
 #define SIZEOF_FONT_VERTEX sizeof(float[4])
 
 static struct Pipeline pipeln;
-static UBO ubo_buf;
-
-static VkVertexInputBindingDescription fontvertbind = {
-	.binding   = 0,
-	.stride    = SIZEOF_FONT_VERTEX, /* xyuv */
-	.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+static VkVertexInputBindingDescription vert_binds[] = {
+	{ .binding   = 0,
+	  .stride    = SIZEOF_FONT_VERTEX, /* xyuv */
+	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, }
 };
-static VkVertexInputAttributeDescription fontvert_attrs[] = {
+static VkVertexInputAttributeDescription vert_attrs[] = {
 	{ .binding  = 0,
 	  .location = 0,
 	  .format   = VK_FORMAT_R32G32_SFLOAT, /* xy */
@@ -41,7 +39,7 @@ static VkVertexInputAttributeDescription fontvert_attrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
-int font_size = 24;
+int font_size = 32;
 
 static FT_Library library;
 static FT_Face    face;
@@ -110,35 +108,30 @@ void font_init(VkRenderPass renderpass)
 	FT_Done_FreeType(library);
 	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
 
-	ubo_buf = ubo_new(sizeof(mat4));
 	pipeln = (struct Pipeline){
-		.vshader   = create_shader(SHADER_DIR "font.vert"),
-		.fshader   = create_shader(SHADER_DIR "font.frag"),
+		.vshader    = create_shader(SHADER_DIR "font.vert"),
+		.fshader    = create_shader(SHADER_DIR "font.frag"),
 		.vert_bindc = 1,
-		.vert_binds = &fontvertbind,
+		.vert_binds = vert_binds,
 		.vert_attrc = 2,
-		.vert_attrs = fontvert_attrs,
-		.texturec  = 1,
-		.textures  = &atlas,
-		.uboc      = 1,
-		.ubos      = &ubo_buf,
-		.enable_blending = true,
+		.vert_attrs = vert_attrs,
+		.texturec   = 1,
+		.textures   = &atlas,
+		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
+		.pushsz     = sizeof(float[4]), /* Z_lvl +  position to draw + padding */
 	};
 
 	pipeln_init(&pipeln, renderpass);
-
-	mat4 proj;
-	glm_ortho(0.0, global_config.winw, global_config.winh, 0.0, 0.0, 1.0, proj);
-	buffer_update(ubo_buf, sizeof(mat4), proj);
 }
 
-int font_render(String text, float start_x, float start_y, float z, float w)
+struct TextObject* font_render(String text, float z, float w)
 {
 	(void)w; // TODO: width/multi-line rendering
+	struct TextObject* obj = &text_objs[text_objc++];
 	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*text.len);
-	float  x = start_x*global_config.winw;
-	float  y = global_config.winh*(1.0f - start_y);
 	float* v = verts;
+	float x = 0.0f;
+	float y = 0.0f;
 	float offset, sz[2];
 	float char_x, char_y;
 	char c;
@@ -148,63 +141,66 @@ int font_render(String text, float start_x, float start_y, float z, float w)
 		sz[0]  = characters[(int)c].sz[0];
 		sz[1]  = characters[(int)c].sz[1];
 
-		char_x = x + characters[(int)c].bearing[0];
-		char_y = y + characters[(int)c].bearing[1] - sz[1];
+		char_x = x + (float)characters[(int)c].bearing[0]/global_config.winw;
+		char_y = y + ((float)characters[(int)c].bearing[1] - sz[1])/global_config.winh;
 
 		*v++ = char_x;
 		*v++ = char_y;
 		*v++ = offset/atlas_w;
 		*v++ = sz[1]/atlas_h;
 
-		*v++ = char_x + sz[0];
+		*v++ = char_x + sz[0]/global_config.winw;
 		*v++ = char_y;
 		*v++ = (offset + sz[0])/atlas_w;
 		*v++ = sz[1]/atlas_h;
 
 		*v++ = char_x;
-		*v++ = char_y + sz[1];
+		*v++ = char_y + sz[1]/global_config.winh;
 		*v++ = offset/atlas_w;
 		*v++ = 0.0;
 
 		*v++ = char_x;
-		*v++ = char_y + sz[1];
+		*v++ = char_y + sz[1]/global_config.winh;
 		*v++ = offset/atlas_w;
 		*v++ = 0.0;
 
-		*v++ = char_x + sz[0];
+		*v++ = char_x + sz[0]/global_config.winw;
 		*v++ = char_y;
 		*v++ = (offset + sz[0])/atlas_w;
 		*v++ = sz[1]/atlas_h;
 
-		*v++ = char_x + sz[0];
-		*v++ = char_y + sz[1];
+		*v++ = char_x + sz[0]/global_config.winw;
+		*v++ = char_y + sz[1]/global_config.winh;
 		*v++ = (offset + sz[0])/atlas_w;
 		*v++ = 0.0;
 
-		x += characters[(int)c].advance >> 6;
+		x += (float)(characters[(int)c].advance >> 6)/global_config.winw;
+		obj->rect.h = MAX(obj->rect.h, sz[1]/global_config.winh);
 	}
+	obj->rect.w = x;
 
-	text_objs[text_objc] = (struct TextObject){
-		.active = true,
-		.vertc  = 6*text.len,
-		.vbo    = vbo_new(6*text.len*SIZEOF_FONT_VERTEX, verts),
-		.z_lvl  = z,
-	};
+	obj->z_lvl  = z;
+	obj->active = true;
+	obj->vertc  = 6*text.len;
+	obj->vbo    = vbo_new(6*text.len*SIZEOF_FONT_VERTEX, verts, true);
 
-	DEBUG(4, "[GFX] Created new text object for \"%s\" at (%.2f, %.2f, %.2f)", text.data, start_x, start_y, z);
+	DEBUG(4, "[GFX] Created new text object for \"%s\" at (%.2f, %.2f, %.2f) [%.2f, %.2f]",
+	      text.data, x, y, z, obj->rect.w, obj->rect.h);
 	free(verts);
-	return text_objc++;
+	return obj;
 }
 
-void font_record_commands(VkCommandBuffer cmdbuf)
+void font_record_commands(VkCommandBuffer cmd_buf)
 {
-	vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
 	for (int i = 0; i < text_objc; i++) {
 		if (!text_objs[i].active)
 			continue;
-		vkCmdBindVertexBuffers(cmdbuf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdDraw(cmdbuf, text_objs[i].vertc, 1, 0, i);
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, (float[]){
+			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y });
+		vkCmdDraw(cmd_buf, text_objs[i].vertc, 1, 0, i);
 	}
 }
 

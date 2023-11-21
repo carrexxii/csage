@@ -17,19 +17,18 @@ typedef struct Buffer SBO;
 
 VkCommandBuffer begin_command_buffer();
 void end_command_buffer(VkCommandBuffer buf, VkFence fence);
-void buffer_new(VkDeviceSize sz, VkBufferUsageFlags use, VkMemoryPropertyFlags propfs,
-                VkBuffer* buf, VkDeviceMemory* mem);
+void buffer_new(VkDeviceSize sz, VkBufferUsageFlags use, VkMemoryPropertyFlags propfs, VkBuffer* buf, VkDeviceMemory* mem);
 /* TODO: switch to memory size as last parameter */
-VBO _vbo_new(VkDeviceSize s, void* verts, const char* file, int line, const char* fn);
+VBO _vbo_new(VkDeviceSize s, void* verts, bool can_update, const char* file, int line, const char* fn);
 IBO _ibo_new(VkDeviceSize s, void* inds, const char* file, int line, const char* fn);
 UBO _ubo_new(VkDeviceSize s, const char* file, int line, const char* fn);
 SBO _sbo_new(VkDeviceSize s, const char* file, int line, const char* fn);
 uint find_memory_index(uint type, uint prop);
 
-#define vbo_new(s, v) _vbo_new((s), (v), __FILE__, __LINE__, __func__)
-#define ibo_new(s, i) _ibo_new((s), (i), __FILE__, __LINE__, __func__)
-#define ubo_new(s)    _ubo_new((s),      __FILE__, __LINE__, __func__)
-#define sbo_new(s)    _sbo_new((s),      __FILE__, __LINE__, __func__)
+#define vbo_new(s, v, u) _vbo_new((s), (v), (u), __FILE__, __LINE__, __func__)
+#define ibo_new(s, i)    _ibo_new((s), (i),      __FILE__, __LINE__, __func__)
+#define ubo_new(s)       _ubo_new((s),           __FILE__, __LINE__, __func__)
+#define sbo_new(s)       _sbo_new((s),           __FILE__, __LINE__, __func__)
 
 void buffer_update(struct Buffer buffer, VkDeviceSize sz, void* mem);
 

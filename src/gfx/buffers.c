@@ -40,8 +40,7 @@ void end_command_buffer(VkCommandBuffer buf, VkFence fence)
 	vkFreeCommandBuffers(gpu, cmdpool, 1, &buf);
 }
 
-void buffer_new(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags propfs, VkBuffer* buf,
-                VkDeviceMemory* mem)
+void buffer_new(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags propfs, VkBuffer* buf, VkDeviceMemory* mem)
 {
 	VkBufferCreateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -68,7 +67,7 @@ void buffer_new(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags
 	vkBindBufferMemory(gpu, *buf, *mem, 0);
 }
 
-VBO _vbo_new(VkDeviceSize sz, void* verts, char const* file, int line, char const* fn)
+VBO _vbo_new(VkDeviceSize sz, void* verts, bool can_update, char const* file, int line, char const* fn)
 {
 	DEBUG(3, "[VK] Creating vertex buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	struct Buffer tmpbuf;
@@ -79,7 +78,8 @@ VBO _vbo_new(VkDeviceSize sz, void* verts, char const* file, int line, char cons
 
 	VBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-	              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
+	           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | (can_update*VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT),
+	           &buf.buf, &buf.mem);
 	copy_buffer(buf.buf, tmpbuf.buf, sz);
 	buffer_free(&tmpbuf);
 

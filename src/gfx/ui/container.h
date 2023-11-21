@@ -4,16 +4,19 @@
 #include "util/arena.h"
 #include "gfx/buffers.h"
 
-#define CONTAINER_MAX_VERTS 256
+#define CONTAINER_DEFAULT_VERTS 64
+#define CONTAINER_DEFAULT_OBJS  8
 
+struct UIStyle;
 struct Container {
-	struct Arena* verts; /* Temporary scratch pad for adding vertices */
-	VBO   vbo;
-	usize vertc;
+	struct VArray* objs;
+	struct VArray* verts;
+	VBO vbo;
 };
 
-int  container_new(struct Rect rect, struct UIStyle* style, int parent);
-void container_add(struct UIObject* obj, int ptc, float* pts);
+struct UIObject* container_new(struct Rect rect, const struct UIStyle* style, struct UIObject* parent);
+void container_add(struct UIObject* container_obj, struct UIObject* obj);
 void container_build(struct UIObject* obj);
+void container_free(struct UIObject* obj);
 
 #endif

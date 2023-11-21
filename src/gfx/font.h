@@ -9,6 +9,7 @@
 #define FONT_MAX_TEXT_OBJECTS 128
 
 struct TextObject {
+	Rect  rect;
 	VBO   vbo;
 	int   vertc;
 	float z_lvl;
@@ -16,7 +17,7 @@ struct TextObject {
 };
 
 void font_init(VkRenderPass renderpass);
-int  font_render(String text, float start_x, float start_y, float z, float w);
+struct TextObject* font_render(String text, float z, float w);
 void font_record_commands(VkCommandBuffer cmdbuf);
 void font_free();
 

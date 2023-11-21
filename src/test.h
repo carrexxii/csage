@@ -42,14 +42,11 @@ static void test_init()
 	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "cube.glb");
 
 	struct UIStyle test_style = {
-		.title  = NULL,
-		.margin = 10,
 		.bg = 0xFF00FFFF,
 		.fg = 0xDDDDDDFF,
 	};
-	int c1 = container_new(RECT(0.0, 0.0, 0.5, 0.5), NULL, -1);
+	struct UIObject* c1 = container_new(RECT(-1.0, 1.0, 1.0, 1.0), NULL, NULL);
 	// int c2 = container_new(RECT(0.5, 0.5, 0.5, 0.5), NULL, -1);
 	// int c3 = container_new(RECT(0.5, 0.5, 0.5, 0.4), &test_style, c1);
-	int b1 = button_new("Hello", RECT(0.0, 0.0, 100.0, 40.0), NULL, c1);
-	ui_build();
+	button_new("Hello", RECT(1.0, -1.0, 100.0, 40.0), NULL, c1);
 }

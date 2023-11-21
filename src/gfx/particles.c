@@ -65,7 +65,7 @@ void particles_init(VkRenderPass renderpass)
 		-0.5,  0.5, 0.0, 0.0,   0.5, 0.5, 1.0, 0.0,   -0.5, -0.5, 0.0, 1.0,
 		-0.5, -0.5, 0.0, 1.0,   0.5, 0.5, 1.0, 0.0,    0.5, -0.5, 1.0, 1.0,
 	};
-	vbo_buf = vbo_new(sizeof(verts), verts);
+	vbo_buf = vbo_new(sizeof(verts), verts, false);
 }
 
 ID particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel, float scale)

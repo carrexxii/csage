@@ -2,15 +2,19 @@
 #define UI_BUTTON_H
 
 #include "util/string.h"
+#include "util/varray.h"
 #include "gfx/font.h"
 
+struct UIObject;
+struct UIStyle;
 struct Button {
+	struct TextObject* text_obj;
 	String text;
-	int    text_obj;
 	void*  fn_cb;
 };
 
-int button_new(char* text, Rect rect, struct UIStyle* style, int parent);
-void button_build(struct UIObject* obj);
+void button_new(char* text, Rect rect, const struct UIStyle* style, struct UIObject* parent);
+void button_build(struct UIObject* obj, struct VArray* verts);
+void button_on_hover(struct UIObject* obj);
 
 #endif

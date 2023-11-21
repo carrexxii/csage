@@ -41,6 +41,8 @@ inline static struct Arena* arena_new(isize sz, enum ArenaFlag flags)
 
 inline static void* arena_alloc(struct Arena* arena, isize in_sz)
 {
+	assert(arena);
+
 	isize sz = in_sz;
 	if (!(arena->flags & ARENA_NO_ALIGN))
 		ARENA_ALIGN(sz);

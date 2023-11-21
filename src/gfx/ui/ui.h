@@ -6,11 +6,14 @@
 #include "util/string.h"
 #include "gfx/buffers.h"
 #include "input.h"
+#include "container.h"
+#include "button.h"
 
-#define UI_MAX_OBJECTS        64
-#define UI_ARENA_DEFAULT_SIZE 4096
-#define UI_BASE_Z_LEVEL       2
-#define UI_VERTEX_SIZE        sizeof(float[7])
+#define UI_MAX_TOP_LEVEL_CONTAINERS 8
+#define UI_DEFAULT_OBJECT_COUNT     32
+#define UI_BASE_Z_LEVEL             2
+#define UI_VERTEX_COUNT             7
+#define UI_VERTEX_SIZE              sizeof(float[UI_VERTEX_COUNT])
 
 enum UIObjectType {
 	UI_NONE,
@@ -21,19 +24,23 @@ enum UIObjectType {
 
 struct UIState {
 	bool visible;
-	bool focus;
+	bool hover;
 };
 
 struct UIObject {
-	int id;
-	int parent;
 	enum UIObjectType type;
-	int8  z_lvl;
-	void* data; // TODO: Maybe make this a union?
+	int8 z_lvl;
 
 	struct Rect rect;
-	struct UIState  state;
-	struct UIStyle* style;
+	struct Rect screen_rect;
+	struct UIState state;
+	const struct UIStyle* style;
+
+	struct UIObject* parent;
+	union {
+		struct Container container;
+		struct Button    button;
+	};
 };
 
 // TODO: Text buffering
@@ -43,46 +50,31 @@ struct UIContext {
 };
 
 struct UIStyle {
-	String* title;
-	uint8   padding;
-	uint8   margin;
 	union Colour bg;
 	union Colour fg;
 };
 
-static struct UIStyle default_container_style = {
-	.title   = NULL,
-	.margin  = 10,
-	.padding = 10,
+static const struct UIStyle default_container_style = {
 	.bg = 0x292929FF,
 	.fg = 0xCCCCCCFF,
 };
-static struct UIStyle default_button_style = {
-	.title   = NULL,
-	.margin  = 10,
-	.padding = 10,
+static const struct UIStyle default_button_style = {
 	.bg = 0xFF0000FF,
 	.fg = 0xCCCCCCFF,
 };
-extern struct Arena* ui_arena;
 extern struct UIContext ui_context;
-extern struct UIObject* ui_objs[UI_MAX_OBJECTS];
-extern int ui_objc;
-
-#include "container.h"
-#include "button.h"
+extern struct UIObject  ui_containers[UI_MAX_TOP_LEVEL_CONTAINERS];
+extern int ui_containerc;
 
 /* -------------------------------------------------------------------- */
 
 void ui_init(VkRenderPass renderpass);
+struct UIObject* ui_alloc_object(void);
+String ui_alloc_string(char* text, isize len);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
 void ui_update(void);
 void ui_record_commands(VkCommandBuffer cmd_buf);
 void ui_free(void);
-
-inline static bool ui_is_valid_obj(int obji) {
-	return obji >= 0 && obji < ui_objc;
-}
 
 #endif

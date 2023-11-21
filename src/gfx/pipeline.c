@@ -83,23 +83,15 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 	VkPipelineColorBlendAttachmentState blendattachs = {
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
 						  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-		// .blendEnable  = pipeln->enable_blending,
-		.blendEnable  = true,
+		.blendEnable = true,
 
-		// .colorBlendOp        = VK_BLEND_OP_ADD,
-		// .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-		// .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+		.colorBlendOp        = VK_BLEND_OP_ADD,
+		.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+		.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 
-		// .alphaBlendOp        = VK_BLEND_OP_ADD,
-		// .srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-		// .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-
-.srcColorBlendFactor=VK_BLEND_FACTOR_SRC_ALPHA,
-.dstColorBlendFactor=VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-.colorBlendOp=VK_BLEND_OP_ADD,
-.srcAlphaBlendFactor=VK_BLEND_FACTOR_ONE,
-.dstAlphaBlendFactor=VK_BLEND_FACTOR_ZERO,
-.alphaBlendOp=VK_BLEND_OP_ADD
+		.alphaBlendOp        = VK_BLEND_OP_ADD,
+		.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+		.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
 	};
 	VkPipelineColorBlendStateCreateInfo blendsci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
@@ -184,6 +176,8 @@ void pipeln_free(struct Pipeline* pipeln)
 	if (pipeln->sbo && pipeln->sbo->sz)
 		sbo_free(pipeln->sbo);
 }
+
+/* -------------------------------------------------------------------- */
 
 static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo* stagecis)
 {
@@ -271,9 +265,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 	return stageic;
 }
 
-inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type,
-                                                              uint binding)
-{
+inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type, uint binding) {
 	return (VkDescriptorSetLayoutBinding){
 		.binding            = binding,
 		.stageFlags         = stagef,

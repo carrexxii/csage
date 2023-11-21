@@ -20,6 +20,8 @@ static enum SceneName current_scene;
 
 void scenemgr_init()
 {
+	ui_build();
+	
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
 	taskmgr_add_task(ui_update);

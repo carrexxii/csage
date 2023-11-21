@@ -3,6 +3,11 @@
 
 #define VARRAY_SIZE_MULTIPLIER 2
 
+#define VARRAY_MAP(arr, fn) do {                                         \
+		for (int i##__LINE__ = 0; i##__LINE__ < arr->len; i##__LINE__++) \
+			fn(varray_get(arr, i##__LINE__));                            \
+	} while (0)
+
 // TODO: Add allocator parameters
 struct VArray {
 	isize len;
@@ -20,11 +25,6 @@ inline static void  varray_free(struct VArray* arr);
 
 inline static struct VArray* varray_new(isize itemc, isize elem_sz)
 {
-	if (itemc < 1) {
-		ERROR("[UTIL] Should not create VArray with < 1 elements");
-		return NULL;
-	}
-
 	struct VArray* arr = smalloc(sizeof(struct VArray) + itemc*elem_sz);
 	arr->len     = 0;
 	arr->cap     = itemc;
@@ -36,11 +36,6 @@ inline static struct VArray* varray_new(isize itemc, isize elem_sz)
 
 inline static void* varray_set(struct VArray* arr, isize i, void* elem)
 {
-	if (i < 0 || i > arr->cap*VARRAY_SIZE_MULTIPLIER || !elem) {
-		ERROR("[UTIL] Error setting value (%p) for varray (len: %ld; cap: %ld, i: %ld)",
-		      elem, arr->len, arr->cap, i);
-		return NULL;
-	}
 	if (i > arr->cap*arr->elem_sz || i > arr->cap)
 		varray_resize(arr, -1);
 
@@ -49,16 +44,19 @@ inline static void* varray_set(struct VArray* arr, isize i, void* elem)
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static void* varray_get(struct VArray* arr, isize i)
-{
+inline static void* varray_get(struct VArray* arr, isize i) {
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static isize varray_push(struct VArray* arr, void* data)
-{
+inline static isize varray_push(struct VArray* arr, void* data) {
 	varray_set(arr, arr->len, data);
-
 	return arr->len++;
+}
+
+inline static isize varray_push_many(struct VArray* arr, isize count, void* data) {
+	for (int i = 0; i < count; i++)
+		varray_set(arr, arr->len++, (byte*)data + i*arr->elem_sz);
+	return arr->len;
 }
 
 inline static void varray_resize(struct VArray* arr, isize new_sz)
@@ -70,11 +68,13 @@ inline static void varray_resize(struct VArray* arr, isize new_sz)
 	arr = srealloc(arr, sizeof(struct VArray) + arr->cap*arr->elem_sz);
 }
 
-inline static void varray_free(struct VArray* arr)
-{
+inline static void varray_reset(struct VArray* arr) {
+	arr->len = 0;
+}
+
+inline static void varray_free(struct VArray* arr) {
 	arr->cap = 0;
 	arr->len = 0;
-
 	sfree(arr);
 }
 
