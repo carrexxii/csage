@@ -9,6 +9,7 @@
 #include "font.h"
 #include "container.h"
 #include "button.h"
+#include "textbox.h"
 
 #define UI_MAX_TOP_LEVEL_CONTAINERS 8
 #define UI_DEFAULT_OBJECT_COUNT     32
@@ -20,7 +21,14 @@ enum UIObjectType {
 	UI_NONE,
 	UI_CONTAINER,
 	UI_BUTTON,
-	UI_LABEL,
+	UI_TEXTBOX,
+};
+
+enum AlignType {
+	ALIGN_NONE,
+	ALIGN_LEFT,
+	ALIGN_CENTRE,
+	ALIGN_RIGHT,
 };
 
 struct UIState {
@@ -41,6 +49,7 @@ struct UIObject {
 	union {
 		struct Container container;
 		struct Button    button;
+		struct TextBox   textbox;
 	};
 };
 
@@ -51,16 +60,24 @@ struct UIContext {
 };
 
 struct UIStyle {
+	enum AlignType align;
 	union Colour bg;
 	union Colour fg;
 };
 
 static const struct UIStyle default_container_style = {
+	.align = ALIGN_LEFT,
 	.bg = 0x292929FF,
 	.fg = 0xCCCCCCFF,
 };
 static const struct UIStyle default_button_style = {
-	.bg = 0xFF0000FF,
+	.align = ALIGN_CENTRE,
+	.bg = 0xC55419FF,
+	.fg = 0xCCCCCCFF,
+};
+static const struct UIStyle default_textbox_style = {
+	.align = ALIGN_LEFT,
+	.bg = 0x112255FF,
 	.fg = 0xCCCCCCFF,
 };
 extern struct UIContext ui_context;

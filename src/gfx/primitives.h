@@ -8,11 +8,11 @@ inline static void quad_from_rect(float* points, Rect rect, float z, union Colou
 {
 	memcpy(points, (float[]){
 		rect.x         , rect.y         , z, EXPAND_COLOUR(colour),
-		rect.x + rect.w, rect.y         , z, EXPAND_COLOUR(colour),
-		rect.x         , rect.y + rect.h, z, EXPAND_COLOUR(colour),
 		rect.x         , rect.y + rect.h, z, EXPAND_COLOUR(colour),
 		rect.x + rect.w, rect.y         , z, EXPAND_COLOUR(colour),
+		rect.x         , rect.y + rect.h, z, EXPAND_COLOUR(colour),
 		rect.x + rect.w, rect.y + rect.h, z, EXPAND_COLOUR(colour),
+		rect.x + rect.w, rect.y         , z, EXPAND_COLOUR(colour),
 	}, sizeof(float[6*7]));
 }
 

@@ -4,8 +4,6 @@
 #include "util/string.h"
 #include "util/varray.h"
 
-struct UIObject;
-struct UIStyle;
 struct Button {
 	struct TextObject* text_obj;
 	String text;

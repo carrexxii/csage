@@ -3,6 +3,7 @@
 #include "gfx/primitives.h"
 #include "ui.h"
 #include "container.h"
+#include "textbox.h"
 
 struct UIObject* container_new(struct Rect rect, const struct UIStyle* style, struct UIObject* parent)
 {
@@ -57,8 +58,18 @@ void container_build(struct UIObject* obj)
 	Rect rect = ui_build_rect(obj, false);
 	quad_from_rect(points, rect, (float)obj->z_lvl, obj->style->bg);
 	varray_push_many(verts, 6, points);
+	struct UIObject* o;
 	for (int i = 0; i < objs->len; i++) {
-		button_build(varray_get(objs, i), verts);
+		o = varray_get(objs, i);
+		switch (o->type) {
+		case UI_BUTTON : button_build(o, verts);  break;
+		case UI_TEXTBOX: textbox_build(o, verts); break;
+		default:
+			// TODO: STRING_OF_UI()
+			ERROR("[UI] Unrecognized type: %d", o->type);
+			exit(1);
+		}
+		
 	}
 
 	obj->screen_rect = rect;

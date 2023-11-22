@@ -69,32 +69,26 @@ void ui_build() {
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz)
 {
 	float start_x, start_y;
-	float scale_x, scale_y;
+	float rel_w, rel_h;
 	struct UIObject* parent = obj->parent;
 	if (parent) {
+		start_x = parent->rect.x + parent->rect.w/2.0f;
+		start_y = parent->rect.y + parent->rect.h/2.0f;
 		if (absolute_sz) {
-			start_x = parent->rect.x + parent->rect.w/2.0f - obj->rect.w/global_config.winw;
-			start_y = parent->rect.y - parent->rect.h/2.0f - obj->rect.h/global_config.winh;
-			scale_x = parent->rect.w/2.0f - obj->rect.w/global_config.winw;
-			scale_y = parent->rect.h/2.0f - obj->rect.h/global_config.winh;
+			rel_w = obj->rect.w/global_config.winw*ASPECT_RATIO;
+			rel_h = obj->rect.h/global_config.winh*ASPECT_RATIO;
+			return RECT(start_x + obj->rect.x*(parent->rect.w/2.0f - rel_w/2.0f) - rel_w/2.0f,
+			            start_y + obj->rect.y*(parent->rect.h/2.0f - rel_h/2.0f) - rel_h/2.0f,
+			            rel_w, rel_h);
 		} else {
-			// TODO + the return
-			start_x = 0.0f;
-			start_y = -1.0f;
-			scale_x = 1.0f;
-			scale_y = 1.0f;
+			return RECT(start_x + obj->rect.x*(parent->rect.w/2.0f),
+			            start_y + obj->rect.y*(parent->rect.h/2.0f),
+			            obj->rect.w/parent->rect.w/2.0f,
+			            obj->rect.h/parent->rect.h/2.0f);
 		}
-	} else {
-		start_x = 0.0f;
-		start_y = -1.0f;
-		scale_x = 1.0f;
-		scale_y = 1.0f;
 	}
-
-	return RECT(start_x + obj->rect.x*scale_x,
-	            start_y + obj->rect.y*scale_y,
-	            absolute_sz? 2.0f*obj->rect.w/global_config.winw: obj->rect.w*scale_x,
-	            absolute_sz? 2.0f*obj->rect.h/global_config.winh: obj->rect.h*scale_y);
+	
+	return obj->rect;
 }
 
 void ui_update()
@@ -107,6 +101,9 @@ void ui_update()
 	struct UIObject* cont;
 	for (int i = 0; i < ui_containerc; i++) {
 		cont = &ui_containers[i];
+		if (cont->type != UI_BUTTON)
+			continue;
+		// TODO: Fix
 		for (int j = 0; j < cont->container.objs->len; j++) {
 			obj = varray_get(cont->container.objs, j);
 			prev_state = obj->state.hover;

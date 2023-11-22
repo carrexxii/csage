@@ -45,8 +45,10 @@ static void test_init()
 		.bg = 0xFF00FFFF,
 		.fg = 0xDDDDDDFF,
 	};
-	struct UIObject* c1 = container_new(RECT(-1.0, 1.0, 1.0, 1.0), NULL, NULL);
+	struct UIObject* c1 = container_new(RECT(-1.0, -1.0, 1.0, 1.0), NULL, NULL);
 	// int c2 = container_new(RECT(0.5, 0.5, 0.5, 0.5), NULL, -1);
 	// int c3 = container_new(RECT(0.5, 0.5, 0.5, 0.4), &test_style, c1);
-	button_new("Hello", RECT(1.0, -1.0, 100.0, 40.0), NULL, c1);
+	button_new("Hello1", RECT(1.0, 1.0, 100.0, 40.0), NULL, c1);
+	button_new("Hello2", RECT(-1.0, 1.0, 100.0, 40.0), NULL, c1);
+	textbox_new("Testing textbox", RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
 }

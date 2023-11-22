@@ -10,5 +10,4 @@ void main()
 	Fcolour = Vcolour;
 
 	gl_Position = vec4(Vpos.xy, 1.0/Vpos.z, 1.0);
-	gl_Position.y *= -1.0;
 }

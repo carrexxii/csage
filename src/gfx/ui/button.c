@@ -37,8 +37,8 @@ void button_build(struct UIObject* obj, struct VArray* verts)
 	varray_push_many(verts, 6, points);
 
 	struct TextObject* txt_obj = obj->button.text_obj;
-	txt_obj->rect.x = rect.x + rect.w/2.0f - txt_obj->rect.w/2.0f;
-	txt_obj->rect.y = rect.y + rect.h/2.0f - txt_obj->rect.h/2.0f;
+	txt_obj->rect.x =  rect.x + rect.w/2.0f - txt_obj->rect.w/2.0f;
+	txt_obj->rect.y = -rect.y - rect.h/2.0f - txt_obj->rect.h/2.0f;
 
 	obj->screen_rect = rect;
 }
