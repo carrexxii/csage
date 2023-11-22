@@ -70,6 +70,10 @@ int string_contains(String str, char c)
 	return -1;
 }
 
+void string_free(String str) {
+	sfree(str.data);
+}
+
 bool starts_with(char* restrict str, char* restrict start)
 {
 	for (int i = 0; start[i] && str[i]; i++)

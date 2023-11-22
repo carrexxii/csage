@@ -1,8 +1,9 @@
+#include "config.h"
 #include "gfx/primitives.h"
 #include "ui.h"
 #include "textbox.h"
 
-void textbox_new(char* text, Rect rect, const struct UIStyle* style, struct UIObject* parent)
+void textbox_new(String text, Rect rect, const struct UIStyle* style, struct UIObject* parent)
 {
 	// TODO: Add STRING_OF_UI()
 	if (!parent || parent->type != UI_CONTAINER) {
@@ -17,11 +18,12 @@ void textbox_new(char* text, Rect rect, const struct UIStyle* style, struct UIOb
 	obj->parent = parent;
 	obj->z_lvl  = parent->z_lvl + 1;
 
-	obj->textbox.text_obj = font_render(string_new(text, -1), obj->z_lvl + 10, 0); // TODO: fix z_lvl
+	float text_w = (obj->rect.w/parent->rect.w/2.0f)*global_config.winw/2.0f;
+	obj->textbox.text_obj = font_render(text.data, text.len, obj->z_lvl + 10, text_w); // TODO: fix z_lvl
 
 	container_add(parent, obj);
 	DEBUG(3, "[UI] Created new textbox %p with parent %p (%.2f, %.2f, %.2f, %.2f):\n\t%s",
-	      obj, parent, rect.x, rect.y, rect.w, rect.h, text);
+	      obj, parent, rect.x, rect.y, rect.w, rect.h, text.data);
 }
 
 void textbox_build(struct UIObject* obj, struct VArray* verts)

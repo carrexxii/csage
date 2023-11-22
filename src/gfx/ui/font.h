@@ -17,7 +17,7 @@ struct TextObject {
 };
 
 void font_init(VkRenderPass renderpass);
-struct TextObject* font_render(String text, float z, float w);
+struct TextObject* font_render(char* text, isize text_len, float z, float w);
 void font_record_commands(VkCommandBuffer cmdbuf);
 void font_free();
 

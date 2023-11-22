@@ -8,7 +8,7 @@ struct TextBox {
 	String text;
 };
 
-void textbox_new(char* text, Rect rect, const struct UIStyle* style, struct UIObject* parent);
+void textbox_new(String text, Rect rect, const struct UIStyle* style, struct UIObject* parent);
 void textbox_build(struct UIObject* obj, struct VArray* verts);
 
 #endif

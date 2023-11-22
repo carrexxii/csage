@@ -124,22 +124,30 @@ void font_init(VkRenderPass renderpass)
 	pipeln_init(&pipeln, renderpass);
 }
 
-struct TextObject* font_render(String text, float z, float w)
+struct TextObject* font_render(char* text, isize text_len, float z, float w)
 {
-	(void)w; // TODO: width/multi-line rendering
+	if (text_len <= 0)
+		text_len = strlen(text);
+
 	struct TextObject* obj = &text_objs[text_objc++];
-	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*text.len);
+	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*text_len);
 	float* v = verts;
 	float x = 0.0f;
 	float y = 0.0f;
 	float offset, sz[2];
 	float char_x, char_y;
 	char c;
-	for (int i = 0; i < text.len; i++) {
-		c = text.data[i];
+	for (int i = 0; i < text_len; i++) {
+		c = text[i];
 		offset = characters[(int)c].offset;
 		sz[0]  = characters[(int)c].sz[0];
 		sz[1]  = characters[(int)c].sz[1];
+
+		// DEBUG(1, "[%.2f] x: %.2f; sz: %.2f (%.2f)", w, x*global_config.winw/2.0f, sz[0], y);
+		if (x*global_config.winw/2.0f + sz[0] > w) {
+			x  = 0.0f;
+			y -= atlas_h / global_config.winh;
+		}
 
 		char_x = x + (float)characters[(int)c].bearing[0]/global_config.winw;
 		char_y = y + ((float)characters[(int)c].bearing[1] - sz[1])/global_config.winh;
@@ -175,17 +183,17 @@ struct TextObject* font_render(String text, float z, float w)
 		*v++ = 0.0;
 
 		x += (float)(characters[(int)c].advance >> 6)/global_config.winw;
-		obj->rect.h = MAX(obj->rect.h, sz[1]/global_config.winh);
 	}
 	obj->rect.w = x;
+	obj->rect.h = atlas_h / global_config.winh;
 
 	obj->z_lvl  = z;
 	obj->active = true;
-	obj->vertc  = 6*text.len;
-	obj->vbo    = vbo_new(6*text.len*SIZEOF_FONT_VERTEX, verts, true);
+	obj->vertc  = 6*text_len;
+	obj->vbo    = vbo_new(6*text_len*SIZEOF_FONT_VERTEX, verts, true);
 
-	DEBUG(4, "[GFX] Created new text object for \"%s\" at (%.2f, %.2f, %.2f) [%.2f, %.2f]",
-	      text.data, x, y, z, obj->rect.w, obj->rect.h);
+	DEBUG(4, "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2f, %.2f]",
+	      text_len, text, x, y, z, obj->rect.w, obj->rect.h);
 	free(verts);
 	return obj;
 }

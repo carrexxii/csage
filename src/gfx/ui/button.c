@@ -4,7 +4,7 @@
 #include "ui.h"
 #include "button.h"
 
-void button_new(char* text, Rect rect, const struct UIStyle* style, struct UIObject* parent)
+void button_new(String text, Rect rect, const struct UIStyle* style, struct UIObject* parent)
 {
 	// TODO: Add STRING_OF_UI()
 	if (!parent || parent->type != UI_CONTAINER) {
@@ -19,7 +19,7 @@ void button_new(char* text, Rect rect, const struct UIStyle* style, struct UIObj
 	obj->parent = parent;
 	obj->z_lvl  = parent->z_lvl + 1;
 
-	obj->button.text_obj = font_render(string_new(text, -1), obj->z_lvl + 10, 0); // TODO: fix z_lvl
+	obj->button.text_obj = font_render(text.data, text.len, obj->z_lvl + 10, rect.w); // TODO: fix z_lvl
 	obj->button.fn_cb = NULL;
 
 	container_add(parent, obj);

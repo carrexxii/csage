@@ -48,7 +48,10 @@ static void test_init()
 	struct UIObject* c1 = container_new(RECT(-1.0, -1.0, 1.0, 1.0), NULL, NULL);
 	// int c2 = container_new(RECT(0.5, 0.5, 0.5, 0.5), NULL, -1);
 	// int c3 = container_new(RECT(0.5, 0.5, 0.5, 0.4), &test_style, c1);
-	button_new("Hello1", RECT(1.0, 1.0, 100.0, 40.0), NULL, c1);
-	button_new("Hello2", RECT(-1.0, 1.0, 100.0, 40.0), NULL, c1);
-	textbox_new("Testing textbox", RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
+	button_new(STRING("Hello1"), RECT(1.0, 1.0, 100.0, 40.0), NULL, c1);
+	button_new(STRING("Hello2"), RECT(-1.0, 1.0, 100.0, 40.0), NULL, c1);
+	// textbox_new("Testing textbox", RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
+	String str1 = STRING("Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple linesTesting textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines");
+	String str2 = STRING("Short stringShort stringShort stringShort stringShort stringShort stringShort stringShort string");
+	textbox_new(str1, RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
 }
