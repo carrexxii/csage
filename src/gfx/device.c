@@ -13,9 +13,11 @@ VkQueue transferq;
 
 VkCommandPool cmd_pool;
 struct QueueFamilyIndices qinds;
+struct DeviceLimits gpu_limits;
 
 static int  rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf);
 static bool supports_extension(VkPhysicalDevice dev, char* ext);
+static void get_device_limits(VkPhysicalDevice dev);
 static void debug_physical(VkPhysicalDevice dev);
 static void set_queue_indices(VkPhysicalDevice dev, VkSurfaceKHR surf);
 
@@ -108,21 +110,6 @@ int device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop)
 	return INT_MAX;
 }
 
-int device_get_max_sample_count(VkPhysicalDevice dev)
-{
-	VkPhysicalDeviceProperties devp;
-	vkGetPhysicalDeviceProperties(dev, &devp);
-
-	VkSampleCountFlags count = devp.limits.framebufferColorSampleCounts & devp.limits.framebufferDepthSampleCounts;
-	return (count & VK_SAMPLE_COUNT_64_BIT? VK_SAMPLE_COUNT_64_BIT:
-	        count & VK_SAMPLE_COUNT_32_BIT? VK_SAMPLE_COUNT_32_BIT:
-	        count & VK_SAMPLE_COUNT_16_BIT? VK_SAMPLE_COUNT_16_BIT:
-	        count & VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT :
-	        count & VK_SAMPLE_COUNT_4_BIT ? VK_SAMPLE_COUNT_4_BIT :
-	        count & VK_SAMPLE_COUNT_2_BIT ? VK_SAMPLE_COUNT_2_BIT :
-	                                        VK_SAMPLE_COUNT_1_BIT);
-}
-
 void device_free()
 {
 	DEBUG(3, "[VK] Destroying device...");
@@ -133,6 +120,9 @@ void device_free()
 
 static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)
 {
+	get_device_limits(dev);
+
+	// TODO: replace with data from `get_device_limits()`
 	int rating = 0;
 	VkPhysicalDeviceProperties devp;
 	VkPhysicalDeviceFeatures   devf;
@@ -198,6 +188,25 @@ static void set_queue_indices(VkPhysicalDevice dev, VkSurfaceKHR surf)
 	}
 }
 
+static void get_device_limits(VkPhysicalDevice dev)
+{
+	VkPhysicalDeviceProperties devp;
+	vkGetPhysicalDeviceProperties(dev, &devp);
+
+	VkSampleCountFlags count = devp.limits.framebufferColorSampleCounts & devp.limits.framebufferDepthSampleCounts;
+	VkSampleCountFlagBits max_samples  = (count & VK_SAMPLE_COUNT_64_BIT? VK_SAMPLE_COUNT_64_BIT:
+	                                      count & VK_SAMPLE_COUNT_32_BIT? VK_SAMPLE_COUNT_32_BIT:
+	                                      count & VK_SAMPLE_COUNT_16_BIT? VK_SAMPLE_COUNT_16_BIT:
+	                                      count & VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT :
+	                                      count & VK_SAMPLE_COUNT_4_BIT ? VK_SAMPLE_COUNT_4_BIT :
+	                                      count & VK_SAMPLE_COUNT_2_BIT ? VK_SAMPLE_COUNT_2_BIT :
+	                                                                      VK_SAMPLE_COUNT_1_BIT);
+
+	gpu_limits = (struct DeviceLimits){
+		.max_samples = max_samples,
+	};
+}
+
 static void debug_physical(VkPhysicalDevice dev)
 {
 	uint major, minor, patch;
@@ -219,7 +228,7 @@ static void debug_physical(VkPhysicalDevice dev)
 	DEBUG(3, "\tGeometry shader                   -> %s", STRING_YN(devf.geometryShader));
 	DEBUG(3, "\tTessellation shader               -> %s", STRING_YN(devf.tessellationShader));
 	DEBUG(3, "\tSampler anisotropy                -> %s", STRING_YN(devf.samplerAnisotropy));
-	DEBUG(3, "\tMSAA Sample Counts                -> %d", device_get_max_sample_count(dev));
+	DEBUG(3, "\tMSAA sample count                 -> %d", gpu_limits.max_samples);
 	DEBUG(3, "\tMax image dimensions (1/2/3)      -> %u/%u/%u", devp.limits.maxImageDimension1D,
 	                                                            devp.limits.maxImageDimension2D,
 	                                                            devp.limits.maxImageDimension3D);

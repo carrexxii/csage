@@ -13,17 +13,16 @@
 VkInstance   instance;
 VkSurfaceKHR surface;
 
-static VkDebugReportCallbackEXT dbgcb;
+static VkDebugReportCallbackEXT dbg_cb;
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL
-debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type, uint64 obj,
-		 uintptr location, int32 msg_code, const char* layer_prefix, const char* msg, void* user_data)
+noreturn static VKAPI_ATTR VkBool32 VKAPI_CALL debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
+                                                        uint64 obj, uintptr location, int32 msg_code, const char* layer_prefix,
+                                                        const char* msg, void* user_data)
 {
 	(void)user_data;
-	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"",
-		  layer_prefix, STRING_DEBUG_REPORT(flags), obj,
-		  STRING_DEBUG_REPORT_OBJECT(obj_type), location, msg_code, msg);
-	return VK_FALSE;
+	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"", layer_prefix, STRING_DEBUG_REPORT(flags), obj,
+	      STRING_DEBUG_REPORT_OBJECT(obj_type), location, msg_code, msg);
+	exit(1);
 }
 
 void init_vulkan(SDL_Window* win)
@@ -33,9 +32,9 @@ void init_vulkan(SDL_Window* win)
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pApplicationName   = APPLICATION_NAME,
 		.applicationVersion = ENGINE_VERSION,
-		.pEngineName		= ENGINE_NAME,
-		.engineVersion	  = APPLICATION_VERSION,
-		.apiVersion		 = VULKAN_API_VERSION,
+		.pEngineName        = ENGINE_NAME,
+		.engineVersion      = APPLICATION_VERSION,
+		.apiVersion         = VULKAN_API_VERSION,
 	};
 	
 	uint32 extpc;
@@ -75,11 +74,11 @@ void init_vulkan(SDL_Window* win)
 	VkInstanceCreateInfo instci = {
 		.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		.flags                   = 0,
-		.pApplicationInfo		 = &appi,
+		.pApplicationInfo        = &appi,
 		.enabledExtensionCount   = extc,
 		.ppEnabledExtensionNames = exts,
-		.enabledLayerCount	     = VULKAN_LAYER_COUNT,
-		.ppEnabledLayerNames	 = VULKAN_LAYERS,
+		.enabledLayerCount       = VULKAN_LAYER_COUNT,
+		.ppEnabledLayerNames     = VULKAN_LAYERS,
 	};
 	if (vkCreateInstance(&instci, NULL, &instance) != VK_SUCCESS)
 		ERROR("[VK] Failed to create Vulkan instance");
@@ -96,7 +95,7 @@ void init_vulkan(SDL_Window* win)
 	VK_GET_EXT(dbgfn, vkCreateDebugReportCallbackEXT);
 	if (!dbgfn)
 		ERROR("[VK] Failed to find debug extension callback function");
-	dbgfn(instance, &debugi, NULL, &dbgcb);
+	dbgfn(instance, &debugi, NULL, &dbg_cb);
 	DEBUG(3, "[VK] Created debug callback");
 #endif
 
@@ -113,9 +112,9 @@ VkShaderModule create_shader(char* restrict path)
 	char* code = file_load(path);
 	FILE* file = file_open(path, "rb");
 	VkShaderModuleCreateInfo moduleci = {
-		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 		.codeSize = file_size(file),
-		.pCode	  = (const uint32*)code,
+		.pCode    = (const uint32*)code,
 	};
 	fclose(file);
 	if (vkCreateShaderModule(logical_gpu, &moduleci, NULL, &module))
@@ -133,7 +132,7 @@ void free_vulkan()
 	VK_GET_EXT(dbgfn, vkDestroyDebugReportCallbackEXT);
 	if (!dbgfn)
 		ERROR("[VK] Failed to find debug extension callback destructor function");
-	dbgfn(instance, dbgcb, NULL);
+	dbgfn(instance, dbg_cb, NULL);
 #endif
 
 	vkDestroySurfaceKHR(instance, surface, NULL);

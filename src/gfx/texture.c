@@ -27,6 +27,7 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 	memcpy(data, pxs, size);
 	vkUnmapMemory(logical_gpu, trans_buffer.mem);
 
+	// TODO: replace with image_new() et al
 	VkImageCreateInfo imgi = {
 		.sType  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext  = NULL,

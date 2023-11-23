@@ -40,25 +40,37 @@ void renderer_init()
 	default_sampler = image_new_sampler(VK_FILTER_NEAREST);
 	swapchain_init(surface, global_config.winw, global_config.winh);
 
-	VkAttachmentDescription colour_desc = {
-		.format         = swapchain_details.fmts[0].format, // ?
-		.samples        = VK_SAMPLE_COUNT_1_BIT,
+	DEBUG_VALUE(VK_SAMPLE_COUNT_1_BIT);
+	DEBUG_VALUE(gpu_limits.max_samples);
+	VkAttachmentDescription colour_attach = {
+		.format         = swapchain.fmt.format,
+		.samples        = gpu_limits.max_samples,
 		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
 		.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		.initialLayout  = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.finalLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 	};
-	VkAttachmentDescription depth_desc = {
+	VkAttachmentDescription depth_attach = {
 		.format         = VK_FORMAT_D16_UNORM,
-		.samples        = VK_SAMPLE_COUNT_1_BIT,
+		.samples        = gpu_limits.max_samples,
 		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 		.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 		.initialLayout  = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 		.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+	};
+	VkAttachmentDescription resolve_attach = {
+		.format         = swapchain.fmt.format,
+		.samples        = VK_SAMPLE_COUNT_1_BIT,
+		.loadOp         = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
+		.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+		.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 	};
 	VkSubpassDescription subpass_desc = {
 		.flags                = 0,
@@ -70,18 +82,21 @@ void renderer_init()
 			{ .attachment = 0,
 			  .layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, },
 		},
-		.pResolveAttachments     = NULL,
-		.pPreserveAttachments    = NULL,
-		.preserveAttachmentCount = 0,
 		.pDepthStencilAttachment = (VkAttachmentReference[]){
 			{ .attachment = 1,
 			  .layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, },
 		},
+		.pResolveAttachments = (VkAttachmentReference[]){
+			{ .attachment = 2,
+			  .layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, },
+		},
+		.preserveAttachmentCount = 0,
+		.pPreserveAttachments    = NULL,
 	};
 	VkRenderPassCreateInfo renpassi = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-		.attachmentCount = 2,
-		.pAttachments    = (VkAttachmentDescription[]){ colour_desc, depth_desc },
+		.attachmentCount = 3,
+		.pAttachments    = (VkAttachmentDescription[]){ colour_attach, depth_attach, resolve_attach },
 		.subpassCount    = 1,
 		.pSubpasses      = &subpass_desc,
 		.dependencyCount = 1,
@@ -231,10 +246,10 @@ static void create_framebuffers()
 	frame_bufs = smalloc(swapchain.imgc*sizeof(VkFramebuffer));
 	for (uint i = 0; i < swapchain.imgc; i++) {
 		VkFramebufferCreateInfo framebufi = {
-			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.renderPass      = renderpass,
-			.attachmentCount = 2,
-			.pAttachments    = (VkImageView[]){ swapchain.imgs[i].view, depth_img.view },
+			.attachmentCount = 3,
+			.pAttachments    = (VkImageView[]){ resolve_img.view, depth_img.view, swapchain.imgs[i].view },
 			.width           = swapchain.ext.width,
 			.height          = swapchain.ext.height,
 			.layers          = 1,
@@ -273,8 +288,8 @@ static void create_sync_objects()
 	};
 	for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
 		if (vkCreateSemaphore(logical_gpu, &semai, NULL, &semas.renderdone[i]) ||
-			vkCreateSemaphore(logical_gpu, &semai, NULL, &semas.imgavail[i]) ||
-			vkCreateFence(logical_gpu, &fencei, NULL, &fences.frames[i]))
+		    vkCreateSemaphore(logical_gpu, &semai, NULL, &semas.imgavail[i]) ||
+		    vkCreateFence(logical_gpu, &fencei, NULL, &fences.frames[i]))
 			ERROR("[VK] Failed to create sync object(s) for frame %d", i);
 	DEBUG(3, "[VK] Created %d sync objects", FRAMES_IN_FLIGHT);
 }

@@ -1,13 +1,14 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "config.h"
 #include "util/string.h"
 #include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
+#include "gfx/image.h"
 #include "gfx/texture.h"
 #include "font.h"
 
@@ -43,6 +44,7 @@ int font_size = 36;
 
 static FT_Library library;
 static FT_Face    face;
+static VkSampler  font_sampler;
 static struct Character characters[128];
 static struct Texture atlas;
 static float atlas_w;
@@ -108,6 +110,7 @@ void font_init(VkRenderPass renderpass)
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);
 
+	font_sampler = image_new_sampler(VK_FILTER_LINEAR);
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "font.vert"),
 		.fshader    = create_shader(SHADER_DIR "font.frag"),
@@ -119,6 +122,7 @@ void font_init(VkRenderPass renderpass)
 		.textures   = &atlas,
 		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
 		.pushsz     = sizeof(float[4]), /* Z_lvl +  position to draw + padding */
+		.sampler    = font_sampler,
 	};
 
 	pipeln_init(&pipeln, renderpass);
@@ -217,4 +221,5 @@ void font_free()
 		vbo_free(&text_objs[i].vbo);
 	texture_free(atlas);
 	pipeln_free(&pipeln);
+	vkDestroySampler(logical_gpu, font_sampler, NULL);
 }

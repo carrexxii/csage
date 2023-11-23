@@ -26,6 +26,6 @@ void swapchain_free();
 extern struct Swapchain        swapchain;
 extern struct SwapchainDetails swapchain_details;
 extern struct Image depth_img;
-extern struct Image colour_img;
+extern struct Image resolve_img;
 
 #endif

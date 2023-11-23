@@ -70,7 +70,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 	VkPipelineMultisampleStateCreateInfo msci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 		.sampleShadingEnable   = false,
-		.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT,
+		.rasterizationSamples  = gpu_limits.max_samples,
 		.minSampleShading      = 1.0,
 		.pSampleMask           = NULL,
 		.alphaToCoverageEnable = false,

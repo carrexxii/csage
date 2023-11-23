@@ -6,7 +6,6 @@
 void device_init_physical(VkInstance inst, VkSurfaceKHR surf);
 void device_init_logical(VkSurfaceKHR surf);
 int  device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop);
-int  device_get_max_sample_count(VkPhysicalDevice dev);
 void device_free();
 
 extern VkDevice      logical_gpu;
@@ -19,5 +18,8 @@ extern struct QueueFamilyIndices {
 	int present;
 	int transfer;
 } qinds;
+extern struct DeviceLimits {
+	VkSampleCountFlagBits max_samples;
+} gpu_limits;
 
 #endif
