@@ -2,13 +2,9 @@
 #define UI_TEXTBOX_H
 
 #include "util/string.h"
+#include "types.h"
 
-struct TextBox {
-	struct TextObject* text_obj;
-	String text;
-};
-
-void textbox_new(String text, Rect rect, const struct UIStyle* style, struct UIObject* parent);
+void textbox_new(String text, Rect rect, struct UIStyle* style, struct UIObject* parent);
 void textbox_build(struct UIObject* obj, struct VArray* verts);
 
 #endif

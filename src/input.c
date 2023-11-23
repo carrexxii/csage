@@ -4,10 +4,11 @@
 #include "input.h"
 
 struct Event {
-	SDL_EventType type;
 	int sym;
-	void (*fn)(void);
+	void (*fn)(bool);
 };
+
+static bool is_button_down(SDL_EventType event_type);
 
 int mouse_x;
 int mouse_y;
@@ -27,16 +28,10 @@ void input_poll(void)
 		case SDL_KEYUP:
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
 			for (int i = 0; i < eventc; i++)
-				if (events[i].type == event.type) {
-					if (events[i].sym == event.key.keysym.sym &&
-					    (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP))
-						events[i].fn();
-					else if (events[i].sym == event.button.button)
-						events[i].fn();
-				}
+				if (events[i].sym == event.key.keysym.sym || events[i].sym == event.button.button)
+					events[i].fn(is_button_down(event.type));
 			break;
 		default:
 			break;
@@ -44,24 +39,30 @@ void input_poll(void)
 	}
 }
 
-void input_register(SDL_EventType type, SDL_Keycode key, void (*fn)(void)) {
+void input_register(SDL_Keycode key, void (*fn)(bool)) {
 	events[eventc++] = (struct Event){
-		.type = type,
 		.sym  = key,
 		.fn   = fn,
 	};
-	DEBUG(5, "[INPUT] Register key %d with event type %d", key, type);
+	DEBUG(5, "[INPUT] Registered key %d", key);
 }
 
-void input_deregister(SDL_EventType type, SDL_Keycode key, void (*fn)(void))
+void input_deregister(SDL_Keycode key, void (*fn)(bool))
 {
 	for (int i = 0; i < eventc; i++)
-		if (events[i].type == type && events[i].sym == key) {
+		if (events[i].sym == key) {
 			if (events[i].fn == fn)
 				return events[i] = (struct Event){ 0 }, (void)0;
 			else
 				ERROR("[INPUT] Event for key %d does not match given function", key);
 		}
 
-	ERROR("[INPUT] Could not find event to deregister for event %d, key %d", type, key);
+	ERROR("[INPUT] Could not find event to deregister for key %d", key);
+}
+
+/* -------------------------------------------------------------------- */
+
+static bool is_button_down(SDL_EventType event_type)
+{
+	return event_type == SDL_KEYDOWN || event_type == SDL_MOUSEBUTTONDOWN;
 }

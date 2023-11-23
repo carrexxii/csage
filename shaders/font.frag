@@ -9,5 +9,6 @@ layout (set = 0, binding = 1) uniform texture2D Ftexture;
 
 void main()
 {
-	screen_colour = texture(sampler2D(Ftexture, Fsampler), Fuv);
+	vec4 tex = texture(sampler2D(Ftexture, Fsampler), Fuv);
+	screen_colour = tex * vec4(0.0, 0.0, 0.0, 1.0);
 }

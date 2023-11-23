@@ -12,19 +12,13 @@ static float zoomspeed = 100.0*DT;
 
 void camera_init()
 {
-	input_register(SDL_KEYDOWN, SDLK_w, LAMBDAV(camdir |=  DIRECTION_UP;));
-	input_register(SDL_KEYUP  , SDLK_w, LAMBDAV(camdir &= ~DIRECTION_UP;));
-	input_register(SDL_KEYDOWN, SDLK_a, LAMBDAV(camdir |=  DIRECTION_LEFT;));
-	input_register(SDL_KEYUP  , SDLK_a, LAMBDAV(camdir &= ~DIRECTION_LEFT;));
-	input_register(SDL_KEYDOWN, SDLK_s, LAMBDAV(camdir |=  DIRECTION_DOWN;));
-	input_register(SDL_KEYUP  , SDLK_s, LAMBDAV(camdir &= ~DIRECTION_DOWN;));
-	input_register(SDL_KEYDOWN, SDLK_d, LAMBDAV(camdir |=  DIRECTION_RIGHT;));
-	input_register(SDL_KEYUP  , SDLK_d, LAMBDAV(camdir &= ~DIRECTION_RIGHT;));
+	input_register(SDLK_w, LAMBDA(void, bool kdown, camdir = kdown? camdir | DIRECTION_UP   : camdir & ~DIRECTION_UP;));
+	input_register(SDLK_a, LAMBDA(void, bool kdown, camdir = kdown? camdir | DIRECTION_LEFT : camdir & ~DIRECTION_LEFT;));
+	input_register(SDLK_s, LAMBDA(void, bool kdown, camdir = kdown? camdir | DIRECTION_DOWN : camdir & ~DIRECTION_DOWN;));
+	input_register(SDLK_d, LAMBDA(void, bool kdown, camdir = kdown? camdir | DIRECTION_RIGHT: camdir & ~DIRECTION_RIGHT;));
 
-	input_register(SDL_KEYDOWN, SDLK_q, LAMBDAV(camdir |=  DIRECTION_FORWARDS;));
-	input_register(SDL_KEYUP  , SDLK_q, LAMBDAV(camdir &= ~DIRECTION_FORWARDS;));
-	input_register(SDL_KEYDOWN, SDLK_e, LAMBDAV(camdir |=  DIRECTION_BACKWARDS;));
-	input_register(SDL_KEYUP  , SDLK_e, LAMBDAV(camdir &= ~DIRECTION_BACKWARDS;));
+	input_register(SDLK_q, LAMBDA(void, bool kdown, camdir = kdown? camdir | DIRECTION_FORWARDS : camdir & ~DIRECTION_FORWARDS;));
+	input_register(SDLK_e, LAMBDA(void, bool kdown, camdir = kdown? camdir | DIRECTION_BACKWARDS: camdir & ~DIRECTION_BACKWARDS;));
 
 	camera_set_perspective();
 }

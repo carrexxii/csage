@@ -6,6 +6,7 @@
 #include "util/string.h"
 #include "gfx/buffers.h"
 #include "input.h"
+#include "types.h"
 #include "font.h"
 #include "container.h"
 #include "button.h"
@@ -17,69 +18,6 @@
 #define UI_VERTEX_COUNT             7
 #define UI_VERTEX_SIZE              sizeof(float[UI_VERTEX_COUNT])
 
-enum UIObjectType {
-	UI_NONE,
-	UI_CONTAINER,
-	UI_BUTTON,
-	UI_TEXTBOX,
-};
-
-enum AlignType {
-	ALIGN_NONE,
-	ALIGN_LEFT,
-	ALIGN_CENTRE,
-	ALIGN_RIGHT,
-};
-
-struct UIState {
-	bool visible;
-	bool hover;
-};
-
-struct UIObject {
-	enum UIObjectType type;
-	int8 z_lvl;
-
-	struct Rect rect;
-	struct Rect screen_rect;
-	struct UIState state;
-	const struct UIStyle* style;
-
-	struct UIObject* parent;
-	union {
-		struct Container container;
-		struct Button    button;
-		struct TextBox   textbox;
-	};
-};
-
-// TODO: Text buffering
-struct UIContext {
-	enum MouseMask mouse_state;
-	vec2 mouse_pos;
-};
-
-struct UIStyle {
-	enum AlignType align;
-	union Colour bg;
-	union Colour fg;
-};
-
-static const struct UIStyle default_container_style = {
-	.align = ALIGN_LEFT,
-	.bg = 0x292929FF,
-	.fg = 0xCCCCCCFF,
-};
-static const struct UIStyle default_button_style = {
-	.align = ALIGN_CENTRE,
-	.bg = 0xC55419FF,
-	.fg = 0xCCCCCCFF,
-};
-static const struct UIStyle default_textbox_style = {
-	.align = ALIGN_LEFT,
-	.bg = 0x112255FF,
-	.fg = 0xCCCCCCFF,
-};
 extern struct UIContext ui_context;
 extern struct UIObject  ui_containers[UI_MAX_TOP_LEVEL_CONTAINERS];
 extern int ui_containerc;
@@ -88,7 +26,6 @@ extern int ui_containerc;
 
 void ui_init(VkRenderPass renderpass);
 struct UIObject* ui_alloc_object(void);
-String ui_alloc_string(char* text, isize len);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
 void ui_update(void);

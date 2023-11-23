@@ -44,18 +44,23 @@ inline static void* varray_set(struct VArray* arr, isize i, void* elem)
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static void* varray_get(struct VArray* arr, isize i) {
+inline static void* varray_get(struct VArray* arr, isize i)
+{
+	assert(i < arr->len);
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static isize varray_push(struct VArray* arr, void* data) {
-	varray_set(arr, arr->len, data);
+inline static isize varray_push(struct VArray* arr, void* elem)
+{
+	varray_set(arr, arr->len, elem);
 	return arr->len++;
 }
 
-inline static isize varray_push_many(struct VArray* arr, isize count, void* data) {
+// TODO: improve
+inline static isize varray_push_many(struct VArray* arr, isize count, void* elem)
+{
 	for (int i = 0; i < count; i++)
-		varray_set(arr, arr->len++, (byte*)data + i*arr->elem_sz);
+		varray_push(arr, (byte*)elem + i*arr->elem_sz);
 	return arr->len;
 }
 
@@ -68,11 +73,13 @@ inline static void varray_resize(struct VArray* arr, isize new_sz)
 	arr = srealloc(arr, sizeof(struct VArray) + arr->cap*arr->elem_sz);
 }
 
-inline static void varray_reset(struct VArray* arr) {
+inline static void varray_reset(struct VArray* arr)
+{
 	arr->len = 0;
 }
 
-inline static void varray_free(struct VArray* arr) {
+inline static void varray_free(struct VArray* arr)
+{
 	arr->cap = 0;
 	arr->len = 0;
 	sfree(arr);

@@ -3,15 +3,10 @@
 
 #include "util/string.h"
 #include "util/varray.h"
+#include "types.h"
 
-struct Button {
-	struct TextObject* text_obj;
-	String text;
-	void*  fn_cb;
-};
-
-void button_new(String text, Rect rect, const struct UIStyle* style, struct UIObject* parent);
+void button_new(String text, Rect rect, void (*fn_cb)(void), struct UIStyle* style, struct UIObject* parent);
 void button_build(struct UIObject* obj, struct VArray* verts);
-void button_on_hover(struct UIObject* obj);
+void button_on_click(struct UIObject* obj);
 
 #endif

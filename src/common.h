@@ -43,7 +43,7 @@
 #define DT_MS                    (DT*1000.0)
 #define DEBUG_MALLOC_MIN         (128*1024)
 
-#define FONT_PATH    "data/font.ttf"
+#define FONT_PATH    "data/"
 #define SHADER_DIR   "shaders/spirv/"
 #define MODEL_PATH   "data/models/"
 #define TEXTURE_PATH "data/textures/"
@@ -150,6 +150,7 @@ union Colour {
 	                               !strncmp((str), "[GFX]" , 5)? TERM_MAGENTA: \
 	                               !strncmp((str), "[VK]"  , 4)? TERM_CYAN   : \
 	                               !strncmp((str), "[MEM]" , 5)? TERM_MAGENTA: \
+	                               !strncmp((str), "[UI]"  , 4)? TERM_YELLOW : \
 	                               TERM_NORMAL))
 #else
 #define TERM_NORMAL  ""

@@ -7,7 +7,7 @@ typedef struct {
 	char* data;
 } String;
 
-#define STRING(x) (String){ .data = x, .len = sizeof(x) }
+#define STRING(x) (String){ .data = x, .len = sizeof(x) - 1 }
 #define STRING8(x)  (String8){  .data = x }
 #define STRING16(x) (String16){ .data = x }
 #define STRING32(x) (String32){ .data = x }

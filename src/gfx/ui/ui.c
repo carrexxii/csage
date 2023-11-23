@@ -5,6 +5,7 @@
 #include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
+#include "types.h"
 #include "ui.h"
 
 static struct Pipeline pipeln;
@@ -27,11 +28,10 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 /* -------------------------------------------------------------------- */
 
 struct UIContext ui_context;
-struct VArray*   ui_objs;
 struct UIObject  ui_containers[UI_MAX_TOP_LEVEL_CONTAINERS];
 int ui_containerc = 0;
 
-static enum MouseMask mouse_state;
+static struct VArray* ui_objs;
 
 void ui_init(VkRenderPass renderpass)
 {
@@ -48,17 +48,16 @@ void ui_init(VkRenderPass renderpass)
 
 	ui_objs = varray_new(UI_DEFAULT_OBJECT_COUNT, sizeof(struct UIObject));
 
-	input_register(SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LEFT, LAMBDA(void, void, mouse_state |=  MOUSE_MASK_LEFT;));
-	input_register(SDL_MOUSEBUTTONUP  , SDL_BUTTON_LEFT, LAMBDA(void, void, mouse_state &= ~MOUSE_MASK_LEFT;));
+	input_register(SDL_BUTTON_LEFT, LAMBDA(void, bool kdown,
+			ui_context.mouse_pressed.lmb  =  kdown;
+			ui_context.mouse_released.lmb = !kdown;
+		));
 
 	DEBUG(2, "[UI] Initialized UI");
 }
 
 struct UIObject* ui_alloc_object() {
 	return varray_get(ui_objs, ui_objs->len++);
-}
-String ui_alloc_string(char* text, isize len) {
-	return string_new(text, len);
 }
 
 void ui_build() {
@@ -87,7 +86,7 @@ Rect ui_build_rect(struct UIObject* obj, bool absolute_sz)
 			            obj->rect.h/parent->rect.h/2.0f);
 		}
 	}
-	
+
 	return obj->rect;
 }
 
@@ -95,24 +94,30 @@ void ui_update()
 {
 	bool update_ui = false;
 	bool prev_state;
-	float mx = (float)mouse_x / global_config.winw;
-	float my = (float)mouse_y / global_config.winh;
+	float mx = ((float)mouse_x / global_config.winw - 0.5f)*2.0f;
+	float my = ((float)mouse_y / global_config.winh - 0.5f)*2.0f;
 	struct UIObject* obj;
-	struct UIObject* cont;
-	for (int i = 0; i < ui_containerc; i++) {
-		cont = &ui_containers[i];
-		if (cont->type != UI_BUTTON)
+	for (int i = 0; i < ui_objs->len; i++) {
+		obj = varray_get(ui_objs, i);
+		if (!obj->state.visible || obj->type != UI_BUTTON)
 			continue;
-		// TODO: Fix
-		for (int j = 0; j < cont->container.objs->len; j++) {
-			obj = varray_get(cont->container.objs, j);
-			prev_state = obj->state.hover;
-			obj->state.hover = (mx >= obj->screen_rect.x && mx <= obj->screen_rect.x + obj->screen_rect.w) &&
-			                   (my >= obj->screen_rect.y && my <= obj->screen_rect.y + obj->screen_rect.h);
-			if (obj->state.hover != prev_state) {
-				button_on_hover(obj);
-				update_ui = true;
+
+		prev_state = obj->state.hover;
+		obj->state.hover = (mx >= obj->button.screen_rect.x && mx <= obj->button.screen_rect.x + obj->button.screen_rect.w) &&
+		                   (my >= obj->button.screen_rect.y && my <= obj->button.screen_rect.y + obj->button.screen_rect.h);
+		if (obj->state.hover != prev_state)
+			update_ui = true;
+
+		if (obj->state.hover) {
+			if (ui_context.mouse_pressed.lmb && !ui_context.clicked_obj) {
+				ui_context.clicked_obj = obj;
+			} else if (ui_context.mouse_released.lmb && ui_context.clicked_obj == obj) {
+				button_on_click(obj);
+				ui_context.clicked_obj = NULL;
 			}
+		} else {
+			if (ui_context.mouse_released.lmb && ui_context.clicked_obj == obj)
+				ui_context.clicked_obj = NULL;
 		}
 	}
 

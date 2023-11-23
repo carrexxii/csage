@@ -39,7 +39,7 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
-int font_size = 32;
+int font_size = 36;
 
 static FT_Library library;
 static FT_Face    face;
@@ -54,8 +54,8 @@ void font_init(VkRenderPass renderpass)
 {
 	if (!library && FT_Init_FreeType(&library))
 		ERROR("[GFX] Failed to initialize FreeType");
-	if (!face && FT_New_Face(library, FONT_PATH, 0, &face))
-		ERROR("[GFX] Failed to load font (\"%s\")", FONT_PATH);
+	if (!face && FT_New_Face(library, FONT_PATH "fantasque.ttf", 0, &face))
+		ERROR("[GFX] Failed to load font (\"%s\")", FONT_PATH "fantasque.ttf");
 
 	FT_Set_Pixel_Sizes(face, font_size, font_size);
 
@@ -104,9 +104,9 @@ void font_init(VkRenderPass renderpass)
 	}
 	atlas = texture_new(atlas_bitmap, atlas_w, atlas_h);
 
+	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);
-	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
 
 	pipeln = (struct Pipeline){
 		.vshader    = create_shader(SHADER_DIR "font.vert"),
@@ -143,7 +143,6 @@ struct TextObject* font_render(char* text, isize text_len, float z, float w)
 		sz[0]  = characters[(int)c].sz[0];
 		sz[1]  = characters[(int)c].sz[1];
 
-		// DEBUG(1, "[%.2f] x: %.2f; sz: %.2f (%.2f)", w, x*global_config.winw/2.0f, sz[0], y);
 		if (x*global_config.winw/2.0f + sz[0] > w) {
 			x  = 0.0f;
 			y -= atlas_h / global_config.winh;
