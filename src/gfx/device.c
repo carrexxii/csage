@@ -1,18 +1,17 @@
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include "vulkan.h"
 #include "swapchain.h"
 #include "device.h"
 
-VkPhysicalDevice physicalgpu;
-VkDevice         gpu;
+VkPhysicalDevice physical_gpu;
+VkDevice         logical_gpu;
 
 VkQueue graphicsq;
 VkQueue presentq;
 VkQueue transferq;
 
-VkCommandPool cmdpool;
+VkCommandPool cmd_pool;
 struct QueueFamilyIndices qinds;
 
 static int  rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf);
@@ -31,26 +30,26 @@ void device_init_physical(VkInstance inst, VkSurfaceKHR surf)
 
 	VkPhysicalDevice devs[devc];
 	int rating;
-	int maxrating = INT_MIN;
+	int max_rating = INT_MIN;
 	vkEnumeratePhysicalDevices(inst, &devc, devs);
 	/* TODO: add feature available flags (e.g., anisotropic filtering) */
 	for (uint i = 0; i < devc; i++) {
 		rating = rate_device(devs[i], surf);
-		if (rating > maxrating) {
-			maxrating   = rating;
-			physicalgpu = devs[i];
+		if (rating > max_rating) {
+			max_rating   = rating;
+			physical_gpu = devs[i];
 		}
 	}
 
-	if (!physicalgpu)
+	if (!physical_gpu)
 		ERROR("[VK] No suitable physical device found");
 	else
-		DEBUG(3, "[VK] Created physical device (rating: %d)", maxrating);
+		DEBUG(3, "[VK] Created physical device (rating: %d)", max_rating);
 }
 
 void device_init_logical(VkSurfaceKHR surf)
 {
-	set_queue_indices(physicalgpu, surf);
+	set_queue_indices(physical_gpu, surf);
 	const uint devqic = 2;
 	VkDeviceQueueCreateInfo devqis[devqic];
 	float prio = 1.0;
@@ -59,54 +58,78 @@ void device_init_logical(VkSurfaceKHR surf)
 			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 			.flags = 0,
 			.queueFamilyIndex = ((int[]){ qinds.graphics,
-				                          qinds.present,
-									      qinds.transfer })[i],
+			                              qinds.present,
+			                              qinds.transfer })[i],
 			.pQueuePriorities = &prio,
 			.queueCount       = 1,
 		};
 
-	VkPhysicalDeviceFeatures devfeatures[] = {
-		{ .geometryShader = 1, }
-	};
-	VkPhysicalDeviceIndexTypeUint8FeaturesEXT uint8inds = {
+	VkPhysicalDeviceIndexTypeUint8FeaturesEXT uint8_feature = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
 		.indexTypeUint8 = 1,
 	};
-	VkPhysicalDeviceShaderDrawParametersFeatures shaderfeatures = {
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-		.shaderDrawParameters = 1,
-		.pNext = &uint8inds,
-	};
-
-	uint extc = 1;
-	const char* exts[] = { "VK_KHR_swapchain" };
 	VkDeviceCreateInfo devi = {
-		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.flags = 0,
-		.queueCreateInfoCount    = devqic,
-		.pQueueCreateInfos       = devqis,
-		.pEnabledFeatures        = devfeatures,
-		.pNext                   = &shaderfeatures,
-		.enabledLayerCount       = VK_LAYERC,
-		.ppEnabledLayerNames     = VK_LAYERS,
-		.enabledExtensionCount   = extc,
-		.ppEnabledExtensionNames = exts,
+		.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		.flags                = 0,
+		.queueCreateInfoCount = devqic,
+		.pQueueCreateInfos    = devqis,
+		.pEnabledFeatures = (VkPhysicalDeviceFeatures[]){
+			{ .geometryShader = 1, },
+		},
+		.pNext = (VkPhysicalDeviceShaderDrawParametersFeatures[]){
+			{ .sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+			  .shaderDrawParameters = 1,
+			  .pNext                = &uint8_feature, },
+		},
+		.enabledLayerCount       = VULKAN_LAYER_COUNT,
+		.ppEnabledLayerNames     = VULKAN_LAYERS,
+		.enabledExtensionCount   = 1,
+		.ppEnabledExtensionNames = (const char*[]){ "VK_KHR_swapchain", },
 	};
-	if (vkCreateDevice(physicalgpu, &devi, NULL, &gpu) != VK_SUCCESS)
+	if (vkCreateDevice(physical_gpu, &devi, NULL, &logical_gpu))
 		ERROR("[VK] Failed to create logical device");
 	else
 		DEBUG(3, "[VK] Created logical device");
 
-	vkGetDeviceQueue(gpu, qinds.present , 0, &presentq);
-	vkGetDeviceQueue(gpu, qinds.graphics, 0, &graphicsq);
-	// vkGetDeviceQueue(gpu, qinds.transfer, 0, &transferq);
+	vkGetDeviceQueue(logical_gpu, qinds.present , 0, &presentq);
+	vkGetDeviceQueue(logical_gpu, qinds.graphics, 0, &graphicsq);
+	// vkGetDeviceQueue(logical_gpu, qinds.transfer, 0, &transferq);
+}
+
+int device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop)
+{
+	VkPhysicalDeviceMemoryProperties memprop;
+	vkGetPhysicalDeviceMemoryProperties(physical_gpu, &memprop);
+	for (int i = 0; i < (int)memprop.memoryTypeCount; i++)
+		if (type & (1 << i) && (memprop.memoryTypes[i].propertyFlags & prop) == prop)
+			return i;
+
+	ERROR("[VK] Failed to find suitable memory type");
+	return INT_MAX;
+}
+
+int device_get_max_sample_count(VkPhysicalDevice dev)
+{
+	VkPhysicalDeviceProperties devp;
+	vkGetPhysicalDeviceProperties(dev, &devp);
+
+	VkSampleCountFlags count = devp.limits.framebufferColorSampleCounts & devp.limits.framebufferDepthSampleCounts;
+	return (count & VK_SAMPLE_COUNT_64_BIT? VK_SAMPLE_COUNT_64_BIT:
+	        count & VK_SAMPLE_COUNT_32_BIT? VK_SAMPLE_COUNT_32_BIT:
+	        count & VK_SAMPLE_COUNT_16_BIT? VK_SAMPLE_COUNT_16_BIT:
+	        count & VK_SAMPLE_COUNT_8_BIT ? VK_SAMPLE_COUNT_8_BIT :
+	        count & VK_SAMPLE_COUNT_4_BIT ? VK_SAMPLE_COUNT_4_BIT :
+	        count & VK_SAMPLE_COUNT_2_BIT ? VK_SAMPLE_COUNT_2_BIT :
+	                                        VK_SAMPLE_COUNT_1_BIT);
 }
 
 void device_free()
 {
 	DEBUG(3, "[VK] Destroying device...");
-	vkDestroyDevice(gpu, NULL);
+	vkDestroyDevice(logical_gpu, NULL);
 }
+
+/* -------------------------------------------------------------------- */
 
 static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)
 {
@@ -122,7 +145,7 @@ static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)
 			rating = INT_MIN;
 
 	swapchain_set(dev, surf);
-	if (swapdetails.fmtc == 0 || swapdetails.mdc == 0)
+	if (swapchain_details.fmtc == 0 || swapchain_details.modec == 0)
 		rating = INT_MIN;
 
 	set_queue_indices(dev, surf);
@@ -152,21 +175,21 @@ static bool supports_extension(VkPhysicalDevice dev, char* ext)
 
 static void set_queue_indices(VkPhysicalDevice dev, VkSurfaceKHR surf)
 {
-	uint qfampc;
-	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfampc, NULL);
-	VkQueueFamilyProperties qfamps[qfampc];
-	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfampc, qfamps);
-	for (uint i = 0; i < qfampc; i++) {
-		if (qfamps[i].queueCount > 0) {
+	uint qfamilyc;
+	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfamilyc, NULL);
+	VkQueueFamilyProperties qfamilies[qfamilyc];
+	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfamilyc, qfamilies);
+	for (uint i = 0; i < qfamilyc; i++) {
+		if (qfamilies[i].queueCount > 0) {
 			uint pres;
 			vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, surf, &pres);
 			if (pres)
 				qinds.present = i;
-			if (qfamps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			if (qfamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				qinds.graphics = i;
-			if (qfamps[i].queueFlags == VK_QUEUE_TRANSFER_BIT)
+			if (qfamilies[i].queueFlags == VK_QUEUE_TRANSFER_BIT)
 				qinds.transfer = i;
-			else if (qfamps[i].queueFlags & VK_QUEUE_TRANSFER_BIT && !qinds.transfer)
+			else if (qfamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT && !qinds.transfer)
 				qinds.transfer = i;
 		}
 
@@ -196,6 +219,7 @@ static void debug_physical(VkPhysicalDevice dev)
 	DEBUG(3, "\tGeometry shader                   -> %s", STRING_YN(devf.geometryShader));
 	DEBUG(3, "\tTessellation shader               -> %s", STRING_YN(devf.tessellationShader));
 	DEBUG(3, "\tSampler anisotropy                -> %s", STRING_YN(devf.samplerAnisotropy));
+	DEBUG(3, "\tMSAA Sample Counts                -> %d", device_get_max_sample_count(dev));
 	DEBUG(3, "\tMax image dimensions (1/2/3)      -> %u/%u/%u", devp.limits.maxImageDimension1D,
 	                                                            devp.limits.maxImageDimension2D,
 	                                                            devp.limits.maxImageDimension3D);
@@ -230,18 +254,18 @@ static void debug_physical(VkPhysicalDevice dev)
 		DEBUG(3, "\t    %2d of 0x%.8X -> %s", qs[i].queueCount,
 			qs[i].queueFlags, STRING_QUEUE_BIT(qs[i].queueFlags));
 
-	DEBUG(3, "\t%u colour formats available", swapdetails.fmtc);
+	DEBUG(3, "\t%u colour formats available", swapchain_details.fmtc);
 
 	DEBUG(3, "\tSurface Capabilities:");
-	DEBUG(3, "\t    Image count  -> %u..%u", swapdetails.abilities.minImageCount,
-	                                         swapdetails.abilities.maxImageCount);
+	DEBUG(3, "\t    Image count  -> %u..%u", swapchain_details.abilities.minImageCount,
+	                                         swapchain_details.abilities.maxImageCount);
 	DEBUG(3, "\t    Extent       -> %ux%u (%ux%u..%ux%u)",
-		swapdetails.abilities.currentExtent.width , swapdetails.abilities.currentExtent.height,
-		swapdetails.abilities.minImageExtent.width, swapdetails.abilities.minImageExtent.height,
-		swapdetails.abilities.maxImageExtent.width, swapdetails.abilities.maxImageExtent.height);
-	DEBUG(3, "\t    Array layers -> %u", swapdetails.abilities.maxImageArrayLayers);
+	      swapchain_details.abilities.currentExtent.width , swapchain_details.abilities.currentExtent.height,
+	      swapchain_details.abilities.minImageExtent.width, swapchain_details.abilities.minImageExtent.height,
+	      swapchain_details.abilities.maxImageExtent.width, swapchain_details.abilities.maxImageExtent.height);
+	DEBUG(3, "\t    Array layers -> %u", swapchain_details.abilities.maxImageArrayLayers);
 
-	DEBUG(3, "\t%u present modes:", swapdetails.mdc);
-	for (uint i = 0; i < swapdetails.mdc; i++)
-		DEBUG(3, "\t    %s", STRING_PRESENT_MODE(swapdetails.mds[i]));
+	DEBUG(3, "\t%u present modes:", swapchain_details.modec);
+	for (uint i = 0; i < swapchain_details.modec; i++)
+		DEBUG(3, "\t    %s", STRING_PRESENT_MODE(swapchain_details.modes[i]));
 }

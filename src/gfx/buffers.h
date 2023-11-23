@@ -17,13 +17,12 @@ typedef struct Buffer SBO;
 
 VkCommandBuffer begin_command_buffer();
 void end_command_buffer(VkCommandBuffer buf, VkFence fence);
-void buffer_new(VkDeviceSize sz, VkBufferUsageFlags use, VkMemoryPropertyFlags propfs, VkBuffer* buf, VkDeviceMemory* mem);
-/* TODO: switch to memory size as last parameter */
+void buffer_new(VkDeviceSize sz, VkBufferUsageFlags buf_flags, VkMemoryPropertyFlags mem_flags, VkBuffer* buf, VkDeviceMemory* mem);
+// TODO: switch to memory size as last parameter
 VBO _vbo_new(VkDeviceSize s, void* verts, bool can_update, const char* file, int line, const char* fn);
 IBO _ibo_new(VkDeviceSize s, void* inds, const char* file, int line, const char* fn);
 UBO _ubo_new(VkDeviceSize s, const char* file, int line, const char* fn);
 SBO _sbo_new(VkDeviceSize s, const char* file, int line, const char* fn);
-uint find_memory_index(uint type, uint prop);
 
 #define vbo_new(s, v, u) _vbo_new((s), (v), (u), __FILE__, __LINE__, __func__)
 #define ibo_new(s, i)    _ibo_new((s), (i),      __FILE__, __LINE__, __func__)
@@ -33,10 +32,10 @@ uint find_memory_index(uint type, uint prop);
 void buffer_update(struct Buffer buffer, VkDeviceSize sz, void* mem);
 
 inline static void buffer_map_memory(struct Buffer buffer, VkDeviceSize sz, void** mem) {
-	vkMapMemory(gpu, buffer.mem, 0, sz, 0, mem);
+	vkMapMemory(logical_gpu, buffer.mem, 0, sz, 0, mem);
 }
 inline static void buffer_unmap_memory(struct Buffer buffer) {
-	vkUnmapMemory(gpu, buffer.mem);
+	vkUnmapMemory(logical_gpu, buffer.mem);
 }
 
 void buffer_free(struct Buffer* buf);

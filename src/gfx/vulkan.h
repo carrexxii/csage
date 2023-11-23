@@ -16,17 +16,17 @@
 
 #if DEBUG_LEVEL > 0
 	#ifdef _WIN32
-		#define VK_LAYERC 2
-		#define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
+		#define VULKAN_LAYER_COUNT 2
+		#define VULKAN_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
 		                                         "VK_LAYER_LUNARG_monitor" }
 	#else
-		#define VK_LAYERC 2
-		#define VK_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
+		#define VULKAN_LAYER_COUNT 2
+		#define VULKAN_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
 		                                         "VK_LAYER_LUNARG_monitor", }
 	#endif
 #else
-	#define VK_LAYERC 0
-	#define VK_LAYERS (char const* const[]){ }
+	#define VULKAN_LAYER_COUNT 0
+	#define VULKAN_LAYERS (char const* const[]){ }
 #endif
 
 #define VK_GET_EXT(var, ext) \

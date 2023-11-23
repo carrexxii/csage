@@ -10,8 +10,12 @@
 #include "swapchain.h"
 #include "camera.h"
 #include "ui/ui.h"
+#include "model.h"
+#include "particles.h"
 #include "map.h"
 #include "renderer.h"
+
+VkSampler default_sampler;
 
 static void record_commands(int imgi);
 static void create_framebuffers();
@@ -30,14 +34,14 @@ static struct {
 static VkRenderPass     renderpass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
-// static struct Pipeline  pipeln;
 
 void renderer_init()
 {
+	default_sampler = image_new_sampler(VK_FILTER_NEAREST);
 	swapchain_init(surface, global_config.winw, global_config.winh);
 
-	VkAttachmentDescription colourdesc = {
-		.format         = surfacefmt.format,
+	VkAttachmentDescription colour_desc = {
+		.format         = swapchain_details.fmts[0].format, // ?
 		.samples        = VK_SAMPLE_COUNT_1_BIT,
 		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
@@ -46,7 +50,7 @@ void renderer_init()
 		.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
 		.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 	};
-	VkAttachmentDescription depthdesc = {
+	VkAttachmentDescription depth_desc = {
 		.format         = VK_FORMAT_D16_UNORM,
 		.samples        = VK_SAMPLE_COUNT_1_BIT,
 		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -56,45 +60,42 @@ void renderer_init()
 		.initialLayout  = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 		.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 	};
-	VkAttachmentReference colourref = {
-		.attachment = 0,
-		.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-	};
-	VkAttachmentReference depthref = {
-		.attachment = 1,
-		.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-	};
-	VkSubpassDescription subpassdesc = {
-		.flags                   = 0,
-		.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS,
-		.inputAttachmentCount    = 0,
-		.pInputAttachments       = NULL,
-		.colorAttachmentCount    = 1,
-		.pColorAttachments       = &colourref,
+	VkSubpassDescription subpass_desc = {
+		.flags                = 0,
+		.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS,
+		.inputAttachmentCount = 0,
+		.pInputAttachments    = NULL,
+		.colorAttachmentCount = 1,
+		.pColorAttachments    = (VkAttachmentReference[]){
+			{ .attachment = 0,
+			  .layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, },
+		},
 		.pResolveAttachments     = NULL,
-		.pDepthStencilAttachment = &depthref,
-		.preserveAttachmentCount = 0,
 		.pPreserveAttachments    = NULL,
-	};
-	VkSubpassDependency subpassdep = {
-		.srcSubpass    = VK_SUBPASS_EXTERNAL,
-		.dstSubpass    = 0,
-		.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		.srcAccessMask = 0,
-		.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-						 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+		.preserveAttachmentCount = 0,
+		.pDepthStencilAttachment = (VkAttachmentReference[]){
+			{ .attachment = 1,
+			  .layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, },
+		},
 	};
 	VkRenderPassCreateInfo renpassi = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 		.attachmentCount = 2,
-		.pAttachments    = (VkAttachmentDescription[]){ colourdesc, depthdesc },
+		.pAttachments    = (VkAttachmentDescription[]){ colour_desc, depth_desc },
 		.subpassCount    = 1,
-		.pSubpasses      = &subpassdesc,
+		.pSubpasses      = &subpass_desc,
 		.dependencyCount = 1,
-		.pDependencies   = &subpassdep,
+		.pDependencies   = (VkSubpassDependency[]){
+			{ .srcSubpass    = VK_SUBPASS_EXTERNAL,
+			  .dstSubpass    = 0,
+			  .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			  .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			  .srcAccessMask = 0,
+			  .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+			                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, },
+		},
 	};
-	if (vkCreateRenderPass(gpu, &renpassi, NULL, &renderpass) != VK_SUCCESS)
+	if (vkCreateRenderPass(logical_gpu, &renpassi, NULL, &renderpass))
 		ERROR("[VK] Failed to create render pass");
 	else
 		DEBUG(1, "[VK] Created render pass");
@@ -112,12 +113,12 @@ void renderer_init()
 
 void renderer_draw()
 {
-	vkWaitForFences(gpu, 1, &fences.frames[frame], true, UINT64_MAX);
-	vkResetFences(gpu, 1, &fences.frames[frame]);
+	vkWaitForFences(logical_gpu, 1, &fences.frames[frame], true, UINT64_MAX);
+	vkResetFences(logical_gpu, 1, &fences.frames[frame]);
 
 	/* TODO: recreate swapchain for out of date */
 	uint imgi;
-	if (vkAcquireNextImageKHR(gpu, swapchain, UINT64_MAX, semas.imgavail[frame], NULL, &imgi) != VK_SUCCESS)
+	if (vkAcquireNextImageKHR(logical_gpu, swapchain.swapchain, UINT64_MAX, semas.imgavail[frame], NULL, &imgi))
 		ERROR("[VK] Failed to aquire next swapchain image");
 
 	vkResetCommandBuffer(cmd_bufs[frame], 0);
@@ -135,7 +136,7 @@ void renderer_draw()
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 		},
 	};
-	if (vkQueueSubmit(graphicsq, 1, &submiti, fences.frames[frame]) != VK_SUCCESS)
+	if (vkQueueSubmit(graphicsq, 1, &submiti, fences.frames[frame]))
 		ERROR("[VK] Failed to submit draw command");
 
 	VkPresentInfoKHR presi = {
@@ -143,11 +144,11 @@ void renderer_draw()
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores    = &semas.renderdone[frame],
 		.swapchainCount     = 1,
-		.pSwapchains        = (VkSwapchainKHR[]){ swapchain },
+		.pSwapchains        = (VkSwapchainKHR[]){ swapchain.swapchain },
 		.pImageIndices      = (uint32[]){ imgi },
 		.pResults           = NULL,
 	};
-	if (vkQueuePresentKHR(presentq, &presi) != VK_SUCCESS)
+	if (vkQueuePresentKHR(presentq, &presi))
 		ERROR("[VK] Failed to present queue");
 
 	frame = (frame + 1) % FRAMES_IN_FLIGHT;
@@ -155,21 +156,21 @@ void renderer_draw()
 
 void renderer_free()
 {
-	vkDeviceWaitIdle(gpu);
+	vkDeviceWaitIdle(logical_gpu);
 
 	DEBUG(3, "[VK] Destroying sync objects...");
 	for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
-		vkDestroySemaphore(gpu, semas.imgavail[i], NULL);
-		vkDestroySemaphore(gpu, semas.renderdone[i], NULL);
-		vkDestroyFence(gpu, fences.frames[i], NULL);
+		vkDestroySemaphore(logical_gpu, semas.imgavail[i], NULL);
+		vkDestroySemaphore(logical_gpu, semas.renderdone[i], NULL);
+		vkDestroyFence(logical_gpu, fences.frames[i], NULL);
 	}
 
-	image_free();
 	swapchain_free();
+	vkDestroySampler(logical_gpu, default_sampler, NULL);
 
 	DEBUG(3, "[VK] Destroying frambuffers...");
-	for (uint i = 0; i < swapchainimgc; i++)
-		vkDestroyFramebuffer(gpu, frame_bufs[i], NULL);
+	for (uint i = 0; i < swapchain.imgc; i++)
+		vkDestroyFramebuffer(logical_gpu, frame_bufs[i], NULL);
 
 	ui_free();
 	models_free();
@@ -177,7 +178,7 @@ void renderer_free()
 	particles_free();
 
 	DEBUG(3, "[VK] Destroying render pass...");
-	vkDestroyRenderPass(gpu, renderpass, NULL);
+	vkDestroyRenderPass(logical_gpu, renderpass, NULL);
 
 	free(frame_bufs);
 	free(cmd_bufs);
@@ -208,7 +209,7 @@ static void record_commands(int imgi)
 		},
 		.renderArea = {
 			.offset = { 0, 0 },
-			.extent = swapchainext,
+			.extent = swapchain.ext,
 		},
 	};
 
@@ -221,24 +222,24 @@ static void record_commands(int imgi)
 	font_record_commands(cmd_buf);
 
 	vkCmdEndRenderPass(cmd_buf);
-	if (vkEndCommandBuffer(cmd_buf) != VK_SUCCESS)
+	if (vkEndCommandBuffer(cmd_buf))
 		ERROR("[VK] Failed to record comand buffer");
 }
 
 static void create_framebuffers()
 {
-	frame_bufs = smalloc(swapchainimgc*sizeof(VkFramebuffer));
-	for (uint i = 0; i < swapchainimgc; i++) {
+	frame_bufs = smalloc(swapchain.imgc*sizeof(VkFramebuffer));
+	for (uint i = 0; i < swapchain.imgc; i++) {
 		VkFramebufferCreateInfo framebufi = {
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.renderPass      = renderpass,
 			.attachmentCount = 2,
-			.pAttachments    = (VkImageView[]){ swapchainimgviews[i], depthview },
-			.width           = swapchainext.width,
-			.height          = swapchainext.height,
+			.pAttachments    = (VkImageView[]){ swapchain.imgs[i].view, depth_img.view },
+			.width           = swapchain.ext.width,
+			.height          = swapchain.ext.height,
 			.layers          = 1,
 		};
-		if (vkCreateFramebuffer(gpu, &framebufi, NULL, &frame_bufs[i]))
+		if (vkCreateFramebuffer(logical_gpu, &framebufi, NULL, &frame_bufs[i]))
 			ERROR("[VK] Failed to create framebuffer %u", i);
 		else
 			DEBUG(3, "[VK] Created framebuffer %u", i);
@@ -247,14 +248,14 @@ static void create_framebuffers()
 
 static void create_command_buffers()
 {
-	cmd_bufs = smalloc(swapchainimgc*sizeof(VkCommandBuffer));
+	cmd_bufs = smalloc(swapchain.imgc*sizeof(VkCommandBuffer));
 	VkCommandBufferAllocateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandBufferCount = swapchainimgc,
-		.commandPool        = cmdpool,
+		.commandBufferCount = swapchain.imgc,
+		.commandPool        = cmd_pool,
 	};
-	if (vkAllocateCommandBuffers(gpu, &bufi, cmd_bufs))
+	if (vkAllocateCommandBuffers(logical_gpu, &bufi, cmd_bufs))
 		ERROR("[VK] Failed to create command buffers");
 	else
 		DEBUG(3, "[VK] Created command buffers");
@@ -271,9 +272,9 @@ static void create_sync_objects()
 		.flags = VK_FENCE_CREATE_SIGNALED_BIT,
 	};
 	for (int i = 0; i < FRAMES_IN_FLIGHT; i++)
-		if (vkCreateSemaphore(gpu, &semai, NULL, &semas.renderdone[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(gpu, &semai, NULL, &semas.imgavail[i]) != VK_SUCCESS ||
-			vkCreateFence(gpu, &fencei, NULL, &fences.frames[i]) != VK_SUCCESS)
+		if (vkCreateSemaphore(logical_gpu, &semai, NULL, &semas.renderdone[i]) ||
+			vkCreateSemaphore(logical_gpu, &semai, NULL, &semas.imgavail[i]) ||
+			vkCreateFence(logical_gpu, &fencei, NULL, &fences.frames[i]))
 			ERROR("[VK] Failed to create sync object(s) for frame %d", i);
 	DEBUG(3, "[VK] Created %d sync objects", FRAMES_IN_FLIGHT);
 }

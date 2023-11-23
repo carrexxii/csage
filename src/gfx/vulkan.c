@@ -73,13 +73,13 @@ void init_vulkan(SDL_Window* win)
 		DEBUG(3, "\t%s", exts[i]);
 
 	VkInstanceCreateInfo instci = {
-		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-		.flags = 0,
+		.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.flags                   = 0,
 		.pApplicationInfo		 = &appi,
 		.enabledExtensionCount   = extc,
 		.ppEnabledExtensionNames = exts,
-		.enabledLayerCount	     = VK_LAYERC,
-		.ppEnabledLayerNames	 = VK_LAYERS,
+		.enabledLayerCount	     = VULKAN_LAYER_COUNT,
+		.ppEnabledLayerNames	 = VULKAN_LAYERS,
 	};
 	if (vkCreateInstance(&instci, NULL, &instance) != VK_SUCCESS)
 		ERROR("[VK] Failed to create Vulkan instance");
@@ -89,8 +89,8 @@ void init_vulkan(SDL_Window* win)
 	/* Set up the callback for validation layer error messages */
 #if DEBUG_LEVEL > 0
 	VkDebugReportCallbackCreateInfoEXT debugi = {
-		.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
-		.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT,
+		.sType       = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
+		.flags       = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT,
 		.pfnCallback = debug_cb,
 	};
 	VK_GET_EXT(dbgfn, vkCreateDebugReportCallbackEXT);
@@ -118,7 +118,7 @@ VkShaderModule create_shader(char* restrict path)
 		.pCode	  = (const uint32*)code,
 	};
 	fclose(file);
-	if (vkCreateShaderModule(gpu, &moduleci, NULL, &module))
+	if (vkCreateShaderModule(logical_gpu, &moduleci, NULL, &module))
 		ERROR("[VK] Failed to create shader module \"%s\"", path);
 	else
 		DEBUG(3, "[VK] Created new shader module \"%s\"", path);

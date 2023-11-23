@@ -1,4 +1,3 @@
-#include "common.h"
 #include "vulkan/vulkan.h"
 
 #include "gfx/vulkan.h"

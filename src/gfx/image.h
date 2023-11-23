@@ -5,24 +5,17 @@
 
 #define MAX_IMAGES 64
 
-extern int32           imagec;
-extern VkImage*        images;
-extern VkImageView*    imageviews;
-extern VkDeviceMemory* imagemems;
-
-extern VkImage        depthimg;
-extern VkImageView    depthview;
-extern VkDeviceMemory depthmem;
-extern VkFormat       depthfmt;
-extern VkImageLayout  depthlayout;
-
-extern VkSampler sampler;
+struct Image {
+	VkImage        img;
+	VkImageView    view;
+	VkDeviceMemory mem;
+};
 
 void image_init();
-void image_new(uint32 w, uint32 h, VkFormat fmt);
+struct Image image_new(uint w, uint h, VkFormat fmt, VkImageUsageFlags usage, VkSampleCountFlags samples);
 VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp);
-void image_new_depth_image();
+VkSampler image_new_sampler(VkFilter filter);
 void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new);
-void image_free();
+void image_free(struct Image* img);
 
 #endif

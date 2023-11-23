@@ -3,24 +3,21 @@
 
 #include <vulkan/vulkan.h>
 
-extern VkPhysicalDevice physicalgpu;
-extern VkDevice         gpu;
+void device_init_physical(VkInstance inst, VkSurfaceKHR surf);
+void device_init_logical(VkSurfaceKHR surf);
+int  device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop);
+int  device_get_max_sample_count(VkPhysicalDevice dev);
+void device_free();
 
-extern VkQueue graphicsq;
-extern VkQueue presentq;
-extern VkQueue transferq;
-
-extern VkCommandPool cmdpool;
-
+extern VkDevice      logical_gpu;
+extern VkCommandPool cmd_pool;
+extern VkQueue       graphicsq;
+extern VkQueue       presentq;
+extern VkQueue       transferq;
 extern struct QueueFamilyIndices {
 	int graphics;
 	int present;
 	int transfer;
 } qinds;
 
-void device_init_physical(VkInstance inst, VkSurfaceKHR surf);
-void device_init_logical(VkSurfaceKHR surf);
-void device_free();
-
 #endif
-

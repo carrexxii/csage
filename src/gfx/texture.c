@@ -23,9 +23,9 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	           &trans_buffer.buf, &trans_buffer.mem);
-	vkMapMemory(gpu, trans_buffer.mem, 0, size, 0, &data);
+	vkMapMemory(logical_gpu, trans_buffer.mem, 0, size, 0, &data);
 	memcpy(data, pxs, size);
-	vkUnmapMemory(gpu, trans_buffer.mem);
+	vkUnmapMemory(logical_gpu, trans_buffer.mem);
 
 	VkImageCreateInfo imgi = {
 		.sType  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -47,20 +47,19 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices   = NULL,
 	};
-	if (vkCreateImage(gpu, &imgi, NULL, &tex.image) != VK_SUCCESS)
+	if (vkCreateImage(logical_gpu, &imgi, NULL, &tex.image) != VK_SUCCESS)
 		ERROR("[VK] Failed to create image");
 
-	VkMemoryRequirements memreq;
-	vkGetImageMemoryRequirements(gpu, tex.image, &memreq);
+	VkMemoryRequirements mem_req;
+	vkGetImageMemoryRequirements(logical_gpu, tex.image, &mem_req);
 	VkMemoryAllocateInfo alloci = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize  = memreq.size,
-		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits,
-		                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
+		.allocationSize  = mem_req.size,
+		.memoryTypeIndex = device_find_memory_index(mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
 	};
-	if (vkAllocateMemory(gpu, &alloci, NULL, &tex.memory) != VK_SUCCESS)
+	if (vkAllocateMemory(logical_gpu, &alloci, NULL, &tex.memory) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate memory for image");
-	vkBindImageMemory(gpu, tex.image, tex.memory, 0);
+	vkBindImageMemory(logical_gpu, tex.image, tex.memory, 0);
 
 	image_transition_layout(tex.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	buffer_to_image(trans_buffer.buf, tex.image, (uint)w, (uint)h);
@@ -90,9 +89,9 @@ struct Texture texture_new_from_image(const char* path)
 void texture_free(struct Texture tex)
 {
 	DEBUG(2, "[VK] Destroying texture...");
-	vkDestroyImageView(gpu, tex.image_view, NULL);
-	vkDestroyImage(gpu, tex.image, NULL);
-	vkFreeMemory(gpu, tex.memory, NULL);
+	vkDestroyImageView(logical_gpu, tex.image_view, NULL);
+	vkDestroyImage(logical_gpu, tex.image, NULL);
+	vkFreeMemory(logical_gpu, tex.memory, NULL);
 }
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h)

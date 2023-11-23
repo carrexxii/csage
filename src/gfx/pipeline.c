@@ -1,8 +1,5 @@
-#include <limits.h>
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
-#include "common.h"
 #include "config.h"
 #include "vulkan.h"
 #include "device.h"
@@ -14,8 +11,7 @@
 #include "pipeline.h"
 
 static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo* stagecis);
-inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type,
-                                                              uint binding);
+inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type, uint binding);
 inline static void update_buf_dset(VkWriteDescriptorSet* dwriteset, VkDescriptorSet dset, VkDescriptorType type,
                                    VkDescriptorBufferInfo* dbufi, uintptr binding);
 inline static void update_img_dset(VkWriteDescriptorSet* dwriteset, VkDescriptorSet dset, VkDescriptorType type,
@@ -42,14 +38,14 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 	VkViewport viewport = {
 		.x        = 0.0,
 		.y        = 0.0,
-		.width    = (float)swapchainext.width,
-		.height   = (float)swapchainext.height,
+		.width    = (float)swapchain.ext.width,
+		.height   = (float)swapchain.ext.height,
 		.minDepth = 0.0,
 		.maxDepth = 1.0,
 	};
 	VkRect2D scissor = {
 		.offset = { 0, 0 },
-		.extent = swapchainext,
+		.extent = swapchain.ext,
 	};
 	VkPipelineViewportStateCreateInfo viewportsci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -125,7 +121,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.pushConstantRangeCount = pipeln->pushsz > 0? 1: 0,
 		.pPushConstantRanges    = &tpushr,
 	};
-	if (vkCreatePipelineLayout(gpu, &tlaysci, NULL, &pipeln->layout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(logical_gpu, &tlaysci, NULL, &pipeln->layout) != VK_SUCCESS)
 		ERROR("[VK] Failed to create pipeline layout");
 	else
 		DEBUG(4, "[VK] Created pipeline layout");
@@ -148,7 +144,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.basePipelineHandle  = NULL,
 		.basePipelineIndex   = -1,
 	};
-	if (vkCreateGraphicsPipelines(gpu, NULL, 1, &tpipelnci, NULL, &pipeln->pipeln) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(logical_gpu, NULL, 1, &tpipelnci, NULL, &pipeln->pipeln) != VK_SUCCESS)
 		ERROR("[VK] Failed to create pipeline");
 	else
 		DEBUG(3, "[VK] Pipeline created");
@@ -157,17 +153,17 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 void pipeln_free(struct Pipeline* pipeln)
 {
 	DEBUG(3, "[VK] Destroying pipeline (%p)...", (void*)pipeln);
-	vkDestroyPipeline(gpu, pipeln->pipeln, NULL);
-	vkDestroyPipelineLayout(gpu, pipeln->layout, NULL);
-	vkDestroyDescriptorPool(gpu, pipeln->dpool, NULL);
+	vkDestroyPipeline(logical_gpu, pipeln->pipeln, NULL);
+	vkDestroyPipelineLayout(logical_gpu, pipeln->layout, NULL);
+	vkDestroyDescriptorPool(logical_gpu, pipeln->dpool, NULL);
 
-	if (pipeln->vshader)  vkDestroyShaderModule(gpu, pipeln->vshader , NULL);
-	if (pipeln->tcshader) vkDestroyShaderModule(gpu, pipeln->tcshader, NULL);
-	if (pipeln->teshader) vkDestroyShaderModule(gpu, pipeln->teshader, NULL);
-	if (pipeln->gshader)  vkDestroyShaderModule(gpu, pipeln->gshader , NULL);
-	if (pipeln->fshader)  vkDestroyShaderModule(gpu, pipeln->fshader , NULL);
+	if (pipeln->vshader)  vkDestroyShaderModule(logical_gpu, pipeln->vshader , NULL);
+	if (pipeln->tcshader) vkDestroyShaderModule(logical_gpu, pipeln->tcshader, NULL);
+	if (pipeln->teshader) vkDestroyShaderModule(logical_gpu, pipeln->teshader, NULL);
+	if (pipeln->gshader)  vkDestroyShaderModule(logical_gpu, pipeln->gshader , NULL);
+	if (pipeln->fshader)  vkDestroyShaderModule(logical_gpu, pipeln->fshader , NULL);
 
-	vkDestroyDescriptorSetLayout(gpu, pipeln->dsetlayout, NULL);
+	vkDestroyDescriptorSetLayout(logical_gpu, pipeln->dsetlayout, NULL);
 
 	for (int i = 0; i < pipeln->uboc; i++)
 		if (pipeln->ubos[i].sz)
@@ -224,7 +220,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 		.bindingCount = dsetlayoutc,
 		.pBindings    = dsetlayouts,
 	};
-	if (vkCreateDescriptorSetLayout(gpu, &dsetlayoutci, NULL, &pipeln->dsetlayout))
+	if (vkCreateDescriptorSetLayout(logical_gpu, &dsetlayoutci, NULL, &pipeln->dsetlayout))
 		ERROR("[VK] Failed to create descriptor set layout");
 	else
 		DEBUG(3, "[VK] Created descriptor set layout");
@@ -244,7 +240,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 		},
 		.maxSets = 1,
 	};
-	if (vkCreateDescriptorPool(gpu, &dpoolci, NULL, &pipeln->dpool))
+	if (vkCreateDescriptorPool(logical_gpu, &dpoolci, NULL, &pipeln->dpool))
 		ERROR("[VK] Failed to create descriptor pool");
 	else
 		DEBUG(3, "[VK] Created descriptor pool");
@@ -255,7 +251,7 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 		.descriptorSetCount = 1,
 		.pSetLayouts        = &pipeln->dsetlayout,
 	};
-	if (vkAllocateDescriptorSets(gpu, &dsetalloci, &pipeln->dset) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(logical_gpu, &dsetalloci, &pipeln->dset) != VK_SUCCESS)
 		ERROR("[VK] Failed to allocate for descriptor set");
 	else
 		DEBUG(3, "[VK] Allocated descriptor sets");
@@ -314,9 +310,9 @@ static void update_dsets(struct Pipeline* pipeln)
 	int sbo_loc, ubo_loc, sampler_loc, images_loc;
 	sbo_loc = ubo_loc = sampler_loc = images_loc = -1;
 	int dwritesetc = 0;
-	VkWriteDescriptorSet   dwritesets[2 + pipeln->uboc + imagec]; /* 2 = storage buffer + sampler */
-	VkDescriptorBufferInfo dbufis[1 + pipeln->uboc];              /* 1 = storage buffer           */
-	VkDescriptorImageInfo  dimgis[1 + imagec];                    /* 1 = sampler                  */
+	VkWriteDescriptorSet   dwritesets[2 + pipeln->uboc + swapchain.imgc]; /* 2 = storage buffer + sampler */
+	VkDescriptorBufferInfo dbufis[1 + pipeln->uboc];                      /* 1 = storage buffer           */
+	VkDescriptorImageInfo  dimgis[1 + swapchain.imgc];                    /* 1 = sampler                  */
 
 	/* Storage buffers */
 	if (pipeln->sbosz > 0) {
@@ -349,13 +345,13 @@ static void update_dsets(struct Pipeline* pipeln)
 	dimgis[0] = (VkDescriptorImageInfo){
 		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		.imageView   = NULL,
-		.sampler     = sampler,
+		.sampler     = pipeln->sampler? pipeln->sampler: default_sampler,
 	};
 	update_img_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_SAMPLER, &dimgis[0], dwritesetc);
 	sampler_loc = dwritesetc;
 	dwritesetc++;
 
-	vkUpdateDescriptorSets(gpu, dwritesetc, dwritesets, 0, NULL);
+	vkUpdateDescriptorSets(logical_gpu, dwritesetc, dwritesets, 0, NULL);
 
 	/* Sampled images */
 	if (pipeln->texturec > 0)
@@ -370,7 +366,7 @@ static void update_dsets(struct Pipeline* pipeln)
 		                &dimgis[i + 1], dwritesetc);
 		dwritesetc++;
 	}
-	vkUpdateDescriptorSets(gpu, 1, &dwritesets[dwritesetc-1], 0, NULL);
+	vkUpdateDescriptorSets(logical_gpu, 1, &dwritesets[dwritesetc-1], 0, NULL);
 	
 	DEBUG(3, "[VK] Updated %d descriptor sets (SBO: %d; UBO: %d; Sampler: %d; Images: %d)", dwritesetc, 
 	      sbo_loc, ubo_loc, sampler_loc, images_loc);

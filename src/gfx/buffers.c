@@ -11,10 +11,10 @@ VkCommandBuffer begin_command_buffer()
 	VkCommandBufferAllocateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandPool        = cmdpool,
+		.commandPool        = cmd_pool,
 		.commandBufferCount = 1,
 	};
-	vkAllocateCommandBuffers(gpu, &bufi, &buf);
+	vkAllocateCommandBuffers(logical_gpu, &bufi, &buf);
 
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -37,34 +37,34 @@ void end_command_buffer(VkCommandBuffer buf, VkFence fence)
 	vkQueueSubmit(graphicsq, 1, &submiti, fence);
 	if (!fence)
 		vkQueueWaitIdle(graphicsq);
-	vkFreeCommandBuffers(gpu, cmdpool, 1, &buf);
+	vkFreeCommandBuffers(logical_gpu, cmd_pool, 1, &buf);
 }
 
-void buffer_new(VkDeviceSize sz, VkBufferUsageFlags usefs, VkMemoryPropertyFlags propfs, VkBuffer* buf, VkDeviceMemory* mem)
+void buffer_new(VkDeviceSize sz, VkBufferUsageFlags buf_flags, VkMemoryPropertyFlags mem_flags, VkBuffer* buf, VkDeviceMemory* mem)
 {
 	VkBufferCreateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.size                  = sz,
-		.usage                 = usefs,
+		.usage                 = buf_flags,
 		.flags                 = 0,
 		.sharingMode           = VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices   = NULL,
 	};
-	if (vkCreateBuffer(gpu, &bufi, NULL, buf) != VK_SUCCESS)
+	if (vkCreateBuffer(logical_gpu, &bufi, NULL, buf) != VK_SUCCESS)
 		ERROR("\tFailed to create buffer");
 
-	VkMemoryRequirements memreq;
-	vkGetBufferMemoryRequirements(gpu, *buf, &memreq);
+	VkMemoryRequirements mem_req;
+	vkGetBufferMemoryRequirements(logical_gpu, *buf, &mem_req);
 	VkMemoryAllocateInfo alloci = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.allocationSize  = memreq.size,
-		.memoryTypeIndex = find_memory_index(memreq.memoryTypeBits, propfs),
+		.allocationSize  = mem_req.size,
+		.memoryTypeIndex = device_find_memory_index(mem_req.memoryTypeBits, mem_flags),
 	};
-	if (vkAllocateMemory(gpu, &alloci, NULL, mem) != VK_SUCCESS)
+	if (vkAllocateMemory(logical_gpu, &alloci, NULL, mem) != VK_SUCCESS)
 		ERROR("\tFailed to allocate memory for buffer");
 
-	vkBindBufferMemory(gpu, *buf, *mem, 0);
+	vkBindBufferMemory(logical_gpu, *buf, *mem, 0);
 }
 
 VBO _vbo_new(VkDeviceSize sz, void* verts, bool can_update, char const* file, int line, char const* fn)
@@ -128,15 +128,15 @@ SBO _sbo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data)
 {
 	void* mem;
-	vkMapMemory(gpu, buf.mem, 0, sz, 0, &mem);
+	vkMapMemory(logical_gpu, buf.mem, 0, sz, 0, &mem);
 	memcpy(mem, data, sz);
-	vkUnmapMemory(gpu, buf.mem);
+	vkUnmapMemory(logical_gpu, buf.mem);
 }
 
 void buffer_free(struct Buffer* buf)
 {
-	vkDestroyBuffer(gpu, buf->buf, NULL);
-	vkFreeMemory(gpu, buf->mem, NULL);
+	vkDestroyBuffer(logical_gpu, buf->buf, NULL);
+	vkFreeMemory(logical_gpu, buf->mem, NULL);
 	buf->sz = 0;
 }
 
@@ -150,17 +150,4 @@ static void copy_buffer(VkBuffer dst, VkBuffer src, VkDeviceSize sz)
 	};
 	vkCmdCopyBuffer(buf, src, dst, 1, &region);
 	end_command_buffer(buf, NULL);
-}
-
-// TODO: Move this to a better place (vulkan.h?)
-uint find_memory_index(uint type, uint prop)
-{
-	VkPhysicalDeviceMemoryProperties memprop;
-	vkGetPhysicalDeviceMemoryProperties(physicalgpu, &memprop);
-	for (uint i = 0; i < memprop.memoryTypeCount; i++)
-		if (type & (1 << i) && (memprop.memoryTypes[i].propertyFlags & prop) == prop)
-			return i;
-
-	ERROR("[VK] Failed to find suitable memory type");
-	return UINT_MAX;
 }

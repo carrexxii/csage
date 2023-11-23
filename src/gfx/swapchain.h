@@ -3,24 +3,29 @@
 
 #include "image.h"
 
+struct Swapchain {
+	VkSwapchainKHR     swapchain;
+	VkExtent2D         ext;
+	VkSurfaceFormatKHR fmt;
+	VkPresentModeKHR   mode;
+	struct Image*      imgs;
+	uint               imgc;
+};
+
+struct SwapchainDetails {
+	VkSurfaceCapabilitiesKHR abilities;
+	VkSurfaceFormatKHR* fmts;
+	VkPresentModeKHR* modes;
+	uint fmtc, modec;
+};
+
 void swapchain_init(VkSurfaceKHR surf, int w, int h);
 void swapchain_set(VkPhysicalDevice dev, VkSurfaceKHR surf);
 void swapchain_free();
 
-extern VkSwapchainKHR     swapchain;
-extern VkExtent2D         swapchainext;
-extern VkSurfaceFormatKHR surfacefmt;
-extern VkPresentModeKHR   presentmd;
-
-extern uint32       swapchainimgc;
-extern VkImage*     swapchainimgs;
-extern VkImageView* swapchainimgviews;
-
-extern struct SwapchainDetails {
-	VkSurfaceCapabilitiesKHR abilities;
-	uint fmtc, mdc;
-	VkSurfaceFormatKHR* fmts;
-	VkPresentModeKHR* mds;
-} swapdetails;
+extern struct Swapchain        swapchain;
+extern struct SwapchainDetails swapchain_details;
+extern struct Image depth_img;
+extern struct Image colour_img;
 
 #endif

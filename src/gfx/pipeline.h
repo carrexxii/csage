@@ -19,27 +19,29 @@ struct Pipeline {
 	VkDescriptorSetLayout dsetlayout;
 
 	/* Caller-defined values */
+	VkSampler sampler;
 	VkPrimitiveTopology topology;
-	struct {
-		int vert_bindc;
-		int vert_attrc;
-		VkVertexInputBindingDescription*   vert_binds;
-		VkVertexInputAttributeDescription* vert_attrs;
-	};
+
+	int vert_bindc;
+	int vert_attrc;
+	VkVertexInputBindingDescription*   vert_binds;
+	VkVertexInputAttributeDescription* vert_attrs;
+
 	VkShaderModule  vshader;
 	VkShaderModule tcshader;
 	VkShaderModule teshader;
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
+
+	VkShaderStageFlags pushstages;
+	intptr pushsz;
 	intptr uboc;
 	UBO*   ubos;
 	intptr sbosz;
 	SBO*   sbo;
-	intptr pushsz;
+
 	struct Texture* textures;
 	intptr texturec;
-	VkShaderStageFlags pushstages;
-	bool enable_blending;
 };
 
 void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);

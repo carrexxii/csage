@@ -5,16 +5,10 @@
 #include "image.h"
 #include "swapchain.h"
 
-VkSwapchainKHR     swapchain;
-VkExtent2D         swapchainext;
-VkSurfaceFormatKHR surfacefmt;
-VkPresentModeKHR   presentmd;
-
-uint32       swapchainimgc;
-VkImage*     swapchainimgs;
-VkImageView* swapchainimgviews;
-
-struct SwapchainDetails swapdetails;
+struct Swapchain        swapchain;
+struct SwapchainDetails swapchain_details;
+struct Image depth_img;
+struct Image colour_img;
 
 static void create_command_pool();
 static VkSurfaceFormatKHR choose_surface_format();
@@ -22,27 +16,26 @@ static VkPresentModeKHR choose_present_mode();
 
 void swapchain_init(VkSurfaceKHR surf, int w, int h)
 {
-	swapchainext = (VkExtent2D){ w, h };
-	surfacefmt   = choose_surface_format();
-	presentmd    = choose_present_mode();
+	swapchain.ext  = (VkExtent2D){ w, h };
+	swapchain.fmt  = choose_surface_format();
+	swapchain.mode = choose_present_mode();
 
-	uint32 minimgc = swapdetails.abilities.minImageCount + 1;
-	if (swapdetails.abilities.maxImageCount > 0 &&
-		minimgc > swapdetails.abilities.maxImageCount)
-		minimgc = swapdetails.abilities.maxImageCount;
+	uint32 min_imgc = swapchain_details.abilities.minImageCount + 1;
+	if (swapchain_details.abilities.maxImageCount > 0 && min_imgc > swapchain_details.abilities.maxImageCount)
+		min_imgc = swapchain_details.abilities.maxImageCount;
 
 	VkSwapchainCreateInfoKHR swapchaini = {
 		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 		.surface          = surf,
-		.minImageCount    = minimgc,
-		.imageFormat      = surfacefmt.format,
-		.imageColorSpace  = surfacefmt.colorSpace,
+		.minImageCount    = min_imgc,
+		.imageFormat      = swapchain.fmt.format,
+		.imageColorSpace  = swapchain.fmt.colorSpace,
 		.imageArrayLayers = 1,
-		.imageExtent      = swapchainext,
+		.imageExtent      = swapchain.ext,
 		.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		.preTransform     = swapdetails.abilities.currentTransform,
+		.preTransform     = swapchain_details.abilities.currentTransform,
 		.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-		.presentMode      = presentmd,
+		.presentMode      = swapchain.mode,
 		.oldSwapchain     = NULL,
 		.clipped          = true,
 	};
@@ -58,72 +51,84 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 		swapchaini.pQueueFamilyIndices   = NULL;
 	}
 
-	if (vkCreateSwapchainKHR(gpu, &swapchaini, NULL, &swapchain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(logical_gpu, &swapchaini, NULL, &swapchain.swapchain))
 		ERROR("[VK] Failed to create swapchain");
 	else
-		DEBUG(1, "[VK] Created swapchain (queue families: %u | minimum images: %u)",
-		      swapchaini.queueFamilyIndexCount, minimgc);
+		DEBUG(1, "[VK] Created swapchain\n\tQueue families: %u\n\tMinimum images: %u",
+		      swapchaini.queueFamilyIndexCount, min_imgc);
 
 	create_command_pool();
 
-	image_init(); 
-	vkGetSwapchainImagesKHR(gpu, swapchain, &swapchainimgc, NULL);
-	/* IMPROVEMENT: combine allocations */
-	swapchainimgs     = smalloc(swapchainimgc*sizeof(VkImage));
-	swapchainimgviews = smalloc(swapchainimgc*sizeof(VkImageView));
-	vkGetSwapchainImagesKHR(gpu, swapchain, &swapchainimgc, swapchainimgs);
-	for (int i = 0; i < (int)swapchainimgc; i++) {
-		swapchainimgviews[i] = image_new_view(swapchainimgs[i], surfacefmt.format, VK_IMAGE_ASPECT_COLOR_BIT);
-		image_transition_layout(swapchainimgs[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	/*** -------------------- Create Swapchain Images -------------------- ***/
+	vkGetSwapchainImagesKHR(logical_gpu, swapchain.swapchain, &swapchain.imgc, NULL);
+	VkImage tmp_imgs[swapchain.imgc];
+	swapchain.imgs = smalloc(swapchain.imgc*sizeof(struct Image));
+	vkGetSwapchainImagesKHR(logical_gpu, swapchain.swapchain, &swapchain.imgc, tmp_imgs);
+	for (int i = 0; i < (int)swapchain.imgc; i++) {
+		swapchain.imgs[i].img  = tmp_imgs[i];
+		swapchain.imgs[i].view = image_new_view(swapchain.imgs[i].img, swapchain.fmt.format, VK_IMAGE_ASPECT_COLOR_BIT);
+		image_transition_layout(swapchain.imgs[i].img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
-	image_new_depth_image();
+
+	depth_img = image_new(swapchain.ext.width, swapchain.ext.height, VK_FORMAT_D16_UNORM,
+	                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+	                      VK_SAMPLE_COUNT_1_BIT);
+	depth_img.view = image_new_view(depth_img.img, VK_FORMAT_D16_UNORM, VK_IMAGE_ASPECT_DEPTH_BIT);
+	image_transition_layout(depth_img.img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void swapchain_set(VkPhysicalDevice dev, VkSurfaceKHR surf)
 {
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, surf, &swapdetails.abilities);
-	uint surffmtc;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surf, &surffmtc, NULL);
-	if (surffmtc != 0) {
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, surf, &swapchain_details.abilities);
+	uint surf_fmtc;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surf, &surf_fmtc, NULL);
+	if (surf_fmtc != 0) {
 		/* Check if enough memory has previously been allocated */
-		if (surffmtc > swapdetails.fmtc)
-			swapdetails.fmts = srealloc(swapdetails.fmts, surffmtc * sizeof(VkSurfaceFormatKHR));
-		vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surf, &surffmtc, swapdetails.fmts);
+		if (surf_fmtc > swapchain_details.fmtc)
+			swapchain_details.fmts = srealloc(swapchain_details.fmts, surf_fmtc * sizeof(VkSurfaceFormatKHR));
+		vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surf, &surf_fmtc, swapchain_details.fmts);
 	}
-	swapdetails.fmtc = surffmtc;
+	swapchain_details.fmtc = surf_fmtc;
 
-	uint surfpresmdc;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surf, &surfpresmdc, NULL);
-	if (surfpresmdc != 0) {
+	uint present_modec;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surf, &present_modec, NULL);
+	if (present_modec != 0) {
 		/* Check if enough memory has previously been allocated */
-		if (surfpresmdc > swapdetails.mdc)
-			swapdetails.mds = srealloc(swapdetails.mds, surfpresmdc * sizeof(VkPresentModeKHR));
-		vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surf, &surfpresmdc, swapdetails.mds);
+		if (present_modec > swapchain_details.modec)
+			swapchain_details.modes = srealloc(swapchain_details.modes, present_modec * sizeof(VkPresentModeKHR));
+		vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surf, &present_modec, swapchain_details.modes);
 	}
-	swapdetails.mdc = surfpresmdc;
+	swapchain_details.modec = present_modec;
 }
 
 void swapchain_free()
 {
 	DEBUG(3, "[VK] Destroying swapchain image views...");
-	for (int i = 0; i < (int)swapchainimgc; i++)
-		vkDestroyImageView(gpu, swapchainimgviews[i], NULL);
-	DEBUG(3, "[VK] Destroying command pool...");
-	vkDestroyCommandPool(gpu, cmdpool, NULL);
-	DEBUG(3, "[VK] Destroying swapchain...");
-	vkDestroySwapchainKHR(gpu, swapchain, NULL);
+	for (int i = 0; i < (int)swapchain.imgc; i++)
+		vkDestroyImageView(logical_gpu, swapchain.imgs[i].view, NULL);
+	image_free(&depth_img);
+	image_free(&colour_img);
 
-	free(swapchainimgs);
+	DEBUG(3, "[VK] Destroying command pool...");
+	vkDestroyCommandPool(logical_gpu, cmd_pool, NULL);
+	
+	DEBUG(3, "[VK] Destroying swapchain...");
+	vkDestroySwapchainKHR(logical_gpu, swapchain.swapchain, NULL);
+
+
+	free(swapchain.imgs);
 }
+
+/* -------------------------------------------------------------------- */
 
 static void create_command_pool()
 {
 	VkCommandPoolCreateInfo pooli = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 		.queueFamilyIndex = qinds.graphics,
-		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+		.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 	};
-	if (vkCreateCommandPool(gpu, &pooli, NULL, &cmdpool) != VK_SUCCESS)
+	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &cmd_pool))
 		ERROR("[VK] Failed to create command pool");
 	else
 		DEBUG(3, "[VK] Created command pool");
@@ -136,8 +141,8 @@ static void create_command_pool()
  */
 static VkSurfaceFormatKHR choose_surface_format()
 {
-	uint fmtc = swapdetails.fmtc;
-	VkSurfaceFormatKHR* fmts = swapdetails.fmts;
+	uint fmtc = swapchain_details.fmtc;
+	VkSurfaceFormatKHR* fmts = swapchain_details.fmts;
 
 	/* Device has no preferred format */
 	if (fmtc == 1 && fmts[0].format == VK_FORMAT_UNDEFINED)
@@ -157,8 +162,8 @@ static VkSurfaceFormatKHR choose_surface_format()
 VkPresentModeKHR choose_present_mode()
 {
 	VkPresentModeKHR md = VK_PRESENT_MODE_IMMEDIATE_KHR;
-	for (int i = 0; i < (int)swapdetails.mdc; i++)
-		switch (swapdetails.mds[i]) {
+	for (int i = 0; i < (int)swapchain_details.modec; i++)
+		switch (swapchain_details.modes[i]) {
 		case VK_PRESENT_MODE_MAILBOX_KHR:
 			return VK_PRESENT_MODE_MAILBOX_KHR;
 		case VK_PRESENT_MODE_FIFO_KHR:
