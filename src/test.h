@@ -39,7 +39,7 @@ static void test_init()
 
 	map_new((ivec3s){ 64, 64, 16 });
 
-	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "cube.glb");
+	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "fish.glb");
 
 	// struct UIStyle test_style = {
 		// .bg = 0xFF00FFFF,

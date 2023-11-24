@@ -2,6 +2,7 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
+#include "util/arena.h"
 #include "util/file.h"
 #include "vulkan.h"
 #include "buffers.h"
@@ -128,26 +129,32 @@ inline static int float_compare(const void* restrict f1, const void* restrict f2
 struct Model* model_new(char* path)
 {
 	struct Model* model = &models[modelc++];
+	*model = (struct Model){ 0 };
 
 	cgltf_options options = {
 		.type = cgltf_file_type_glb,
 	};
 	cgltf_data* data;
-	if (cgltf_parse_file(&options, path, &data))
+	if (cgltf_parse_file(&options, path, &data)) {
 		ERROR("[GFX] CGLTF failed to parse file \"%s\"", path);
-	else
-		DEBUG(5, "Basic model data for \"%s\" loaded with:\n\tMeshes: %lu\n\tMaterials: %lu\n\tTextures: %lu\n\tBuffers: %lu",
-		      path, data->meshes_count, data->materials_count, data->textures_count, data->buffers_count);
+	} else {
+		DEBUG(4, "[GFX] Model data for \"%s\" loaded with:", path);
+		DEBUG(4, "\tMeshes    -> %lu", data->meshes_count);
+		DEBUG(4, "\tMaterials -> %lu", data->materials_count);
+		DEBUG(4, "\tTextures  -> %lu", data->textures_count);
+		DEBUG(4, "\tImages    -> %lu", data->images_count);
+		DEBUG(4, "\tBuffers   -> %lu", data->buffers_count);
+	}
 
 	if (cgltf_load_buffers(&options, data, path))
 		ERROR("[GFX] Error loading buffer data");
 	else
-		DEBUG(5, "Loaded buffer data for \"%s\"", path);
+		DEBUG(4, "Loaded buffer data for \"%s\"", path);
 
 	load_materials(model, data);
 	load_meshes(model, data);
-	load_skin(model, data);
-	load_animations(model, data);
+	// load_skin(model, data);
+	// load_animations(model, data);
 
 #if DEBUG_LEVEL > 0
 	int total_indc = 0;
@@ -159,12 +166,11 @@ struct Model* model_new(char* path)
 		total_framec += model->animations[i].framec;
 #endif
 
-	model->current_animation = 0;
-	model->timer = 0.0;
-
 	cgltf_free(data);
-	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
-	      path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin->jointc, total_framec);
+	// DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
+	      // path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin->jointc, total_framec);
+	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles)",
+	      path, model->meshc, total_indc, total_indc/3);
 	return model;
 }
 
@@ -240,7 +246,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			// DEBUG(1, "[%d Static] Drawing %d vertices", i, models[i].meshes[m].indc);
 
 			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs) - 2, (VkBuffer[]){ mesh->vbos[0].buf,
-			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, sizeof(VkBuffer), sizeof(VkBuffer[2]) });
+			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.pushstages, 0, pipeln_static.pushsz, &push_constants);
 			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
@@ -266,6 +272,8 @@ void models_free()
 	pipeln_free(&pipeln);
 	pipeln_free(&pipeln_static);
 }
+
+/* -------------------------------------------------------------------- */
 
 static void load_materials(struct Model* model, cgltf_data* data)
 {
@@ -301,7 +309,7 @@ static void load_materials(struct Model* model, cgltf_data* data)
 	/* Default material if none exist */
 	if (!data->materials_count)
 		models->materials[0] = (struct Material){
-			.albedo = { 0.3, 0.3, 0.3, 0.3 },
+			.albedo = { 0.3f, 0.3f, 0.3f, 1.0f },
 		};
 }
 
@@ -321,12 +329,14 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 				vert_max = MAX(vert_max, (int)data->meshes[m].primitives[p].attributes[a].data->count);
 		}
 	}
-	uint16* inds = smalloc(indc_max*sizeof(uint16));
-	float* verts = smalloc(vert_max*(sizeof(float[12]) + sizeof(int8[4])));
-	float* normals       = verts   + 3*vert_max;
-	float* uvs           = normals + 3*vert_max;
-	int8*  joint_ids     = (int8*)(uvs + 2*vert_max);
-	float* joint_weights = (float*)(joint_ids + 4*vert_max);
+
+	struct Arena* mesh_mem = arena_new(indc_max*sizeof(uint16) + vert_max*(sizeof(float[12]) + sizeof(int8[4])), 0);
+	uint16* inds         = arena_alloc(mesh_mem, indc_max*sizeof(uint16));
+	float* verts         = arena_alloc(mesh_mem, vert_max*sizeof(float[3]));
+	float* normals       = arena_alloc(mesh_mem, vert_max*sizeof(float[3]));
+	float* uvs           = arena_alloc(mesh_mem, vert_max*sizeof(float[2]));
+	int8*  joint_ids     = arena_alloc(mesh_mem, vert_max*sizeof(uint8[4]));
+	float* joint_weights = arena_alloc(mesh_mem, vert_max*sizeof(float[4]));
 
 	cgltf_mesh*      mesh;
 	cgltf_primitive* prim;
@@ -339,107 +349,168 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 		mesh = &data->meshes[m];
 		for (int p = 0; p < (int)mesh->primitives_count; p++) {
 			prim = &mesh->primitives[p];
-			assert(prim->type == cgltf_primitive_type_triangles);
+			if (prim->type != cgltf_primitive_type_triangles)
+				ERROR("[RES] Mesh has non-triangle primitives (%d)", prim->type);
+
 			for (int a = 0; a < (int)prim->attributes_count; a++) {
-				attr = prim->attributes[a].data;
+				attr  = prim->attributes[a].data;
 				vert  = (float*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(float) + attr->offset/sizeof(float);
 				vert8 = (int8*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(int8) + attr->offset/sizeof(int8);
 				int i = 0;
 				for (int v = 0; v < (int)attr->count; v++) {
 					switch(prim->attributes[a].type) {
-						case cgltf_attribute_type_position:
-							verts[3*v + 0] = vert[i + 0];
-							verts[3*v + 1] = vert[i + 1];
-							verts[3*v + 2] = vert[i + 2];
-							i += (int)(attr->stride/sizeof(float));
-							break;
-						case cgltf_attribute_type_normal:
-							normals[3*v + 0] = vert[i + 0];
-							normals[3*v + 1] = vert[i + 1];
-							normals[3*v + 2] = vert[i + 2];
-							i += (int)(attr->stride/sizeof(float));
-							break;
-						case cgltf_attribute_type_texcoord:
-							uvs[2*v + 0] = vert[i + 0];
-							uvs[2*v + 1] = vert[i + 1];
-							break;
-						case cgltf_attribute_type_joints:
-							joint_ids[4*v + 0] = vert8[i + 0];
-							joint_ids[4*v + 1] = vert8[i + 1];
-							joint_ids[4*v + 2] = vert8[i + 2];
-							joint_ids[4*v + 3] = vert8[i + 3];
-							i += (int)(attr->stride/sizeof(int8));
-							// DEBUG_VALUE(joint_ids[4*v + 0]);
-							// DEBUG_VALUE(joint_ids[4*v + 1]);
-							// DEBUG_VALUE(joint_ids[4*v + 2]);
-							// DEBUG_VALUE(joint_ids[4*v + 3]);
-							// DEBUG(1, " ");
-							break;
-						case cgltf_attribute_type_weights:
-							joint_weights[4*v + 0] = vert[i + 0];
-							joint_weights[4*v + 1] = vert[i + 1];
-							joint_weights[4*v + 2] = vert[i + 2];
-							joint_weights[4*v + 3] = vert[i + 3];
-							i += (int)(attr->stride/sizeof(float));
-							// DEBUG_VALUE(joint_weights[4*v + 0]);
-							// DEBUG_VALUE(joint_weights[4*v + 1]);
-							// DEBUG_VALUE(joint_weights[4*v + 2]);
-							// DEBUG_VALUE(joint_weights[4*v + 3]);
-							// DEBUG(1, " ");
-							break;
-						default:
-							ERROR("[GFX] Invalid attribute type: %d", prim->attributes[a].type);
-							continue;
-					}
-				}
-				switch(prim->attributes[a].type) {
 					case cgltf_attribute_type_position:
-						models->meshes[m].vbos[0] = vbo_new(attr->count*sizeof(float[3]), verts, false);
+						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec3)
+							ERROR("[RES] Position attribute has invalid type (expect vec3 (%d vs %d) float (%d vs %d)):",
+							      cgltf_type_vec3, attr->type, cgltf_component_type_r_32f, attr->component_type);
+						verts[3*v + 0] = vert[i + 0];
+						verts[3*v + 1] = vert[i + 1];
+						verts[3*v + 2] = vert[i + 2];
+						i += (int)(attr->stride/sizeof(float));
 						break;
 					case cgltf_attribute_type_normal:
-						models->meshes[m].vbos[1] = vbo_new(attr->count*sizeof(float[3]), normals, false);
+						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec3)
+							ERROR("[RES] Normal attribute has invalid type (expect vec3 (%d vs %d) float (%d vs %d)):",
+							      cgltf_type_vec3, attr->type, cgltf_component_type_r_32f, attr->component_type);
+						normals[3*v + 0] = vert[i + 0];
+						normals[3*v + 1] = vert[i + 1];
+						normals[3*v + 2] = vert[i + 2];
+						i += (int)(attr->stride/sizeof(float));
 						break;
 					case cgltf_attribute_type_texcoord:
-						models->meshes[m].vbos[2] = vbo_new(attr->count*sizeof(float[2]), uvs, false);
+						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec2)
+							ERROR("[RES] Texcoord attribute has invalid type (expect vec2 (%d vs %d) float (%d vs %d)):",
+							      cgltf_type_vec2, attr->type, cgltf_component_type_r_32f, attr->component_type);
+						uvs[2*v + 0] = vert[i + 0];
+						uvs[2*v + 1] = vert[i + 1];
+						i += (int)(attr->stride/sizeof(float));
 						break;
 					case cgltf_attribute_type_joints:
-						models->meshes[m].vbos[3] = vbo_new(attr->count*sizeof(int8[4]), verts, false);
+						if (attr->component_type != cgltf_component_type_r_8u || attr->type != cgltf_type_vec4)
+							ERROR("[RES] Joint attribute has invalid type (expect vec4 (%d vs %d) uint8 (%d vs %d)):",
+							      cgltf_type_vec4, attr->type, cgltf_component_type_r_8u, attr->component_type);
+						joint_ids[4*v + 0] = vert8[i + 0];
+						joint_ids[4*v + 1] = vert8[i + 1];
+						joint_ids[4*v + 2] = vert8[i + 2];
+						joint_ids[4*v + 3] = vert8[i + 3];
+						i += (int)(attr->stride/sizeof(int8));
 						break;
 					case cgltf_attribute_type_weights:
-						models->meshes[m].vbos[4] = vbo_new(attr->count*sizeof(float[4]), verts, false);
+						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec4)
+							ERROR("[RES] Weight attribute has invalid type (expect vec4 (%d vs %d) float (%d vs %d)):",
+							      cgltf_type_vec4, attr->type, cgltf_component_type_r_32f, attr->component_type);
+						joint_weights[4*v + 0] = vert[i + 0];
+						joint_weights[4*v + 1] = vert[i + 1];
+						joint_weights[4*v + 2] = vert[i + 2];
+						joint_weights[4*v + 3] = vert[i + 3];
+						i += (int)(attr->stride/sizeof(float));
+						break;
+					case cgltf_attribute_type_tangent:
+						static bool tangent_err = false;
+						if (!tangent_err) {
+							ERROR("[GFX] Tangent loading from GLTF files not implemented");
+							tangent_err = true;
+						}
+						break;
+					case cgltf_attribute_type_color:
+						static bool colour_err = false;
+						if (!colour_err) {
+							ERROR("[GFX] Colour loading from GLTF files not implemented");
+							colour_err = true;
+						}
 						break;
 					default:
+						ERROR("[GFX] Invalid attribute type: %d", prim->attributes[a].type);
 						continue;
+					}
+				}
+
+				/*** Apply the transform to the mesh ***/
+				cgltf_node* node;
+				mat4 trans;
+				float* vts; /* vts = vertex type that the transform will be applied to */
+				if (prim->attributes[a].type == cgltf_attribute_type_position)
+					vts = verts;
+				else if (prim->attributes[a].type == cgltf_attribute_type_normal)
+					vts = normals;
+				else
+					goto skip_transform;
+
+				for (int n = 0; n < (int)data->nodes_count; n++) {
+					node = &data->nodes[n];
+					cgltf_node_transform_world(node, (float*)trans);
+					// DEBUG(1, "rot: %d, trans: %d, scale: %d", node->has_rotation, node->has_translation, node->has_scale);
+					// DEBUG(1, "rotation: %.2f, %.2f, %.2f, %.2f", node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]);
+					// DEBUG(1, "translation: %.2f, %.2f, %.2f", node->translation[0], node->translation[1], node->translation[2]);
+					// DEBUG(1, "scale: %.2f, %.2f, %.2f", node->scale[0], node->scale[1], node->scale[2]);
+					// DEBUG(1, "Transform matrix for %p (current mesh: %p):", node->mesh, mesh);
+					// for (int j = 0; j < 16; j++)
+					// 	printf("%6.2f%s", trans[j/4][j%4], (j + 1) % 4 == 0? "\n": ", ");
+
+					if (node->mesh == mesh) {
+						vec3 v;
+						for (int j = 0; j < vert_max; j++) {
+							v[0] = vts[3*j + 0];
+							v[1] = vts[3*j + 1];
+							v[2] = vts[3*j + 2];
+							glm_mat4_mulv3(trans, v, 1.0f, &vts[3*j]);
+						}
+					}
+				}
+
+			skip_transform:
+				switch(prim->attributes[a].type) {
+				case cgltf_attribute_type_position:
+					models->meshes[m].vbos[0] = vbo_new(attr->count*sizeof(float[3]), verts, false);
+					break;
+				case cgltf_attribute_type_normal:
+					models->meshes[m].vbos[1] = vbo_new(attr->count*sizeof(float[3]), normals, false);
+					break;
+				case cgltf_attribute_type_texcoord:
+					models->meshes[m].vbos[2] = vbo_new(attr->count*sizeof(float[2]), uvs, false);
+					break;
+				case cgltf_attribute_type_joints:
+					models->meshes[m].vbos[3] = vbo_new(attr->count*sizeof(int8[4]), verts, false);
+					break;
+				case cgltf_attribute_type_weights:
+					models->meshes[m].vbos[4] = vbo_new(attr->count*sizeof(float[4]), verts, false);
+					break;
+				default:
+					continue;
 				}
 			}
+
 			if (prim->indices) {
 				attr = prim->indices;
 				model->meshes[m].indc = attr->count;
 				int i = 0;
 				switch (attr->component_type) {
-					case cgltf_component_type_r_16u:
-						ind_16 = (uint16*)attr->buffer_view->buffer->data +
-						         attr->buffer_view->offset/sizeof(uint16) +
-						         attr->offset/sizeof(uint16);
-						for (int v = 0; v < (int)attr->count; v++) {
-							inds[v] = (uint16)ind_16[i];
-							i += (int)(attr->stride/sizeof(uint16));
-						}
-						break;
-					case cgltf_component_type_r_32u:
-						ind_32 = (uint32*)attr->buffer_view->buffer->data +
-						         attr->buffer_view->offset/sizeof(uint32) +
-						         attr->offset/sizeof(uint32);
-						for (int v = 0; v < (int)attr->count; v++) {
-							inds[v] = (uint16)ind_32[i];
-							i += (int)(attr->stride/sizeof(uint32));
-						}
-						break;
-					default:
-						ERROR("[GFX] Unsupported index size value: %u", attr->component_type);
+				case cgltf_component_type_r_16u:
+					ind_16 = (uint16*)attr->buffer_view->buffer->data +
+					         attr->buffer_view->offset/sizeof(uint16) +
+					         attr->offset/sizeof(uint16);
+					for (int v = 0; v < (int)attr->count; v++) {
+						inds[v] = (uint16)ind_16[i];
+						i += (int)(attr->stride/sizeof(uint16));
+					}
+					break;
+				case cgltf_component_type_r_32u:
+					ind_32 = (uint32*)attr->buffer_view->buffer->data +
+					         attr->buffer_view->offset/sizeof(uint32) +
+					         attr->offset/sizeof(uint32);
+					for (int v = 0; v < (int)attr->count; v++) {
+						inds[v] = (uint16)ind_32[i];
+						i += (int)(attr->stride/sizeof(uint32));
+					}
+					break;
+				default:
+					ERROR("[GFX] Unsupported index size value: %u", attr->component_type);
 				}
 
 				model->meshes[m].ibo = ibo_new(model->meshes[m].indc*sizeof(uint16), inds);
+			} else {
+				ERROR("[RES] GLTF file does not provide indices (non-indexed drawing not supported)");
+				exit(70);
 			}
 
 			/* Assign materials to their meshes */
@@ -450,8 +521,10 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 		}
 	}
 
-	sfree(inds);
-	sfree(verts);
+	arena_free(mesh_mem);
+	// sfree(inds);
+	// sfree(verts);
+	// exit(0);
 }
 
 static void load_skin(struct Model* model, cgltf_data* data)

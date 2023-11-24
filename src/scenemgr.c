@@ -29,10 +29,17 @@ void scenemgr_init()
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
 
-	global_light.ambient = 0.1f;
-	global_light.colour[0] = 0.5f;
-	global_light.colour[1] = 0.1f;
-	global_light.colour[2] = 0.1f;
+	global_light.ambient[0] = 1.0f;
+	global_light.ambient[1] = 1.0f;
+	global_light.ambient[2] = 1.0f;
+	global_light.ambient[3] = 0.03f;
+	global_light.pos[0] = 10.0f;
+	global_light.pos[1] = 0.0f;
+	global_light.pos[2] = 0.0f;
+	global_light.pos[3] = 3.0f;
+	global_light.colour[0] = 1.0f;
+	global_light.colour[1] = 0.2f;
+	global_light.colour[2] = 0.2f;
 
 	current_scene = SCENE_GAME;
 }
@@ -49,6 +56,10 @@ noreturn void scenemgr_loop()
 		ot = nt;
 		acc += dt;
 		while (acc >= DT_MS) {
+			// global_light.pos[0] = fmod((global_light.pos[0] + 0.1), 20.0f);
+			// global_light.pos[1] = fmod((global_light.pos[1] + 0.1), 20.0f);
+			// global_light.pos[2] = -fmod((global_light.pos[2] + 0.1), 20.0f);
+			// global_light.ambient[3] = fmod((global_light.ambient[3] + 0.01), 1.0f);
 			while (!taskmgr_reset());
 			acc -= DT_MS;
 		}

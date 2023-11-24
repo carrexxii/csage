@@ -11,13 +11,9 @@ void renderer_free();
 
 extern VkSampler default_sampler;
 extern struct GlobalLighting {
-	float ambient;
-	float power;
-	float p1[2];
-	vec3  dir;
-	float p2[1];
-	vec3  colour;
-	float p3[1];
+	vec4 ambient; /* [colour|power] */
+	vec4 pos;     /* [pos|power]    */
+	vec3 colour;
 } global_light;
 
 #endif
