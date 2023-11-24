@@ -32,11 +32,11 @@ void scenemgr_init()
 	global_light.ambient[0] = 1.0f;
 	global_light.ambient[1] = 1.0f;
 	global_light.ambient[2] = 1.0f;
-	global_light.ambient[3] = 0.03f;
-	global_light.pos[0] = 10.0f;
+	global_light.ambient[3] = 0.02f;
+	global_light.pos[0] = 100.0f;
 	global_light.pos[1] = 0.0f;
 	global_light.pos[2] = 0.0f;
-	global_light.pos[3] = 3.0f;
+	global_light.pos[3] = 2.0f;
 	global_light.colour[0] = 1.0f;
 	global_light.colour[1] = 0.2f;
 	global_light.colour[2] = 0.2f;

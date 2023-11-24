@@ -23,9 +23,9 @@ void main()
 {
 	mat4 mdl = mdls.objs[gl_BaseInstance].mat;
 
-	Fuv     = Vuv;
-	Fnormal = normalize(vec3(mdl * vec4(Vnormal, 1.0)));
 	Fpos    = vec3(mdl * vec4(Vpos, 1.0));
+	Fnormal = normalize(vec3(mdl * vec4(Vnormal, 1.0)));
+	Fuv     = Vuv;
 
 	gl_Position = cam.vp * mdl * vec4(Vpos, 1.0);
 }

@@ -31,28 +31,17 @@ layout(push_constant) uniform PushConstants {
 void main()
 {
 	vec3 ambient   = global_light.ambient.xyz * global_light.ambient.w;
-	// vec3 light_dir = normalize(normalize(global_light.pos.xyz) - Fnormal);
 	vec3 light_dir = normalize(-global_light.pos.xyz - Fpos);
 	vec3 diffuse   = max(-dot(Fnormal, light_dir), 0.0) * global_light.colour * global_light.pos.w;
-	// diffuse = global_light.colour;
+
+	float spec_str   = 5;
+	float shininess  = 32;
+	vec3 view_dir    = normalize(-Fpos);
+	vec3 reflect_dir = reflect(-light_dir, Fnormal);
+	float spec       = pow(max(dot(view_dir, reflect_dir), 0.0), shininess);
+	vec3 specular    = spec_str * spec * global_light.colour; 
 
 	vec4 obj_colour = materials.materials[constants.materiali].albedo;
 	obj_colour = vec4(0.3, 0.3, 0.3, 1.0);
-	FragColor = vec4((ambient + diffuse)*obj_colour.xzy, obj_colour.w);
-	// FragColor = vec4(max(-dot(Fnormal, light_dir), 0.0) * global_light.colour, 1.0);
-	// FragColor = vec4(diffuse, 1.0);
-	// FragColor = vec4((Fnormal + vec3(1.0, 1.0, 1.0))/2.0, 1.0);
-
-	//     // ambient
-    // float ambientStrength = 0.1;
-    // vec3 ambient = ambientStrength * lightColor;
-  	
-    // // diffuse 
-    // vec3 norm = normalize(Normal);
-    // vec3 lightDir = normalize(lightPos - FragPos);
-    // float diff = max(dot(norm, lightDir), 0.0);
-    // vec3 diffuse = diff * lightColor;
-            
-    // vec3 result = (ambient + diffuse) * objectColor;
-    // FragColor = vec4(result, 1.0);
+	FragColor = vec4((ambient + diffuse + specular)*obj_colour.xzy, obj_colour.w);
 }
