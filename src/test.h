@@ -41,13 +41,13 @@ static void test_init()
 
 	e1 = entity_new((vec3s){ 0.0, 0.0, 0.0 }, MODEL_PATH "cube.glb");
 
-	struct UIStyle test_style = {
-		.bg = 0xFF00FFFF,
-		.fg = 0xDDDDDDFF,
-	};
-	struct UIObject* c1 = container_new(RECT(-1.0, -1.0, 1.0, 1.0), NULL, NULL);
-	button_new(STRING("Hello1"), RECT(1.0, 1.0, 100.0, 40.0), LAMBDAV(printf("Hello1\n");), NULL, c1);
-	button_new(STRING("Hello2"), RECT(-1.0, 1.0, 100.0, 40.0), LAMBDAV(printf("Hello2\n");), NULL, c1);
-	String str1 = STRING("Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple linesTesting textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines");
-	textbox_new(str1, RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
+	// struct UIStyle test_style = {
+		// .bg = 0xFF00FFFF,
+		// .fg = 0xDDDDDDFF,
+	// };
+	// struct UIObject* c1 = container_new(RECT(-1.0, -1.0, 1.0, 1.0), NULL, NULL);
+	// button_new(STRING("Hello1"), RECT(1.0, 1.0, 100.0, 40.0), LAMBDAV(printf("Hello1\n");), NULL, c1);
+	// button_new(STRING("Hello2"), RECT(-1.0, 1.0, 100.0, 40.0), LAMBDAV(printf("Hello2\n");), NULL, c1);
+	// String str1 = STRING("Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple linesTesting textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines");
+	// textbox_new(str1, RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
 }

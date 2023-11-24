@@ -29,6 +29,11 @@ void scenemgr_init()
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
 
+	global_light.ambient = 0.1f;
+	global_light.colour[0] = 0.5f;
+	global_light.colour[1] = 0.1f;
+	global_light.colour[2] = 0.1f;
+
 	current_scene = SCENE_GAME;
 }
 

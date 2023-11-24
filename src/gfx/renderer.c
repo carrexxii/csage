@@ -16,6 +16,7 @@
 #include "renderer.h"
 
 VkSampler default_sampler;
+struct GlobalLighting global_light;
 
 static void record_commands(int imgi);
 static void create_framebuffers();

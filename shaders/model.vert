@@ -18,13 +18,14 @@ layout(binding = 1) uniform CameraBuffer {
 	mat4 vp;
 } cam;
 
+const int MAX_BONES = 64;
 struct AnimationData {
 	vec4 rotation;
 	vec3 translation;
 	vec3 scale;
 };
-layout(binding = 2) uniform AnimationBuffer {
-	AnimationData transforms[64];
+layout(binding = 4) uniform AnimationBuffer {
+	AnimationData transforms[MAX_BONES];
 } anim;
 
 layout(push_constant) uniform PushConstants {
@@ -32,22 +33,22 @@ layout(push_constant) uniform PushConstants {
 	float timer;
 } constants;
 
-const int MAX_BONES = 64;
 
 void main()
 {
 	Fuv  = Vuv;
 	Fnnn = Vnormal;
 
-	vec3 anim_pos = Vpos;
-	for (int i = 0; i < 4; i++) {
-		if (Vjoint_IDs[i] == -1)
-			continue;
-		else if (Vjoint_IDs[i] >= MAX_BONES)
-			break;
-		anim_pos += anim.transforms[Vjoint_IDs[i]].translation * Vjoint_weights[i];
-	}
+	// vec3 anim_pos = Vpos;
+	// for (int i = 0; i < 4; i++) {
+	// 	if (Vjoint_IDs[i] == -1)
+	// 		continue;
+	// 	else if (Vjoint_IDs[i] >= MAX_BONES)
+	// 		break;
+	// 	anim_pos += anim.transforms[Vjoint_IDs[i]].translation * Vjoint_weights[i];
+	// }
 
 	mat4 mdl = mdls.objs[gl_BaseInstance].mat;
-	gl_Position = cam.vp * mdl * vec4(anim_pos, 1.0);
+	// gl_Position = cam.vp * mdl * vec4(anim_pos, 1.0);
+	gl_Position = cam.vp * mdl * vec4(Vpos, 1.0);
 }

@@ -2,10 +2,11 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
-#include "vulkan.h"
-#include "pipeline.h"
 #include "util/file.h"
+#include "vulkan.h"
 #include "buffers.h"
+#include "pipeline.h"
+#include "renderer.h"
 #include "camera.h"
 #include "model.h"
 
@@ -76,45 +77,45 @@ static struct Pipeline pipeln;
 static struct Pipeline pipeln_static;
 static struct Model models[MAX_MODELS];
 static intptr modelc = 0;
-static UBO ubo_bufs[3];
+static UBO ubo_bufs[4];
 static SBO sbo_buf;
 
 void models_init(VkRenderPass renderpass)
 {
 	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
-	ubo_bufs[0] = ubo_new(sizeof(mat4));                           /* Camera matrix */
-	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material));  /* Material data */
-	ubo_bufs[2] = ubo_new(MAX_JOINTS*sizeof(struct Transform));    /* Joint data    */
-
+	ubo_bufs[0] = ubo_new(sizeof(mat4));                          /* Camera matrix */
+	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material)); /* Material data */
+	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));         /* Light data    */
+	ubo_bufs[3] = ubo_new(MAX_JOINTS*sizeof(struct Transform));   /* Joint data    */
 	pipeln = (struct Pipeline){
-		.vshader    = create_shader(SHADER_DIR "model.vert"),
-		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vert_bindc  = ARRAY_SIZE(vertex_binds),
+		.vshader     = create_shader(SHADER_DIR "model.vert"),
+		.fshader     = create_shader(SHADER_DIR "model.frag"),
+		.vert_bindc  = 5,
 		.vert_binds  = vertex_binds,
-		.vert_attrc  = ARRAY_SIZE(vertex_attrs),
+		.vert_attrc  = 5,
 		.vert_attrs  = vertex_attrs,
-		.uboc       = ARRAY_SIZE(ubo_bufs),
-		.ubos       = ubo_bufs,
-		.sbo        = &sbo_buf,
-		.sbosz      = MAX_MODELS*sizeof(mat4),
-		.pushstages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		.pushsz     = sizeof(struct PushConstants),
+		.uboc        = 4,
+		.ubos        = ubo_bufs,
+		.sbo         = &sbo_buf,
+		.sbosz       = MAX_MODELS*sizeof(mat4),
+		.pushstages  = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		.pushsz      = sizeof(struct PushConstants),
 	};
 	pipeln_init(&pipeln, renderpass);
 
 	pipeln_static = (struct Pipeline){
-		.vshader    = create_shader(SHADER_DIR "model_static.vert"),
-		.fshader    = create_shader(SHADER_DIR "model.frag"),
-		.vert_bindc  = ARRAY_SIZE(vertex_binds) - 2,
+		.vshader     = create_shader(SHADER_DIR "model_static.vert"),
+		.fshader     = create_shader(SHADER_DIR "model.frag"),
+		.vert_bindc  = 3,
 		.vert_binds  = vertex_binds,
-		.vert_attrc  = ARRAY_SIZE(vertex_attrs) - 2,
+		.vert_attrc  = 3,
 		.vert_attrs  = vertex_attrs,
-		.uboc       = 2,
-		.ubos       = ubo_bufs,
-		.sbo        = &sbo_buf,
-		.sbosz      = MAX_MODELS*sizeof(mat4),
-		.pushstages = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.pushsz     = sizeof(struct PushConstants),
+		.uboc        = 3,
+		.ubos        = ubo_bufs,
+		.sbo         = &sbo_buf,
+		.sbosz       = MAX_MODELS*sizeof(mat4),
+		.pushstages  = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.pushsz      = sizeof(struct PushConstants),
 	};
 	pipeln_init(&pipeln_static, renderpass);
 }
@@ -205,7 +206,8 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 		// animation = &model->animations[model->current_animation];
 		if (!model->skin)
 			continue;
-		// buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
+		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
+		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
 		// buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform),
 		//               animation->frames[animation->current_frame].transforms);
 		for (int m = 0; m < models[i].meshc; m++) {
@@ -231,6 +233,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 		if (model->skin)
 			continue;
 		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
+		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
 		for (int m = 0; m < models[i].meshc; m++) {
 			mesh = &model->meshes[m];
 			push_constants.materiali = mesh->materiali;

@@ -13,6 +13,12 @@ struct Material {
 layout(binding = 2) uniform MaterialsBuffer {
 	Material materials[8];
 } materials;
+layout(binding = 3) uniform LightBuffer {
+	float ambient;
+	float power;
+	vec3  dir;
+	vec3  colour;
+} global_light;
 
 layout(push_constant) uniform PushConstants
 {
@@ -20,8 +26,13 @@ layout(push_constant) uniform PushConstants
 	float timer;
 } constants;
 
+// finalColor = ambient
+//           + lambertianTerm * surfaceColor * lightColor
+//           + specularIntensity * specularColor * lightColor;
 void main()
 {
-	// rgba = vec4(materials.materials[constants.materiali].albedo);
-	rgba = vec4(Fnnn, 1.0);
+	vec3 ambient = global_light.colour * global_light.ambient;
+
+	rgba = vec4(materials.materials[constants.materiali].albedo.xyz * ambient, 1.0);
+	// rgba = vec4(Fnnn, 1.0);
 }
