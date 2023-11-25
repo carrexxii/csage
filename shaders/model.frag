@@ -34,12 +34,12 @@ void main()
 	vec3 light_dir = normalize(-global_light.pos.xyz - Fpos);
 	vec3 diffuse   = max(-dot(Fnormal, light_dir), 0.0) * global_light.colour * global_light.pos.w;
 
-	float spec_str   = 5;
+	float spec_str   = 0.5;
 	float shininess  = 32;
 	vec3 view_dir    = normalize(-Fpos);
 	vec3 reflect_dir = reflect(-light_dir, Fnormal);
 	float spec       = pow(max(dot(view_dir, reflect_dir), 0.0), shininess);
-	vec3 specular    = spec_str * spec * global_light.colour; 
+	vec3 specular    = spec_str * spec * global_light.colour;
 
 	vec4 obj_colour = materials.materials[constants.materiali].albedo;
 	obj_colour = vec4(0.3, 0.3, 0.3, 1.0);

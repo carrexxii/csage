@@ -1,7 +1,7 @@
 #ifndef GFX_MODEL_H
 #define GFX_MODEL_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 #undef CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 
@@ -39,9 +39,14 @@ struct Mesh {
 /* This must be aligned correctly for the shader */
 struct Material {
 	float albedo[4];
+	// float emissive[4];
 	float metallic;
 	float roughness;
-	struct Texture* texture;
+	struct Texture colour_tex;
+	struct Texture metallic_tex;
+	struct Texture normal_tex;
+	// struct Texture occlusion_tex;
+	// struct Texture emission_tex;
 };
 
 struct Joint {
@@ -92,5 +97,9 @@ void models_free();
 
 extern void (*update_model_transforms)(SBO);
 extern mat4s* model_transforms;
+
+constexpr struct Material default_material = {
+	.albedo = { 0.3f, 0.3f, 0.3f, 1.0f },
+};
 
 #endif

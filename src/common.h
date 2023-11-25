@@ -107,6 +107,10 @@ union Colour {
 	)
 #define LAMBDAV(body) LAMBDA(void, void, body)
 
+#define UNPACK2(x) x[0], x[1]
+#define UNPACK3(x) x[0], x[1], x[2]
+#define UNPACK4(x) x[0], x[1], x[2], x[3]
+
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))
 #define MAX(a, b) ((a) > (b)? (a): (b))

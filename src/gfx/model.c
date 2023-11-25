@@ -1,6 +1,7 @@
 #include "vulkan/vulkan.h"
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
+#include "stb_image.h"
 
 #include "util/arena.h"
 #include "util/file.h"
@@ -19,6 +20,7 @@ static struct PushConstants {
 } push_constants;
 
 static void load_materials(struct Model* model, cgltf_data* data);
+static struct Texture load_material_image(cgltf_image* img);
 static void load_meshes(struct Model* model, cgltf_data* data);
 static void load_skin(struct Model* model, cgltf_data* data);
 static void load_animations(struct Model* model, cgltf_data* data);
@@ -262,6 +264,11 @@ void model_free(ID model_id)
 			vbo_free(&model->meshes[i].vbos[j]);
 		ibo_free(&model->meshes[i].ibo);
 	}
+	for (int i = 0; i < model->materialc; i++) {
+		texture_free(model->materials[i].colour_tex);
+		texture_free(model->materials[i].metallic_tex);
+		texture_free(model->materials[i].normal_tex);
+	}
 	model->meshc = 0;
 }
 
@@ -280,37 +287,69 @@ static void load_materials(struct Model* model, cgltf_data* data)
 	model->materialc = data->materials_count? data->materials_count: 1;
 	model->materials = scalloc(model->materialc, sizeof(struct Material));
 	if (model->materialc > MAX_MATERIALS)
-		ERROR("[GFX] Model has %d materials. MAX_MATERIALS is set to %d", model->materialc, MAX_MATERIALS);
+		ERROR("[RES] Model has %d materials. MAX_MATERIALS is set to %d", model->materialc, MAX_MATERIALS);
 
 	cgltf_material*     material;
 	// cgltf_image*        img;
 	// cgltf_texture_view* texture;
 	for (int m = 0; m < (int)data->materials_count; m++) {
 		material = &data->materials[m];
-		if (material->has_pbr_metallic_roughness) {
-			memcpy(model->materials[m].albedo, material->pbr_metallic_roughness.base_color_factor, sizeof(float[4]));
-			model->materials[m].metallic  = material->pbr_metallic_roughness.metallic_factor;
-			model->materials[m].roughness = material->pbr_metallic_roughness.roughness_factor;
-			if (material->pbr_metallic_roughness.metallic_roughness_texture.texture ||
-				material->pbr_metallic_roughness.base_color_texture.texture)
-				DEBUG(5, "[GFX] Metallic texture unaccounted for");
+		memcpy(model->materials[m].albedo, material->pbr_metallic_roughness.base_color_factor, sizeof(float[4]));
+		model->materials[m].metallic  = material->pbr_metallic_roughness.metallic_factor;
+		model->materials[m].roughness = material->pbr_metallic_roughness.roughness_factor;
+		if (!material->has_pbr_metallic_roughness) {
+			ERROR("[RES] Only metallic-roughness materials are supported");
+			continue;
 		}
-		if (material->normal_texture.texture) {
-				DEBUG(5, "[GFX] Normal texture unaccounted for");
-		}
-		if (material->occlusion_texture.texture) {
-				DEBUG(5, "[GFX] Occlusion texture unaccounted for");
-		}
-		if (material->emissive_texture.texture) {
-				DEBUG(5, "[GFX] Emissive texture unaccounted for");
-		}
+
+		if (material->pbr_metallic_roughness.base_color_texture.texture)
+			model->materials[m].colour_tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
+		if (material->pbr_metallic_roughness.metallic_roughness_texture.texture)
+			model->materials[m].metallic_tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
+
+		if (material->normal_texture.texture)
+			model->materials[m].normal_tex = load_material_image(material->normal_texture.texture->image);
+		if (material->occlusion_texture.texture)
+			ERROR("[RES] Ignoring occlusion texture");
+			// model->materials[m].occlusion_tex = load_material_image(material->occlusion_texture.texture->image);
+		if (material->emissive_texture.texture)
+			ERROR("[RES] Ignoring emissive texture");
+			// model->materials[m].emissive_tex = load_material_image(material->emissive_texture.texture->image);
+
+		DEBUG(5, "[RES] Loaded material %d with: %s%s%s%s%s", m,
+		      material->pbr_metallic_roughness.base_color_texture.texture        ? "base colour texture, "       : "",
+		      material->pbr_metallic_roughness.metallic_roughness_texture.texture? "metallic roughness texture, ": "",
+		      material->normal_texture.texture   ? "normal texture, "   : "",
+		      material->occlusion_texture.texture? "occlusion texture, ": "",
+		      material->emissive_texture.texture ? "emissive texture"   : "");
+		DEBUG(5, "\tAlbedo    -> %.2f, %.2f, %.2f, %.2f", UNPACK4(model->materials[m].albedo));
+		DEBUG(5, "\tMetallic  -> %.2f", model->materials[m].metallic);
+		DEBUG(5, "\tRoughness -> %.2f", model->materials[m].roughness);
 	}
-	// TODO: do this in general
+
 	/* Default material if none exist */
 	if (!data->materials_count)
-		models->materials[0] = (struct Material){
-			.albedo = { 0.3f, 0.3f, 0.3f, 1.0f },
-		};
+		models->materials[0] = default_material;
+}
+
+static struct Texture load_material_image(cgltf_image* img)
+{
+	if (img->uri) {
+		ERROR("[RES] Image loading from URIs not implemented");
+		return (struct Texture){ 0 };
+	} else if (img->buffer_view->buffer->data) {
+		if (!strncmp(img->mime_type, "image/png", sizeof("image/png"))) {
+			int w, h, ch;
+			byte* pxs = stbi_load_from_memory((byte*)img->buffer_view->buffer->data + img->buffer_view->offset,
+			                                  img->buffer_view->size, &w, &h, &ch, 4);
+			return texture_new(pxs, w, h);
+		} else {
+			ERROR("[RES] MIME type not supported for image: %s", img->mime_type);
+		}
+	}
+	
+	ERROR("[RES] Image does not have either URI or buffer data");
+	return (struct Texture){ 0 };
 }
 
 static void load_meshes(struct Model* model, cgltf_data* data)

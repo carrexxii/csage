@@ -73,6 +73,7 @@ struct Texture texture_new(uint8* pxs, int w, int h)
 	return tex;
 }
 
+// TODO: rename to _from_file
 struct Texture texture_new_from_image(const char* path)
 {
 	struct Texture tex;
