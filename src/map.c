@@ -66,16 +66,16 @@ void map_init(VkRenderPass renderpass)
 	ubo_bufs[0] = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
 	ubo_bufs[1] = ubo_new(sizeof(selections)); /* Selections to be highlighted */
 	pipeln = (struct Pipeline){
-		.vshader    = create_shader(SHADER_DIR "map.vert"),
-		.fshader    = create_shader(SHADER_DIR "map.frag"),
+		.vshader     = create_shader(SHADER_DIR "map.vert"),
+		.fshader     = create_shader(SHADER_DIR "map.frag"),
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
 		.vert_attrc  = ARRAY_SIZE(vertex_attrs),
 		.vert_attrs  = vertex_attrs,
-		.uboc       = 2,
-		.ubos       = ubo_bufs,
-		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
-		.pushsz     = sizeof(int), /* Index of the current block being drawn */
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
+		.push_sz     = sizeof(int), /* Index of the current block being drawn */
+		.uboc        = 2,
+		.ubos        = ubo_bufs,
 	};
 	pipeln_init(&pipeln, renderpass);
 	DEBUG(3, "[MAP] Map initialized. Block dimensions are set to: %dx%dx%d",
@@ -152,13 +152,13 @@ void map_record_commands(VkCommandBuffer cmd_buf)
 	buffer_update(ubo_bufs[1], sizeof(selections), selections);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
 
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]){ 0 });
 	for (int i = 0; i < blockc; i++) {
 		// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
 		vkCmdBindIndexBuffer(cmd_buf, ibo_bufs[i].buf, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &i);
+		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &i);
 		vkCmdDrawIndexed(cmd_buf, indcs[i], 1, 0, 0, 0);
 	}
 }
@@ -169,12 +169,15 @@ void map_free()
 	for (int i = 0; i < blockc; i++)
 		ibo_free(&ibo_bufs[i]);
 
-	free(ibo_bufs);
-	free(indcs);
+	ubo_free(&ubo_bufs[0]);
+	ubo_free(&ubo_bufs[1]);
+
+	sfree(ibo_bufs);
+	sfree(indcs);
 	// for (int i = 0; i < blockc; i++)
 		// if (map_blocks[i].voxels)
 			// free(map_blocks[i].voxels);
-	free(map_blocks);
+	sfree(map_blocks);
 
 	pipeln_free(&pipeln);
 }

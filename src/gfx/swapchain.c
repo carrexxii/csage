@@ -72,13 +72,13 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 
 	depth_img = image_new(swapchain.ext.width, swapchain.ext.height, VK_FORMAT_D16_UNORM,
 	                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-	                      gpu_limits.max_samples);
+	                      gpu_properties.max_samples);
 	depth_img.view = image_new_view(depth_img.img, VK_FORMAT_D16_UNORM, VK_IMAGE_ASPECT_DEPTH_BIT);
 	image_transition_layout(depth_img.img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 	resolve_img = image_new(swapchain.ext.width, swapchain.ext.height, swapchain.fmt.format,
 	                        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-	                        gpu_limits.max_samples);
+	                        gpu_properties.max_samples);
 	resolve_img.view = image_new_view(resolve_img.img, swapchain.fmt.format, VK_IMAGE_ASPECT_COLOR_BIT);
 	image_transition_layout(resolve_img.img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 }

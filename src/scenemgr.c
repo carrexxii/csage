@@ -1,13 +1,18 @@
+#include <vulkan/vulkan.h>
+
 #include "taskmgr.h"
 #include "input.h"
 #include "camera.h"
 #include "gfx/particles.h"
 #include "entities/entity.h"
 #include "gfx/model.h"
+#include "map.h"
 #include "gfx/renderer.h"
 #include "gfx/ui/ui.h"
 #include "scenes.h"
 #include "scenemgr.h"
+
+#include "test.h"
 
 
 static enum SceneName current_scene;
@@ -20,6 +25,18 @@ static enum SceneName current_scene;
 
 void scenemgr_init()
 {
+	VkRenderPass renderpass = renderer_init();
+
+	camera_init();
+	entities_init();
+	test_init();
+	
+	ui_init(renderpass);
+	font_init(renderpass);
+	particles_init(renderpass);
+	map_init(renderpass);
+	models_init(renderpass);
+
 	ui_build();
 	
 	taskmgr_init();

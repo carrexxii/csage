@@ -13,7 +13,7 @@ layout(location = 1) out vec3 Fnnn;
 // 	ObjectData objs[];
 // } mdls;
 
-layout(binding = 0) uniform UniformBuffer {
+layout(set = 0, binding = 1) uniform UniformBuffer {
 	mat4  cam_vp;
 	ivec4 map_dim;
 	ivec4 block_dim;

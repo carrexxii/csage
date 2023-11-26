@@ -88,12 +88,16 @@ struct Texture texture_new_from_image(const char* path)
 	return tex;
 }
 
-void texture_free(struct Texture tex)
+void texture_free(struct Texture* tex)
 {
-	DEBUG(2, "[VK] Destroying texture...");
-	vkDestroyImageView(logical_gpu, tex.image_view, NULL);
-	vkDestroyImage(logical_gpu, tex.image, NULL);
-	vkFreeMemory(logical_gpu, tex.memory, NULL);
+	if (!tex->image || !tex->memory) {
+		ERROR("[VK] Texture does not appear to be valid (probably uninitialized or double free)");
+		return;
+	}
+	vkDestroyImageView(logical_gpu, tex->image_view, NULL);
+	vkDestroyImage(logical_gpu, tex->image, NULL);
+	vkFreeMemory(logical_gpu, tex->memory, NULL);
+	memset(tex, 0, sizeof(struct Texture));
 }
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h)

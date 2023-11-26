@@ -11,6 +11,6 @@ struct Texture {
 
 struct Texture texture_new(uint8* pxs, int w, int h);
 struct Texture texture_new_from_image(const char* path);
-void texture_free(struct Texture tex);
+void texture_free(struct Texture* tex);
 
 #endif

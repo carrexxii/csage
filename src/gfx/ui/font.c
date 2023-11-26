@@ -112,19 +112,20 @@ void font_init(VkRenderPass renderpass)
 
 	font_sampler = image_new_sampler(VK_FILTER_LINEAR);
 	pipeln = (struct Pipeline){
-		.vshader    = create_shader(SHADER_DIR "font.vert"),
-		.fshader    = create_shader(SHADER_DIR "font.frag"),
-		.vert_bindc = 1,
-		.vert_binds = vert_binds,
-		.vert_attrc = 2,
-		.vert_attrs = vert_attrs,
-		.texturec   = 1,
-		.textures   = &atlas,
-		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
-		.pushsz     = sizeof(float[4]), /* Z_lvl +  position to draw + padding */
-		.sampler    = font_sampler,
+		.vshader     = create_shader(SHADER_DIR "font.vert"),
+		.fshader     = create_shader(SHADER_DIR "font.frag"),
+		.vert_bindc  = 1,
+		.vert_binds  = vert_binds,
+		.vert_attrc  = 2,
+		.vert_attrs  = vert_attrs,
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
+		.push_sz     = sizeof(float[4]), /* [z_lvl][padding][position to draw] */
+		.sampler     = font_sampler,
+		.imgc        = 1,
+		.dset_cap    = 1,
 	};
-
+	pipeln_alloc_dsets(&pipeln);
+	pipeln_create_image_dset(&pipeln, &atlas.image_view);
 	pipeln_init(&pipeln, renderpass);
 }
 
@@ -204,12 +205,12 @@ struct TextObject* font_render(char* text, isize text_len, float z, float w)
 void font_record_commands(VkCommandBuffer cmd_buf)
 {
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
 	for (int i = 0; i < text_objc; i++) {
 		if (!text_objs[i].active)
 			continue;
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, (float[]){
+		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, (float[]){
 			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y });
 		vkCmdDraw(cmd_buf, text_objs[i].vertc, 1, 0, i);
 	}
@@ -219,7 +220,7 @@ void font_free()
 {
 	for (int i = 0; i < text_objc; i++)
 		vbo_free(&text_objs[i].vbo);
-	texture_free(atlas);
+	texture_free(&atlas);
 	pipeln_free(&pipeln);
 	vkDestroySampler(logical_gpu, font_sampler, NULL);
 }

@@ -7,7 +7,9 @@ layout(location = 1) in vec3 Fnnn;
 
 layout(location = 0) out vec4 rgba;
 
-layout(binding = 1) uniform UniformBuffer {
+layout (set = 0, binding = 0) uniform sampler Fsampler;
+
+layout(set = 0, binding = 2) uniform UniformBuffer {
 	ivec4 selections[SELECTION_COUNT];
 } ubo;
 

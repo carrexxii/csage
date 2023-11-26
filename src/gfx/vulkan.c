@@ -15,14 +15,14 @@ VkSurfaceKHR surface;
 
 static VkDebugReportCallbackEXT dbg_cb;
 
-noreturn static VKAPI_ATTR VkBool32 VKAPI_CALL debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
-                                                        uint64 obj, uintptr location, int32 msg_code, const char* layer_prefix,
-                                                        const char* msg, void* user_data)
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
+                                               uint64 obj, uintptr location, int32 msg_code, const char* layer_prefix,
+                                               const char* msg, void* user_data)
 {
 	(void)user_data;
 	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"", layer_prefix, STRING_DEBUG_REPORT(flags), obj,
 	      STRING_DEBUG_REPORT_OBJECT(obj_type), location, msg_code, msg);
-	exit(1);
+	return false;
 }
 
 void init_vulkan(SDL_Window* win)
@@ -109,6 +109,7 @@ void init_vulkan(SDL_Window* win)
 VkShaderModule create_shader(char* restrict path)
 {
 	VkShaderModule module;
+	// TODO: fix
 	char* code = file_load(path);
 	FILE* file = file_open(path, "rb");
 	VkShaderModuleCreateInfo moduleci = {

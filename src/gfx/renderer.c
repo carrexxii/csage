@@ -36,16 +36,14 @@ static VkRenderPass     renderpass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
 
-void renderer_init()
+VkRenderPass renderer_init()
 {
 	default_sampler = image_new_sampler(VK_FILTER_NEAREST);
 	swapchain_init(surface, global_config.winw, global_config.winh);
 
-	DEBUG_VALUE(VK_SAMPLE_COUNT_1_BIT);
-	DEBUG_VALUE(gpu_limits.max_samples);
 	VkAttachmentDescription colour_attach = {
 		.format         = swapchain.fmt.format,
-		.samples        = gpu_limits.max_samples,
+		.samples        = gpu_properties.max_samples,
 		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
 		.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -55,7 +53,7 @@ void renderer_init()
 	};
 	VkAttachmentDescription depth_attach = {
 		.format         = VK_FORMAT_D16_UNORM,
-		.samples        = gpu_limits.max_samples,
+		.samples        = gpu_properties.max_samples,
 		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 		.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -120,11 +118,7 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	ui_init(renderpass);
-	models_init(renderpass);
-	font_init(renderpass);
-	particles_init(renderpass);
-	map_init(renderpass);
+	return renderpass;
 }
 
 void renderer_draw()
@@ -266,13 +260,13 @@ static void create_command_buffers()
 {
 	cmd_bufs = smalloc(swapchain.imgc*sizeof(VkCommandBuffer));
 	VkCommandBufferAllocateInfo bufi = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 		.commandBufferCount = swapchain.imgc,
 		.commandPool        = cmd_pool,
 	};
-	if (vkAllocateCommandBuffers(logical_gpu, &bufi, cmd_bufs))
-		ERROR("[VK] Failed to create command buffers");
+	if ((vk_err = vkAllocateCommandBuffers(logical_gpu, &bufi, cmd_bufs)))
+		ERROR("[VK] Failed to create command buffers\n\t\"%d\"", vk_err);
 	else
 		DEBUG(3, "[VK] Created command buffers");
 }

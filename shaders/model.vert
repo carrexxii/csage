@@ -11,11 +11,11 @@ layout(location = 1) out vec3 Fnormal;
 layout(location = 2) out vec3 Fpos;
 
 struct ObjectData { mat4 mat; };
-layout(binding = 0) readonly buffer ObjectBuffer {
+layout(set = 0, binding = 1) readonly buffer ObjectBuffer {
 	ObjectData objs[];
 } mdls;
 
-layout(binding = 1) uniform CameraBuffer {
+layout(set = 0, binding = 4) uniform CameraBuffer {
 	mat4 vp;
 } cam;
 
@@ -25,7 +25,7 @@ struct AnimationData {
 	vec3 translation;
 	vec3 scale;
 };
-layout(binding = 4) uniform AnimationBuffer {
+layout(set = 0, binding = 5) uniform AnimationBuffer {
 	AnimationData transforms[MAX_BONES];
 } anim;
 

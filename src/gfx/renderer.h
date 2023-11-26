@@ -5,7 +5,7 @@
 
 #define FRAMES_IN_FLIGHT 2
 
-void renderer_init();
+VkRenderPass renderer_init();
 void renderer_draw();
 void renderer_free();
 

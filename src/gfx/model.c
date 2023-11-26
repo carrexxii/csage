@@ -90,21 +90,22 @@ void models_init(VkRenderPass renderpass)
 	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material)); /* Material data */
 	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));         /* Light data    */
 	ubo_bufs[3] = ubo_new(MAX_JOINTS*sizeof(struct Transform));   /* Joint data    */
-	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "model.vert"),
-		.fshader     = create_shader(SHADER_DIR "model.frag"),
-		.vert_bindc  = 5,
-		.vert_binds  = vertex_binds,
-		.vert_attrc  = 5,
-		.vert_attrs  = vertex_attrs,
-		.uboc        = 4,
-		.ubos        = ubo_bufs,
-		.sbo         = &sbo_buf,
-		.sbosz       = MAX_MODELS*sizeof(mat4),
-		.pushstages  = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		.pushsz      = sizeof(struct PushConstants),
-	};
-	pipeln_init(&pipeln, renderpass);
+	// pipeln = (struct Pipeline){
+	// 	.vshader     = create_shader(SHADER_DIR "model.vert"),
+	// 	.fshader     = create_shader(SHADER_DIR "model.frag"),
+	// 	.vert_bindc  = 5,
+	// 	.vert_binds  = vertex_binds,
+	// 	.vert_attrc  = 5,
+	// 	.vert_attrs  = vertex_attrs,
+	// 	.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+	// 	.push_sz     = sizeof(struct PushConstants),
+	// 	.uboc        = 4,
+	// 	.ubos        = ubo_bufs,
+	// 	.sboc        = 1,
+	// 	.sbo_szs     = (isize[]){ MAX_MODELS*sizeof(mat4) },
+	// 	.sbos        = (SBO[]){ sbo_buf },
+	// 	.imgc        = 4,
+	// };
 
 	pipeln_static = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "model_static.vert"),
@@ -113,13 +114,25 @@ void models_init(VkRenderPass renderpass)
 		.vert_binds  = vertex_binds,
 		.vert_attrc  = 3,
 		.vert_attrs  = vertex_attrs,
+		.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.push_sz     = sizeof(struct PushConstants),
+		.sboc        = 1,
+		.sbo_szs     = (isize[]){ MAX_MODELS*sizeof(mat4) },
+		.sbos        = (SBO[]){ sbo_buf },
 		.uboc        = 3,
 		.ubos        = ubo_bufs,
-		.sbo         = &sbo_buf,
-		.sbosz       = MAX_MODELS*sizeof(mat4),
-		.pushstages  = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.pushsz      = sizeof(struct PushConstants),
+		.imgc        = 1,
+		.dset_cap    = 1,
 	};
+	pipeln_alloc_dsets(&pipeln_static);
+	for (int i = 0; i < modelc; i++) {
+		for (int j = 0; j < models[i].materialc; j++) {
+			// DEBUG_VALUE(models[i].materials[j].colour_tex.image_view);
+			models[i].materials[j].dset = pipeln_create_image_dset(&pipeln_static, (VkImageView[]){
+				models[i].materials[j].colour_tex.image_view,
+			});
+		}
+	}
 	pipeln_init(&pipeln_static, renderpass);
 }
 
@@ -202,55 +215,59 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 
 	mat4 vp;
 	camera_get_vp(vp);
+	// TODO: Named buffers, not arrays
 	buffer_update(ubo_bufs[0], sizeof(mat4), vp);
 	
 	update_model_transforms(sbo_buf);
 
 	/* Animated models */
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
-	for (int i = 0; i < modelc; i++) {
-		model     = &models[i];
-		// animation = &model->animations[model->current_animation];
-		if (!model->skin)
-			continue;
-		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
-		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
-		// buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform),
-		//               animation->frames[animation->current_frame].transforms);
-		for (int m = 0; m < models[i].meshc; m++) {
-			mesh = &model->meshes[m];
-			push_constants.materiali = mesh->materiali;
-			push_constants.timer     = model->timer/3.0;
-			// DEBUG(1, "[%d Animated] Drawing %d vertices", i, models[i].meshes[m].vertc);
+	// vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
+	// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
+	// for (int i = 0; i < modelc; i++) {
+	// 	model     = &models[i];
+	// 	// animation = &model->animations[model->current_animation];
+	// 	if (!model->skin)
+	// 		continue;
+	// 	buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
+	// 	buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
+	// 	// buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform),
+	// 	//               animation->frames[animation->current_frame].transforms);
+	// 	for (int m = 0; m < models[i].meshc; m++) {
+	// 		mesh = &model->meshes[m];
+	// 		push_constants.materiali = mesh->materiali;
+	// 		push_constants.timer     = model->timer/3.0;
+	// 		// DEBUG(1, "[%d Animated] Drawing %d vertices", i, models[i].meshes[m].vertc);
 
-			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs), (VkBuffer[]){ mesh->vbos[0].buf,
-			                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
-			                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
-			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.pushstages, 0, pipeln.pushsz, &push_constants);
-			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
-		}
-	}
+	// 		vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs), (VkBuffer[]){ mesh->vbos[0].buf,
+	// 		                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
+	// 		                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
+	// 		vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+	// 		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &push_constants);
+	// 		vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
+	// 	}
+	// }
 
 	/* Static models */
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0, 1, &pipeln_static.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0, 1, pipeln_static.dset, 0, NULL);
 	for (int i = 0; i < modelc; i++) {
 		model = &models[i];
 		if (model->skin)
 			continue;
 		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
 		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
+
 		for (int m = 0; m < models[i].meshc; m++) {
 			mesh = &model->meshes[m];
 			push_constants.materiali = mesh->materiali;
+			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 1,
+			                        1, &model->materials[mesh->materiali].dset, 0, NULL);
 			// DEBUG(1, "[%d Static] Drawing %d vertices", i, models[i].meshes[m].indc);
 
 			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs) - 2, (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.pushstages, 0, pipeln_static.pushsz, &push_constants);
+			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.push_stages, 0, pipeln_static.push_sz, &push_constants);
 			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}
@@ -260,22 +277,30 @@ void model_free(ID model_id)
 {
 	struct Model* model = &models[model_id];
 	for (int i = 0; i < model->meshc; i++) {
-		for (int j = 0; j < (int)ARRAY_SIZE(model->meshes[i].vbos); j++)
+		/* Static Meshes do not use the last two vbos */
+		for (int j = 0; j < MODEL_MESH_VBO_COUNT - (model->animationc > 0? 0: 2); j++)
 			vbo_free(&model->meshes[i].vbos[j]);
 		ibo_free(&model->meshes[i].ibo);
 	}
+
 	for (int i = 0; i < model->materialc; i++) {
-		texture_free(model->materials[i].colour_tex);
-		texture_free(model->materials[i].metallic_tex);
-		texture_free(model->materials[i].normal_tex);
+		if (model->materials[i].colour_tex.image)    texture_free(&model->materials[i].colour_tex);
+		if (model->materials[i].metallic_tex.image)  texture_free(&model->materials[i].metallic_tex);
+		if (model->materials[i].normal_tex.image)    texture_free(&model->materials[i].normal_tex);
+		if (model->materials[i].occlusion_tex.image) texture_free(&model->materials[i].occlusion_tex);
 	}
 	model->meshc = 0;
 }
 
 void models_free()
 {
-	for (int i = 0; i < MAX_MODELS; i++)
+	for (int i = 0; i < modelc; i++)
 		model_free(i);
+
+	sbo_free(&sbo_buf);
+	for (int i = 0; i < (int)ARRAY_SIZE(ubo_bufs); i++)
+		ubo_free(&ubo_bufs[i]);
+
 	pipeln_free(&pipeln);
 	pipeln_free(&pipeln_static);
 }
@@ -310,8 +335,7 @@ static void load_materials(struct Model* model, cgltf_data* data)
 		if (material->normal_texture.texture)
 			model->materials[m].normal_tex = load_material_image(material->normal_texture.texture->image);
 		if (material->occlusion_texture.texture)
-			ERROR("[RES] Ignoring occlusion texture");
-			// model->materials[m].occlusion_tex = load_material_image(material->occlusion_texture.texture->image);
+			model->materials[m].occlusion_tex = load_material_image(material->occlusion_texture.texture->image);
 		if (material->emissive_texture.texture)
 			ERROR("[RES] Ignoring emissive texture");
 			// model->materials[m].emissive_tex = load_material_image(material->emissive_texture.texture->image);

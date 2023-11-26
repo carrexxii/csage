@@ -40,7 +40,8 @@ struct Image image_new(uint w, uint h, VkFormat fmt, VkImageUsageFlags usage, Vk
 	VkMemoryAllocateInfo alloci = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.allocationSize  = mem_req.size,
-		.memoryTypeIndex = device_find_memory_index(mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
+		.memoryTypeIndex = device_find_memory_index(mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | 
+		                                            (gpu_properties.lazy_mem && samples? VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT: 0)),
 	};
 	if (vkAllocateMemory(logical_gpu, &alloci, NULL, &img.mem))
 		ERROR("[VK] Failed to allocate memory for image");

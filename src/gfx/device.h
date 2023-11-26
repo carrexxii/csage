@@ -20,6 +20,7 @@ extern struct QueueFamilyIndices {
 } qinds;
 extern struct DeviceLimits {
 	VkSampleCountFlagBits max_samples;
-} gpu_limits;
+	bool lazy_mem;
+} gpu_properties;
 
 #endif

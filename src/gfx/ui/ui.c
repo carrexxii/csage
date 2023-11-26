@@ -36,13 +36,13 @@ static struct VArray* ui_objs;
 void ui_init(VkRenderPass renderpass)
 {
 	pipeln = (struct Pipeline){
-		.vshader         = create_shader(SHADER_DIR "ui.vert"),
-		.fshader         = create_shader(SHADER_DIR "ui.frag"),
 		// TODO: Tesselation shader?
-		.vert_bindc      = 1,
-		.vert_binds      = vert_binds,
-		.vert_attrc      = 2,
-		.vert_attrs      = vert_attrs,
+		.vshader    = create_shader(SHADER_DIR "ui.vert"),
+		.fshader    = create_shader(SHADER_DIR "ui.frag"),
+		.vert_bindc = 1,
+		.vert_binds = vert_binds,
+		.vert_attrc = 2,
+		.vert_attrs = vert_attrs,
 	};
 	pipeln_init(&pipeln, renderpass);
 
@@ -128,7 +128,7 @@ void ui_update()
 void ui_record_commands(VkCommandBuffer cmd_buf)
 {
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
 	for (int i = 0; i < ui_containerc; i++) {
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &ui_containers[i].container.vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, ui_containers[i].container.verts->len, 1, 0, i);

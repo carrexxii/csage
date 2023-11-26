@@ -11,12 +11,100 @@
 #include "pipeline.h"
 
 static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo* stagecis);
-inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type, uint binding);
-inline static void update_buf_dset(VkWriteDescriptorSet* dwriteset, VkDescriptorSet dset, VkDescriptorType type,
-                                   VkDescriptorBufferInfo* dbufi, uintptr binding);
-inline static void update_img_dset(VkWriteDescriptorSet* dwriteset, VkDescriptorSet dset, VkDescriptorType type,
-                                   VkDescriptorImageInfo* dimgi, uintptr binding);
-static void update_dsets(struct Pipeline* pipeln);
+inline static VkDescriptorSet pipeln_get_dset(struct Pipeline* pipeln);
+inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type, int binding);
+inline static void bind_sampler(VkDescriptorSet dset, int binding, VkSampler samp);
+inline static void bind_buffer(VkDescriptorSet dset, int binding, VkDescriptorType type, VkBuffer buf, isize offset, isize range);
+
+void pipeln_alloc_dsets(struct Pipeline* pipeln)
+{
+	/* Data bindings (set 0) */
+	int dset_bindingc = 1;
+	VkDescriptorSetLayoutBinding dset_bindings[PIPELINE_MAX_BINDINGS] = {
+		[0] = create_dset_layout(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLER, 0),
+	};
+	for (int i = 0; i < pipeln->sboc; i++) {
+		dset_bindings[dset_bindingc] = create_dset_layout(VK_SHADER_STAGE_ALL, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, dset_bindingc);
+		dset_bindingc++;
+	}
+	for (int i = 0; i < pipeln->uboc; i++) {
+		dset_bindings[dset_bindingc] = create_dset_layout(VK_SHADER_STAGE_ALL, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, dset_bindingc);
+		dset_bindingc++;
+	}
+	VkDescriptorSetLayoutCreateInfo dset_bindingsi = {
+		.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.bindingCount = dset_bindingc,
+		.pBindings    = dset_bindings,
+	};
+	if ((vk_err = vkCreateDescriptorSetLayout(logical_gpu, &dset_bindingsi, NULL, &pipeln->dset_data_layout)))
+		ERROR("[VK] Failed to create descriptor set layout (%d)", vk_err);
+	else
+		DEBUG(3, "[VK] Created descriptor set layout with %d descriptors", dset_bindingc);
+
+	/* Image bindings (sets 1+) */
+	dset_bindingc = 0;
+	for (int i = 0; i < pipeln->imgc; i++) {
+		dset_bindings[dset_bindingc] = create_dset_layout(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, dset_bindingc);
+		dset_bindingc++;
+	}
+	dset_bindingsi = (VkDescriptorSetLayoutCreateInfo){
+		.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.bindingCount = dset_bindingc,
+		.pBindings    = dset_bindings,
+	};
+	if ((vk_err = vkCreateDescriptorSetLayout(logical_gpu, &dset_bindingsi, NULL, &pipeln->dset_img_layout)))
+		ERROR("[VK] Failed to create descriptor set layout (%d)", vk_err);
+	else
+		DEBUG(3, "[VK] Created descriptor set layout with %d descriptors", dset_bindingc);
+
+	int pool_szc = 1;
+	VkDescriptorPoolSize pool_szs[4] = {
+		[0] = (VkDescriptorPoolSize){ .type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 2, }, // !!
+	};
+	if (pipeln->sboc)
+		pool_szs[pool_szc++] = (VkDescriptorPoolSize){
+			.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.descriptorCount = pipeln->sboc,
+		};
+	if (pipeln->uboc)
+		pool_szs[pool_szc++] = (VkDescriptorPoolSize){
+			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.descriptorCount = pipeln->uboc,
+		};
+	if (pipeln->imgc)
+		pool_szs[pool_szc++] = (VkDescriptorPoolSize){
+			.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			.descriptorCount = pipeln->imgc * pipeln->dset_cap + 1, // !!
+		};
+	VkDescriptorPoolCreateInfo dpoolci = {
+		.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+		.poolSizeCount = pool_szc,
+		.pPoolSizes    = pool_szs,
+		.maxSets       = ++pipeln->dset_cap, // TODO: Check this
+	};
+	if ((vk_err = vkCreateDescriptorPool(logical_gpu, &dpoolci, NULL, &pipeln->dpool)))
+		ERROR("[VK] Failed to create descriptor pool (%d)", vk_err);
+	else
+		DEBUG(3, "[VK] Created descriptor pool with %d descriptor sets (%ld slots for images)", pool_szc, pipeln->imgc);
+
+	VkDescriptorSetLayout layouts[PIPELINE_MAX_DESCRIPTOR_SETS];
+	layouts[0] = pipeln->dset_data_layout;
+	for (int i = 1; i < pipeln->dset_cap; i++)
+		layouts[i] = pipeln->dset_img_layout;
+	pipeln->dsets = smalloc(pipeln->dset_cap*sizeof(VkDescriptorSet));
+	pipeln->dset  = &pipeln->dsets[0];
+	pipeln->dsetc = 1;
+	VkDescriptorSetAllocateInfo dsetalloci = {
+		.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+		.descriptorPool     = pipeln->dpool,
+		.descriptorSetCount = pipeln->dset_cap,
+		.pSetLayouts        = layouts,
+	};
+	if ((vk_err = vkAllocateDescriptorSets(logical_gpu, &dsetalloci, pipeln->dsets)))
+		ERROR("[VK] Failed to allocate for %d descriptor sets\n\t\"%d\"", dsetalloci.descriptorSetCount, vk_err); // TODO: STRING_OF_VK_ERR
+	else
+		DEBUG(3, "[VK] Allocated %ld descriptor sets", pipeln->dset_cap);
+}
 
 void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 {
@@ -70,7 +158,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 	VkPipelineMultisampleStateCreateInfo msci = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 		.sampleShadingEnable   = false,
-		.rasterizationSamples  = gpu_limits.max_samples,
+		.rasterizationSamples  = gpu_properties.max_samples,
 		.minSampleShading      = 1.0,
 		.pSampleMask           = NULL,
 		.alphaToCoverageEnable = false,
@@ -110,18 +198,18 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.back                  = { 0 },
 	};
 	VkPushConstantRange tpushr = {
-		.stageFlags = pipeln->pushstages,
+		.stageFlags = pipeln->push_stages,
 		.offset     = 0,
-		.size       = pipeln->pushsz,
+		.size       = pipeln->push_sz,
 	};
 	VkPipelineLayoutCreateInfo tlaysci = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount         = 1,
-		.pSetLayouts            = &pipeln->dsetlayout,
-		.pushConstantRangeCount = pipeln->pushsz > 0? 1: 0,
+		.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.setLayoutCount         = 2,
+		.pSetLayouts            = (VkDescriptorSetLayout[]){ pipeln->dset_data_layout, pipeln->dset_img_layout },
+		.pushConstantRangeCount = pipeln->push_sz > 0? 1: 0,
 		.pPushConstantRanges    = &tpushr,
 	};
-	if (vkCreatePipelineLayout(logical_gpu, &tlaysci, NULL, &pipeln->layout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(logical_gpu, &tlaysci, NULL, &pipeln->layout))
 		ERROR("[VK] Failed to create pipeline layout");
 	else
 		DEBUG(4, "[VK] Created pipeline layout");
@@ -144,10 +232,36 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.basePipelineHandle  = NULL,
 		.basePipelineIndex   = -1,
 	};
-	if (vkCreateGraphicsPipelines(logical_gpu, NULL, 1, &tpipelnci, NULL, &pipeln->pipeln) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(logical_gpu, NULL, 1, &tpipelnci, NULL, &pipeln->pipeln))
 		ERROR("[VK] Failed to create pipeline");
 	else
 		DEBUG(3, "[VK] Pipeline created");
+}
+
+VkDescriptorSet pipeln_create_image_dset(struct Pipeline* pipeln, VkImageView* img_views)
+{
+	VkDescriptorSet      dset = pipeln_get_dset(pipeln);
+	VkWriteDescriptorSet dset_writes[PIPELINE_MAX_IMAGES_PER_DSET];
+	for (int i = 0; i < pipeln->imgc; i++) {
+		dset_writes[i] = (VkWriteDescriptorSet) {
+			.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet           = dset,
+			.dstBinding       = i,
+			.dstArrayElement  = 0,
+			.descriptorCount  = 1,
+			.descriptorType   = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			.pBufferInfo      = NULL,
+			.pTexelBufferView = NULL,
+			.pImageInfo       = &(VkDescriptorImageInfo){
+				.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				.imageView   = img_views[i],
+				.sampler     = NULL,
+			},
+		};
+	}
+
+	vkUpdateDescriptorSets(logical_gpu, pipeln->imgc, dset_writes, 0, NULL);
+	return dset;
 }
 
 void pipeln_free(struct Pipeline* pipeln)
@@ -163,14 +277,8 @@ void pipeln_free(struct Pipeline* pipeln)
 	if (pipeln->gshader)  vkDestroyShaderModule(logical_gpu, pipeln->gshader , NULL);
 	if (pipeln->fshader)  vkDestroyShaderModule(logical_gpu, pipeln->fshader , NULL);
 
-	vkDestroyDescriptorSetLayout(logical_gpu, pipeln->dsetlayout, NULL);
-
-	for (int i = 0; i < pipeln->uboc; i++)
-		if (pipeln->ubos[i].sz)
-			ubo_free(&pipeln->ubos[i]);
-
-	if (pipeln->sbo && pipeln->sbo->sz)
-		sbo_free(pipeln->sbo);
+	vkDestroyDescriptorSetLayout(logical_gpu, pipeln->dset_data_layout, NULL);
+	vkDestroyDescriptorSetLayout(logical_gpu, pipeln->dset_img_layout , NULL);
 }
 
 /* -------------------------------------------------------------------- */
@@ -200,68 +308,32 @@ static int init_shaders(struct Pipeline* pipeln, VkPipelineShaderStageCreateInfo
 			.pName  = "main",
 		};
 
-	uint dsetlayoutc = 0;
-	VkDescriptorSetLayoutBinding dsetlayouts[3 + pipeln->uboc]; /* 3 = storage buffer + sampler + images */
-	if (pipeln->sbosz > 0) {
-		dsetlayouts[dsetlayoutc] = create_dset_layout(VK_SHADER_STAGE_ALL, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, dsetlayoutc);
-		dsetlayoutc++;
-	}
-	for (int i = 0; i < pipeln->uboc; i++) {
-		dsetlayouts[dsetlayoutc] = create_dset_layout(VK_SHADER_STAGE_ALL, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, dsetlayoutc);
-		dsetlayoutc++;
-	}
-	dsetlayouts[dsetlayoutc] = create_dset_layout(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLER, dsetlayoutc);
-	dsetlayoutc++;
-	dsetlayouts[dsetlayoutc] = create_dset_layout(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, dsetlayoutc);
-	dsetlayoutc++;
+	if (!pipeln->dsets)
+		pipeln_alloc_dsets(pipeln);
 
-	VkDescriptorSetLayoutCreateInfo dsetlayoutci = {
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.bindingCount = dsetlayoutc,
-		.pBindings    = dsetlayouts,
-	};
-	if (vkCreateDescriptorSetLayout(logical_gpu, &dsetlayoutci, NULL, &pipeln->dsetlayout))
-		ERROR("[VK] Failed to create descriptor set layout");
-	else
-		DEBUG(3, "[VK] Created descriptor set layout");
+	int total = 1, sboc, uboc;
+	bind_sampler(*pipeln->dset, 0, pipeln->sampler? pipeln->sampler: default_sampler);
+	for (sboc = 0; sboc < pipeln->sboc; total++, sboc++)
+		bind_buffer(*pipeln->dset, total, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, pipeln->sbos[sboc].buf, 0, pipeln->sbo_szs[sboc]);
+	for (uboc = 0; uboc < pipeln->uboc; total++, uboc++)
+		bind_buffer(*pipeln->dset, total, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, pipeln->ubos[uboc].buf, 0, pipeln->ubos[uboc].sz);
 
-	VkDescriptorPoolCreateInfo dpoolci = {
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.poolSizeCount = 4, /* 4 = storage buffer + uniform buffers + sampler + sampled images */
-		.pPoolSizes    = (VkDescriptorPoolSize[]){
-			{ .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-			  .descriptorCount = 1, },
-			{ .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			  .descriptorCount = pipeln->uboc? pipeln->uboc: 1, },
-			{ .type = VK_DESCRIPTOR_TYPE_SAMPLER,
-			  .descriptorCount = 1, },
-			{ .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			  .descriptorCount = 1, },
-		},
-		.maxSets = 1,
-	};
-	if (vkCreateDescriptorPool(logical_gpu, &dpoolci, NULL, &pipeln->dpool))
-		ERROR("[VK] Failed to create descriptor pool");
-	else
-		DEBUG(3, "[VK] Created descriptor pool");
-
-	VkDescriptorSetAllocateInfo dsetalloci = {
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-		.descriptorPool     = pipeln->dpool,
-		.descriptorSetCount = 1,
-		.pSetLayouts        = &pipeln->dsetlayout,
-	};
-	if (vkAllocateDescriptorSets(logical_gpu, &dsetalloci, &pipeln->dset) != VK_SUCCESS)
-		ERROR("[VK] Failed to allocate for descriptor set");
-	else
-		DEBUG(3, "[VK] Allocated descriptor sets");
-
-	update_dsets(pipeln);
-
+	DEBUG(4, "[GFX] Initialized %d shaders with %d buffers bound (SBOs: %d; UBOs: %d)", stageic, total, sboc, uboc);
 	return stageic;
 }
 
-inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type, uint binding) {
+inline static VkDescriptorSet pipeln_get_dset(struct Pipeline* pipeln)
+{
+	if (pipeln->dsetc > pipeln->dset_cap) {
+		ERROR("[GFX] No more descriptor sets remain in the pipeline's pool (cap: %ld)", pipeln->dset_cap);
+		return NULL;
+	}
+
+	return pipeln->dsets[pipeln->dsetc++];
+}
+
+inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stagef, VkDescriptorType type, int binding)
+{
 	return (VkDescriptorSetLayoutBinding){
 		.binding            = binding,
 		.stageFlags         = stagef,
@@ -271,104 +343,44 @@ inline static VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagB
 	};
 }
 
-inline static void update_buf_dset(VkWriteDescriptorSet* dwriteset, VkDescriptorSet dset, VkDescriptorType type,
-                                   VkDescriptorBufferInfo* dbufi, uintptr binding)
+inline static void bind_sampler(VkDescriptorSet dset, int binding, VkSampler samp)
 {
-	if (!dbufi->buffer)
-		ERROR("[VK] Should not have NULL buffer passed for descriptor set (binding: %lu)", binding);
-	*dwriteset = (VkWriteDescriptorSet){
-		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	VkWriteDescriptorSet dset_write = {
+		.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet           = dset,
 		.dstBinding       = binding,
 		.dstArrayElement  = 0,
 		.descriptorCount  = 1,
-		.descriptorType   = type,
-		.pBufferInfo      = dbufi,
-		.pImageInfo       = NULL,
+		.descriptorType   = VK_DESCRIPTOR_TYPE_SAMPLER,
 		.pTexelBufferView = NULL,
-	};
-}
-
-inline static void update_img_dset(VkWriteDescriptorSet* dwriteset, VkDescriptorSet dset, VkDescriptorType type,
-                                   VkDescriptorImageInfo* dimgi, uintptr binding)
-{
-	*dwriteset = (VkWriteDescriptorSet){
-		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-		.dstSet           = dset,
-		.dstBinding       = binding,
-		.dstArrayElement  = 0,
-		.descriptorCount  = 1,
-		.descriptorType   = type,
 		.pBufferInfo      = NULL,
-		.pImageInfo       = dimgi,
-		.pTexelBufferView = NULL,
-	};
-}
-
-static void update_dsets(struct Pipeline* pipeln)
-{
-	int sbo_loc, ubo_loc, sampler_loc, images_loc;
-	sbo_loc = ubo_loc = sampler_loc = images_loc = -1;
-	int dwritesetc = 0;
-	VkWriteDescriptorSet   dwritesets[2 + pipeln->uboc + swapchain.imgc]; /* 2 = storage buffer + sampler */
-	VkDescriptorBufferInfo dbufis[1 + pipeln->uboc];                      /* 1 = storage buffer           */
-	VkDescriptorImageInfo  dimgis[1 + swapchain.imgc];                    /* 1 = sampler                  */
-
-	/* Storage buffers */
-	if (pipeln->sbosz > 0) {
-		dbufis[dwritesetc] = (VkDescriptorBufferInfo){
-			.buffer = pipeln->sbo->buf,
-			.offset = 0,
-			.range  = pipeln->sbosz,
-		};
-		update_buf_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-		                &dbufis[dwritesetc], dwritesetc);
-		sbo_loc = dwritesetc;
-		dwritesetc++;
-	}
- 	
-	/* Uniform buffers */
-	if (pipeln->uboc > 0)
-		ubo_loc = dwritesetc;
-	for (int i = 0; i < pipeln->uboc; i++) {
-		dbufis[dwritesetc] = (VkDescriptorBufferInfo){
-			.buffer = pipeln->ubos[i].buf,
-			.offset = 0,
-			.range  = pipeln->ubos[i].sz,
-		};
-		update_buf_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 
-		                &dbufis[dwritesetc], dwritesetc);
-		dwritesetc++;
-	}
-
-	/* Sampler */
-	dimgis[0] = (VkDescriptorImageInfo){
-		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		.imageView   = NULL,
-		.sampler     = pipeln->sampler? pipeln->sampler: default_sampler,
-	};
-	update_img_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_SAMPLER, &dimgis[0], dwritesetc);
-	sampler_loc = dwritesetc;
-	dwritesetc++;
-
-	vkUpdateDescriptorSets(logical_gpu, dwritesetc, dwritesets, 0, NULL);
-
-	/* Sampled images */
-	if (pipeln->texturec > 0)
-		images_loc = dwritesetc;
-	for (int i = 0; i < pipeln->texturec; i++) {
-		dimgis[i + 1] = (VkDescriptorImageInfo){
+		.pImageInfo       = &(VkDescriptorImageInfo){
 			.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			.imageView   = pipeln->textures[i].image_view,
-			.sampler     = NULL,
-		};
-		update_img_dset(&dwritesets[dwritesetc], pipeln->dset, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-		                &dimgis[i + 1], dwritesetc);
-		dwritesetc++;
-	}
-	vkUpdateDescriptorSets(logical_gpu, 1, &dwritesets[dwritesetc-1], 0, NULL);
-	
-	DEBUG(3, "[VK] Updated %d descriptor sets (SBO: %d; UBO: %d; Sampler: %d; Images: %d)", dwritesetc, 
-	      sbo_loc, ubo_loc, sampler_loc, images_loc);
+			.imageView   = NULL,
+			.sampler     = samp,
+		},
+	};
+
+	vkUpdateDescriptorSets(logical_gpu, 1, &dset_write, 0, NULL);
 }
 
+inline static void bind_buffer(VkDescriptorSet dset, int binding, VkDescriptorType type, VkBuffer buf, isize offset, isize range)
+{
+	VkWriteDescriptorSet dset_write = {
+		.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		.dstSet           = dset,
+		.dstBinding       = binding,
+		.dstArrayElement  = 0,
+		.descriptorCount  = 1,
+		.descriptorType   = type,
+		.pTexelBufferView = NULL,
+		.pImageInfo       = NULL,
+		.pBufferInfo      = &(VkDescriptorBufferInfo){
+			.buffer = buf,
+			.offset = offset,
+			.range  = range,
+		},
+	};
+
+	vkUpdateDescriptorSets(logical_gpu, 1, &dset_write, 0, NULL);
+}

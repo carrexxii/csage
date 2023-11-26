@@ -25,6 +25,7 @@ struct Particle {
 }; static_assert(sizeof(struct Particle) == 32);
 
 struct ParticlePool {
+	VkDescriptorSet dset;
 	bool   enabled;
 	int32  life;
 	int32  particle_life;
@@ -32,10 +33,9 @@ struct ParticlePool {
 	int32  timer;
 	float* start_pos;
 	float* start_vel;
-	struct {
-		struct Particle particles[MAX_PARTICLES_PER_POOL];
-		float scale;
-	};
+
+	struct Particle particles[MAX_PARTICLES_PER_POOL];
+	float scale;
 };
 
 void particles_init(VkRenderPass renderpass);

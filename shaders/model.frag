@@ -11,10 +11,10 @@ struct Material {
 	float metallic;
 	float roughness;
 };
-layout(binding = 2) uniform MaterialsBuffer {
+layout(set = 0, binding = 3) uniform MaterialsBufferUBO {
 	Material materials[8];
 } materials;
-layout(binding = 3) uniform LightBuffer {
+layout(set = 0, binding = 4) uniform LightBufferUBO {
 	vec4 ambient; /* [colour|power] */
 	vec4 pos;     /* [pos|power]    */
 	vec3 colour;
@@ -24,6 +24,9 @@ layout(push_constant) uniform PushConstants {
 	int   materiali;
 	float timer;
 } constants;
+
+layout (set = 0, binding = 0) uniform sampler   Fsampler;
+layout (set = 1, binding = 0) uniform texture2D Ftexture;
 
 // finalColor = ambient
 //           + lambertianTerm * surfaceColor * lightColor
@@ -43,5 +46,6 @@ void main()
 
 	vec4 obj_colour = materials.materials[constants.materiali].albedo;
 	obj_colour = vec4(0.3, 0.3, 0.3, 1.0);
+	obj_colour = texture(sampler2D(Ftexture, Fsampler), Fuv);
 	FragColor = vec4((ambient + diffuse + specular)*obj_colour.xzy, obj_colour.w);
 }

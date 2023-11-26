@@ -13,23 +13,22 @@
 #define MAX_JOINTS           64
 #define MAX_NAME_LENGTH      32
 #define MAX_ANIMATION_FRAMES 64
+#define MODEL_MESH_VBO_COUNT 5
 
 enum InterpolationType {
-	INTERPOLATION_NONE,
 	INTERPOLATION_LINEAR       = cgltf_interpolation_type_linear,
 	INTERPOLATION_STEP         = cgltf_interpolation_type_step,
 	INTERPOLATION_CUBIC_SPLINE = cgltf_interpolation_type_cubic_spline,
 };
 
 enum AnimationType {
-	ANIMATION_NONE,
 	ANIMATION_TRANSLATE = cgltf_animation_path_type_translation,
 	ANIMATION_SCALE     = cgltf_animation_path_type_scale,
 	ANIMATION_ROTATE    = cgltf_animation_path_type_rotation,
 };
 
 struct Mesh {
-	VBO    vbos[5];
+	VBO    vbos[MODEL_MESH_VBO_COUNT];
 	IBO    ibo;
 	int    vertc;
 	uint16 indc;
@@ -38,6 +37,7 @@ struct Mesh {
 
 /* This must be aligned correctly for the shader */
 struct Material {
+	VkDescriptorSet dset;
 	float albedo[4];
 	// float emissive[4];
 	float metallic;
@@ -45,7 +45,7 @@ struct Material {
 	struct Texture colour_tex;
 	struct Texture metallic_tex;
 	struct Texture normal_tex;
-	// struct Texture occlusion_tex;
+	struct Texture occlusion_tex;
 	// struct Texture emission_tex;
 };
 

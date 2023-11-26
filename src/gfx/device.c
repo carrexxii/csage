@@ -11,13 +11,13 @@ VkQueue graphicsq;
 VkQueue presentq;
 VkQueue transferq;
 
-VkCommandPool cmd_pool;
+VkCommandPool             cmd_pool;
 struct QueueFamilyIndices qinds;
-struct DeviceLimits gpu_limits;
+struct DeviceLimits       gpu_properties;
 
 static int  rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf);
 static bool supports_extension(VkPhysicalDevice dev, char* ext);
-static void get_device_limits(VkPhysicalDevice dev);
+static void get_device_properties(VkPhysicalDevice dev);
 static void debug_physical(VkPhysicalDevice dev);
 static void set_queue_indices(VkPhysicalDevice dev, VkSurfaceKHR surf);
 
@@ -120,7 +120,7 @@ void device_free()
 
 static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)
 {
-	get_device_limits(dev);
+	get_device_properties(dev);
 
 	// TODO: replace with data from `get_device_limits()`
 	int rating = 0;
@@ -188,10 +188,12 @@ static void set_queue_indices(VkPhysicalDevice dev, VkSurfaceKHR surf)
 	}
 }
 
-static void get_device_limits(VkPhysicalDevice dev)
+static void get_device_properties(VkPhysicalDevice dev)
 {
 	VkPhysicalDeviceProperties devp;
+	VkPhysicalDeviceMemoryProperties dev_memp;
 	vkGetPhysicalDeviceProperties(dev, &devp);
+	vkGetPhysicalDeviceMemoryProperties(dev, &dev_memp);
 
 	VkSampleCountFlags count = devp.limits.framebufferColorSampleCounts & devp.limits.framebufferDepthSampleCounts;
 	VkSampleCountFlagBits max_samples  = (count & VK_SAMPLE_COUNT_64_BIT? VK_SAMPLE_COUNT_64_BIT:
@@ -202,9 +204,17 @@ static void get_device_limits(VkPhysicalDevice dev)
 	                                      count & VK_SAMPLE_COUNT_2_BIT ? VK_SAMPLE_COUNT_2_BIT :
 	                                                                      VK_SAMPLE_COUNT_1_BIT);
 
-	gpu_limits = (struct DeviceLimits){
+	gpu_properties = (struct DeviceLimits){
 		.max_samples = max_samples,
 	};
+
+	for (int i = 0; i < (int)dev_memp.memoryTypeCount; i++)
+		if (dev_memp.memoryTypes[i].propertyFlags == VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
+			gpu_properties.lazy_mem = true;
+
+	DEBUG(1, "[VK] GPU has the following support:");
+	DEBUG(1, "\tMSAA samples -> %d", max_samples);
+	DEBUG(1, "\tLazy memory  -> %s", STRING_TF(gpu_properties.lazy_mem));
 }
 
 static void debug_physical(VkPhysicalDevice dev)
@@ -228,7 +238,7 @@ static void debug_physical(VkPhysicalDevice dev)
 	DEBUG(3, "\tGeometry shader                   -> %s", STRING_YN(devf.geometryShader));
 	DEBUG(3, "\tTessellation shader               -> %s", STRING_YN(devf.tessellationShader));
 	DEBUG(3, "\tSampler anisotropy                -> %s", STRING_YN(devf.samplerAnisotropy));
-	DEBUG(3, "\tMSAA sample count                 -> %d", gpu_limits.max_samples);
+	DEBUG(3, "\tMSAA sample count                 -> %d", gpu_properties.max_samples);
 	DEBUG(3, "\tMax image dimensions (1/2/3)      -> %u/%u/%u", devp.limits.maxImageDimension1D,
 	                                                            devp.limits.maxImageDimension2D,
 	                                                            devp.limits.maxImageDimension3D);

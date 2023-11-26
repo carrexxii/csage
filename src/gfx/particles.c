@@ -1,5 +1,4 @@
-#include "common.h"
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "vulkan.h"
 #include "pipeline.h"
@@ -45,20 +44,21 @@ void particles_init(VkRenderPass renderpass)
 	ubos[0] = ubo_new(sizeof(mat4));
 	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
 	pipeln = (struct Pipeline){
-		.vshader    = create_shader(SHADER_DIR "particle.vert"),
-		.fshader    = create_shader(SHADER_DIR "particle.frag"),
+		.vshader     = create_shader(SHADER_DIR "particle.vert"),
+		.fshader     = create_shader(SHADER_DIR "particle.frag"),
 		.vert_bindc  = 1,
 		.vert_binds  = &streamvert_binds,
 		.vert_attrc  = 2,
 		.vert_attrs  = streamvert_attrs,
-		.pushstages = VK_SHADER_STAGE_VERTEX_BIT,
-		.pushsz     = sizeof(float),
-		.uboc       = 2,
-		.ubos       = ubos,
-		.texturec   = 1,
-		.textures   = &texture,
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
+		.push_sz     = sizeof(float),
+		.uboc        = 2,
+		.ubos        = ubos,
+		.imgc        = 1,
+		.dset_cap    = 1,
 	};
-
+	pipeln_alloc_dsets(&pipeln);
+	pipeln_create_image_dset(&pipeln, &texture.image_view);
 	pipeln_init(&pipeln, renderpass);
 
 	float verts[] = {
@@ -138,14 +138,14 @@ void particles_record_commands(VkCommandBuffer cmd_buf)
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]) { 0 });
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
 	struct ParticlePool* pool;
 	for (int i = 0; i < poolc; i++) {
 		pool = &pools[i];
 		if (pool->life <= 0)
 			continue;
 		buffer_update(pipeln.ubos[1], PARTICLES_UBO_SIZE, pool->particles);
-		vkCmdPushConstants(cmd_buf, pipeln.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, pipeln.pushsz, &pool->scale);
+		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &pool->scale);
 
 		vkCmdDraw(cmd_buf, 6, MAX_PARTICLES_PER_POOL, 0, MAX_PARTICLES_PER_POOL*i);
 	}
@@ -153,8 +153,10 @@ void particles_record_commands(VkCommandBuffer cmd_buf)
 
 void particles_free()
 {
-	texture_free(texture);
+	texture_free(&texture);
 	vbo_free(&vbo_buf);
+	ubo_free(&ubos[0]);
+	ubo_free(&ubos[1]);
 	pipeln_free(&pipeln);
 }
 

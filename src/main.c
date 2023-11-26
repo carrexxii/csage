@@ -43,15 +43,11 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
-	init_vulkan(window);
-	renderer_init();
-	camera_init();
-	entities_init();
-
 	srand(SDL_GetTicks64());
 
-	test_init();
+	init_vulkan(window);
 	scenemgr_init();
+
 	scenemgr_loop();
  
 	return 0;

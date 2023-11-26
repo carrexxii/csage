@@ -5,21 +5,22 @@ layout(location = 1) in vec2 Vuv;
 
 layout(location = 0) out vec2 Fuv;
 
+const int MAX_PARTICLES = 256;
+
 struct ParticleData {
 	vec2 s, v;
 	int  life;
 };
 
-layout(binding = 0) uniform CameraViewProjectionUBO {
+layout(set = 0, binding = 1) uniform CameraViewProjectionUBO {
 	mat4 vp;
 } camera;
-layout(binding = 1) uniform ParticleDataUBO {
-	ParticleData data[256];
+layout(set = 0, binding = 2) uniform ParticleDataUBO {
+	ParticleData data[MAX_PARTICLES];
 	float scale;
 } particles;
 
-layout(push_constant) uniform PushConstants
-{
+layout(push_constant) uniform PushConstants {
 	float scale;
 } constants;
 

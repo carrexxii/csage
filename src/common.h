@@ -243,6 +243,8 @@ inline static int random_int(int min, int max)
     return num;
 }
 
+static int vk_err;
+
 #include "maths/maths.h"
 
 #endif
