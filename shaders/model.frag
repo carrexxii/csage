@@ -10,6 +10,8 @@ struct Material {
 	vec4  albedo;
 	float metallic;
 	float roughness;
+	vec4 pad0;
+	vec4 pad1;
 };
 layout(set = 0, binding = 3) uniform MaterialsBufferUBO {
 	Material materials[8];
@@ -28,24 +30,24 @@ layout(push_constant) uniform PushConstants {
 layout (set = 0, binding = 0) uniform sampler   Fsampler;
 layout (set = 1, binding = 0) uniform texture2D Ftexture;
 
-// finalColor = ambient
-//           + lambertianTerm * surfaceColor * lightColor
-//           + specularIntensity * specularColor * lightColor;
 void main()
 {
-	vec3 ambient   = global_light.ambient.xyz * global_light.ambient.w;
+	vec4 obj_colour = materials.materials[constants.materiali].albedo;
+
+	vec3 ambient   = obj_colour.xyz*(global_light.ambient.xyz * global_light.ambient.w);
+
 	vec3 light_dir = normalize(-global_light.pos.xyz - Fpos);
 	vec3 diffuse   = max(-dot(Fnormal, light_dir), 0.0) * global_light.colour * global_light.pos.w;
+	diffuse *= obj_colour.xyz;
 
+	// TODO: this in a buffer
 	float spec_str   = 0.5;
 	float shininess  = 32;
 	vec3 view_dir    = normalize(-Fpos);
-	vec3 reflect_dir = reflect(-light_dir, Fnormal);
-	float spec       = pow(max(dot(view_dir, reflect_dir), 0.0), shininess);
-	vec3 specular    = spec_str * spec * global_light.colour;
+	vec3 halfway_dir = -normalize(light_dir + view_dir);
+	vec3 specular    = global_light.colour * spec_str * pow(max(dot(Fnormal, halfway_dir), 0.0), shininess);
+	specular *= obj_colour.xyz;
 
-	vec4 obj_colour = materials.materials[constants.materiali].albedo;
-	obj_colour = vec4(0.3, 0.3, 0.3, 1.0);
-	obj_colour = texture(sampler2D(Ftexture, Fsampler), Fuv);
-	FragColor = vec4((ambient + diffuse + specular)*obj_colour.xzy, obj_colour.w);
+	// obj_colour = texture(sampler2D(Ftexture, Fsampler), Fuv);
+	FragColor = vec4(ambient + diffuse + specular, obj_colour.w);
 }

@@ -54,7 +54,7 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 {
 	VkImageView img_view;
 	VkImageViewCreateInfo viewi = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D,
 		.image    = img,
 		.format   = fmt,
@@ -72,8 +72,8 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 			.layerCount     = 1,
 		},
 	};
-	if (vkCreateImageView(logical_gpu, &viewi, NULL, &img_view))
-		ERROR("[VK] Failed to create image view");
+	if ((vk_err = vkCreateImageView(logical_gpu, &viewi, NULL, &img_view)))
+		ERROR("[VK] Failed to create image view\n\t\"%d\"", vk_err);
 	else
 		DEBUG(3, "[VK] Created image view");
 

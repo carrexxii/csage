@@ -60,7 +60,7 @@ struct Pipeline {
 
 void pipeln_alloc_dsets(struct Pipeline* pipeln);
 void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);
-VkDescriptorSet pipeln_create_image_dset(struct Pipeline* pipeln, VkImageView* img_views);
+VkDescriptorSet pipeln_create_image_dset(struct Pipeline* pipeln, int img_viewc, VkImageView* img_views);
 void pipeln_free(struct Pipeline* pipeln);
 
 #endif

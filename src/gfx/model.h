@@ -8,8 +8,10 @@
 #include "buffers.h"
 #include "texture.h"
 
+// TODO: rename
 #define MAX_MODELS           16
 #define MAX_MATERIALS        8
+#define MODEL_MAX_IMAGES     8
 #define MAX_JOINTS           64
 #define MAX_NAME_LENGTH      32
 #define MAX_ANIMATION_FRAMES 64
@@ -37,16 +39,12 @@ struct Mesh {
 
 /* This must be aligned correctly for the shader */
 struct Material {
-	VkDescriptorSet dset;
 	float albedo[4];
-	// float emissive[4];
 	float metallic;
 	float roughness;
-	struct Texture colour_tex;
-	struct Texture metallic_tex;
-	struct Texture normal_tex;
-	struct Texture occlusion_tex;
-	// struct Texture emission_tex;
+	struct Texture tex;
+	VkDescriptorSet dset;
+	float pad0[2];
 };
 
 struct Joint {
@@ -98,8 +96,6 @@ void models_free();
 extern void (*update_model_transforms)(SBO);
 extern mat4s* model_transforms;
 
-constexpr struct Material default_material = {
-	.albedo = { 0.3f, 0.3f, 0.3f, 1.0f },
-};
+extern struct Material default_material;
 
 #endif

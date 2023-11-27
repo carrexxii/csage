@@ -58,7 +58,7 @@ void particles_init(VkRenderPass renderpass)
 		.dset_cap    = 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_image_dset(&pipeln, &texture.image_view);
+	pipeln_create_image_dset(&pipeln, 1, &texture.image_view);
 	pipeln_init(&pipeln, renderpass);
 
 	float verts[] = {

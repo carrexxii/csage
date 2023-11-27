@@ -25,6 +25,7 @@ void main()
 
 	Fpos    = vec3(mdl * vec4(Vpos, 1.0));
 	Fnormal = normalize(vec3(mdl * vec4(Vnormal, 1.0)));
+	Fnormal = normalize(vec3(transpose(inverse(mdl)) * vec4(Vnormal, 1.0)));
 	Fuv     = Vuv;
 
 	gl_Position = cam.vp * mdl * vec4(Vpos, 1.0);

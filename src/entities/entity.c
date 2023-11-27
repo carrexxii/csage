@@ -108,17 +108,17 @@ static void entity_update_transforms(SBO sbo_buf)
 	mat4 trans;
 	struct Body* body = (struct Body*)bodies->data;
 	for (int i = 0; i <= bodies->len; body++, i++) {
-		static int c;
-		body->facing.x = sinf((float)c/1000.0);
-		body->facing.y = cosf((float)c/1000.0);
-		body->facing.z = cosf((float)c/1000.0);
-		c++;
+		// static int c;
+		// body->facing.x = sinf((float)c/1000.0);
+		// body->facing.y = cosf((float)c/1000.0);
+		// body->facing.z = cosf((float)c/1000.0);
+		// c++;
 
 		glm_translate_make(trans, body->pos.raw);
 		glm_rotate_z(trans, atan2f(body->facing.y, body->facing.x) - GLM_PI_2, trans);
 		glm_rotate_x(trans, -GLM_PI_2, trans); // TODO: Move the rotation to model loading
-		glm_rotate_x(trans, fmod(body->facing.z, (2.0*GLM_PI)), trans); // TODO: Move the rotation to model loading
-		glm_scale(trans, (vec3){ 20.0, 20.0, 20.0 });
+		// glm_rotate_x(trans, fmod(body->facing.z, (2.0*GLM_PI)), trans);
+		glm_scale(trans, (vec3){ 4.0, 4.0, 4.0 });
 		memcpy(ENTITY_TRANSFORM(i), trans, sizeof(mat4));
 	}
 

@@ -49,14 +49,17 @@ void scenemgr_init()
 	global_light.ambient[0] = 1.0f;
 	global_light.ambient[1] = 1.0f;
 	global_light.ambient[2] = 1.0f;
-	global_light.ambient[3] = 0.02f;
-	global_light.pos[0] = 100.0f;
-	global_light.pos[1] = 0.0f;
-	global_light.pos[2] = 0.0f;
-	global_light.pos[3] = 2.0f;
+	global_light.ambient[3] = 0.1f;
+	glm_vec3_normalize(global_light.ambient);
+
+	global_light.pos[0] = 10.0f;
+	global_light.pos[1] = -10.0f;
+	global_light.pos[2] = -1.0f;
+	global_light.pos[3] = 0.5f;
 	global_light.colour[0] = 1.0f;
-	global_light.colour[1] = 0.2f;
-	global_light.colour[2] = 0.2f;
+	global_light.colour[1] = 1.0f;
+	global_light.colour[2] = 1.0f;
+	glm_vec3_normalize(global_light.colour);
 
 	current_scene = SCENE_GAME;
 }
@@ -73,10 +76,11 @@ noreturn void scenemgr_loop()
 		ot = nt;
 		acc += dt;
 		while (acc >= DT_MS) {
-			// global_light.pos[0] = fmod((global_light.pos[0] + 0.1), 20.0f);
-			// global_light.pos[1] = fmod((global_light.pos[1] + 0.1), 20.0f);
-			// global_light.pos[2] = -fmod((global_light.pos[2] + 0.1), 20.0f);
-			// global_light.ambient[3] = fmod((global_light.ambient[3] + 0.01), 1.0f);
+			// static float dir = 1.0;
+			// global_light.pos[0] += dir;
+			// if (fabs(global_light.pos[0]) > 100.0)
+			// 	dir = -dir;
+
 			while (!taskmgr_reset());
 			acc -= DT_MS;
 		}

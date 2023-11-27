@@ -75,6 +75,7 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 
 void (*update_model_transforms)(SBO);
 mat4s* model_transforms;
+struct Material default_material;
 
 static struct Pipeline pipeln;
 static struct Pipeline pipeln_static;
@@ -85,28 +86,36 @@ static SBO sbo_buf;
 
 void models_init(VkRenderPass renderpass)
 {
+	default_material = (struct Material){
+		.albedo    = { 0.3f, 0.3f, 0.3f, 1.0f },
+		.metallic  = 1.0f,
+		.roughness = 1.0f,
+		.tex       = texture_new_from_image(TEXTURE_PATH "default.png"),
+	};
+
 	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
 	ubo_bufs[0] = ubo_new(sizeof(mat4));                          /* Camera matrix */
 	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material)); /* Material data */
 	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));         /* Light data    */
 	ubo_bufs[3] = ubo_new(MAX_JOINTS*sizeof(struct Transform));   /* Joint data    */
-	// pipeln = (struct Pipeline){
-	// 	.vshader     = create_shader(SHADER_DIR "model.vert"),
-	// 	.fshader     = create_shader(SHADER_DIR "model.frag"),
-	// 	.vert_bindc  = 5,
-	// 	.vert_binds  = vertex_binds,
-	// 	.vert_attrc  = 5,
-	// 	.vert_attrs  = vertex_attrs,
-	// 	.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-	// 	.push_sz     = sizeof(struct PushConstants),
-	// 	.uboc        = 4,
-	// 	.ubos        = ubo_bufs,
-	// 	.sboc        = 1,
-	// 	.sbo_szs     = (isize[]){ MAX_MODELS*sizeof(mat4) },
-	// 	.sbos        = (SBO[]){ sbo_buf },
-	// 	.imgc        = 4,
-	// };
 
+	pipeln = (struct Pipeline){
+		.vshader     = create_shader(SHADER_DIR "model.vert"),
+		.fshader     = create_shader(SHADER_DIR "model.frag"),
+		.vert_bindc  = 5,
+		.vert_binds  = vertex_binds,
+		.vert_attrc  = 5,
+		.vert_attrs  = vertex_attrs,
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		.push_sz     = sizeof(struct PushConstants),
+		.sboc        = 1,
+		.sbo_szs     = (isize[]){ MAX_MODELS*sizeof(mat4) },
+		.sbos        = (SBO[]){ sbo_buf },
+		.uboc        = 4,
+		.ubos        = ubo_bufs,
+		.imgc        = 1,
+		.dset_cap    = 2,
+	};
 	pipeln_static = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "model_static.vert"),
 		.fshader     = create_shader(SHADER_DIR "model.frag"),
@@ -122,17 +131,23 @@ void models_init(VkRenderPass renderpass)
 		.uboc        = 3,
 		.ubos        = ubo_bufs,
 		.imgc        = 1,
-		.dset_cap    = 1,
+		.dset_cap    = 2,
 	};
+	pipeln_alloc_dsets(&pipeln);
 	pipeln_alloc_dsets(&pipeln_static);
+	VkImageView img_view;
 	for (int i = 0; i < modelc; i++) {
 		for (int j = 0; j < models[i].materialc; j++) {
-			// DEBUG_VALUE(models[i].materials[j].colour_tex.image_view);
-			models[i].materials[j].dset = pipeln_create_image_dset(&pipeln_static, (VkImageView[]){
-				models[i].materials[j].colour_tex.image_view,
-			});
+			if (models[i].materials[j].tex.image)
+				img_view = models[i].materials[j].tex.image_view;
+			else
+				img_view = models[i].materials[j].tex.image_view;
+			if (!img_view)
+				img_view = default_material.tex.image_view;
+			models[i].materials[j].dset = pipeln_create_image_dset(&pipeln_static, 1, &img_view);
 		}
 	}
+	pipeln_init(&pipeln, renderpass);
 	pipeln_init(&pipeln_static, renderpass);
 }
 
@@ -221,31 +236,34 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 	update_model_transforms(sbo_buf);
 
 	/* Animated models */
-	// vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
-	// for (int i = 0; i < modelc; i++) {
-	// 	model     = &models[i];
-	// 	// animation = &model->animations[model->current_animation];
-	// 	if (!model->skin)
-	// 		continue;
-	// 	buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
-	// 	buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
-	// 	// buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform),
-	// 	//               animation->frames[animation->current_frame].transforms);
-	// 	for (int m = 0; m < models[i].meshc; m++) {
-	// 		mesh = &model->meshes[m];
-	// 		push_constants.materiali = mesh->materiali;
-	// 		push_constants.timer     = model->timer/3.0;
-	// 		// DEBUG(1, "[%d Animated] Drawing %d vertices", i, models[i].meshes[m].vertc);
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
+	for (int i = 0; i < modelc; i++) {
+		model     = &models[i];
+		// animation = &model->animations[model->current_animation];
+		if (!model->skin)
+			continue;
+		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
+		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
+		// buffer_update(ubo_bufs[2], animation->framec*sizeof(struct Transform),
+		//               animation->frames[animation->current_frame].transforms);
+		for (int m = 0; m < models[i].meshc; m++) {
+			mesh = &model->meshes[m];
+			push_constants.materiali = mesh->materiali;
+			push_constants.timer     = model->timer/3.0;
+			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 1,
+			                        1, &model->materials[mesh->materiali].dset, 0, NULL);
+			// DEBUG(1, "[%d Animated] Drawing %d vertices", i, models[i].meshes[m].vertc);
 
-	// 		vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs), (VkBuffer[]){ mesh->vbos[0].buf,
-	// 		                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
-	// 		                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
-	// 		vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-	// 		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &push_constants);
-	// 		vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
-	// 	}
-	// }
+			// TODO: these vbos need to be named
+			vkCmdBindVertexBuffers(cmd_buf, 0, 5, (VkBuffer[]){ mesh->vbos[0].buf,
+			                       mesh->vbos[1].buf, mesh->vbos[3].buf, mesh->vbos[4].buf, mesh->vbos[2].buf },
+			                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
+			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &push_constants);
+			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
+		}
+	}
 
 	/* Static models */
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.pipeln);
@@ -264,7 +282,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			                        1, &model->materials[mesh->materiali].dset, 0, NULL);
 			// DEBUG(1, "[%d Static] Drawing %d vertices", i, models[i].meshes[m].indc);
 
-			vkCmdBindVertexBuffers(cmd_buf, 0, ARRAY_SIZE(vertex_attrs) - 2, (VkBuffer[]){ mesh->vbos[0].buf,
+			vkCmdBindVertexBuffers(cmd_buf, 0, 3, (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.push_stages, 0, pipeln_static.push_sz, &push_constants);
@@ -283,12 +301,10 @@ void model_free(ID model_id)
 		ibo_free(&model->meshes[i].ibo);
 	}
 
-	for (int i = 0; i < model->materialc; i++) {
-		if (model->materials[i].colour_tex.image)    texture_free(&model->materials[i].colour_tex);
-		if (model->materials[i].metallic_tex.image)  texture_free(&model->materials[i].metallic_tex);
-		if (model->materials[i].normal_tex.image)    texture_free(&model->materials[i].normal_tex);
-		if (model->materials[i].occlusion_tex.image) texture_free(&model->materials[i].occlusion_tex);
-	}
+	texture_free(&default_material.tex);
+	for (int i = 0; i < model->materialc; i++)
+		if (model->materials[i].tex.image)
+			texture_free(&model->materials[i].tex);
 	model->meshc = 0;
 }
 
@@ -314,12 +330,11 @@ static void load_materials(struct Model* model, cgltf_data* data)
 	if (model->materialc > MAX_MATERIALS)
 		ERROR("[RES] Model has %d materials. MAX_MATERIALS is set to %d", model->materialc, MAX_MATERIALS);
 
-	cgltf_material*     material;
-	// cgltf_image*        img;
-	// cgltf_texture_view* texture;
+	cgltf_material* material;
 	for (int m = 0; m < (int)data->materials_count; m++) {
 		material = &data->materials[m];
 		memcpy(model->materials[m].albedo, material->pbr_metallic_roughness.base_color_factor, sizeof(float[4]));
+
 		model->materials[m].metallic  = material->pbr_metallic_roughness.metallic_factor;
 		model->materials[m].roughness = material->pbr_metallic_roughness.roughness_factor;
 		if (!material->has_pbr_metallic_roughness) {
@@ -328,17 +343,15 @@ static void load_materials(struct Model* model, cgltf_data* data)
 		}
 
 		if (material->pbr_metallic_roughness.base_color_texture.texture)
-			model->materials[m].colour_tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
+			model->materials[m].tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
 		if (material->pbr_metallic_roughness.metallic_roughness_texture.texture)
-			model->materials[m].metallic_tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
-
+			ERROR("[GFX] Ignoring metallic roughness texture");
 		if (material->normal_texture.texture)
-			model->materials[m].normal_tex = load_material_image(material->normal_texture.texture->image);
+			ERROR("[GFX] Ignoring normal texture");
 		if (material->occlusion_texture.texture)
-			model->materials[m].occlusion_tex = load_material_image(material->occlusion_texture.texture->image);
+			ERROR("[GFX] Ignoring occlusion texture");
 		if (material->emissive_texture.texture)
 			ERROR("[RES] Ignoring emissive texture");
-			// model->materials[m].emissive_tex = load_material_image(material->emissive_texture.texture->image);
 
 		DEBUG(5, "[RES] Loaded material %d with: %s%s%s%s%s", m,
 		      material->pbr_metallic_roughness.base_color_texture.texture        ? "base colour texture, "       : "",
@@ -352,8 +365,10 @@ static void load_materials(struct Model* model, cgltf_data* data)
 	}
 
 	/* Default material if none exist */
-	if (!data->materials_count)
+	if (!data->materials_count) {
+		models->materialc    = 1;
 		models->materials[0] = default_material;
+	}
 }
 
 static struct Texture load_material_image(cgltf_image* img)
@@ -582,12 +597,13 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 				if (&data->materials[i] == data->meshes[i].primitives[p].material)
 					model->meshes[i].materiali = i;
 		}
+
+		if (!models->meshes[m].vbos[2].buf)
+			models->meshes[m].vbos[2] = vbo_new(1, uvs, false);
 	}
 
+
 	arena_free(mesh_mem);
-	// sfree(inds);
-	// sfree(verts);
-	// exit(0);
 }
 
 static void load_skin(struct Model* model, cgltf_data* data)

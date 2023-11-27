@@ -125,7 +125,7 @@ void font_init(VkRenderPass renderpass)
 		.dset_cap    = 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_image_dset(&pipeln, &atlas.image_view);
+	pipeln_create_image_dset(&pipeln, 1, &atlas.image_view);
 	pipeln_init(&pipeln, renderpass);
 }
 
