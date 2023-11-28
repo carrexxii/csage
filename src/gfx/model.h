@@ -9,13 +9,14 @@
 #include "texture.h"
 
 // TODO: rename
-#define MAX_MODELS           16
-#define MAX_MATERIALS        8
-#define MODEL_MAX_IMAGES     8
-#define MAX_JOINTS           64
-#define MAX_NAME_LENGTH      32
-#define MAX_ANIMATION_FRAMES 64
-#define MODEL_MESH_VBO_COUNT 5
+#define MAX_MODELS             16
+#define MAX_MATERIALS          8
+#define MODEL_MAX_IMAGES       8
+#define MAX_JOINTS             64
+#define ANIMATION_MAX_NAME_LEN 32
+#define JOINT_MAX_NAME_LEN     32
+#define MAX_ANIMATION_FRAMES   64
+#define MODEL_MESH_VBO_COUNT   5
 
 enum InterpolationType {
 	INTERPOLATION_LINEAR       = cgltf_interpolation_type_linear,
@@ -49,7 +50,7 @@ struct Material {
 
 struct Joint {
 	struct Transform transform;
-	char name[MAX_NAME_LENGTH];
+	char name[JOINT_MAX_NAME_LEN];
 	int  parent;
 };
 
@@ -58,20 +59,21 @@ struct Skin {
 	struct Joint joints[];
 };
 
-struct AnimationFrame {
+struct KeyFrame {
 	struct Transform* transforms;
-	int* joint_indices;
-	int  jointc;
+	// int*  joints;
+	int   jointc;
+	float time;
 };
 
 struct Animation {
-	char name[MAX_NAME_LENGTH];
-	enum AnimationType     type;
-	enum InterpolationType interpolation;
-	struct AnimationFrame* frames;
-	float* times;
+	char name[ANIMATION_MAX_NAME_LEN];
+	// enum AnimationType     type;
+	// enum InterpolationType interp;
+	struct KeyFrame* frames;
+	// float* times;
 	int framec;
-	int current_frame;
+	// int current_frame;
 };
 
 struct Model {

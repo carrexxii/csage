@@ -35,7 +35,7 @@ inline static struct Arena* arena_new(isize sz, enum ArenaFlag flags)
 	arena->cap   = sz;
 	arena->flags = flags;
 
-	DEBUG(3, "[MEM] Created new arena of size %ld", sz);
+	DEBUG(3, "[MEM] Created new arena of size %ldB/%ldkB", sz, sz/1024);
 	return arena;
 }
 

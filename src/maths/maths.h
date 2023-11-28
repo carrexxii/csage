@@ -9,7 +9,7 @@ typedef struct Rect {
 struct Transform {
 	vec4s rotation;
 	vec3s translation;
-	vec3s scale;
+	float scale;
 };
 
 /* P(t) = p + t*v */

@@ -165,26 +165,31 @@ struct Model* model_new(char* path)
 		.type = cgltf_file_type_glb,
 	};
 	cgltf_data* data;
-	if (cgltf_parse_file(&options, path, &data)) {
-		ERROR("[GFX] CGLTF failed to parse file \"%s\"", path);
+	int err;
+	if ((err = cgltf_parse_file(&options, path, &data))) {
+		ERROR("[GFX] CGLTF failed to parse file \"%s\": %d", path, err);
 	} else {
-		DEBUG(4, "[GFX] Model data for \"%s\" loaded with:", path);
+		DEBUG(4, "[GFX] Model data for \"%s\" (%zuB / %.2fkB) loaded with:", path, data->json_size, data->json_size/1024.0);
 		DEBUG(4, "\tMeshes    -> %lu", data->meshes_count);
 		DEBUG(4, "\tMaterials -> %lu", data->materials_count);
 		DEBUG(4, "\tTextures  -> %lu", data->textures_count);
 		DEBUG(4, "\tImages    -> %lu", data->images_count);
 		DEBUG(4, "\tBuffers   -> %lu", data->buffers_count);
+		DEBUG(4, "\tSkins     -> %lu", data->skins_count);
 	}
 
-	if (cgltf_load_buffers(&options, data, path))
-		ERROR("[GFX] Error loading buffer data");
+	if ((err = cgltf_validate(data)))
+		ERROR("[RES] GLTF file \"%s\" fails `cgltf_validate`: %d", path, err);
+
+	if ((err = cgltf_load_buffers(&options, data, path)))
+		ERROR("[GFX] Error loading buffer data: %d", err);
 	else
-		DEBUG(4, "Loaded buffer data for \"%s\"", path);
+		DEBUG(4, "Loaded buffer data for \"%s\" (%zuB / %.2fkB)", path, data->bin_size, data->bin_size/1024.0);
 
 	load_materials(model, data);
 	load_meshes(model, data);
-	// load_skin(model, data);
-	// load_animations(model, data);
+	load_skin(model, data);
+	load_animations(model, data);
 
 #if DEBUG_LEVEL > 0
 	int total_indc = 0;
@@ -197,10 +202,9 @@ struct Model* model_new(char* path)
 #endif
 
 	cgltf_free(data);
-	// DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
-	      // path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin->jointc, total_framec);
-	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles)",
-	      path, model->meshc, total_indc, total_indc/3);
+	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
+	      path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin? model->skin->jointc: 0, total_framec);
+	exit(0);
 	return model;
 }
 
@@ -408,7 +412,8 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 		}
 	}
 
-	struct Arena* mesh_mem = arena_new(indc_max*sizeof(uint16) + vert_max*(sizeof(float[12]) + sizeof(int8[4])), 0);
+	/* Add extra 2* for arena alignment */
+	struct Arena* mesh_mem = arena_new(2*indc_max*sizeof(uint16) + vert_max*(sizeof(float[12]) + sizeof(int8[4])), 0);
 	uint16* inds         = arena_alloc(mesh_mem, indc_max*sizeof(uint16));
 	float* verts         = arena_alloc(mesh_mem, vert_max*sizeof(float[3]));
 	float* normals       = arena_alloc(mesh_mem, vert_max*sizeof(float[3]));
@@ -420,7 +425,8 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 	cgltf_primitive* prim;
 	cgltf_accessor*  attr;
 	float*  vert;
-	int8*   vert8;
+	uint8*  uvert8;
+	uint16* uvert16;
 	uint16* ind_16;
 	uint32* ind_32;
 	for (uint m = 0; m < data->meshes_count; m++) {
@@ -431,9 +437,10 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 				ERROR("[RES] Mesh has non-triangle primitives (%d)", prim->type);
 
 			for (int a = 0; a < (int)prim->attributes_count; a++) {
-				attr  = prim->attributes[a].data;
-				vert  = (float*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(float) + attr->offset/sizeof(float);
-				vert8 = (int8*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(int8) + attr->offset/sizeof(int8);
+				attr    = prim->attributes[a].data;
+				vert    = (float*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(float) + attr->offset/sizeof(float);
+				uvert8  = (uint8*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(uint8) + attr->offset/sizeof(uint8);
+				uvert16 = (uint16*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(uint16) + attr->offset/sizeof(uint16);
 				int i = 0;
 				for (int v = 0; v < (int)attr->count; v++) {
 					switch(prim->attributes[a].type) {
@@ -464,14 +471,25 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 						i += (int)(attr->stride/sizeof(float));
 						break;
 					case cgltf_attribute_type_joints:
-						if (attr->component_type != cgltf_component_type_r_8u || attr->type != cgltf_type_vec4)
-							ERROR("[RES] Joint attribute has invalid type (expect vec4 (%d vs %d) uint8 (%d vs %d)):",
-							      cgltf_type_vec4, attr->type, cgltf_component_type_r_8u, attr->component_type);
-						joint_ids[4*v + 0] = vert8[i + 0];
-						joint_ids[4*v + 1] = vert8[i + 1];
-						joint_ids[4*v + 2] = vert8[i + 2];
-						joint_ids[4*v + 3] = vert8[i + 3];
-						i += (int)(attr->stride/sizeof(int8));
+						if (attr->type != cgltf_type_vec4)
+							ERROR("[RES] Joint attribute has unsupported type (expect vec4 (%d) -> got (%d)",
+							      cgltf_type_vec4, attr->type);
+						if (attr->component_type == cgltf_component_type_r_8u) {
+							joint_ids[4*v + 0] = uvert8[i + 0];
+							joint_ids[4*v + 1] = uvert8[i + 1];
+							joint_ids[4*v + 2] = uvert8[i + 2];
+							joint_ids[4*v + 3] = uvert8[i + 3];
+							i += (int)(attr->stride/sizeof(uint8));
+						} else if (attr->component_type == cgltf_component_type_r_16u) {
+							joint_ids[4*v + 0] = uvert16[i + 0];
+							joint_ids[4*v + 1] = uvert16[i + 1];
+							joint_ids[4*v + 2] = uvert16[i + 2];
+							joint_ids[4*v + 3] = uvert16[i + 3];
+							i += (int)(attr->stride/sizeof(uint16));
+						} else {
+							ERROR("[RES] Joint attribute has unsupported component type (expect u8 (%d) or u16 (%d) -> got %d",
+							      cgltf_component_type_r_8u, cgltf_component_type_r_16u, attr->component_type);
+						}
 						break;
 					case cgltf_attribute_type_weights:
 						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec4)
@@ -481,6 +499,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 						joint_weights[4*v + 1] = vert[i + 1];
 						joint_weights[4*v + 2] = vert[i + 2];
 						joint_weights[4*v + 3] = vert[i + 3];
+						// DEBUG(1, "[%d] %.2f, %.2f, %.2f, %.2f", v, joint_weights[4*v + 0], joint_weights[4*v + 1], joint_weights[4*v + 2], joint_weights[4*v + 3]);
 						i += (int)(attr->stride/sizeof(float));
 						break;
 					case cgltf_attribute_type_tangent:
@@ -592,7 +611,6 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 			}
 
 			/* Assign materials to their meshes */
-			// TODO: Add a default material for those that dont have one
 			for (int i = 0; i < (int)data->materials_count; i++)
 				if (&data->materials[i] == data->meshes[i].primitives[p].material)
 					model->meshes[i].materiali = i;
@@ -601,7 +619,6 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 		if (!models->meshes[m].vbos[2].buf)
 			models->meshes[m].vbos[2] = vbo_new(1, uvs, false);
 	}
-
 
 	arena_free(mesh_mem);
 }
@@ -621,7 +638,7 @@ static void load_skin(struct Model* model, cgltf_data* data)
 			joint = &model->skin->joints[j];
 			node  = skin->joints[j];
 
-			strncpy(joint->name, node->name, MAX_NAME_LENGTH);
+			strncpy(joint->name, node->name, JOINT_MAX_NAME_LEN);
 			joint->parent = -1;
 			for (int j2 = 0; j2 < (int)skin->joints_count; j2++) {
 				if (skin->joints[j2] == node->parent && j2 != j) {
@@ -634,9 +651,10 @@ static void load_skin(struct Model* model, cgltf_data* data)
 			joint->transform.translation.y = node->translation[1];
 			joint->transform.translation.z = node->translation[2];
 
-			joint->transform.scale.x = node->scale[0];
-			joint->transform.scale.y = node->scale[1];
-			joint->transform.scale.z = node->scale[2];
+			if (node->scale[0] - node->scale[1] > FLT_EPSILON ||
+			    node->scale[1] - node->scale[2] > FLT_EPSILON)
+			    ERROR("[RES] Non-linear scale (%.2f, %2.f, %.2f)", node->scale[0], node->scale[1], node->scale[2]);
+			joint->transform.scale = node->scale[0];
 
 			joint->transform.rotation.x = node->rotation[0];
 			joint->transform.rotation.y = node->rotation[1];
@@ -650,147 +668,117 @@ static void load_skin(struct Model* model, cgltf_data* data)
 				                 joint->transform.translation.raw, joint->transform.translation.raw);
 				glm_vec3_add(model->skin->joints[joint->parent].transform.translation.raw,
 				             joint->transform.translation.raw, joint->transform.translation.raw);
-				glm_vec3_mulv(model->skin->joints[joint->parent].transform.scale.raw,
-				              joint->transform.scale.raw, joint->transform.scale.raw);
+				joint->transform.scale *= model->skin->joints[joint->parent].transform.scale;
 			} else if (joint->parent != -1) {
 				ERROR("[GFX] Assuming joints are toplogically sorted, but joint %d has parent %d", j, joint->parent);
 			}
 
-			// DEBUG(1, "Joint name: %32s; parent: %d", model->skin->joints[j].name, model->skin->joints[j].parent);
+			DEBUG(1, "[%d] Joint name: \"%.32s\"; parent: %d", j, model->skin->joints[j].name, model->skin->joints[j].parent);
+			DEBUG(1, "\ttranslation: %.2f, %.2f, %.2f", joint->transform.translation.x, joint->transform.translation.y, joint->transform.translation.z);
+			DEBUG(1, "\tscale: %.2f", joint->transform.scale);
+			DEBUG(1, "\trotation: %.2f, %.2f, %.2f, %.2f", joint->transform.rotation.x, joint->transform.rotation.y, joint->transform.rotation.z, joint->transform.rotation.w);
 		}
 	}
-
 }
 
 static void load_animations(struct Model* model, cgltf_data* data)
 {
-	// DEBUG(1, "\n-------------------------------------------------------------------------------");
+	DEBUG(1, "\n-------------------------------------------------------------------------------");
 	model->animationc = data->animations_count;
-	model->animations = smalloc(model->animationc*sizeof(struct Animation));
-	// DEBUG(1, "Animations: %d", model->animationc);
+	model->animations = scalloc(data->animations_count, sizeof(struct Animation));
 
-	// struct {
-	// 	cgltf_animation_path_type type;
-	// 	cgltf_animation_channel*  channel;
-	// }* transforms;
 	cgltf_animation*         animation;
 	cgltf_animation_channel* channel;
 	cgltf_animation_sampler* sampler;
-	// cgltf_accessor*          input;
-	// cgltf_accessor*          output;
-	cgltf_skin* skin = &data->skins[0];
 	for (int a = 0; a < (int)data->animations_count; a++) {
 		animation = &data->animations[a];
-		assert(animation->samplers_count == animation->channels_count);
-		strncpy(model->animations[a].name, animation->name, MAX_NAME_LENGTH);
-		// DEBUG(1, " *** %s *** channels: %lu; samplers: %lu", model->animations[a].name, animation->channels_count, animation->samplers_count);
+		if (animation->name)
+			strncpy(model->animations[a].name, animation->name, JOINT_MAX_NAME_LEN);
+		DEBUG(1, "[%d] Animation \"%s\"", a, model->animations[a].name);
 
-		// TODO: calculate the number of joints modifies
-		/* First calculate the number of frames to be allocated for */
 		int framec = 0;
-		float time;
-		float times[MAX_ANIMATION_FRAMES] = { 0 };
-		for (int c = 0; c < (int)animation->channels_count; c++) {
-			channel = &animation->channels[c];
-			sampler = channel->sampler;
+		for (int c = 0; c < (int)animation->channels_count; c++)
+			framec = MAX(framec, (int)animation->channels[c].sampler->input->count);
+		model->animations[a].framec = framec;
+		model->animations[a].frames = smalloc(framec*sizeof(struct KeyFrame));
 
-			/* Count how many frames for the animation */
-			for (int t = 0; t < (int)sampler->input->count; t++) {
-				if (!cgltf_accessor_read_float(sampler->input, t, &time, 1))
-					ERROR("[GFX] Error reading from accessor %d", t);
-				for (int f = 0; f < framec; f++) {
-					if (fabs(time - times[f]) <= FLT_EPSILON)
-						goto skip_duplicate_time;
-				}
-
-				times[framec++] = time;
-				skip_duplicate_time:
-			}
-			if (framec > MAX_ANIMATION_FRAMES)
-				goto skip_animation;
+		// TODO: Optimize to not always allocated for every joint
+		for (int f = 0; f < framec; f++) {
+			model->animations[a].frames[f].transforms = scalloc(model->skin->jointc, sizeof(struct Transform));
+			model->animations[a].frames[f].jointc = model->skin->jointc;
 		}
 
-		// DEBUG(1, "Animation %d of %d has %d frames", a + 1, model->animationc, framec);
-
-		model->animations[a].framec = framec;
-		model->animations[a].frames = smalloc(framec*sizeof(struct AnimationFrame) + framec*sizeof(float));
-		model->animations[a].times  = (float*)(model->animations[a].frames + framec);
-		for (int f = 0; f < framec; f++)
-			model->animations[a].frames[f].transforms = smalloc(MAX_JOINTS*sizeof(struct Transform));
-
-		// TODO: own sorting function
-		memcpy(model->animations[a].times, times, framec*sizeof(float));
-		qsort(model->animations[a].times, model->animations[a].framec, sizeof(float), float_compare);
-		// fprintf(stderr, "Frame times: ");
-		// for (int t = 0; t < model->animations[a].framec; t++)
-		// 	fprintf(stderr, "%f, ", model->animations[a].times[t]);
-		// fprintf(stderr, "\n");
-
-		/* Load the actual tranforms */
-		struct AnimationFrame* frame;
-		float* target;
-		intptr size;
+		cgltf_accessor* input;
+		cgltf_accessor* output;
+		float* verts;
 		for (int c = 0; c < (int)animation->channels_count; c++) {
 			channel = &animation->channels[c];
 			sampler = channel->sampler;
+			input   = sampler->input;
+			output  = sampler->output;
+			if (input->type != cgltf_type_scalar)
+				ERROR("[RES] Input accessor type was expected to be scalar (%d), got: %d",
+				      cgltf_type_scalar, input->type);
+			if (output->type != cgltf_type_vec3 && output->type != cgltf_type_vec4)
+				ERROR("[RES] Output accessor type was expected to be vec3 (%d) or vec4 (%d), got: %d",
+				      cgltf_type_vec3, cgltf_type_vec4, output->type);
+			if (input->component_type != cgltf_component_type_r_32f || output->component_type != cgltf_component_type_r_32f)
+				ERROR("[RES] Input/Output accessor component type was expected to be float (%d), got: %d/%d",
+				      cgltf_component_type_r_32f, input->component_type, output->component_type);
 
-			/* Find which joint this belongs to */
-			int joint_index = -1;
-			for (int j = 0; j < (int)skin->joints_count; j++) {
-				if (skin->joints[j] == channel->target_node) {
-					joint_index = j;
+			/* Times for the keyframes */
+			verts = (float*)input->buffer_view->buffer->data + input->buffer_view->offset/sizeof(float) + input->offset/sizeof(float);
+			for (int f = 0, i = 0; f < (int)input->count; f++) {
+				model->animations[a].frames[f].time = verts[i];
+				i += (int)(input->stride/sizeof(float));
+			}
+
+			/* Find the joint this channel is for */
+			int joint = -1;
+			for (int i = 0; i < (int)data->skins[0].joints_count; i++) {
+				if (data->skins[0].joints[i] == channel->target_node) {
+					joint = i;
 					break;
 				}
 			}
-			if (joint_index == -1)
-				ERROR("[GFX] Animation channel %d is not in the skin", c);
+			if (joint == -1) {
+				ERROR("[RES] Channel does not seem to be linked to any joint");
+				continue;
+			}
 
-			/* Load each transform */
-			for (int t = 0; t < (int)sampler->input->count; t++) {
-				/* Find which frame this is for using the time */
-				if (!cgltf_accessor_read_float(sampler->input, t, &time, 1))
-					ERROR("[GFX] Error reading from accessor");
-				frame = NULL;
-				for (int f = 0; f < model->animations[a].framec; f++) {
-					if (fabs(model->animations[a].times[f] - time) <= FLT_EPSILON) {
-						frame = &model->animations[a].frames[f];
-						break;
-					}
+			/* Transforms (one of scale/transform/rotate at a time) for the keyframes */
+			verts = (float*)output->buffer_view->buffer->data + output->buffer_view->offset/sizeof(float) + output->offset/sizeof(float);
+			for (int f = 0, i = 0; f < (int)output->count; f++) {
+				switch (channel->target_path) {
+				case cgltf_animation_path_type_rotation:
+					memcpy(&model->animations[a].frames[f].transforms[joint].rotation, verts, sizeof(float[4]));
+					break;
+				case cgltf_animation_path_type_translation:
+					memcpy(&model->animations[a].frames[f].transforms[joint].translation, verts, sizeof(float[3]));
+					break;
+				case cgltf_animation_path_type_scale:
+					model->animations[a].frames[f].transforms[joint].scale = verts[0];
+					break;
+				default:
+					ERROR("[RES] Unsupported target path: %d", channel->target_path);
 				}
-				if (!frame) {
-					ERROR("[GFX] Skipping accessor %d for time %f", t, time);
-					continue;
-				}
-				// DEBUG(1, "Loading accessor with taget_path = %d for time %f", channel->target_path, time);
-
-				if (sampler->output->type == cgltf_type_vec3 || sampler->output->type == cgltf_type_vec4) {
-					switch (channel->target_path) {
-						case cgltf_animation_path_type_translation:
-							target = frame->transforms[joint_index].translation.raw;
-							size   = 3;
-							break;
-						case cgltf_animation_path_type_rotation:
-							target = frame->transforms[joint_index].rotation.raw;
-							size   = 4;
-							break;
-						case cgltf_animation_path_type_scale:
-							target = frame->transforms[joint_index].scale.raw;
-							size   = 3;
-							break;
-						default:
-							ERROR("[GFX] Invalid target path for animation %d", channel->target_path);
-							target = NULL;
-							size   = 0;
-					}
-					// DEBUG(1, "joint_index: %d; size: %ld", joint_index, size);
-					if (!cgltf_accessor_read_float(sampler->output, t, target, size))
-						ERROR("[GFX] Error reading from accessor %d", t);
-				} else {
-					ERROR("[GFX] Accessor has invalid type: %u", sampler->output->type);
-				}
-				// DEBUG(1, " ");
+				i += (int)(output->stride/sizeof(float));
 			}
 		}
-	skip_animation:
+	}
+
+	DEBUG(1, " --- Model Animation --- ");
+	struct Animation* anim = &model->animations[0];
+	struct KeyFrame*  frame;
+	struct Transform* trans;
+	for (int f = 0; f < anim->framec; f++) {
+		frame = &anim->frames[f];
+		DEBUG(1, "Frame %d (%d joints):", f, frame->jointc);
+		for (int j = 0; j < frame->jointc; j++) {
+			trans = &frame->transforms[j];
+			DEBUG(1, "\t[%d:] Rot (%.2f, %.2f, %.2f, %.2f); Trans (%.2f, %.2f, %.2f); Scale (%.2f)",
+			      j, trans->rotation.x, trans->rotation.y, trans->rotation.z, trans->rotation.w,
+			      trans->translation.x, trans->translation.y, trans->translation.z, trans->scale);
+		}
 	}
 }
