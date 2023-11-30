@@ -61,9 +61,9 @@ struct Skin {
 
 struct KeyFrame {
 	struct Transform* transforms;
-	// int*  joints;
-	int   jointc;
-	float time;
+	// uint8* joints;
+	// uint8  jointc;
+	float  time;
 };
 
 struct Animation {
@@ -73,7 +73,7 @@ struct Animation {
 	struct KeyFrame* frames;
 	// float* times;
 	int framec;
-	// int current_frame;
+	int current_frame;
 };
 
 struct Model {

@@ -90,7 +90,7 @@ void pipeln_alloc_dsets(struct Pipeline* pipeln)
 	if ((vk_err = vkCreateDescriptorPool(logical_gpu, &dpoolci, NULL, &pipeln->dpool)))
 		ERROR("[VK] Failed to create descriptor pool\n\t\"%d\"", vk_err);
 	else
-		DEBUG(3, "[VK] Created descriptor pool with %d descriptor sets (%ld slots for images)", pool_szc, pipeln->imgc);
+		DEBUG(3, "[VK] Created descriptor pool with %d descriptors (%ld slots for images)", pool_szc, pipeln->imgc);
 
 	VkDescriptorSetLayout layouts[PIPELINE_MAX_DESCRIPTOR_SETS];
 	layouts[0] = pipeln->dset_data_layout;
@@ -124,8 +124,8 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.vertexAttributeDescriptionCount = pipeln->vert_attrc,
 	};
 	VkPipelineInputAssemblyStateCreateInfo inassci = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-		.topology = pipeln->topology? pipeln->topology: VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+		.topology               = pipeln->topology? pipeln->topology: VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.primitiveRestartEnable = pipeln->topology && pipeln->topology != VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST? true: false,
 	};
 	VkViewport viewport = {
@@ -141,14 +141,14 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.extent = swapchain.ext,
 	};
 	VkPipelineViewportStateCreateInfo viewportsci = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+		.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
 		.viewportCount = 1,
 		.pViewports    = &viewport,
 		.scissorCount  = 1,
 		.pScissors     = &scissor,
 	};
 	VkPipelineRasterizationStateCreateInfo rasterci = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+		.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.rasterizerDiscardEnable = false,
 		.polygonMode             = VK_POLYGON_MODE_FILL,
 		.lineWidth               = 1.0,
@@ -161,7 +161,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.depthBiasSlopeFactor    = 0.0,
 	};
 	VkPipelineMultisampleStateCreateInfo msci = {
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+		.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 		.sampleShadingEnable   = false,
 		.rasterizationSamples  = gpu_properties.max_samples,
 		.minSampleShading      = 1.0,

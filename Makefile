@@ -15,11 +15,10 @@ COMPILE_WITH = -DDEBUG_LEVEL=5
 WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict        \
            -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration \
            -Wmissing-prototypes -Wstrict-prototypes -Wunsafe-loop-optimizations -Wbad-function-cast -Wmissing-noreturn  \
-           -Wdisabled-optimization -Wno-unused-variable
+           -Wdisabled-optimization -Wno-unused-variable # Optimization: -Winline
 CFLAGS   = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRCDIR)                       \
            -isystem $(LIBDIR)/include -I/usr/include/freetype2 -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH) \
            -fstack-clash-protection -fstack-protector-strong -pie
-# Optimization: -Winline
 
 LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan -lfreetype
 DEPFLAGS = -MT $@ -MMD -MF $(OBJDIR)/$*.dep

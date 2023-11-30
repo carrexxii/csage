@@ -53,8 +53,8 @@ void scenemgr_init()
 	glm_vec3_normalize(global_light.ambient);
 
 	global_light.pos[0] = 10.0f;
-	global_light.pos[1] = -10.0f;
-	global_light.pos[2] = -1.0f;
+	global_light.pos[1] = 0.0f;
+	global_light.pos[2] = 20.0f;
 	global_light.pos[3] = 0.5f;
 	global_light.colour[0] = 1.0f;
 	global_light.colour[1] = 1.0f;
@@ -78,7 +78,7 @@ noreturn void scenemgr_loop()
 		while (acc >= DT_MS) {
 			// static float dir = 1.0;
 			// global_light.pos[0] += dir;
-			// if (fabs(global_light.pos[0]) > 100.0)
+			// if (fabs(global_light.pos[0]) > 50.0)
 			// 	dir = -dir;
 
 			while (!taskmgr_reset());

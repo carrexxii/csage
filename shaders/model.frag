@@ -1,8 +1,8 @@
 #version 460
 
-layout(location = 0) in vec2 Fuv;
+layout(location = 0) in vec3 Fpos;
 layout(location = 1) in vec3 Fnormal;
-layout(location = 2) in vec3 Fpos;
+layout(location = 2) in vec2 Fuv;
 
 layout(location = 0) out vec4 FragColor;
 
@@ -50,4 +50,5 @@ void main()
 
 	// obj_colour = texture(sampler2D(Ftexture, Fsampler), Fuv);
 	FragColor = vec4(ambient + diffuse + specular, obj_colour.w);
+	// FragColor = vec4(Fnormal, 1.0);
 }
