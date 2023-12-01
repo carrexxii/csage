@@ -74,9 +74,11 @@ void map_init(VkRenderPass renderpass)
 		.vert_attrs  = vertex_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(int), /* Index of the current block being drawn */
+		.dset_cap    = 1,
 		.uboc        = 2,
-		.ubos        = ubo_bufs,
 	};
+	pipeln_alloc_dsets(&pipeln);
+	pipeln_create_dset(&pipeln, 2, ubo_bufs, 0, NULL, 0, NULL);
 	pipeln_init(&pipeln, renderpass);
 	DEBUG(3, "[MAP] Map initialized. Block dimensions are set to: %dx%dx%d",
 	      MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
@@ -148,11 +150,11 @@ void map_clear_highlight()
 void map_record_commands(VkCommandBuffer cmd_buf)
 {
 	camera_get_vp(map_data.cam_vp);
-	buffer_update(ubo_bufs[0], sizeof(map_data), &map_data);
-	buffer_update(ubo_bufs[1], sizeof(selections), selections);
+	buffer_update(ubo_bufs[0], sizeof(map_data), &map_data, 0);
+	buffer_update(ubo_bufs[1], sizeof(selections), selections, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]){ 0 });
 	for (int i = 0; i < blockc; i++) {

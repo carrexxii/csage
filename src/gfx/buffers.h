@@ -8,7 +8,7 @@
 struct Buffer {
 	VkBuffer       buf;
 	VkDeviceMemory mem;
-	intptr         sz;
+	isize          sz;
 };
 typedef struct Buffer VBO;
 typedef struct Buffer IBO;
@@ -29,13 +29,13 @@ SBO _sbo_new(VkDeviceSize s, const char* file, int line, const char* fn);
 #define ubo_new(s)       _ubo_new((s),           __FILE__, __LINE__, __func__)
 #define sbo_new(s)       _sbo_new((s),           __FILE__, __LINE__, __func__)
 
-void buffer_update(struct Buffer buffer, VkDeviceSize sz, void* mem);
+void buffer_update(struct Buffer buf, VkDeviceSize sz, void* mem, isize offset);
 
-inline static void buffer_map_memory(struct Buffer buffer, VkDeviceSize sz, void** mem) {
-	vkMapMemory(logical_gpu, buffer.mem, 0, sz, 0, mem);
+inline static void buffer_map_memory(struct Buffer buf, VkDeviceSize sz, void** mem) {
+	vkMapMemory(logical_gpu, buf.mem, 0, sz, 0, mem);
 }
-inline static void buffer_unmap_memory(struct Buffer buffer) {
-	vkUnmapMemory(logical_gpu, buffer.mem);
+inline static void buffer_unmap_memory(struct Buffer buf) {
+	vkUnmapMemory(logical_gpu, buf.mem);
 }
 
 void buffer_free(struct Buffer* buf);

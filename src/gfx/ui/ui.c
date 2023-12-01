@@ -128,7 +128,6 @@ void ui_update()
 void ui_record_commands(VkCommandBuffer cmd_buf)
 {
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
 	for (int i = 0; i < ui_containerc; i++) {
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &ui_containers[i].container.vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, ui_containers[i].container.verts->len, 1, 0, i);

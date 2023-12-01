@@ -9,11 +9,11 @@ layout(location = 1) out vec3 Fnormal;
 layout(location = 2) out vec2 Fuv;
 
 struct ObjectData { mat4 mat; };
-layout(set = 0, binding = 1) readonly buffer ObjectBufferSBO {
+layout(binding = 10) readonly buffer ObjectBufferSBO {
 	ObjectData objs[];
 } mdls;
 
-layout(set = 0, binding = 2) uniform CameraBufferUBO {
+layout(binding = 0) uniform CameraBufferUBO {
 	mat4 vp;
 } cam;
 

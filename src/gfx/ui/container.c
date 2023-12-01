@@ -73,7 +73,7 @@ void container_build(struct UIObject* obj)
 	}
 
 	// TODO: Check for resizing vbo (when varray resizes)
-	buffer_update(obj->container.vbo, verts->len*UI_VERTEX_SIZE, verts->data);
+	buffer_update(obj->container.vbo, verts->len*UI_VERTEX_SIZE, verts->data, 0);
 }
 
 void container_free(struct UIObject* obj)

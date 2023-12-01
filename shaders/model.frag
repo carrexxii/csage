@@ -13,10 +13,10 @@ struct Material {
 	vec4 pad0;
 	vec4 pad1;
 };
-layout(set = 0, binding = 3) uniform MaterialsBufferUBO {
+layout(binding = 1) uniform MaterialsBufferUBO {
 	Material materials[8];
 } materials;
-layout(set = 0, binding = 4) uniform LightBufferUBO {
+layout(binding = 2) uniform LightBufferUBO {
 	vec4 ambient; /* [colour|power] */
 	vec4 pos;     /* [pos|power]    */
 	vec3 colour;
@@ -27,8 +27,8 @@ layout(push_constant) uniform PushConstants {
 	float timer;
 } constants;
 
-layout (set = 0, binding = 0) uniform sampler   Fsampler;
-layout (set = 1, binding = 0) uniform texture2D Ftexture;
+layout (binding = 20) uniform sampler   Fsampler;
+layout (binding = 21) uniform texture2D Ftexture;
 
 void main()
 {

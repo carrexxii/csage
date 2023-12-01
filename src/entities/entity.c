@@ -39,8 +39,8 @@ void entities_init()
 	paths      = varray_new(STARTING_ARRAY_SIZE, sizeof(struct Path));
 	ais        = varray_new(STARTING_ARRAY_SIZE, sizeof(struct AI));
 
-	update_model_transforms = entity_update_transforms;
-	model_transforms = (mat4s*)transforms->data;
+	update_mdl_tforms = entity_update_transforms;
+	mdl_tforms = (mat4s*)transforms->data;
 }
 
 EntityID entity_new(vec3s pos, char* model_path)
@@ -122,11 +122,7 @@ static void entity_update_transforms(SBO sbo_buf)
 		memcpy(ENTITY_TRANSFORM(i), trans, sizeof(mat4));
 	}
 
-	void* mem;
-	intptr mem_size = transforms->len*sizeof(mat4);
-	buffer_map_memory(sbo_buf, mem_size, &mem);
-	memcpy(mem, transforms->data, mem_size);
-	buffer_unmap_memory(sbo_buf);
+	buffer_update(sbo_buf, transforms->len*sizeof(mat4), transforms->data, 0);
 }
 
 void entities_free()

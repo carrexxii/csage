@@ -75,7 +75,7 @@ VBO _vbo_new(VkDeviceSize sz, void* verts, bool can_update, char const* file, in
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
 	                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
-	buffer_update(tmpbuf, sz, verts);
+	buffer_update(tmpbuf, sz, verts, 0);
 
 	VBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -95,7 +95,7 @@ IBO _ibo_new(VkDeviceSize sz, void* inds, char const* file, int line, char const
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
-	buffer_update(tmpbuf, sz, inds);
+	buffer_update(tmpbuf, sz, inds, 0);
 
 	IBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -130,10 +130,10 @@ SBO _sbo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 	return buf;
 }
 
-void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data)
+void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data, isize offset)
 {
 	void* mem;
-	if ((vk_err = vkMapMemory(logical_gpu, buf.mem, 0, sz, 0, &mem)))
+	if ((vk_err = vkMapMemory(logical_gpu, buf.mem, offset, sz, 0, &mem)))
 		ERROR("[VK] Failed to map memory\n\t\"%d\"", vk_err);
 	memcpy(mem, data, sz);
 	vkUnmapMemory(logical_gpu, buf.mem);

@@ -182,9 +182,13 @@ void renderer_free()
 	for (uint i = 0; i < swapchain.imgc; i++)
 		vkDestroyFramebuffer(logical_gpu, frame_bufs[i], NULL);
 
+	DEBUG(3, "[VK] Freeing UI pipeline");
 	ui_free();
+	DEBUG(3, "[VK] Freeing models pipeline");
 	models_free();
+	DEBUG(3, "[VK] Freeing font pipeline");
 	font_free();
+	DEBUG(3, "[VK] Freeing particles pipeline");
 	particles_free();
 
 	DEBUG(3, "[VK] Destroying render pass...");

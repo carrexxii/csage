@@ -12,10 +12,10 @@ struct ParticleData {
 	int  life;
 };
 
-layout(set = 0, binding = 1) uniform CameraViewProjectionUBO {
+layout(binding = 0) uniform CameraViewProjectionUBO {
 	mat4 vp;
 } camera;
-layout(set = 0, binding = 2) uniform ParticleDataUBO {
+layout(binding = 1) uniform ParticleDataUBO {
 	ParticleData data[MAX_PARTICLES];
 	float scale;
 } particles;

@@ -125,7 +125,7 @@ void font_init(VkRenderPass renderpass)
 		.dset_cap    = 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_image_dset(&pipeln, 1, &atlas.image_view);
+	pipeln_create_dset(&pipeln, 0, NULL, 0, NULL, 1, &atlas.image_view);
 	pipeln_init(&pipeln, renderpass);
 }
 
@@ -205,7 +205,7 @@ struct TextObject* font_render(char* text, isize text_len, float z, float w)
 void font_record_commands(VkCommandBuffer cmd_buf)
 {
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 	for (int i = 0; i < text_objc; i++) {
 		if (!text_objs[i].active)
 			continue;

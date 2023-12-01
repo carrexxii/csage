@@ -9,3 +9,4 @@ csage
 compile_commands.json
 *.sublime-*
 TODO
+*.langb

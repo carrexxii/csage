@@ -7,8 +7,8 @@ typedef struct Rect {
 } Rect;
 
 struct Transform {
-	vec4s rotation;
-	vec3s translation;
+	vec4s rot;
+	vec3s trans;
 	float scale;
 };
 

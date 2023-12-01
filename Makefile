@@ -18,9 +18,9 @@ WARNINGS = -Wall -Wextra -Wshadow -Wfloat-equal -Wpointer-arith -Wdangling-else 
            -Wdisabled-optimization -Wno-unused-variable # Optimization: -Winline
 CFLAGS   = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRCDIR)                       \
            -isystem $(LIBDIR)/include -I/usr/include/freetype2 -ftabstop=4 -include $(SRCDIR)/common.h $(COMPILE_WITH) \
-           -fstack-clash-protection -fstack-protector-strong -pie
+           -fstack-protector-strong -fstack-clash-protection #-fsanitize=address -fsanitize=leak -fsanitize=undefined #-fsanitize=thread
 
-LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan -lfreetype
+LFLAGS   = -fuse-ld=gold -L$(LIBDIR) -Wl,-O3 -lm -lSDL2 -lvulkan -lfreetype #-fsanitize=address -fsanitize=leak -fsanitize=undefined #-fsanitize=thread
 DEPFLAGS = -MT $@ -MMD -MF $(OBJDIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED

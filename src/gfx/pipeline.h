@@ -5,9 +5,8 @@
 
 #include "buffers.h"
 
-#define PIPELINE_MAX_BINDINGS        16
-#define PIPELINE_MAX_DESCRIPTOR_SETS 64
-#define PIPELINE_MAX_IMAGES_PER_DSET 8
+#define PIPELINE_MAX_BINDINGS        32
+#define PIPELINE_MAX_DESCRIPTOR_SETS 8
 
 // TODO: maybe make the descriptor layout parameters
 /* Pipeline layout:
@@ -21,13 +20,12 @@
  * - No values must be changed once `pipeln_init` has been called
  */
 struct Pipeline {
-	VkPipeline            pipeln;
-	VkPipelineLayout      layout;
-	VkDescriptorPool      dpool;
-	VkDescriptorSet*      dset;   /* This is just a pointer to dsets[0] */
-	VkDescriptorSet*      dsets;
-	VkDescriptorSetLayout dset_data_layout;
-	VkDescriptorSetLayout dset_img_layout;
+	VkPipeline             pipeln;
+	VkPipelineLayout       layout;
+	VkDescriptorPool       dpool;
+	VkDescriptorSetLayout* dset_layouts;
+	VkDescriptorSet*       dsets;
+	isize dset_layoutc;
 	isize dsetc;
 
 	/*** Caller-defined values ***/
@@ -48,19 +46,15 @@ struct Pipeline {
 	isize push_sz;
 	VkShaderStageFlags push_stages;
 
-	isize  uboc;
-	UBO*   ubos;
-	isize  sboc;
-	isize* sbo_szs;
-	SBO*   sbos;
-
-	isize dset_cap; /* How many sets of images             */
-	isize imgc;     /* Number of images used in the shader */
+	isize dset_cap;
+	isize uboc;
+	isize sboc;
+	isize imgc;
 };
 
 void pipeln_alloc_dsets(struct Pipeline* pipeln);
 void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);
-VkDescriptorSet pipeln_create_image_dset(struct Pipeline* pipeln, int img_viewc, VkImageView* img_views);
+VkDescriptorSet pipeln_create_dset(struct Pipeline* pipeln, int uboc, UBO* ubos, int sboc, SBO* sbos, int img_viewc, VkImageView* img_views);
 void pipeln_free(struct Pipeline* pipeln);
 
 #endif

@@ -13,18 +13,18 @@
 #include "model.h"
 
 static struct PushConstants {
-	int   materiali;
+	int   mtli;
 	float timer;
-} push_constants;
+} push_consts;
 
-static void load_materials(struct Model* model, cgltf_data* data);
+static void load_materials(struct Model* mdl, cgltf_data* data);
 static struct Texture load_material_image(cgltf_image* img);
-static void load_meshes(struct Model* model, cgltf_data* data);
-static void load_skin(struct Model* model, cgltf_data* data);
-static void load_animations(struct Model* model, cgltf_data* data);
+static void load_meshes(struct Model* mdl, cgltf_data* data);
+static void load_skin(struct Model* mdl, cgltf_data* data);
+static void load_animations(struct Model* mdl, cgltf_data* data);
 
 /* -------------------------------------------------------------------- */
-static VkVertexInputBindingDescription vertex_binds[] = {
+static VkVertexInputBindingDescription vert_binds[] = {
 	/* [3:xyz][3:nnn][2:uv][4:joint ids][4:joint weights] */
 	{ .binding   = 0,
 	  .stride    = sizeof(float[3]),
@@ -42,7 +42,7 @@ static VkVertexInputBindingDescription vertex_binds[] = {
 	  .stride    = sizeof(float[4]),
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
 };
-static VkVertexInputAttributeDescription vertex_attrs[] = {
+static VkVertexInputAttributeDescription vert_attrs[] = {
 	/* position */
 	{ .binding  = 0,
 	  .location = 0,
@@ -71,20 +71,20 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
-void (*update_model_transforms)(SBO);
-mat4s* model_transforms;
-struct Material default_material;
+void (*update_mdl_tforms)(SBO);
+mat4s* mdl_tforms;
+struct Material default_mtl;
 
 static struct Pipeline pipeln;
 static struct Pipeline pipeln_static;
-static struct Model models[MAX_MODELS];
-static intptr modelc = 0;
+static struct Model mdls[MAX_MODELS];
+static intptr mdlc = 0;
 static UBO ubo_bufs[4];
 static SBO sbo_buf;
 
 void models_init(VkRenderPass renderpass)
 {
-	default_material = (struct Material){
+	default_mtl = (struct Material){
 		.albedo    = { 0.3f, 0.3f, 0.3f, 1.0f },
 		.metallic  = 1.0f,
 		.roughness = 1.0f,
@@ -92,69 +92,70 @@ void models_init(VkRenderPass renderpass)
 	};
 
 	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
-	ubo_bufs[0] = ubo_new(sizeof(mat4));                          /* Camera matrix */
-	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material)); /* Material data */
-	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));         /* Light data    */
-	ubo_bufs[3] = ubo_new(MAX_JOINTS*sizeof(struct Transform));   /* Joint data    */
+	ubo_bufs[0] = ubo_new(sizeof(mat4));                                /* Camera matrix */
+	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material));       /* Material data */
+	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));               /* Light data    */
+	ubo_bufs[3] = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform)); /* Joint data    */
 
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "model.vert"),
 		.fshader     = create_shader(SHADER_DIR "model.frag"),
 		.vert_bindc  = 5,
-		.vert_binds  = vertex_binds,
+		.vert_binds  = vert_binds,
 		.vert_attrc  = 5,
-		.vert_attrs  = vertex_attrs,
+		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 		.push_sz     = sizeof(struct PushConstants),
-		.sboc        = 1,
-		.sbo_szs     = (isize[]){ MAX_MODELS*sizeof(mat4) },
-		.sbos        = (SBO[]){ sbo_buf },
-		.uboc        = 4,
-		.ubos        = ubo_bufs,
-		.imgc        = 1,
 		.dset_cap    = 1,
+		.uboc        = 4,
+		.sboc        = 2,
+		.imgc        = 1,
 	};
 	pipeln_static = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "model_static.vert"),
 		.fshader     = create_shader(SHADER_DIR "model.frag"),
 		.vert_bindc  = 3,
-		.vert_binds  = vertex_binds,
+		.vert_binds  = vert_binds,
 		.vert_attrc  = 3,
-		.vert_attrs  = vertex_attrs,
+		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.push_sz     = sizeof(struct PushConstants),
-		.sboc        = 1,
-		.sbo_szs     = (isize[]){ MAX_MODELS*sizeof(mat4) },
-		.sbos        = (SBO[]){ sbo_buf },
-		.uboc        = 3,
-		.ubos        = ubo_bufs,
-		.imgc        = 1,
 		.dset_cap    = 1,
+		.uboc        = 3,
+		.sboc        = 1,
+		.imgc        = 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
 	pipeln_alloc_dsets(&pipeln_static);
 	VkImageView img_view;
-	for (int i = 0; i < modelc; i++) {
-		for (int j = 0; j < models[i].materialc; j++) {
-			img_view = models[i].materials[j].tex.image_view;
+	for (int i = 0; i < mdlc; i++) {
+		for (int j = 0; j < mdls[i].mtlc; j++) {
+			img_view = mdls[i].mtls[j].tex.image_view;
 			if (!img_view)
-				img_view = default_material.tex.image_view;
-			models[i].materials[j].dset = pipeln_create_image_dset(models[i].skin? &pipeln: &pipeln_static, 1, &img_view);
+				img_view = default_mtl.tex.image_view;
+
+			if (mdls[i].skin)
+				mdls[i].mtls[j].dset = pipeln_create_dset(&pipeln,
+				                                          4, ubo_bufs,
+				                                          2, (SBO[]){ sbo_buf, mdls[i].skin->sbo },
+				                                          1, &img_view);
+			else
+				mdls[i].mtls[j].dset = pipeln_create_dset(&pipeln_static,
+				                                          3, ubo_bufs,
+				                                          1, (SBO[]){ sbo_buf },
+				                                          1, &img_view);
+
 		}
 	}
 	pipeln_init(&pipeln, renderpass);
-	pipeln_init(&pipeln_static, renderpass);
-}
-
-inline static int float_compare(const void* restrict f1, const void* restrict f2) {
-	return *(float*)f1 > *(float*)f2? 1: *(float*)f2 > *(float*)f1? -1: 0;
+	// pipeln_init(&pipeln_static, renderpass);
 }
 
 // TODO: this doesnt work properly for removing elements
 struct Model* model_new(char* path)
 {
-	struct Model* model = &models[modelc++];
-	*model = (struct Model){ 0 };
+	struct Model* mdl = &mdls[mdlc++];
+	*mdl = (struct Model){ 0 };
 
 	cgltf_options options = {
 		.type = cgltf_file_type_glb,
@@ -181,139 +182,144 @@ struct Model* model_new(char* path)
 	else
 		DEBUG(4, "Loaded buffer data for \"%s\" (%zuB / %.2fkB)", path, data->bin_size, data->bin_size/1024.0);
 
-	load_materials(model, data);
-	load_meshes(model, data);
-	load_skin(model, data);
-	load_animations(model, data);
+	load_materials(mdl, data);
+	load_meshes(mdl, data);
+	load_skin(mdl, data);
+	load_animations(mdl, data);
 
 #if DEBUG_LEVEL > 0
 	int total_indc = 0;
-	for (int i = 0; i < model->meshc; i++)
-		total_indc += model->meshes[i].indc;
+	for (int i = 0; i < mdl->meshc; i++)
+		total_indc += mdl->meshes[i].indc;
 
 	int total_framec = 0;
-	for (int i = 0; i < model->animationc; i++)
-		total_framec += model->animations[i].framec;
+	for (int i = 0; i < mdl->animc; i++)
+		total_framec += mdl->anims[i].frmc;
 #endif
 
 	cgltf_free(data);
 	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
-	      path, model->meshc, total_indc, total_indc/3, model->animationc, model->skin? model->skin->jointc: 0, total_framec);
+	      path, mdl->meshc, total_indc, total_indc/3, mdl->animc, mdl->skin? mdl->skin->jointc: 0, total_framec);
 	// exit(0);
-	return model;
+	return mdl;
 }
 
 void models_update()
 {
-	struct Model*     model;
-	struct Animation* animation;
-	for (int m = 0; m < modelc; m++) {
-		model     = &models[m];
-		animation = &model->animations[model->current_animation];
-		model->timer += DT;
-		if (model->timer >= animation->frames[animation->current_frame].time)
-			animation->current_frame++;
+	struct Model*     mdl;
+	struct Animation* anim;
+	for (int m = 0; m < mdlc; m++) {
+		mdl  = &mdls[m];
+		anim = &mdl->anims[mdl->curr_anim];
+		mdl->timer += DT;
+		if (mdl->timer >= anim->frms[anim->curr_frm].time)
+			anim->curr_frm++;
 
-		if (animation->current_frame >= animation->framec) {
-			animation->current_frame = 0;
-			model->timer = 0;
+		if (anim->curr_frm >= anim->frmc) {
+			anim->curr_frm = 0;
+			mdl->timer = 0;
 		}
-		// struct Transform* t = &animation->frames[animation->current_frame].transforms[0];
-		// DEBUG(1, "[%d::%d::%.2f (%.2f)] (%.2f, %.2f, %.2f, %.2f), (%.2f, %.2f, %.2f)", animation->current_frame,
-		//       model->current_animation, model->timer, animation->frames[animation->current_frame].time,
-		//       t->rotation.x, t->rotation.y, t->rotation.z, t->rotation.w,
-		//       t->translation.x, t->translation.y, t->translation.z);
+		struct Transform* t = &anim->frms[anim->curr_frm].tforms[0];
+		DEBUG(1, "[%d::%d::%.2f (%.2f)] (%.2f, %.2f, %.2f, %.2f), (%.2f, %.2f, %.2f)", anim->curr_frm,
+		      mdl->curr_anim, mdl->timer, anim->frms[anim->curr_frm].time,
+		      t->rot.x, t->rot.y, t->rot.z, t->rot.w,
+		      t->trans.x, t->trans.y, t->trans.z);
 	}
 }
 
 void models_record_commands(VkCommandBuffer cmd_buf)
 {
-	struct Model*     model;
+	struct Model*     mdl;
 	struct Mesh*      mesh;
-	struct Animation* animation;
+	struct Animation* anim;
+	struct KeyFrame*  curr_frm;
+	struct KeyFrame*  next_frm;
 
 	mat4 vp;
 	camera_get_vp(vp);
 	// TODO: Named buffers, not arrays
-	buffer_update(ubo_bufs[0], sizeof(mat4), vp);
+	buffer_update(ubo_bufs[0], sizeof(mat4), vp, 0);
 	
-	update_model_transforms(sbo_buf);
+	update_mdl_tforms(sbo_buf);
 
-	/* Animated models */
+	/*** Animated models ***/
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
-	for (int i = 0; i < modelc; i++) {
-		model     = &models[i];
-		animation = &model->animations[model->current_animation];
-		if (!model->skin)
+	// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+	for (int i = 0; i < mdlc; i++) {
+		mdl      = &mdls[i];
+		anim     = &mdl->anims[mdl->curr_anim];
+		curr_frm = &anim->frms[anim->curr_frm];
+		next_frm = &anim->frms[(anim->curr_frm + 1)%anim->frmc];
+		if (!mdl->skin)
 			continue;
-		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
-		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
-		buffer_update(ubo_bufs[3], animation->framec*sizeof(struct Transform), animation->frames[animation->current_frame].transforms);
-		for (int m = 0; m < models[i].meshc; m++) {
-			mesh = &model->meshes[m];
-			push_constants.materiali = mesh->materiali;
-			push_constants.timer     = model->timer;
-			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 1,
-			                        1, &model->materials[mesh->materiali].dset, 0, NULL);
-			// DEBUG(1, "[%d Animated] Drawing %d vertices", i, models[i].meshes[m].vertc);
+		buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
+		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
+		buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), curr_frm->tforms, 0);
+		buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), next_frm->tforms, MODEL_MAX_JOINTS*sizeof(struct Transform));
+		for (int m = 0; m < mdls[i].meshc; m++) {
+			mesh = &mdl->meshes[m];
+			push_consts.mtli  = mesh->mtli;
+			push_consts.timer = mdl->timer;
+			// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
+			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+			// DEBUG(1, "[%d Animated] Drawing %d vertices", i, mdls[i].meshes[m].vertc);
 
 			// TODO: these vbos need to be named
 			vkCmdBindVertexBuffers(cmd_buf, 0, 5, (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
 			                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &push_constants);
+			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &push_consts);
 			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 		}
 	}
 
-	/* Static models */
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0, 1, pipeln_static.dset, 0, NULL);
-	for (int i = 0; i < modelc; i++) {
-		model = &models[i];
-		if (model->skin)
-			continue;
-		buffer_update(ubo_bufs[1], model->materialc*sizeof(struct Material), model->materials);
-		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light);
+	/*** Static Models ***/
+	// vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.pipeln);
+	// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0, 1, pipeln_static.dsets, 0, NULL);
+	// for (int i = 0; i < mdlc; i++) {
+	// 	mdl = &mdls[i];
+	// 	if (mdl->skin)
+	// 		continue;
+	// 	buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
+	// 	buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
 
-		for (int m = 0; m < models[i].meshc; m++) {
-			mesh = &model->meshes[m];
-			push_constants.materiali = mesh->materiali;
-			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 1,
-			                        1, &model->materials[mesh->materiali].dset, 0, NULL);
-			// DEBUG(1, "[%d Static] Drawing %d vertices", i, models[i].meshes[m].indc);
+	// 	for (int m = 0; m < mdls[i].meshc; m++) {
+	// 		mesh = &mdl->meshes[m];
+	// 		push_consts.mtli = mesh->mtli;
+	// 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 1,
+	// 		                        1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
+	// 		// DEBUG(1, "[%d Static] Drawing %d vertices", i, mdls[i].meshes[m].indc);
 
-			vkCmdBindVertexBuffers(cmd_buf, 0, 3, (VkBuffer[]){ mesh->vbos[0].buf,
-			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
-			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.push_stages, 0, pipeln_static.push_sz, &push_constants);
-			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
-		}
-	}
+	// 		vkCmdBindVertexBuffers(cmd_buf, 0, 3, (VkBuffer[]){ mesh->vbos[0].buf,
+	// 		                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
+	// 		vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+	// 		vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.push_stages, 0, pipeln_static.push_sz, &push_consts);
+	// 		vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
+	// 	}
+	// }
 }
 
-void model_free(ID model_id)
+void model_free(ID mdl_id)
 {
-	struct Model* model = &models[model_id];
-	for (int i = 0; i < model->meshc; i++) {
+	struct Model* mdl = &mdls[mdl_id];
+	for (int i = 0; i < mdl->meshc; i++) {
 		/* Static Meshes do not use the last two vbos */
-		for (int j = 0; j < MODEL_MESH_VBO_COUNT - (model->animationc > 0? 0: 2); j++)
-			vbo_free(&model->meshes[i].vbos[j]);
-		ibo_free(&model->meshes[i].ibo);
+		for (int j = 0; j < MODEL_MESH_VBO_COUNT - (mdl->animc > 0? 0: 2); j++)
+			vbo_free(&mdl->meshes[i].vbos[j]);
+		ibo_free(&mdl->meshes[i].ibo);
 	}
 
-	texture_free(&default_material.tex);
-	for (int i = 0; i < model->materialc; i++)
-		if (model->materials[i].tex.image)
-			texture_free(&model->materials[i].tex);
-	model->meshc = 0;
+	texture_free(&default_mtl.tex);
+	for (int i = 0; i < mdl->mtlc; i++)
+		if (mdl->mtls[i].tex.image)
+			texture_free(&mdl->mtls[i].tex);
+	mdl->meshc = 0;
 }
 
 void models_free()
 {
-	for (int i = 0; i < modelc; i++)
+	for (int i = 0; i < mdlc; i++)
 		model_free(i);
 
 	sbo_free(&sbo_buf);
@@ -328,25 +334,25 @@ void models_free()
 
 static void load_materials(struct Model* model, cgltf_data* data)
 {
-	model->materialc = data->materials_count? data->materials_count: 1;
-	model->materials = scalloc(model->materialc, sizeof(struct Material));
-	if (model->materialc > MAX_MATERIALS)
-		ERROR("[RES] Model has %d materials. MAX_MATERIALS is set to %d", model->materialc, MAX_MATERIALS);
+	model->mtlc = data->materials_count? data->materials_count: 1;
+	model->mtls = scalloc(model->mtlc, sizeof(struct Material));
+	if (model->mtlc > MAX_MATERIALS)
+		ERROR("[RES] Model has %d materials. MAX_MATERIALS is set to %d", model->mtlc, MAX_MATERIALS);
 
 	cgltf_material* material;
 	for (int m = 0; m < (int)data->materials_count; m++) {
 		material = &data->materials[m];
-		memcpy(model->materials[m].albedo, material->pbr_metallic_roughness.base_color_factor, sizeof(float[4]));
+		memcpy(model->mtls[m].albedo, material->pbr_metallic_roughness.base_color_factor, sizeof(float[4]));
 
-		model->materials[m].metallic  = material->pbr_metallic_roughness.metallic_factor;
-		model->materials[m].roughness = material->pbr_metallic_roughness.roughness_factor;
+		model->mtls[m].metallic  = material->pbr_metallic_roughness.metallic_factor;
+		model->mtls[m].roughness = material->pbr_metallic_roughness.roughness_factor;
 		if (!material->has_pbr_metallic_roughness) {
 			ERROR("[RES] Only metallic-roughness materials are supported");
 			continue;
 		}
 
 		if (material->pbr_metallic_roughness.base_color_texture.texture)
-			model->materials[m].tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
+			model->mtls[m].tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
 		if (material->pbr_metallic_roughness.metallic_roughness_texture.texture)
 			ERROR("[GFX] Ignoring metallic roughness texture");
 		if (material->normal_texture.texture)
@@ -362,15 +368,15 @@ static void load_materials(struct Model* model, cgltf_data* data)
 		      material->normal_texture.texture   ? "normal texture, "   : "",
 		      material->occlusion_texture.texture? "occlusion texture, ": "",
 		      material->emissive_texture.texture ? "emissive texture"   : "");
-		DEBUG(5, "\tAlbedo    -> %.2f, %.2f, %.2f, %.2f", UNPACK4(model->materials[m].albedo));
-		DEBUG(5, "\tMetallic  -> %.2f", model->materials[m].metallic);
-		DEBUG(5, "\tRoughness -> %.2f", model->materials[m].roughness);
+		DEBUG(5, "\tAlbedo    -> %.2f, %.2f, %.2f, %.2f", UNPACK4(model->mtls[m].albedo));
+		DEBUG(5, "\tMetallic  -> %.2f", model->mtls[m].metallic);
+		DEBUG(5, "\tRoughness -> %.2f", model->mtls[m].roughness);
 	}
 
 	/* Default material if none exist */
 	if (!data->materials_count) {
-		models->materialc    = 1;
-		models->materials[0] = default_material;
+		mdls->mtlc    = 1;
+		mdls->mtls[0] = default_mtl;
 	}
 }
 
@@ -556,19 +562,19 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 			skip_transform:
 				switch(prim->attributes[a].type) {
 				case cgltf_attribute_type_position:
-					models->meshes[m].vbos[0] = vbo_new(attr->count*sizeof(float[3]), verts, false);
+					mdls->meshes[m].vbos[0] = vbo_new(attr->count*sizeof(float[3]), verts, false);
 					break;
 				case cgltf_attribute_type_normal:
-					models->meshes[m].vbos[1] = vbo_new(attr->count*sizeof(float[3]), normals, false);
+					mdls->meshes[m].vbos[1] = vbo_new(attr->count*sizeof(float[3]), normals, false);
 					break;
 				case cgltf_attribute_type_texcoord:
-					models->meshes[m].vbos[2] = vbo_new(attr->count*sizeof(float[2]), uvs, false);
+					mdls->meshes[m].vbos[2] = vbo_new(attr->count*sizeof(float[2]), uvs, false);
 					break;
 				case cgltf_attribute_type_joints:
-					models->meshes[m].vbos[3] = vbo_new(attr->count*sizeof(uint8[4]), joint_ids, false);
+					mdls->meshes[m].vbos[3] = vbo_new(attr->count*sizeof(uint8[4]), joint_ids, false);
 					break;
 				case cgltf_attribute_type_weights:
-					models->meshes[m].vbos[4] = vbo_new(attr->count*sizeof(float[4]), joint_weights, false);
+					mdls->meshes[m].vbos[4] = vbo_new(attr->count*sizeof(float[4]), joint_weights, false);
 					break;
 				default:
 					continue;
@@ -611,13 +617,13 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 			/* Assign materials to their meshes */
 			for (int i = 0; i < (int)data->materials_count; i++)
 				if (&data->materials[i] == data->meshes[i].primitives[p].material)
-					model->meshes[i].materiali = i;
+					model->meshes[i].mtli = i;
 		}
 
 		/* Make sure there's a dummy vbo for uvs if there aren't any */
 		float duvs[] = { 0.0f, 0.0f, };
-		if (!models->meshes[m].vbos[2].buf)
-			models->meshes[m].vbos[2] = vbo_new(1, duvs, false);
+		if (!mdls->meshes[m].vbos[2].buf)
+			mdls->meshes[m].vbos[2] = vbo_new(1, duvs, false);
 	}
 
 	arena_free(mesh_mem);
@@ -625,12 +631,13 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 
 static void load_skin(struct Model* model, cgltf_data* data)
 {
+	if (data->skins_count > 1)
+		ERROR("[RES] Warning: only one of the %lu skins will be loaded", data->skins_count); 
+
 	cgltf_skin* skin;
 	cgltf_node* node;
 	struct Joint* joint;
-	if (data->skins_count > 1)
-		ERROR("[GFX] Warning: only one of the %lu skins will be loaded", data->skins_count);
-	else if (data->skins_count) {
+	if (data->skins_count) {
 		skin = data->skins;
 		model->skin = smalloc(skin->joints_count*sizeof(struct Joint) + sizeof(struct Skin));
 		model->skin->jointc = (int)skin->joints_count;
@@ -647,69 +654,72 @@ static void load_skin(struct Model* model, cgltf_data* data)
 				}
 			}
 
-			joint->transform.translation.x = node->translation[0];
-			joint->transform.translation.y = node->translation[1];
-			joint->transform.translation.z = node->translation[2];
+			joint->tform.trans.x = node->translation[0];
+			joint->tform.trans.y = node->translation[1];
+			joint->tform.trans.z = node->translation[2];
 
-			if (node->scale[0] - node->scale[1] > FLT_EPSILON ||
-			    node->scale[1] - node->scale[2] > FLT_EPSILON)
-			    ERROR("[RES] Non-linear scale (%.2f, %2.f, %.2f)", node->scale[0], node->scale[1], node->scale[2]);
-			joint->transform.scale = node->scale[0];
+			if (fabs(node->scale[0] - node->scale[1]) > 0.00001 ||
+			    fabs(node->scale[1] - node->scale[2]) > 0.00001)
+			    ERROR("[RES] Non-linear scale (%f, %f, %f)", node->scale[0], node->scale[1], node->scale[2]);
+			joint->tform.scale = node->scale[0];
 
-			joint->transform.rotation.x = node->rotation[0];
-			joint->transform.rotation.y = node->rotation[1];
-			joint->transform.rotation.z = node->rotation[2];
-			joint->transform.rotation.w = node->rotation[3];
+			joint->tform.rot.x = node->rotation[0];
+			joint->tform.rot.y = node->rotation[1];
+			joint->tform.rot.z = node->rotation[2];
+			joint->tform.rot.w = node->rotation[3];
 
 			if (joint->parent != -1 && joint->parent < j) {
-				glm_quat_mul(model->skin->joints[joint->parent].transform.rotation.raw,
-				             joint->transform.rotation.raw, joint->transform.rotation.raw);
-				glm_quat_rotatev(model->skin->joints[joint->parent].transform.rotation.raw,
-				                 joint->transform.translation.raw, joint->transform.translation.raw);
-				glm_vec3_add(model->skin->joints[joint->parent].transform.translation.raw,
-				             joint->transform.translation.raw, joint->transform.translation.raw);
-				joint->transform.scale *= model->skin->joints[joint->parent].transform.scale;
+				glm_quat_mul(model->skin->joints[joint->parent].tform.rot.raw,
+				             joint->tform.rot.raw, joint->tform.rot.raw);
+				glm_quat_rotatev(model->skin->joints[joint->parent].tform.rot.raw,
+				                 joint->tform.trans.raw, joint->tform.trans.raw);
+				glm_vec3_add(model->skin->joints[joint->parent].tform.trans.raw,
+				             joint->tform.trans.raw, joint->tform.trans.raw);
+				joint->tform.scale *= model->skin->joints[joint->parent].tform.scale;
 			} else if (joint->parent != -1) {
 				ERROR("[GFX] Assuming joints are toplogically sorted, but joint %d has parent %d", j, joint->parent);
 			}
 
 			DEBUG(1, "[%d] Joint name: \"%.32s\"; parent: %d", j, model->skin->joints[j].name, model->skin->joints[j].parent);
-			DEBUG(1, "\ttranslation: %.2f, %.2f, %.2f", joint->transform.translation.x, joint->transform.translation.y, joint->transform.translation.z);
-			DEBUG(1, "\tscale: %.2f", joint->transform.scale);
-			DEBUG(1, "\trotation: %.2f, %.2f, %.2f, %.2f", joint->transform.rotation.x, joint->transform.rotation.y, joint->transform.rotation.z, joint->transform.rotation.w);
+			DEBUG(1, "\tTranslation -> %5.2f, %5.2f, %5.2f", joint->tform.trans.x, joint->tform.trans.y, joint->tform.trans.z);
+			DEBUG(1, "\tScale       -> %5.2f", joint->tform.scale);
+			DEBUG(1, "\tRotation    -> %5.2f, %5.2f, %5.2f, %5.2f", joint->tform.rot.x, joint->tform.rot.y, joint->tform.rot.z, joint->tform.rot.w);
 		}
+
+		model->skin->sbo = sbo_new(model->skin->jointc*sizeof(struct Joint));
+		buffer_update(model->skin->sbo, model->skin->sbo.sz, model->skin->joints, 0);
 	}
 }
 
-static void load_animations(struct Model* model, cgltf_data* data)
+static void load_animations(struct Model* mdl, cgltf_data* data)
 {
-	model->animationc = data->animations_count;
-	model->animations = scalloc(data->animations_count, sizeof(struct Animation));
+	mdl->animc = data->animations_count;
+	mdl->anims = scalloc(data->animations_count, sizeof(struct Animation));
 
-	cgltf_animation*         animation;
+	cgltf_animation*         anim;
 	cgltf_animation_channel* channel;
 	cgltf_animation_sampler* sampler;
 	for (int a = 0; a < (int)data->animations_count; a++) {
-		animation = &data->animations[a];
-		if (animation->name)
-			strncpy(model->animations[a].name, animation->name, JOINT_MAX_NAME_LEN);
+		anim = &data->animations[a];
+		if (anim->name)
+			strncpy(mdl->anims[a].name, anim->name, JOINT_MAX_NAME_LEN);
 
 		int framec = 0;
-		for (int c = 0; c < (int)animation->channels_count; c++)
-			framec = MAX(framec, (int)animation->channels[c].sampler->input->count);
-		model->animations[a].framec = framec;
-		model->animations[a].frames = scalloc(framec, sizeof(struct KeyFrame));
-		model->animations[a].current_frame = 0;
+		for (int c = 0; c < (int)anim->channels_count; c++)
+			framec = MAX(framec, (int)anim->channels[c].sampler->input->count);
+		mdl->anims[a].frmc     = framec;
+		mdl->anims[a].frms     = scalloc(framec, sizeof(struct KeyFrame));
+		mdl->anims[a].curr_frm = 0;
 
 		// TODO: Find a method that doesn't allocate for unchanged joints?
 		for (int f = 0; f < framec; f++)
-			model->animations[a].frames[f].transforms = scalloc(model->skin->jointc, sizeof(struct Transform));
+			mdl->anims[a].frms[f].tforms = scalloc(mdl->skin->jointc, sizeof(struct Transform));
 
 		cgltf_accessor* input;
 		cgltf_accessor* output;
 		float* verts;
-		for (int c = 0; c < (int)animation->channels_count; c++) {
-			channel = &animation->channels[c];
+		for (int c = 0; c < (int)anim->channels_count; c++) {
+			channel = &anim->channels[c];
 			sampler = channel->sampler;
 			input   = sampler->input;
 			output  = sampler->output;
@@ -726,7 +736,7 @@ static void load_animations(struct Model* model, cgltf_data* data)
 			/* Times for the keyframes */
 			verts = (float*)input->buffer_view->buffer->data + input->buffer_view->offset/sizeof(float) + input->offset/sizeof(float);
 			for (int f = 0, i = 0; f < (int)input->count; f++) {
-				model->animations[a].frames[f].time = verts[i];
+				mdl->anims[a].frms[f].time = verts[i];
 				i += (int)(input->stride/sizeof(float));
 			}
 
@@ -747,13 +757,13 @@ static void load_animations(struct Model* model, cgltf_data* data)
 			for (int f = 0, i = 0; f < (int)output->count; f++) {
 				switch (channel->target_path) {
 				case cgltf_animation_path_type_rotation:
-					memcpy(&model->animations[a].frames[f].transforms[joint].rotation, &verts[i], sizeof(float[4]));
+					memcpy(&mdl->anims[a].frms[f].tforms[joint].rot, &verts[i], sizeof(float[4]));
 					break;
 				case cgltf_animation_path_type_translation:
-					memcpy(&model->animations[a].frames[f].transforms[joint].translation, &verts[i], sizeof(float[3]));
+					memcpy(&mdl->anims[a].frms[f].tforms[joint].trans, &verts[i], sizeof(float[3]));
 					break;
 				case cgltf_animation_path_type_scale:
-					model->animations[a].frames[f].transforms[joint].scale = verts[i];
+					mdl->anims[a].frms[f].tforms[joint].scale = verts[i];
 					break;
 				default:
 					ERROR("[RES] Unsupported target path: %d", channel->target_path);
@@ -763,21 +773,21 @@ static void load_animations(struct Model* model, cgltf_data* data)
 		}
 	}
 
-	// DEBUG(1, " --- Model Animation --- ");
-	// struct Animation* anim;
-	// struct KeyFrame*  frame;
-	// struct Transform* trans;
-	// for (int a = 0; a < model->animationc; a++) {
-	// 	anim = &model->animations[a];
-	// 	for (int f = 0; f < anim->framec; f++) {
-	// 		frame = &anim->frames[f];
-	// 		fprintf(stderr, "Frame %d: ", f);
-	// 		for (int j = 0; j < model->skin->jointc; j++) {
-	// 			trans = &frame->transforms[j];
-	// 			DEBUG(1, "\t[%d::%.2f]\tRot (%.2f, %.2f, %.2f, %.2f); Trans (%.2f, %.2f, %.2f); Scale (%.2f)",
-	// 			      j, frame->time, trans->rotation.x, trans->rotation.y, trans->rotation.z, trans->rotation.w,
-	// 			      trans->translation.x, trans->translation.y, trans->translation.z, trans->scale);
-	// 		}
-	// 	}
-	// }
+	DEBUG(1, " --- Model Animation --- ");
+	struct Animation* danim;
+	struct KeyFrame*  frame;
+	struct Transform* trans;
+	for (int a = 0; a < mdl->animc; a++) {
+		danim = &mdl->anims[a];
+		for (int f = 0; f < danim->frmc; f++) {
+			frame = &danim->frms[f];
+			fprintf(stderr, "Frame %d: \n", f);
+			for (int j = 0; j < mdl->skin->jointc; j++) {
+				trans = &frame->tforms[j];
+				DEBUG(1, "\t[%d::%.2f]\tRot (%5.2f, %5.2f, %5.2f, %5.2f);    \tTrans (%5.2f, %5.2f, %5.2f); Scale (%5.2f)",
+				      j, frame->time, trans->rot.x, trans->rot.y, trans->rot.z, trans->rot.w,
+				      trans->trans.x, trans->trans.y, trans->trans.z, trans->scale);
+			}
+		}
+	}
 }

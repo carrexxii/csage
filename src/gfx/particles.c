@@ -52,13 +52,12 @@ void particles_init(VkRenderPass renderpass)
 		.vert_attrs  = streamvert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(float),
-		.uboc        = 2,
-		.ubos        = ubos,
-		.imgc        = 1,
 		.dset_cap    = 1,
+		.uboc        = 2,
+		.imgc        = 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_image_dset(&pipeln, 1, &texture.image_view);
+	pipeln_create_dset(&pipeln, 2, ubos, 0, NULL, 1, &texture.image_view);
 	pipeln_init(&pipeln, renderpass);
 
 	float verts[] = {
@@ -134,17 +133,17 @@ void particles_record_commands(VkCommandBuffer cmd_buf)
 {
 	mat4 vp;
 	camera_get_vp(vp);
-	buffer_update(pipeln.ubos[0], sizeof(mat4), vp);
+	buffer_update(ubos[0], sizeof(mat4), vp, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]) { 0 });
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dset, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 	struct ParticlePool* pool;
 	for (int i = 0; i < poolc; i++) {
 		pool = &pools[i];
 		if (pool->life <= 0)
 			continue;
-		buffer_update(pipeln.ubos[1], PARTICLES_UBO_SIZE, pool->particles);
+		buffer_update(ubos[1], PARTICLES_UBO_SIZE, pool->particles, 0);
 		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &pool->scale);
 
 		vkCmdDraw(cmd_buf, 6, MAX_PARTICLES_PER_POOL, 0, MAX_PARTICLES_PER_POOL*i);
