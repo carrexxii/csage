@@ -2,6 +2,7 @@
 #define UI_TYPES_H
 
 #include "util/string.h"
+#include "util/varray.h"
 #include "gfx/buffers.h"
 
 enum UIObjectType {
@@ -19,8 +20,8 @@ enum AlignType {
 };
 
 struct Container {
-	struct VArray* objs;
-	struct VArray* verts;
+	struct VArray objs;
+	struct VArray verts;
 	VBO vbo;
 };
 

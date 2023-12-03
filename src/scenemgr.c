@@ -39,9 +39,12 @@ void scenemgr_init()
 
 	ui_build();
 	
+	input_register(SDL_BUTTON_LEFT, map_mouse_select);
+
 	taskmgr_init();
 	taskmgr_add_task(camera_update);
 	taskmgr_add_task(ui_update);
+	taskmgr_add_task(map_update);
 	taskmgr_add_task(particles_update);
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing

@@ -2,9 +2,9 @@
 
 /* TODO: Fix printout bug + add levels for bigger allocs */
 
-static uintptr malloced = 0;
+static isize malloced = 0;
 
-void* _smalloc(uintptr s, const char* restrict file, int line, const char* restrict fn)
+void* _smalloc(isize s, const char* file, int line, const char* fn)
 {
 	void* mem = malloc(s);
 	if (!mem) {
@@ -19,9 +19,9 @@ void* _smalloc(uintptr s, const char* restrict file, int line, const char* restr
 	}
 }
 
-void* _scalloc(uintptr n, uintptr s, const char* restrict file, int line, const char* restrict fn)
+void* _scalloc(isize n, isize s, const char* file, int line, const char* fn)
 {
-	uintptr b = n*s;
+	isize b = n*s;
 	void* mem = calloc(n, s);
 	if (!mem) {
 		ERROR("[MEM] Calloc failed for %lu bytes", b);
@@ -35,7 +35,7 @@ void* _scalloc(uintptr n, uintptr s, const char* restrict file, int line, const 
 	}
 }
 
-void* _srealloc(void* mem, uintptr s, const char* restrict file, int line, const char* restrict fn)
+void* _srealloc(void* mem, isize s, const char* file, int line, const char* fn)
 {
 	mem = realloc(mem, s);
 	if (!mem) {
@@ -49,7 +49,7 @@ void* _srealloc(void* mem, uintptr s, const char* restrict file, int line, const
 	}
 }
 
-void _sfree(void* restrict mem, const char* file, int line, const char* fn)
+void _sfree(void* mem, const char* file, int line, const char* fn)
 {
 	if (mem)
 		free(mem);

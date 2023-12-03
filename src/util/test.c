@@ -20,7 +20,6 @@ int main()
 	assert(arena_alloc(a2, 100));
 	assert(arena_alloc(a2, 150));
 	assert(arena_alloc(a2, 200));
-	exit(0);
 
 	DEBUG(1, " --- Testing String ---");
 	char* str = "some/file/path.txt";
@@ -67,6 +66,11 @@ int main()
 	DEBUG(1, "%d", *(int*)varray_get(arr, 2));
 	DEBUG(1, "%d", *(int*)varray_get(arr, 3));
 	DEBUG(1, "%d", *(int*)varray_get(arr, 4));
+
+	DEBUG(1, "Setting [0] = 99 and [4] = 100");
+	varray_set(arr, 0, (int[]){ 99 });
+	varray_set(arr, 4, (int[]){ 100 });
+	varray_print(arr);
 
 	DEBUG(1, " --- Testing HTable ---");
 

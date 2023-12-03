@@ -29,9 +29,9 @@ struct Instruction {
 
 // TODO: Option to make copies of the ast arrays/tables
 struct ByteCode {
-	struct VArray* instrs;
-	struct VArray* lits;
-	struct VArray* vars;
+	struct VArray  instrs;
+	struct VArray  lits;
+	struct VArray  vars;
 	struct HTable* lit_table;
 	struct HTable* var_table;
 	intptr entry;

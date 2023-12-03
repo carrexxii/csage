@@ -1,8 +1,10 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
+#include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/pipeline.h"
+#include "input.h"
 #include "camera.h"
 #include "map.h"
 
@@ -51,6 +53,8 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 struct MapData     map_data;
 struct VoxelBlock* map_blocks;
 
+static struct VArray vxl_hls;
+
 static struct Pipeline pipeln;
 static UBO  ubo_bufs[2];
 static VBO  vbo_buf;
@@ -62,6 +66,8 @@ static int    selectionc;
 
 void map_init(VkRenderPass renderpass)
 {
+	vxl_hls = varray_new(MAP_DEFAULT_SELECTION_COUNT, sizeof(IRect));
+
 	map_data.block_size = (ivec4s){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH };
 	ubo_bufs[0] = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
 	ubo_bufs[1] = ubo_new(sizeof(selections)); /* Selections to be highlighted */
@@ -134,6 +140,23 @@ void map_new(ivec3s dim)
 	      map_data.map_size.x*MAP_BLOCK_WIDTH, map_data.map_size.y*MAP_BLOCK_HEIGHT, map_data.map_size.z*MAP_BLOCK_DEPTH, blockc);
 }
 
+void map_mouse_select(bool kdown)
+{
+	static int hl_start;
+
+	IRect rect;
+	if (kdown) {
+		rect     = IRECT(mouse_x, mouse_y, 1, 1);
+		hl_start = varray_push(&vxl_hls, &rect);
+	} else {
+		rect = *(IRect*)varray_get(&vxl_hls, hl_start);
+		rect.w = mouse_x - rect.x;
+		rect.h = mouse_y - rect.y;
+		varray_set(&vxl_hls, hl_start, &rect);
+		hl_start = -1;
+	}
+}
+
 int map_highlight_area(ivec4s area)
 {
 	selections[selectionc] = area;
@@ -145,6 +168,11 @@ void map_clear_highlight()
 {
 	selectionc = 0;
 	memset(selections, 0, sizeof(selections));
+}
+
+void map_update()
+{
+
 }
 
 void map_record_commands(VkCommandBuffer cmd_buf)
@@ -183,6 +211,8 @@ void map_free()
 
 	pipeln_free(&pipeln);
 }
+
+/* -------------------------------------------------------------------- */
 
 static void remesh_block(int b)
 {

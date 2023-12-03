@@ -3,6 +3,7 @@
 
 #include "vulkan/vulkan.h"
 
+#define MAP_DEFAULT_SELECTION_COUNT 8
 #define MAP_MAX_SELECTIONS 64
 
 #define MAP_BLOCK_WIDTH      32
@@ -23,10 +24,12 @@ struct VoxelBlock {
 
 void map_init(VkRenderPass renderpass);
 void map_new(ivec3s dim);
+void map_mouse_select(bool kdown);
 int  map_highlight_area(ivec4s area);
-void map_clear_highlight();
+void map_clear_highlight(void);
+void map_update(void);
 void map_record_commands(VkCommandBuffer cmd_buf);
-void map_free();
+void map_free(void);
 
 extern struct MapData {
 	mat4   cam_vp;

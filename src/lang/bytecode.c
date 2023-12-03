@@ -48,7 +48,7 @@ struct ByteCode bytecode_generate(struct AST* ast)
 
 	intptr i = htable_get(code.var_table, STRING("main"));
 	if (i >= 0)
-		code.entry = *(intptr*)varray_get(code.vars, i);
+		code.entry = *(intptr*)varray_get(&code.vars, i);
 	else
 		ERROR("[LANG] Failed to find \"main\" for entry point");
 
@@ -59,12 +59,12 @@ void bytecode_print(struct ByteCode code)
 {
 	printf("\n\t  [OP]\t[Operand]\n");
 	struct Instruction* instr;
-	for (int i = 0; i < code.instrs->len; i++) {
-		instr = varray_get(code.instrs, i);
+	for (int i = 0; i < code.instrs.len; i++) {
+		instr = varray_get(&code.instrs, i);
 		printf("[%02d]\t%s\t ", i, STRING_OF_OP(instr->op));
 		printf("%d", instr->operand);
 		if (instr->op == OP_CALL)
-			printf(" -> %ld", *(int64*)varray_get(code.vars, instr->operand));
+			printf(" -> %ld", *(int64*)varray_get(&code.vars, instr->operand));
 		printf("\n");
 	}
 }
@@ -102,7 +102,7 @@ inline static void push_expr(struct ByteCode* code, struct ASTNode* node)
 
 inline static void pop_var(struct ByteCode* code, String name)
 {
-	struct LangVar* var = varray_get(code->vars, htable_get(code->var_table, name));
+	struct LangVar* var = varray_get(&code->vars, htable_get(code->var_table, name));
 	write_instr(code, (struct Instruction){
 		.op      = OP_POP,
 		.type    = var->type,
@@ -113,7 +113,7 @@ inline static void pop_var(struct ByteCode* code, String name)
 /* -------------------------------------------------------------------- */
 
 inline static void write_instr(struct ByteCode* code, struct Instruction instr) {
-	varray_push(code->instrs, &instr);
+	varray_push(&code->instrs, &instr);
 }
 
 inline static void write_assign(struct ByteCode* code, struct ASTNode* node)
@@ -128,8 +128,8 @@ inline static void write_call(struct ByteCode* code, struct ASTNode* node)
 		.op = OP_CALL,
 	};
 
-	for (int i = 0; i < node->params->len; i++)
-		push_expr(code, varray_get(node->params, i));
+	for (int i = 0; i < node->params.len; i++)
+		push_expr(code, varray_get(&node->params, i));
 
 	// int i = code->varc++;
 	// htable_insert(code->var_table, node->lexeme, i);
@@ -140,7 +140,7 @@ inline static void write_call(struct ByteCode* code, struct ASTNode* node)
 
 inline static void write_fun(struct ByteCode* code, struct ASTNode* node)
 {
-	varray_set(code->vars, htable_get(code->var_table, node->lexeme), &code->instrs->len);
+	varray_set(&code->vars, htable_get(code->var_table, node->lexeme), &code->instrs.len);
 
 	push_expr(code, node->expr);
 

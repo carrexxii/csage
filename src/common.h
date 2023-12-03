@@ -224,10 +224,10 @@ long long int: "long long int", unsigned long long int: "unsigned long long int"
 #define sfree(x)       free(x)
 #endif
 
-void* _smalloc(uintptr s, const char* file, int line, const char* fn);
-void* _scalloc(uintptr n, uintptr s, const char* file, int line, const char* fn);
-void* _srealloc(void* restrict mem, uintptr n, const char* file, int line, const char* fn);
-void  _sfree(void* restrict mem, const char* file, int line, const char* fn);
+void* _smalloc(isize s, const char* file, int line, const char* fn);
+void* _scalloc(isize n, isize s, const char* file, int line, const char* fn);
+void* _srealloc(void* mem, isize n, const char* file, int line, const char* fn);
+void  _sfree(void* mem, const char* file, int line, const char* fn);
 
 /* [min, max] */
 inline static int random_int(int min, int max)

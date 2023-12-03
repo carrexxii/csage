@@ -31,7 +31,7 @@ struct UIContext ui_context;
 struct UIObject  ui_containers[UI_MAX_TOP_LEVEL_CONTAINERS];
 int ui_containerc = 0;
 
-static struct VArray* ui_objs;
+static struct VArray ui_objs;
 
 void ui_init(VkRenderPass renderpass)
 {
@@ -57,7 +57,7 @@ void ui_init(VkRenderPass renderpass)
 }
 
 struct UIObject* ui_alloc_object() {
-	return varray_get(ui_objs, ui_objs->len++);
+	return varray_get(&ui_objs, ui_objs.len++);
 }
 
 void ui_build() {
@@ -97,8 +97,8 @@ void ui_update()
 	float mx = ((float)mouse_x / global_config.winw - 0.5f)*2.0f;
 	float my = ((float)mouse_y / global_config.winh - 0.5f)*2.0f;
 	struct UIObject* obj;
-	for (int i = 0; i < ui_objs->len; i++) {
-		obj = varray_get(ui_objs, i);
+	for (int i = 0; i < ui_objs.len; i++) {
+		obj = varray_get(&ui_objs, i);
 		if (!obj->state.visible || obj->type != UI_BUTTON)
 			continue;
 
@@ -130,13 +130,13 @@ void ui_record_commands(VkCommandBuffer cmd_buf)
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	for (int i = 0; i < ui_containerc; i++) {
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &ui_containers[i].container.vbo.buf, (VkDeviceSize[]){ 0 });
-		vkCmdDraw(cmd_buf, ui_containers[i].container.verts->len, 1, 0, i);
+		vkCmdDraw(cmd_buf, ui_containers[i].container.verts.len, 1, 0, i);
 	}
 }
 
 void ui_free()
 {
-	varray_free(ui_objs);
+	varray_free(&ui_objs);
 	for (int i = 0; i < ui_containerc; i++)
 		container_free(&ui_containers[i]);
 	pipeln_free(&pipeln);

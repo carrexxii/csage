@@ -1,6 +1,7 @@
 #ifndef LANG_VM_H
 #define LANG_VM_H
 
+#include "util/varray.h"
 #include "util/htable.h"
 #include "bytecode.h"
 
@@ -9,8 +10,8 @@
 struct VM {
 	struct Instruction* instrs;
 	// TODO: copy the bytecode's hashtable for variables for the repl?
-	struct VArray* vars;
-	struct VArray* lits;
+	struct VArray vars;
+	struct VArray lits;
 	intptr entry;
 };
 

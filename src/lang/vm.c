@@ -12,13 +12,13 @@ struct VM vm_load(struct ByteCode* code)
 
 	struct VM vm;
 	// TODO: improve/copy
-	vm.instrs = (struct Instruction*)code->instrs->data;
+	vm.instrs = (struct Instruction*)code->instrs.data;
 	vm.lits   = code->lits;
 	vm.vars   = code->vars;
 	vm.entry  = code->entry;
 
-	DEBUG(4, "[LANG] Loaded %ld bytecode instructions into vm (%ld literals, %ld variables)\n\tEntry point: %ld",
-	      code->instrs->len, code->lits->len, code->vars->len, code->entry);
+	DEBUG(4, "[LANG] Loaded %d bytecode instructions into vm (%d literals, %d variables)\n\tEntry point: %ld",
+	      code->instrs.len, code->lits.len, code->vars.len, code->entry);
 	return vm;
 }
 
@@ -59,7 +59,7 @@ op_push:
 	next();
 
 op_pop:
-	varray_set(vm.vars, ci.operand, &stack[--sp]);
+	varray_set(&vm.vars, ci.operand, &stack[--sp]);
 	next();
 
 /* Calling:
@@ -71,7 +71,7 @@ op_call:
 	stack[sp++] = ip;
 	fp = sp;
 
-	ip = *(int64*)varray_get(vm.vars, ci.operand);
+	ip = *(int64*)varray_get(&vm.vars, ci.operand);
 	next();
 
 /* Returning:

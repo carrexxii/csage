@@ -1,10 +1,24 @@
 #ifndef UTIL_MATHS_H
 #define UTIL_MATHS_H
 
-#define RECT(x, y, w, h) (Rect){ x, y, w, h }
+#define  RECT(x, y, w, h)  (Rect){ x, y, w, h }
+#define IRECT(x, y, w, h) (IRect){ x, y, w, h }
 typedef struct Rect {
 	float x, y, w, h;
 } Rect;
+typedef struct IRect {
+	int16 x, y, w, h;
+} IRect;
+
+#define print_rect(r) _Generic((r), \
+	Rect : print_rect_rect,         \
+	IRect: print_rect_irect)(r)
+inline static void print_rect_rect(Rect rect) {
+	printf("Rect -> [%.2f, %.2f, %.2f, %.2f]\n", rect.x, rect.y, rect.w, rect.h);
+}
+inline static void print_rect_irect(IRect rect) {
+	printf("IRect -> [%d, %d, %d, %d]\n", rect.x, rect.y, rect.w, rect.h);
+}
 
 struct Transform {
 	vec4s rot;

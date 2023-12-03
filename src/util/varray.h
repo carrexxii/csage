@@ -10,34 +10,37 @@
 
 // TODO: Add allocator parameters
 struct VArray {
-	isize len;
-	isize cap;
-	isize elem_sz;
-	byte data[];
+	byte* data;
+	int len;
+	int cap;
+	int elem_sz;
 };
 
-inline static struct VArray* varray_new(isize itemc, isize elem_sz);
-inline static void* varray_set(struct VArray* arr, isize i, void* elem);
+inline static struct VArray varray_new(isize elemc, isize elem_sz);
+inline static void* varray_set(struct VArray* restrict arr, isize i, const void* restrict elem);
 inline static void* varray_get(struct VArray* arr, isize i);
-inline static isize varray_push(struct VArray* arr, void* data);
-inline static void  varray_resize(struct VArray* arr, isize new_sz);
+inline static isize varray_push(struct VArray* restrict arr, const void* restrict data);
+inline static void varray_resize(struct VArray** arr, isize new_sz);
 inline static void  varray_free(struct VArray* arr);
 
-inline static struct VArray* varray_new(isize itemc, isize elem_sz)
+// TODO: flags for slow grow/no grow/...
+inline static struct VArray varray_new(isize elemc, isize elem_sz)
 {
-	struct VArray* arr = smalloc(sizeof(struct VArray) + itemc*elem_sz);
-	arr->len     = 0;
-	arr->cap     = itemc;
-	arr->elem_sz = elem_sz;
+	assert(elemc > 0 && elem_sz > 0);
+	struct VArray arr = {
+		.data = smalloc(elemc*elem_sz),
+		.len     = 0,
+		.cap     = elemc,
+		.elem_sz = elem_sz,
+	};
 
-	DEBUG(4, "[UTIL] Created new VArray with %ld elements of size %ld", arr->cap, arr->elem_sz);
+	DEBUG(4, "[UTIL] Created new VArray with %d elements of size %d", arr.cap, arr.elem_sz);
 	return arr;
 }
 
-inline static void* varray_set(struct VArray* arr, isize i, void* elem)
+inline static void* varray_set(struct VArray* arr, isize i, const void* elem)
 {
-	if (i > arr->cap*arr->elem_sz || i > arr->cap)
-		varray_resize(arr, -1);
+	assert(i >= 0 && i < arr->len);
 
 	memcpy(arr->data + i*arr->elem_sz, elem, arr->elem_sz);
 
@@ -46,31 +49,30 @@ inline static void* varray_set(struct VArray* arr, isize i, void* elem)
 
 inline static void* varray_get(struct VArray* arr, isize i)
 {
-	assert(i < arr->len);
+	assert(i >= 0 && i < arr->len);
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static isize varray_push(struct VArray* arr, void* elem)
+inline static isize varray_push(struct VArray* restrict arr, const void* restrict elem)
 {
-	varray_set(arr, arr->len, elem);
+	if (arr->len >= arr->cap) {
+		arr->cap *= VARRAY_SIZE_MULTIPLIER;
+		arr->data = srealloc(arr->data, arr->cap*arr->elem_sz);
+		DEBUG(4, "[UTIL] Resized VArray [len=%d; cap=%d; elem_sz=%dB]", arr->len, arr->cap, arr->elem_sz);
+	}
+
+	memcpy(arr->data + arr->len*arr->elem_sz, elem, arr->elem_sz);
+
 	return arr->len++;
 }
 
 // TODO: improve
-inline static isize varray_push_many(struct VArray* arr, isize count, void* elem)
+inline static isize varray_push_many(struct VArray* restrict arr, isize count, const void* restrict elem)
 {
+	assert(count > 0);
 	for (int i = 0; i < count; i++)
 		varray_push(arr, (byte*)elem + i*arr->elem_sz);
 	return arr->len;
-}
-
-inline static void varray_resize(struct VArray* arr, isize new_sz)
-{
-	if (new_sz < 0)
-		arr->cap *= VARRAY_SIZE_MULTIPLIER;
-	else
-		arr->cap = new_sz;
-	arr = srealloc(arr, sizeof(struct VArray) + arr->cap*arr->elem_sz);
 }
 
 inline static void varray_reset(struct VArray* arr)
@@ -82,15 +84,15 @@ inline static void varray_free(struct VArray* arr)
 {
 	arr->cap = 0;
 	arr->len = 0;
-	sfree(arr);
+	sfree(arr->data);
 }
 
 static void varray_print(struct VArray* arr)
 {
-	printf("VArray: (%lu elements of size %lu; %lu total capacity)", arr->len, arr->elem_sz, arr->cap);
+	printf("VArray: (%d elements of size %d; %d total capacity)", arr->len, arr->elem_sz, arr->cap);
 	for (int i = 0; i < arr->cap; i++) {
 		printf(i % 4 == 0? "\n": "");
-		printf("\t[%d: %2ld] %d", i, (byte*)varray_get(arr, i) - arr->data, *(int*)varray_get(arr, i));
+		printf("\t[%d: %2ld] %d", i, (byte*)(arr->data + i*arr->elem_sz) - arr->data, *(int*)(arr->data + i*arr->elem_sz));
 		if (i == arr->len)
 			printf("*");
 	}

@@ -1,6 +1,7 @@
 #ifndef LANG_PARSER_H
 #define LANG_PARSER_H
 
+#include "util/varray.h"
 #include "lang.h"
 #include "lexer.h"
 
@@ -52,7 +53,7 @@ struct ASTNode {
 		struct ASTNode* paren;
 		struct ASTUnaryNode  unary;
 		struct ASTBinaryNode binary;
-		struct VArray* params;
+		struct VArray        params;
 	};
 };
 
@@ -61,8 +62,8 @@ struct AST {
 	struct ASTNode* nodes;
 	isize nodec;
 
-	struct VArray* lits;
-	struct VArray* vars;
+	struct VArray lits;
+	struct VArray vars;
 	struct HTable* lit_table;
 	struct HTable* var_table;
 

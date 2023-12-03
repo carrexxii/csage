@@ -33,7 +33,7 @@ struct UIObject* container_new(struct Rect rect, struct UIStyle* style, struct U
 
 	obj->container.verts = varray_new(CONTAINER_DEFAULT_VERTS, UI_VERTEX_SIZE);
 	obj->container.objs  = varray_new(CONTAINER_DEFAULT_OBJS , sizeof(struct UIObject*));
-	obj->container.vbo   = vbo_new(CONTAINER_DEFAULT_VERTS*UI_VERTEX_SIZE, obj->container.verts->data, true);
+	obj->container.vbo   = vbo_new(CONTAINER_DEFAULT_VERTS*UI_VERTEX_SIZE, obj->container.verts.data, true);
 
 	DEBUG(3, "[UI] Created new container %p with parent %p (%.2f, %.2f, %.2f, %.2f)",
 	      obj, obj->parent, rect.x, rect.y, rect.w, rect.h);
@@ -44,15 +44,15 @@ void container_add(struct UIObject* container_obj, struct UIObject* obj)
 {
 	assert(container_obj != obj && container_obj->type == UI_CONTAINER && obj->type != UI_CONTAINER);
 
-	varray_push(container_obj->container.objs, &obj);
+	varray_push(&container_obj->container.objs, &obj);
 }
 
 void container_build(struct UIObject* obj)
 {
 	assert(obj && obj->type == UI_CONTAINER);
 
-	struct VArray* verts = obj->container.verts;
-	struct VArray* objs  = obj->container.objs;
+	struct VArray* verts = &obj->container.verts;
+	struct VArray* objs  = &obj->container.objs;
 	varray_reset(verts);
 
 	float points[6*UI_VERTEX_COUNT];
