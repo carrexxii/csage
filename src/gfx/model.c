@@ -134,7 +134,7 @@ void models_init(VkRenderPass renderpass)
 			if (!img_view)
 				img_view = default_mtl.tex.image_view;
 
-			if (mdls[i].skin)
+			if (mdls[i].skin->jointc)
 				mdls[i].mtls[j].dset = pipeln_create_dset(&pipeln,
 				                                          4, ubo_bufs,
 				                                          2, (SBO[]){ sbo_buf, mdls[i].skin->sbo },
@@ -144,7 +144,6 @@ void models_init(VkRenderPass renderpass)
 				                                          3, ubo_bufs,
 				                                          1, (SBO[]){ sbo_buf },
 				                                          1, &img_view);
-
 		}
 	}
 	pipeln_init(&pipeln, renderpass);
@@ -199,7 +198,7 @@ struct Model* model_new(char* path)
 
 	cgltf_free(data);
 	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
-	      path, mdl->meshc, total_indc, total_indc/3, mdl->animc, mdl->skin? mdl->skin->jointc: 0, total_framec);
+	      path, mdl->meshc, total_indc, total_indc/3, mdl->animc, mdl->skin->jointc? mdl->skin->jointc: 0, total_framec);
 	// exit(0);
 	return mdl;
 }
@@ -219,11 +218,8 @@ void models_update()
 			anim->curr_frm = 0;
 			mdl->timer = 0;
 		}
-		struct Transform* t = &anim->frms[anim->curr_frm].tforms[0];
-		DEBUG(1, "[%d::%d::%.2f (%.2f)] (%.2f, %.2f, %.2f, %.2f), (%.2f, %.2f, %.2f)", anim->curr_frm,
-		      mdl->curr_anim, mdl->timer, anim->frms[anim->curr_frm].time,
-		      t->rot.x, t->rot.y, t->rot.z, t->rot.w,
-		      t->trans.x, t->trans.y, t->trans.z);
+
+		buffer_update(mdl->skin->sbo, mdl->skin->sbo.sz, mdl->skin, 0);
 	}
 }
 
@@ -244,13 +240,13 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 
 	/*** Animated models ***/
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 	for (int i = 0; i < mdlc; i++) {
 		mdl      = &mdls[i];
 		anim     = &mdl->anims[mdl->curr_anim];
 		curr_frm = &anim->frms[anim->curr_frm];
 		next_frm = &anim->frms[(anim->curr_frm + 1)%anim->frmc];
-		if (!mdl->skin)
+		if (!mdl->skin->jointc)
 			continue;
 		buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
 		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
@@ -261,7 +257,7 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 			push_consts.mtli  = mesh->mtli;
 			push_consts.timer = mdl->timer;
 			// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
-			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+			// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 			// DEBUG(1, "[%d Animated] Drawing %d vertices", i, mdls[i].meshes[m].vertc);
 
 			// TODO: these vbos need to be named
@@ -314,6 +310,9 @@ void model_free(ID mdl_id)
 	for (int i = 0; i < mdl->mtlc; i++)
 		if (mdl->mtls[i].tex.image)
 			texture_free(&mdl->mtls[i].tex);
+	for (int i = 0; i < mdlc; i++)
+		if (mdls[i].skin->jointc)
+			sbo_free(&mdls[i].skin->sbo);
 	mdl->meshc = 0;
 }
 
@@ -641,11 +640,18 @@ static void load_skin(struct Model* model, cgltf_data* data)
 		skin = data->skins;
 		model->skin = smalloc(skin->joints_count*sizeof(struct Joint) + sizeof(struct Skin));
 		model->skin->jointc = (int)skin->joints_count;
+
+		float* inv_binds = smalloc(skin->inverse_bind_matrices->count*skin->inverse_bind_matrices->stride);
+		cgltf_accessor_unpack_floats(skin->inverse_bind_matrices, inv_binds, skin->inverse_bind_matrices->count*skin->inverse_bind_matrices->stride);
+
 		for (int j = 0; j < (int)skin->joints_count; j++) {
 			joint = &model->skin->joints[j];
 			node  = skin->joints[j];
+			if (node->mesh)
+				ERROR("[RES] Ignoring node mesh data");
 
-			strncpy(joint->name, node->name, JOINT_MAX_NAME_LEN);
+			memcpy(joint->inv_bind, &inv_binds[16*j], sizeof(float[16]));
+
 			joint->parent = -1;
 			for (int j2 = 0; j2 < (int)skin->joints_count; j2++) {
 				if (skin->joints[j2] == node->parent && j2 != j) {
@@ -654,40 +660,12 @@ static void load_skin(struct Model* model, cgltf_data* data)
 				}
 			}
 
-			joint->tform.trans.x = node->translation[0];
-			joint->tform.trans.y = node->translation[1];
-			joint->tform.trans.z = node->translation[2];
-
-			if (fabs(node->scale[0] - node->scale[1]) > 0.00001 ||
-			    fabs(node->scale[1] - node->scale[2]) > 0.00001)
-			    ERROR("[RES] Non-linear scale (%f, %f, %f)", node->scale[0], node->scale[1], node->scale[2]);
-			joint->tform.scale = node->scale[0];
-
-			joint->tform.rot.x = node->rotation[0];
-			joint->tform.rot.y = node->rotation[1];
-			joint->tform.rot.z = node->rotation[2];
-			joint->tform.rot.w = node->rotation[3];
-
-			if (joint->parent != -1 && joint->parent < j) {
-				glm_quat_mul(model->skin->joints[joint->parent].tform.rot.raw,
-				             joint->tform.rot.raw, joint->tform.rot.raw);
-				glm_quat_rotatev(model->skin->joints[joint->parent].tform.rot.raw,
-				                 joint->tform.trans.raw, joint->tform.trans.raw);
-				glm_vec3_add(model->skin->joints[joint->parent].tform.trans.raw,
-				             joint->tform.trans.raw, joint->tform.trans.raw);
-				joint->tform.scale *= model->skin->joints[joint->parent].tform.scale;
-			} else if (joint->parent != -1) {
-				ERROR("[GFX] Assuming joints are toplogically sorted, but joint %d has parent %d", j, joint->parent);
-			}
-
-			DEBUG(1, "[%d] Joint name: \"%.32s\"; parent: %d", j, model->skin->joints[j].name, model->skin->joints[j].parent);
-			DEBUG(1, "\tTranslation -> %5.2f, %5.2f, %5.2f", joint->tform.trans.x, joint->tform.trans.y, joint->tform.trans.z);
-			DEBUG(1, "\tScale       -> %5.2f", joint->tform.scale);
-			DEBUG(1, "\tRotation    -> %5.2f, %5.2f, %5.2f, %5.2f", joint->tform.rot.x, joint->tform.rot.y, joint->tform.rot.z, joint->tform.rot.w);
+			cgltf_node_transform_local(node, joint->tform);
 		}
 
-		model->skin->sbo = sbo_new(model->skin->jointc*sizeof(struct Joint));
-		buffer_update(model->skin->sbo, model->skin->sbo.sz, model->skin->joints, 0);
+		model->skin->sbo = sbo_new(model->skin->jointc*sizeof(struct Joint) + sizeof(struct Skin));
+		// buffer_update(model->skin->sbo, model->skin->sbo.sz, inv_binds, 0);
+		free(inv_binds);
 	}
 }
 
@@ -701,8 +679,6 @@ static void load_animations(struct Model* mdl, cgltf_data* data)
 	cgltf_animation_sampler* sampler;
 	for (int a = 0; a < (int)data->animations_count; a++) {
 		anim = &data->animations[a];
-		if (anim->name)
-			strncpy(mdl->anims[a].name, anim->name, JOINT_MAX_NAME_LEN);
 
 		int framec = 0;
 		for (int c = 0; c < (int)anim->channels_count; c++)
@@ -713,7 +689,7 @@ static void load_animations(struct Model* mdl, cgltf_data* data)
 
 		// TODO: Find a method that doesn't allocate for unchanged joints?
 		for (int f = 0; f < framec; f++)
-			mdl->anims[a].frms[f].tforms = scalloc(mdl->skin->jointc, sizeof(struct Transform));
+			mdl->anims[a].frms[f].tforms = scalloc(MODEL_MAX_JOINTS, sizeof(struct Transform));
 
 		cgltf_accessor* input;
 		cgltf_accessor* output;
@@ -757,10 +733,10 @@ static void load_animations(struct Model* mdl, cgltf_data* data)
 			for (int f = 0, i = 0; f < (int)output->count; f++) {
 				switch (channel->target_path) {
 				case cgltf_animation_path_type_rotation:
-					memcpy(&mdl->anims[a].frms[f].tforms[joint].rot, &verts[i], sizeof(float[4]));
+					memcpy(&mdl->anims[a].frms[f].tforms[joint].rot.raw, &verts[i], sizeof(float[4]));
 					break;
 				case cgltf_animation_path_type_translation:
-					memcpy(&mdl->anims[a].frms[f].tforms[joint].trans, &verts[i], sizeof(float[3]));
+					memcpy(&mdl->anims[a].frms[f].tforms[joint].trans.raw, &verts[i], sizeof(float[3]));
 					break;
 				case cgltf_animation_path_type_scale:
 					mdl->anims[a].frms[f].tforms[joint].scale = verts[i];
@@ -773,21 +749,21 @@ static void load_animations(struct Model* mdl, cgltf_data* data)
 		}
 	}
 
-	DEBUG(1, " --- Model Animation --- ");
-	struct Animation* danim;
-	struct KeyFrame*  frame;
-	struct Transform* trans;
-	for (int a = 0; a < mdl->animc; a++) {
-		danim = &mdl->anims[a];
-		for (int f = 0; f < danim->frmc; f++) {
-			frame = &danim->frms[f];
-			fprintf(stderr, "Frame %d: \n", f);
-			for (int j = 0; j < mdl->skin->jointc; j++) {
-				trans = &frame->tforms[j];
-				DEBUG(1, "\t[%d::%.2f]\tRot (%5.2f, %5.2f, %5.2f, %5.2f);    \tTrans (%5.2f, %5.2f, %5.2f); Scale (%5.2f)",
-				      j, frame->time, trans->rot.x, trans->rot.y, trans->rot.z, trans->rot.w,
-				      trans->trans.x, trans->trans.y, trans->trans.z, trans->scale);
-			}
-		}
-	}
+	// DEBUG(1, " --- Model Animation --- ");
+	// struct Animation* danim;
+	// struct KeyFrame*  frame;
+	// struct Transform* trans;
+	// for (int a = 0; a < mdl->animc; a++) {
+	// 	danim = &mdl->anims[a];
+	// 	for (int f = 0; f < danim->frmc; f++) {
+	// 		frame = &danim->frms[f];
+	// 		fprintf(stderr, "Frame %d: \n", f);
+	// 		for (int j = 0; j < mdl->skin->jointc; j++) {
+	// 			trans = &frame->tforms[j];
+	// 			DEBUG(1, "\t[%d::%.2f]\tRot (%5.2f, %5.2f, %5.2f, %5.2f);    \tTrans (%5.2f, %5.2f, %5.2f); Scale (%5.2f)",
+	// 			      j, frame->time, trans->rot.x, trans->rot.y, trans->rot.z, trans->rot.w,
+	// 			      trans->trans.x, trans->trans.y, trans->trans.z, trans->scale);
+	// 		}
+	// 	}
+	// }
 }

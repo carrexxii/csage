@@ -49,34 +49,34 @@ struct Material {
 };
 
 struct Joint {
-	struct Transform tform;
-	char name[JOINT_MAX_NAME_LEN]; // TODO: move as array to skin so it can be cleared when not debugging
-	int  parent;
+	// struct Transform tform;
+	float tform[16];
+	float inv_bind[16];
+	int   parent;
+	float pad0[3];
 };
 
 struct Skin {
 	SBO sbo;
 	int jointc;
+	float pad0;
 	struct Joint joints[];
 };
 
 struct KeyFrame {
 	struct Transform* tforms;
-	// uint8* joints;
-	// uint8  jointc;
-	float  time;
+	float time;
 };
 
 struct Animation {
-	char name[ANIMATION_MAX_NAME_LEN]; // TODO: same as for joint names
 	// enum AnimationType     type;
 	// enum InterpolationType interp;
 	struct KeyFrame* frms;
-	// float* times;
 	int frmc;
 	int curr_frm;
 };
 
+// TODO: can make weights uint8
 struct Model {
 	struct Mesh*      meshes;
 	struct Material*  mtls;

@@ -10,10 +10,10 @@ struct SwapchainDetails swapchain_details;
 struct Image depth_img;
 struct Image resolve_img;
 
-static void create_command_pool();
 static VkSurfaceFormatKHR choose_surface_format();
-static VkPresentModeKHR choose_present_mode();
+static VkPresentModeKHR   choose_present_mode();
 
+__attribute__((no_sanitize_address))
 void swapchain_init(VkSurfaceKHR surf, int w, int h)
 {
 	swapchain.ext  = (VkExtent2D){ w, h };
@@ -25,7 +25,7 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 		min_imgc = swapchain_details.abilities.maxImageCount;
 
 	VkSwapchainCreateInfoKHR swapchaini = {
-		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+		.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 		.surface          = surf,
 		.minImageCount    = min_imgc,
 		.imageFormat      = swapchain.fmt.format,
@@ -51,13 +51,22 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 		swapchaini.pQueueFamilyIndices   = NULL;
 	}
 
-	if (vkCreateSwapchainKHR(logical_gpu, &swapchaini, NULL, &swapchain.swapchain))
-		ERROR("[VK] Failed to create swapchain");
+	if ((vk_err = vkCreateSwapchainKHR(logical_gpu, &swapchaini, NULL, &swapchain.swapchain)))
+		ERROR("[VK] Failed to create swapchain:\n\t\"%d\"", vk_err);
 	else
 		DEBUG(1, "[VK] Created swapchain\n\tQueue families: %u\n\tMinimum images: %u",
 		      swapchaini.queueFamilyIndexCount, min_imgc);
 
-	create_command_pool();
+	/*** -------------------- Create the Command Pool -------------------- ***/
+	VkCommandPoolCreateInfo pooli = {
+		.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.queueFamilyIndex = qinds.graphics,
+		.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+	};
+	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &cmd_pool))
+		ERROR("[VK] Failed to create command pool");
+	else
+		DEBUG(3, "[VK] Created command pool");
 
 	/*** -------------------- Create Swapchain Images -------------------- ***/
 	vkGetSwapchainImagesKHR(logical_gpu, swapchain.swapchain, &swapchain.imgc, NULL);
@@ -126,19 +135,6 @@ void swapchain_free()
 }
 
 /* -------------------------------------------------------------------- */
-
-static void create_command_pool()
-{
-	VkCommandPoolCreateInfo pooli = {
-		.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-		.queueFamilyIndex = qinds.graphics,
-		.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-	};
-	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &cmd_pool))
-		ERROR("[VK] Failed to create command pool");
-	else
-		DEBUG(3, "[VK] Created command pool");
-}
 
 /* Function: choose_surface_format
  *   Find and return the most appropriate surface format from the

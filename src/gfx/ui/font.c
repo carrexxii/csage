@@ -107,6 +107,7 @@ void font_init(VkRenderPass renderpass)
 	atlas = texture_new(atlas_bitmap, atlas_w, atlas_h);
 
 	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
+	free(atlas_bitmap);
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);
 

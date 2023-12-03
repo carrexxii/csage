@@ -23,7 +23,7 @@ static void create_framebuffers();
 static void create_command_buffers();
 static void create_sync_objects();
 
-static int frame;
+static int frame = 0;
 static struct {
 	VkSemaphore renderdone[FRAMES_IN_FLIGHT];
 	VkSemaphore imgavail[FRAMES_IN_FLIGHT];
@@ -135,7 +135,7 @@ void renderer_draw()
 	record_commands(imgi);
 
 	VkSubmitInfo submiti = {
-		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 		.waitSemaphoreCount   = 1,
 		.signalSemaphoreCount = 1,
 		.commandBufferCount   = 1,
@@ -150,7 +150,7 @@ void renderer_draw()
 		ERROR("[VK] Failed to submit draw command");
 
 	VkPresentInfoKHR presi = {
-		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores    = &semas.renderdone[frame],
 		.swapchainCount     = 1,
@@ -158,8 +158,8 @@ void renderer_draw()
 		.pImageIndices      = (uint32[]){ imgi },
 		.pResults           = NULL,
 	};
-	if (vkQueuePresentKHR(presentq, &presi))
-		ERROR("[VK] Failed to present queue");
+	if ((vk_err = vkQueuePresentKHR(presentq, &presi)))
+		ERROR("[VK] Failed to present queue:\n\t\"%d\"", vk_err);
 
 	frame = (frame + 1) % FRAMES_IN_FLIGHT;
 }

@@ -31,8 +31,6 @@
 	#include <io.h>
 #endif
 
-#include <SDL2/SDL_log.h>
-
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #define CGLM_DEFINE_PRINTS
 #define CGLM_OMIT_NS_FROM_STRUCT_API
