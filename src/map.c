@@ -20,11 +20,6 @@
 #define VERTICES_PER_LAYER (VERTEX_WIDTH*VERTEX_HEIGHT)
 #define VERTICES_PER_BLOCK VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH
 
-struct PushData {
-	ivec4s selection;
-	int i;
-};
-
 static void remesh_block(int b);
 static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z2, int axis);
 inline static bool is_visible(int x, int y, int z, int axis);
@@ -53,24 +48,20 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 struct MapData     map_data;
 struct VoxelBlock* map_blocks;
 
-static struct VArray vxl_hls;
-
 static struct Pipeline pipeln;
 static UBO  ubo_bufs[2];
 static VBO  vbo_buf;
 static IBO* ibo_bufs;
 static int* indcs;
 static int blockc;
-static ivec4s selections[MAP_MAX_SELECTIONS];
-static int    selectionc;
+static Rect vxl_sels[MAP_MAX_VOXEL_SELECTIONS];
+static int  vxl_selc;
 
 void map_init(VkRenderPass renderpass)
 {
-	vxl_hls = varray_new(MAP_DEFAULT_SELECTION_COUNT, sizeof(IRect));
-
 	map_data.block_size = (ivec4s){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH };
-	ubo_bufs[0] = ubo_new(sizeof(map_data)); /* camera matrix, block dimensions and map dimensions */
-	ubo_bufs[1] = ubo_new(sizeof(selections)); /* Selections to be highlighted */
+	ubo_bufs[0] = ubo_new(sizeof(map_data));   /* Camera matrix, block dimensions and map dimensions */
+	ubo_bufs[1] = ubo_new(sizeof(vxl_sels)); /* vxl_sels to be highlighted                       */
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "map.vert"),
 		.fshader     = create_shader(SHADER_DIR "map.frag"),
@@ -140,46 +131,58 @@ void map_new(ivec3s dim)
 	      map_data.map_size.x*MAP_BLOCK_WIDTH, map_data.map_size.y*MAP_BLOCK_HEIGHT, map_data.map_size.z*MAP_BLOCK_DEPTH, blockc);
 }
 
+static int hl_start;
 void map_mouse_select(bool kdown)
 {
-	static int hl_start;
+	if (vxl_selc >= MAP_MAX_VOXEL_SELECTIONS)
+		return;
 
-	IRect rect;
+	vec2s v = camera_get_map_point(camera_get_mouse_ray(mouse_x, mouse_y));
 	if (kdown) {
-		rect     = IRECT(mouse_x, mouse_y, 1, 1);
-		hl_start = varray_push(&vxl_hls, &rect);
+		hl_start = vxl_selc++;
+		vxl_sels[hl_start] = RECT(ceilf(v.x), ceilf(v.y), 1, 1);
 	} else {
-		rect = *(IRect*)varray_get(&vxl_hls, hl_start);
-		rect.w = mouse_x - rect.x;
-		rect.h = mouse_y - rect.y;
-		varray_set(&vxl_hls, hl_start, &rect);
 		hl_start = -1;
+	}
+}
+
+void map_mouse_deselect(bool kdown)
+{
+	if (!kdown) {
+		vxl_selc = 0;
+		memset(vxl_sels, 0, sizeof(vxl_sels));
 	}
 }
 
 int map_highlight_area(ivec4s area)
 {
-	selections[selectionc] = area;
+	// vxl_sels[vxl_selc] = area;
 
-	return selectionc++;
+	// return vxl_selc++;
+	return vxl_selc;
 }
 
 void map_clear_highlight()
 {
-	selectionc = 0;
-	memset(selections, 0, sizeof(selections));
+	// vxl_selc = 0;
+	// memset(vxl_sels, 0, sizeof(vxl_sels));
 }
 
 void map_update()
 {
-
+	vec2s v = camera_get_map_point(camera_get_mouse_ray(mouse_x, mouse_y));
+	if (hl_start != -1) {
+		Rect* r = &vxl_sels[hl_start];
+		r->w = ceilf(v.x) - r->x;
+		r->h = ceilf(v.y) - r->y;
+	}
 }
 
 void map_record_commands(VkCommandBuffer cmd_buf)
 {
 	camera_get_vp(map_data.cam_vp);
 	buffer_update(ubo_bufs[0], sizeof(map_data), &map_data, 0);
-	buffer_update(ubo_bufs[1], sizeof(selections), selections, 0);
+	buffer_update(ubo_bufs[1], sizeof(vxl_sels), vxl_sels, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);

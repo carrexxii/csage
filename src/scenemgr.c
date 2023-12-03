@@ -40,6 +40,7 @@ void scenemgr_init()
 	ui_build();
 	
 	input_register(SDL_BUTTON_LEFT, map_mouse_select);
+	input_register(SDL_BUTTON_RIGHT, map_mouse_deselect);
 
 	taskmgr_init();
 	taskmgr_add_task(camera_update);

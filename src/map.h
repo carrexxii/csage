@@ -3,8 +3,7 @@
 
 #include "vulkan/vulkan.h"
 
-#define MAP_DEFAULT_SELECTION_COUNT 8
-#define MAP_MAX_SELECTIONS 64
+#define MAP_MAX_VOXEL_SELECTIONS 16
 
 #define MAP_BLOCK_WIDTH      32
 #define MAP_BLOCK_HEIGHT     MAP_BLOCK_WIDTH
@@ -25,6 +24,7 @@ struct VoxelBlock {
 void map_init(VkRenderPass renderpass);
 void map_new(ivec3s dim);
 void map_mouse_select(bool kdown);
+void map_mouse_deselect(bool kdown);
 int  map_highlight_area(ivec4s area);
 void map_clear_highlight(void);
 void map_update(void);
