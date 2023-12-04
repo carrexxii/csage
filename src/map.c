@@ -26,7 +26,7 @@ inline static bool is_visible(int x, int y, int z, int axis);
 
 /* -------------------------------------------------------------------- */
 static VkVertexInputBindingDescription vert_binds[] = {
-	/* xyznnnuv */
+	/* [pos][normal] */
 	{ .binding   = 0,
 	  .stride    = SIZEOF_VERTEX,
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
@@ -37,12 +37,16 @@ static VkVertexInputAttributeDescription vertex_attrs[] = {
 	  .location = 0,
 	  .format   = VK_FORMAT_R8G8B8_SINT,
 	  .offset   = 0, },
-	/* nnn */
+	/* normal */
 	{ .binding  = 0,
 	  .location = 1,
 	  .format   = VK_FORMAT_R8G8B8_SINT,
 	  .offset   = sizeof(int8[3]), },
 };
+struct PushConstants {
+	int blocki;
+	int selc;
+} consts;
 /* -------------------------------------------------------------------- */
 
 struct MapData     map_data;
@@ -69,8 +73,8 @@ void map_init(VkRenderPass renderpass)
 		.vert_binds  = vert_binds,
 		.vert_attrc  = ARRAY_SIZE(vertex_attrs),
 		.vert_attrs  = vertex_attrs,
-		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
-		.push_sz     = sizeof(int), /* Index of the current block being drawn */
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		.push_sz     = sizeof(consts),
 		.dset_cap    = 1,
 		.uboc        = 2,
 	};
@@ -140,8 +144,9 @@ void map_mouse_select(bool kdown)
 	vec2s v = camera_get_map_point(camera_get_mouse_ray(mouse_x, mouse_y));
 	if (kdown) {
 		hl_start = vxl_selc++;
-		vxl_sels[hl_start] = RECT(ceilf(v.x), ceilf(v.y), 1, 1);
+		vxl_sels[hl_start] = RECT(floorf(v.x), floorf(v.y), 1.0f, 1.0f);
 	} else {
+		print_rect(vxl_sels[hl_start]);
 		hl_start = -1;
 	}
 }
@@ -170,11 +175,12 @@ void map_clear_highlight()
 
 void map_update()
 {
+	// TODO: move to global value calcualted once per frame
 	vec2s v = camera_get_map_point(camera_get_mouse_ray(mouse_x, mouse_y));
 	if (hl_start != -1) {
 		Rect* r = &vxl_sels[hl_start];
-		r->w = ceilf(v.x) - r->x;
-		r->h = ceilf(v.y) - r->y;
+		r->w = floorf(v.x + 1.0f - r->x);
+		r->h = floorf(v.y + 1.0f - r->y);
 	}
 }
 
@@ -183,15 +189,17 @@ void map_record_commands(VkCommandBuffer cmd_buf)
 	camera_get_vp(map_data.cam_vp);
 	buffer_update(ubo_bufs[0], sizeof(map_data), &map_data, 0);
 	buffer_update(ubo_bufs[1], sizeof(vxl_sels), vxl_sels, 0);
+	consts.selc = vxl_selc;
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]){ 0 });
 	for (int i = 0; i < blockc; i++) {
+		consts.blocki = i;
 		// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
 		vkCmdBindIndexBuffer(cmd_buf, ibo_bufs[i].buf, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &i);
+		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &consts);
 		vkCmdDrawIndexed(cmd_buf, indcs[i], 1, 0, 0, 0);
 	}
 }
