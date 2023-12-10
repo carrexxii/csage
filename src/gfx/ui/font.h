@@ -3,6 +3,7 @@
 
 #include "vulkan/vulkan.h"
 
+#include "maths/maths.h"
 #include "util/string.h"
 #include "gfx/buffers.h"
 

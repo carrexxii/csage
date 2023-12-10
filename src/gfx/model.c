@@ -3,6 +3,7 @@
 #include "cgltf.h"
 #include "stb_image.h"
 
+#include "maths/maths.h"
 #include "util/arena.h"
 #include "util/file.h"
 #include "vulkan.h"

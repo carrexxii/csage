@@ -19,6 +19,7 @@ void init_sdl();
 struct GlobalConfig global_config;
 SDL_Renderer* renderer;
 SDL_Window*   window;
+int vk_err;
 
 #ifndef TESTING
 int main(int argc, char** argv)

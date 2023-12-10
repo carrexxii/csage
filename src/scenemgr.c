@@ -3,12 +3,13 @@
 #include "taskmgr.h"
 #include "input.h"
 #include "camera.h"
-#include "gfx/particles.h"
-#include "entities/entity.h"
-#include "gfx/model.h"
-#include "map.h"
 #include "gfx/renderer.h"
 #include "gfx/ui/ui.h"
+#include "gfx/model.h"
+#include "gfx/particles.h"
+#include "maths/scratch.h"
+#include "entities/entity.h"
+#include "map.h"
 #include "scenes.h"
 #include "scenemgr.h"
 
@@ -36,6 +37,7 @@ void scenemgr_init()
 	particles_init(renderpass);
 	map_init(renderpass);
 	models_init(renderpass);
+	scratch_init(renderpass);
 
 	ui_build();
 	

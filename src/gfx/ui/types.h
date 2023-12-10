@@ -1,6 +1,7 @@
 #ifndef UI_TYPES_H
 #define UI_TYPES_H
 
+#include "maths/maths.h"
 #include "util/string.h"
 #include "util/varray.h"
 #include "gfx/buffers.h"

@@ -229,6 +229,7 @@ void* _scalloc(isize n, isize s, const char* file, int line, const char* fn);
 void* _srealloc(void* mem, isize n, const char* file, int line, const char* fn);
 void  _sfree(void* mem, const char* file, int line, const char* fn);
 
+// TODO: move this
 /* [min, max] */
 inline static int random_int(int min, int max)
 {
@@ -241,9 +242,7 @@ inline static int random_int(int min, int max)
     return num;
 }
 
-static int vk_err;
-
-#include "maths/maths.h"
+extern int vk_err;
 
 #endif
 

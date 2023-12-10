@@ -1,3 +1,4 @@
+#include "maths/maths.h"
 #include "util/varray.h"
 #include "gfx/model.h"
 #include "body.h"

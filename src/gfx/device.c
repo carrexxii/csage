@@ -213,8 +213,8 @@ static void get_device_properties(VkPhysicalDevice dev)
 			gpu_properties.lazy_mem = true;
 
 	DEBUG(1, "[VK] GPU has the following support:");
-	DEBUG(1, "\tMSAA samples -> %d", max_samples);
-	DEBUG(1, "\tLazy memory  -> %s", STRING_TF(gpu_properties.lazy_mem));
+	DEBUG(1, "\tMSAA samples     -> %d", max_samples);
+	DEBUG(1, "\tLazy memory      -> %s", STRING_TF(gpu_properties.lazy_mem));
 }
 
 static void debug_physical(VkPhysicalDevice dev)

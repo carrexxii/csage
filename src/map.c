@@ -1,5 +1,6 @@
 #include <vulkan/vulkan.h>
 
+#include "maths/maths.h"
 #include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"

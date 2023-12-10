@@ -1,4 +1,5 @@
 #include "config.h"
+#include "maths/maths.h"
 #include "input.h"
 #include "camera.h"
 

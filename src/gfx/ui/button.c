@@ -1,4 +1,5 @@
 #include "config.h"
+#include "maths/maths.h"
 #include "util/varray.h"
 #include "gfx/primitives.h"
 #include "types.h"
