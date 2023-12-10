@@ -53,6 +53,12 @@ bool taskmgr_reset()
 	return true;
 }
 
+void taskmgr_clear()
+{
+	taskmgr_reset();
+	taskc = 0;
+}
+
 void taskmgr_free()
 {
 	for (int i = 0; i < threadc; i++)

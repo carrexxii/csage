@@ -1,7 +1,10 @@
 #include <vulkan/vulkan.h>
 
+#include "util/varray.h"
 #include "gfx/vulkan.h"
+#include "gfx/buffers.h"
 #include "gfx/pipeline.h"
+#include "maths.h"
 #include "scratch.h"
 
 #define SCRATCH_VERTEX_COUNT 7
@@ -25,8 +28,27 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 	  .offset   = sizeof(float[3]), },
 };
 
+static float axes_verts[][7] = {
+	/* x */
+	{ -10.0f, 0.0f, 0.0f, COLOUR_RED, 1.0f },
+	{  10.0f, 0.0f, 0.0f, COLOUR_RED, 1.0f },
+	/* y */
+	{ 0.0f, -10.0f, 0.0f, COLOUR_GREEN, 1.0f },
+	{ 0.0f,  10.0f, 0.0f, COLOUR_GREEN, 1.0f },
+	/* z */
+	{ 0.0f, 0.0f, -10.0f, COLOUR_BLUE, 1.0f },
+	{ 0.0f, 0.0f,  10.0f, COLOUR_BLUE, 1.0f },
+};
+
+static VBO axes_vbo;
+static VBO lines_vbo;
+static VBO planes_vbo;
+static struct VArray lines;
+static struct VArray planes;
+
 void scratch_init(VkRenderPass renderpass)
 {
+	axes_vbo = vbo_new(sizeof(axes_verts), axes_verts, false);
 	line_pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "scratch.vert"),
 		.fshader     = create_shader(SHADER_DIR "scratch.frag"),
@@ -46,17 +68,37 @@ void scratch_init(VkRenderPass renderpass)
 	};
 	pipeln_init(&line_pipeln, renderpass);
 	pipeln_init(&plane_pipeln, renderpass);
+
+	lines  = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[2][7]));
+	planes = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[6][7]));
+}
+
+void scratch_add_trivec(Trivec a)
+{
+
+}
+
+void scratch_clear()
+{
+	varray_reset(&lines);
+	varray_reset(&planes);
 }
 
 void scratch_record_commands(VkCommandBuffer cmd_buf)
 {
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.pipeln);
-	vkCmdBindVertexBuffers(cmd_buf, 0, 1, NULL, (VkDeviceSize[]) { 0 });
-	vkCmdDraw(cmd_buf, -1, 1, 0, 0);
-
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln.pipeln);
-	vkCmdBindVertexBuffers(cmd_buf, 0, 1, NULL, (VkDeviceSize[]) { 0 });
-	vkCmdDraw(cmd_buf, -1, 1, 0, 0);
+	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &axes_vbo.buf, (VkDeviceSize[]) { 0 });
+	vkCmdDraw(cmd_buf, 6, 1, 0, 0);
+	if (lines.len > 0) {
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &lines_vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmd_buf, lines.len, 1, 0, 0);
+	}
+
+	if (planes.len > 0) {
+		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.pipeln);
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &planes_vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmd_buf, planes.len, 1, 0, 0);
+	}
 }
 
 void scratch_free()

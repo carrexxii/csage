@@ -13,6 +13,7 @@
 #include "model.h"
 #include "particles.h"
 #include "map.h"
+#include "maths/scratch.h"
 #include "renderer.h"
 
 VkSampler default_sampler;
@@ -23,7 +24,9 @@ static void create_framebuffers();
 static void create_command_buffers();
 static void create_sync_objects();
 
-static int frame = 0;
+static void (*draw_fns[RENDERER_MAX_DRAW_FUNCTIONS])(VkCommandBuffer);
+static int draw_fnc = 0;
+static int frame    = 0;
 static struct {
 	VkSemaphore renderdone[FRAMES_IN_FLIGHT];
 	VkSemaphore imgavail[FRAMES_IN_FLIGHT];
@@ -121,6 +124,18 @@ VkRenderPass renderer_init()
 	return renderpass;
 }
 
+void renderer_clear_draw_list(void)
+{
+	draw_fnc = 0;
+}
+
+void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer))
+{
+	if (draw_fnc >= RENDERER_MAX_DRAW_FUNCTIONS)
+		ERROR("[GFX] Max draw function count (%d/%d) exceeded", draw_fnc, RENDERER_MAX_DRAW_FUNCTIONS);
+	draw_fns[draw_fnc++] = fn;
+}
+
 void renderer_draw()
 {
 	vkWaitForFences(logical_gpu, 1, &fences.frames[frame], true, UINT64_MAX);
@@ -198,6 +213,8 @@ void renderer_free()
 	free(cmd_bufs);
 }
 
+/* -------------------------------------------------------------------- */
+
 /* Records a command for the given image
  *   imgi - index of the framebuffer image to record the command for
  */
@@ -229,11 +246,8 @@ static void record_commands(int imgi)
 
 	vkCmdBeginRenderPass(cmd_buf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
-	map_record_commands(cmd_buf);
-	models_record_commands(cmd_buf);
-	particles_record_commands(cmd_buf);
-	ui_record_commands(cmd_buf);
-	font_record_commands(cmd_buf);
+	for (int i = 0; i < draw_fnc; i++)
+		draw_fns[i](cmd_buf);
 
 	vkCmdEndRenderPass(cmd_buf);
 	if (vkEndCommandBuffer(cmd_buf))

@@ -17,6 +17,7 @@ enum MouseMask {
 void input_poll(void);
 void input_register(SDL_Keycode key, void (*fn)(bool));
 void input_deregister(SDL_Keycode key, void (*fn)(bool));
+void input_reset(void);
 
 extern int mouse_x;
 extern int mouse_y;

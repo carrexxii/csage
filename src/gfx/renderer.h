@@ -3,9 +3,12 @@
 
 #include <vulkan/vulkan.h>
 
-#define FRAMES_IN_FLIGHT 2
+#define FRAMES_IN_FLIGHT            2
+#define RENDERER_MAX_DRAW_FUNCTIONS 16
 
 VkRenderPass renderer_init();
+void renderer_clear_draw_list(void);
+void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer));
 void renderer_draw();
 void renderer_free();
 

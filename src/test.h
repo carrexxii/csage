@@ -35,8 +35,6 @@ static bool move_to_mouse(int type, bool kdown, int x, int y)
 
 static void test_init()
 {
-	input_register(SDLK_ESCAPE, LAMBDA(void, bool kdown, if (kdown) quit();));
-
 	map_new((ivec3s){ 64, 64, 16 });
 
 	e = entity_new((vec3s){ 5.0, 5.0, -5.0 }, MODEL_PATH "RiggedSimple.glb");

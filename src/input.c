@@ -8,7 +8,7 @@ struct Event {
 	void (*fn)(bool);
 };
 
-static bool is_button_down(SDL_EventType event_type);
+inline static bool is_button_down(SDL_EventType event_type);
 
 int mouse_x;
 int mouse_y;
@@ -39,7 +39,8 @@ void input_poll(void)
 	}
 }
 
-void input_register(SDL_Keycode key, void (*fn)(bool)) {
+void input_register(SDL_Keycode key, void (*fn)(bool))
+{
 	events[eventc++] = (struct Event){
 		.sym  = key,
 		.fn   = fn,
@@ -60,9 +61,14 @@ void input_deregister(SDL_Keycode key, void (*fn)(bool))
 	ERROR("[INPUT] Could not find event to deregister for key %d", key);
 }
 
+void input_reset()
+{
+	eventc = 0;
+}
+
 /* -------------------------------------------------------------------- */
 
-static bool is_button_down(SDL_EventType event_type)
+inline static bool is_button_down(SDL_EventType event_type)
 {
 	return event_type == SDL_KEYDOWN || event_type == SDL_MOUSEBUTTONDOWN;
 }
