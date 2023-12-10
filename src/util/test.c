@@ -1,10 +1,68 @@
 #ifdef TESTING_UTIL
 
+#include "maths/maths.h"
+#include "maths/pga2.h"
 #include "varray.h"
 #include "htable.h"
 #include "arena.h"
 
+static void test_maths(void);
+static void test_arena(void);
+static void test_string(void);
+static void test_varray(void);
+static void test_htable(void);
+
 int main()
+{
+	DEBUG(1, "------- Starting Tests -------");
+	DEBUG(1, "------------------------------");
+
+	test_maths();
+	// test_arena();
+	// test_string();
+	// test_varray();
+	// test_htable();
+
+	DEBUG(1, "------- Tests Complete -------");
+}
+
+static void test_maths()
+{
+	DEBUG(1, "\t--- Testing Maths ---");
+	printf("e0:   "); pga_print(e0);
+	printf("e1:   "); pga_print(e1);
+	printf("e2:   "); pga_print(e2);
+	printf("e3:   "); pga_print(e3);
+	printf("e123: "); pga_print(e123);
+	printf("\n");
+
+	printf("reverse of 5.0:  "); pga_print(reverse(5.0f));
+	printf("reverse of e0:   "); pga_print(reverse(e0));
+	printf("reverse of e123: "); pga_print(reverse(e123));
+	printf("reverse of e31:  "); pga_print(reverse(e31));
+	printf("\n");
+
+	printf("dual of e12: "); pga_print(dual(e12));
+	printf("dual of e01: "); pga_print(dual(e01));
+	printf("\n");
+
+	printf("wedge of e1 and e2:  "); pga_print(wedge(e1, e2));
+	printf("wedge of e0 and e3:  "); pga_print(wedge(e0, e3));
+	printf("wedge of e3 and e3:  "); pga_print(wedge(e3, e3));
+	printf("wedge of e01 and e3: "); pga_print(wedge(e01, e3));
+	printf("wedge of e23 and e0: "); pga_print(wedge(e23, e0));
+	printf("wedge of e31 and e1: "); pga_print(wedge(e31, e1));
+	printf("\n");
+
+	printf("inner of 2 and 3:       "); pga_print(inner(2.0f, 3.0f));
+	printf("inner of e1 and e2:     "); pga_print(inner(e1, e2));
+	printf("inner of e12 and e23:   "); pga_print(inner(e12, e23));
+	printf("inner of e123 and e032: "); pga_print(inner(e123, e032));
+	printf("inner of e123 and e1:   "); pga_print(inner(e123, e1));
+	printf("\n");
+}
+
+static void test_arena()
 {
 	DEBUG(1, " --- Testing Arena ---");
 	struct Arena* a1 = arena_new(128, 0);
@@ -20,7 +78,10 @@ int main()
 	assert(arena_alloc(a2, 100));
 	assert(arena_alloc(a2, 150));
 	assert(arena_alloc(a2, 200));
+}
 
+static void test_string()
+{
 	DEBUG(1, " --- Testing String ---");
 	char* str = "some/file/path.txt";
 	DEBUG(1, "Splitting with `string_new_split()`: \"%s\"", str);
@@ -50,28 +111,34 @@ int main()
 	DEBUG(1, "\t15 = %s", string_new_split(str, '.', 15).data);
 	DEBUG(1, "\t-10 = %s", string_new_split(str, '.', -10).data);
 	DEBUG(1, "\t-1 = %s", string_new_split(str, '.', -1).data);
+}
 
+static void test_varray()
+{
 	DEBUG(1, " --- Testing VArray ---");
-	struct VArray* arr = varray_new(10, 8);
-	varray_print(arr);
-	varray_push(arr, (int[]){ 1 });
-	varray_push(arr, (int[]){ 2 });
-	varray_push(arr, (int[]){ 3 });
-	varray_push(arr, (int[]){ 4 });
-	varray_push(arr, (int[]){ 5 });
-	varray_print(arr);
+	struct VArray arr = varray_new(10, 8);
+	varray_print(&arr);
+	varray_push(&arr, (int[]){ 1 });
+	varray_push(&arr, (int[]){ 2 });
+	varray_push(&arr, (int[]){ 3 });
+	varray_push(&arr, (int[]){ 4 });
+	varray_push(&arr, (int[]){ 5 });
+	varray_print(&arr);
 
-	DEBUG(1, "%d", *(int*)varray_get(arr, 0));
-	DEBUG(1, "%d", *(int*)varray_get(arr, 1));
-	DEBUG(1, "%d", *(int*)varray_get(arr, 2));
-	DEBUG(1, "%d", *(int*)varray_get(arr, 3));
-	DEBUG(1, "%d", *(int*)varray_get(arr, 4));
+	DEBUG(1, "%d", *(int*)varray_get(&arr, 0));
+	DEBUG(1, "%d", *(int*)varray_get(&arr, 1));
+	DEBUG(1, "%d", *(int*)varray_get(&arr, 2));
+	DEBUG(1, "%d", *(int*)varray_get(&arr, 3));
+	DEBUG(1, "%d", *(int*)varray_get(&arr, 4));
 
 	DEBUG(1, "Setting [0] = 99 and [4] = 100");
-	varray_set(arr, 0, (int[]){ 99 });
-	varray_set(arr, 4, (int[]){ 100 });
-	varray_print(arr);
+	varray_set(&arr, 0, (int[]){ 99 });
+	varray_set(&arr, 4, (int[]){ 100 });
+	varray_print(&arr);
+}
 
+static void test_htable()
+{
 	DEBUG(1, " --- Testing HTable ---");
 
 	DEBUG(1, "\n - - - - - - - * htable_insert * - - - - - - - ");

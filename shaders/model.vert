@@ -43,26 +43,20 @@ layout(push_constant) uniform PushConstants {
 
 void build_transform_mat(vec4 q, vec3 p, out mat4 mat)
 {
-	// q -= normalize(vec4(0.04, 0.00, -0.00, -1.00));
-	mat[0][0] = 1.0 - 2.0*q.y*q.y - 2.0*q.z*q.z;
-	mat[0][1] =       2.0*q.x*q.y - 2.0*q.z*q.w;
-	mat[0][2] =       2.0*q.x*q.z + 2.0*q.y*q.w;
-	mat[0][3] = 0.0;//p.x;
-
-	mat[1][0] =       2.0*q.x*q.y + 2.0*q.z*q.w;
-	mat[1][1] = 1.0 - 2.0*q.x*q.x - 2.0*q.z*q.z;
-	mat[1][2] =       2.0*q.y*q.z - 2.0*q.x*q.w;
-	mat[1][3] = 0.0;//p.y;
-
-	mat[2][0] =       2.0*q.x*q.z - 2.0*q.y*q.w;
-	mat[2][1] =       2.0*q.y*q.z + 2.0*q.x*q.w;
-	mat[2][2] = 1.0 - 2.0*q.x*q.x - 2.0*q.y*q.y;
-	mat[2][3] = 0.0;//p.z;
-
-	mat[3][0] = 0.0;
-	mat[3][1] = 0.0;
-	mat[3][2] = 0.0;
-	mat[3][3] = 1.0;
+	mat4 trans = mat4(
+		1.0, 0.0, 0.0, p.x,
+		0.0, 1.0, 0.0, p.y,
+		0.0, 0.0, 1.0, p.z,
+		0.0, 0.0, 0.0, 1.0
+	);
+	mat4 rot = mat4(
+		1.0 - 2.0*q.y*q.y - 2.0*q.z*q.z,       2.0*q.x*q.y - 2.0*q.z*q.w,       2.0*q.x*q.z + 2.0*q.y*q.w, 0.0,
+		      2.0*q.x*q.y + 2.0*q.z*q.w, 1.0 - 2.0*q.x*q.x - 2.0*q.z*q.z,       2.0*q.y*q.z - 2.0*q.x*q.w, 0.0,
+		      2.0*q.x*q.z - 2.0*q.y*q.w,       2.0*q.y*q.z + 2.0*q.x*q.w, 1.0 - 2.0*q.x*q.x - 2.0*q.y*q.y, 0.0,
+		                            0.0,                             0.0,                             0.0, 1.0
+	);
+	// mat = trans * rot;
+	mat = rot;
 }
 
 vec4 apply_joint_transform(vec4 v)
@@ -77,6 +71,10 @@ vec4 apply_joint_transform(vec4 v)
 	                  Vweights[1]*pose_mats[1] +
 	                  Vweights[2]*pose_mats[2] +
 	                  Vweights[3]*pose_mats[3];
+	// mat4 bone_trans = Vweights[0]*pose_mats[0]*skin.joints[Vids[0]].inv_bind +
+	//                   Vweights[1]*pose_mats[1]*skin.joints[Vids[1]].inv_bind +
+	//                   Vweights[2]*pose_mats[2]*skin.joints[Vids[2]].inv_bind +
+	//                   Vweights[3]*pose_mats[3]*skin.joints[Vids[3]].inv_bind;
 
 	return bone_trans * v;
 }

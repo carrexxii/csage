@@ -8,7 +8,7 @@
 #include "map.h"
 #include "gfx/ui/ui.h"
 
-static EntityID e1;
+static EntityID e;
 
 static bool path_to_mouse(int type, bool kdown, int x, int y)
 {
@@ -27,7 +27,7 @@ static bool move_to_mouse(int type, bool kdown, int x, int y)
 	(void)type;
 	if (kdown) {
 		vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
-		entity_path_to(e1, (ivec3s){ screen.x, screen.y, 0 });
+		entity_path_to(e, (ivec3s){ screen.x, screen.y, 0 });
 	}
 
 	return true;
@@ -39,7 +39,7 @@ static void test_init()
 
 	map_new((ivec3s){ 64, 64, 16 });
 
-	e1 = entity_new((vec3s){ 5.0, 5.0, -5.0 }, MODEL_PATH "RiggedSimple.glb");
+	e = entity_new((vec3s){ 5.0, 5.0, -5.0 }, MODEL_PATH "RiggedSimple.glb");
 
 	// struct UIStyle test_style = {
 		// .bg = 0xFF00FFFF,

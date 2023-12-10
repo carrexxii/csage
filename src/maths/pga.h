@@ -1,262 +1,358 @@
-#ifndef PGA_H
-#define PGA_H
+#ifndef MATH_PGA_H
+#define MATH_PGA_H
 
-// typedef union Vec2 {
-// 	struct { float e1; float e2; };
-// 	struct { float  x; float  y; };
-// 	struct { float  u; float  v; };
-// 	float vec[2];
-// } Vec2;
-typedef union Vec3 {
-	struct { float e1; float e2; float e3; };
-	struct { float  x; float  y; float  z; };
-	struct { float  r; float  g; float  b; };
-	float vec[3];
-} Vec3;
-typedef union Vec4 {
-	struct { float e1; float e2; float e3; float e4; };
-	struct { float  r; float  g; float  b; float  a; };
-	struct {
-		union {
-			struct { float x; float y; float z; };
-			vec3 p;
-		};
-		float w;
-	};
-	float vec[4];
-	// float vec __attribute__((vector_size(16)));
-} Vec4;
+typedef union { struct { float x, y;       }; float arr[2]; } Vec2;
+typedef union { struct { float x, y, z;    }; float arr[3]; } Vec3;
+typedef union { struct { float x, y, z, w; }; float arr[4]; } Vec4;
+typedef union {
+	struct { float  x,  y,  z; };
+	struct { float E1, E2, E3; };
+	float arr[3];
+} Point;
 
-// typedef union BiVec2 {
-// 	float e12;
-// 	float  xy;
-// } BiVec2;
-// typedef union BiVec3 {
-// 	struct { float e23; float e31; float e12; };
-// 	struct { float  yz; float  zx; float  xy; };
-// 	float vec[3];
-// } BiVec3;
-typedef union BiVec {
-	struct { float e41; float e42; float e43; float e23; float e31; float e12; };
-	struct { float  wx; float  wy; float  wz; float  yz; float  zx; float  xy; };
-	struct { float  vx; float  vy; float  vz; float  mx; float  my; float  mz; };
-	struct { Vec3 v; Vec3 m; }; /* v = direction; m = moment */
-	float vec[6];
-} BiVec;
+typedef float Scalar;
+typedef union {
+	struct { float  x,  y,  z,  w; };
+	struct { float e1, e2, e3, e0; };
+	float arr[4];
+} Vec;
+typedef union {
+	struct { float e23, e31, e12, e01, e02, e03; };
+	struct { float  yz,  zx,  xy,  wx,  wy,  wz; };
+	struct { Vec3 E; Vec3 e0; };
+	float arr[6];
+} Bivec;
+typedef union {
+	struct { float e032, e013, e021, e123; };
+	struct { float    x,    y,    z,    w; };
+	float arr[4];
+} Trivec;
+typedef union { float e0123; } Pseudo;
 
-// typedef union TriVec3 {
-// 	float e123;
-// 	float  xyz;
-// } TriVec3;
-typedef union TriVec {
-	struct { float e423; float e431; float e412; float e321; };
-	struct { float  wyz; float  wzx; float  wxy; float  zyx; };
-	struct { float    x; float    y; float    z; float    w; };
-	struct {
-		union {
-			struct { float nx; float ny; float nz; };
-			Vec3 n;
-		};
-		float d;
-	};
-	float vec[4];
-} TriVec;
-
-typedef float QuadVec;
-
-typedef Vec3   Point;
-typedef BiVec  Line;
-typedef TriVec Plane;
+static const Vec e0 = { .e0 = 1.0f };
+static const Vec e1 = { .e1 = 1.0f };
+static const Vec e2 = { .e2 = 1.0f };
+static const Vec e3 = { .e3 = 1.0f };
+static const Bivec e01 = { .e01 = 1.0f };
+static const Bivec e02 = { .e02 = 1.0f };
+static const Bivec e03 = { .e03 = 1.0f };
+static const Bivec e12 = { .e12 = 1.0f };
+static const Bivec e31 = { .e31 = 1.0f };
+static const Bivec e23 = { .e23 = 1.0f };
+static const Trivec e021 = { .e021 = 1.0f };
+static const Trivec e032 = { .e032 = 1.0f };
+static const Trivec e013 = { .e013 = 1.0f };
+static const Trivec e123 = { .e123 = 1.0f };
+static const Pseudo e0123 = { .e0123 = 1.0f };
 
 /* -------------------------------------------------------------------- */
 
-inline static float magnitude2(Vec3 v) { return v.x*v.x + v.y*v.y + v.z*v.z; }
-inline static float magnitude(Vec3 v)  { return sqrtf(magnitude2(v));        }
-inline static Vec3 normalized(Vec3 v) {
-	float mag = magnitude(v);
-	return (Vec3){ v.x/mag, v.y/mag, v.z/mag };
-}
-inline static void normalize(Vec3* v) {
-	float mag = magnitude(*v);
-	v->x /= mag;
-	v->y /= mag;
-	v->z /= mag;
-}
-
-#define vec_sum(v, u) _Generic((a), \
-	Vec3: _Generic(u, Vec3: vec3_vec3_sum(v, u)))
-inline static Vec3 vec3_vec3_sum(Vec3 v, Vec3 u) { return (Vec3){ v.x + u.x, v.y + u.y, v.z + u.z }; }
-
-/* -------------------------------------------------------------------- */
-
-#define vec_dot(v, u) _Generic(v, \
-	Vec3: _Generic(u, Vec3: vec3_dot_vec3(v, u)))
-inline static float vec3_dot_vec3(Vec3 v, Vec3 u) { return v.x*u.x + v.y*u.y + v.z*u.z; }
-
-/* -------------------------------------------------------------------- */
-
-/* vec_wedge(v, u) -> v ∧ u */
-#define wedge(v, u) _Generic((v),                      \
-	Vec3  : _Generic(u, Vec3  :  vec_wedge_vec(v, u),   \
-	                    BiVec :  vec_wedge_bivec(v, u),  \
-	                    TriVec:  vec_wedge_trivec(v, u)), \
-	BiVec : _Generic(u, Vec3  :  vec_wedge_bivec(u, v),    \
-	                    BiVec :  bivec_wedge_bivec(v, u),   \
-	                    TriVec:  bivec_wedge_trivec(v, u)),  \
-	TriVec: _Generic(u, Vec3  : -vec_wedge_trivec(u, v),      \
-	                    BiVec :  bivec_wedge_trivec(u, v),     \
-	                    TriVec:  trivec_wedge_trivec(v, u)))
-/* p ∧ q = Line containing points p and q. Zero if p and q are coincident. */
-inline static BiVec vec_wedge_vec(Vec3 p, Vec3 q) {
-	return (BiVec){
-		.wx = q.x - p.x,         /* e41 */
-		.wy = q.y - p.y,         /* e42 */
-		.wz = q.z - p.z,         /* e43 */
-		.yz = p.y*q.z - p.z*q.y, /* e23 */
-		.zx = p.z*q.x - p.x*q.z, /* e13 */
-		.xy = p.x*q.y - p.y*q.x, /* e12 */
+/* negate: a -> -a */
+#define negate(a) _Generic(a, \
+		Scalar: negate_scalar, \
+		Vec   : negate_vec,     \
+		Bivec : negate_bivec,    \
+		Trivec: negate_trivec,    \
+		Pseudo: negate_pseudo      \
+	)(a)
+inline static Scalar negate_scalar(Scalar a) { return -a; }
+inline static Vec negate_vec(Vec a) {
+	return (Vec){
+		.e0 = -a.e0,
+		.e1 = -a.e1,
+		.e2 = -a.e2,
+		.e3 = -a.e3,
 	};
 }
-/* p ∧ L = Plane containing line L and point p. Normal is zero if p lies in L.
- *   Assumes w = 1
- */
-inline static TriVec vec_wedge_bivec(Vec3 p, BiVec L) {
-	return (TriVec){
-		.wyz =  L.vy*p.z - L.vz*p.y + L.mx,     /* !e1 */
-		.wzx =  L.vz*p.x - L.vx*p.z + L.my,     /* !e2 */
-		.wxy =  L.vx*p.y - L.vy*p.x + L.mz,     /* !e3 */
-		.zyx = -L.mx*p.x - L.my*p.y - L.mz*p.z, /* !e4 */
+inline static Bivec negate_bivec(Bivec a) {
+	return (Bivec){
+		.e01 = -a.e01,
+		.e02 = -a.e02,
+		.e03 = -a.e03,
+		.e12 = -a.e12,
+		.e23 = -a.e23,
+		.e31 = -a.e31,
 	};
 }
-/* p ∧ f */
-static inline QuadVec vec_wedge_trivec(Vec3 p, TriVec f) {
-	return (QuadVec)(p.x*f.x + p.y*f.y + p.z*f.z + f.w);
-}
-/* L1 ∧ L2 */
-static inline QuadVec bivec_wedge_bivec(BiVec L1, BiVec L2) {
-	return (QuadVec)(-vec_dot(L1.v, L2.m) + vec_dot(L2.v, L1.m));
-}
-/* L ∧ f */
-static inline Vec4 bivec_wedge_trivec(BiVec L, TriVec f) {
-	return (Vec4){
-		.x =  L.my*f.z - L.mz*f.y + L.vx*f.w,
-		.y =  L.mz*f.x - L.mx*f.z + L.vy*f.w,
-		.z =  L.mx*f.y - L.my*f.x + L.vz*f.w,
-		.w = -L.vx*f.x - L.vy*f.y + L.vz*f.z,
+inline static Trivec negate_trivec(Trivec a) {
+	return (Trivec){
+		.e021 = -a.e021,
+		.e013 = -a.e013,
+		.e032 = -a.e032,
+		.e123 = -a.e123,
 	};
 }
-/* f ∧ g */
-static inline BiVec trivec_wedge_trivec(TriVec f, TriVec g) {
-	return (BiVec){
-		.wx = f.y*g.z - f.z*g.y, /* e41 */
-		.wy = f.z*g.x - f.x*g.z, /* e42 */
-		.wz = f.x*g.y - f.y*g.x, /* e43 */
-		.yz = f.w*g.x - f.x*g.w, /* e23 */
-		.zx = f.w*g.y - f.y*g.w, /* e31 */
-		.xy = f.w*g.z - f.z*g.w, /* e12 */
+inline static Pseudo negate_pseudo(Pseudo a) {
+	return (Pseudo){
+		.e0123 = -a.e0123,
 	};
 }
 
-/* -------------------------------------------------------------------- */
-
-/* vec_antiwedge(v, u) -> v ∨ u */
-#define antiwedge(v, u) _Generic((v),                          \
-	TriVec: _Generic(u, TriVec: trivec_antiwedge_trivec(v, u)), \
-	                    BiVec : bivec_antiwedge_trivec(u, v)),   \
-	BiVec : _Generic(u, BiVec : bivec_antiwedge_bivec(u, v),      \
-	                    TriVec: bivec_antiwedge_trivec(v, u)),     \
-	Vec3  : _Generic(u, Vec3  : vec_antiwedge_vec(u, v)),
-/* f ∨ g = Line where planes f and g intersect. Direction is zero if f and g are parallel. */
-inline static BiVec trivec_antiwedge_trivec(TriVec f, TriVec g) {
-	return (BiVec){
-		.wx = f.z*g.y - f.y*g.z, /* e41 */
-		.wy = f.x*g.z - f.z*g.x, /* e42 */
-		.wz = f.y*g.x - f.x*g.y, /* e43 */
-		.yz = f.x*g.w - f.w*g.x, /* e23 */
-		.zx = f.y*g.w - f.w*g.y, /* e31 */
-		.xy = f.z*g.w - f.w*g.z, /* e12 */
+/* reverse: a -> ~a */
+#define reverse(a) _Generic(a,                                                \
+		Vec   : reverse_vec   , Bivec : reverse_bivec, Trivec: reverse_trivec, \
+		Scalar: reverse_scalar, Pseudo: reverse_pseudo                          \
+	)(a)
+inline static Scalar reverse_scalar(Scalar a) { return a; }
+inline static Vec    reverse_vec(Vec a)       { return a; }
+inline static Pseudo reverse_pseudo(Pseudo a) { return a; }
+inline static Bivec reverse_bivec(Bivec a) {
+	return (Bivec){
+		.e23 = -a.e23, .e31 = -a.e31, .e12 = -a.e12,
+		.e01 = -a.e01, .e02 = -a.e02, .e03 = -a.e03,
 	};
 }
-/* L ∨ f = Point where line L intersects plane f. Weight is zero if L and f are parallel. */
-static inline TriVec bivec_antiwedge_trivec(BiVec L, TriVec f) {
-	return (TriVec){
-		.x =  L.my*f.z - L.mz*f.y + L.vx*f.w, /* e1 */
-		.y =  L.mz*f.x - L.mx*f.z + L.vy*f.w, /* e2 */
-		.z =  L.mx*f.y - L.my*f.x + L.vz*f.w, /* e3 */
-		.w = -L.vx*f.x - L.vy*f.y - L.vz*f.z, /* e4 */
+inline static Trivec reverse_trivec(Trivec a) {
+	return (Trivec){
+		.e032 = -a.e032, .e013 = -a.e013, .e021 = -a.e021,
+		.e123 = -a.e123,
 	};
 }
-static inline float bivec_antiwedge_bivec(BiVec L1, BiVec L2) {
-	return -antiwedge(L1.v, L2.m) - antiwedge(L2.v, L1.m);
+
+/* dual: a -> a* */
+#define dual(a) _Generic(a,                                                   \
+		Vec   : dual_of_vec   , Bivec : dual_of_bivec, Trivec: dual_of_trivec, \
+		Scalar: dual_of_scalar, Pseudo: dual_of_pseudo                          \
+	)(a)
+inline static Pseudo dual_of_scalar(Scalar a) { return (Pseudo){ .e0123 = a, }; }
+inline static Scalar dual_of_pseudo(Pseudo a) { return a.e0123; }
+inline static Trivec dual_of_vec(Vec a) {
+	return (Trivec){
+		.e123 = a.e0,
+		.e032 = a.e1,
+		.e013 = a.e2,
+		.e021 = a.e3,
+	};
+}
+inline static Bivec dual_of_bivec(Bivec a) {
+	return (Bivec){
+		.e01 = a.e23,
+		.e02 = a.e31,
+		.e03 = a.e12,
+		.e23 = a.e01,
+		.e31 = a.e02,
+		.e12 = a.e03,
+	};
+}
+inline static Vec dual_of_trivec(Trivec a) {
+	return (Vec){
+		.e0 = a.e123,
+		.e1 = a.e032,
+		.e2 = a.e013,
+		.e3 = a.e021,
+	};
 }
 
-/* -------------------------------------------------------------------- */
+/* wedge: a, b -> a∧b */
+#define wedge(a, b) _Generic(a,                          \
+		Scalar: _Generic(b, Scalar: scalar_wedge_scalar, \
+		                    Vec   : scalar_wedge_vec,    \
+		                    Bivec : scalar_wedge_bivec,  \
+		                    Trivec: scalar_wedge_trivec, \
+		                    Pseudo: scalar_wedge_pseudo  \
+		),                                               \
+		Vec: _Generic(b, Scalar: vec_wedge_scalar,       \
+		                 Vec   : vec_wedge_vec,          \
+		                 Bivec : vec_wedge_bivec,        \
+		                 Trivec: vec_wedge_trivec        \
+		),                                               \
+		Bivec: _Generic(b, Scalar: bivec_wedge_scalar,   \
+		                   Vec   : bivec_wedge_vec,      \
+		                   Bivec : bivec_wedge_bivec     \
+		),                                               \
+		Trivec: _Generic(b, Scalar: scalar_wedge_trivec, \
+		                    Vec   : trivec_wedge_vec     \
+		)                                                \
+	)(a, b)
+inline static Scalar scalar_wedge_scalar(Scalar a, Scalar b) {
+	return a*b;
+}
+inline static Vec scalar_wedge_vec(Scalar a, Vec b) {
+	return (Vec){
+		.e0 = b.e0*a,
+		.e1 = b.e1*a,
+		.e2 = b.e2*a,
+		.e3 = b.e3*a,
+	};
+}
+inline static Bivec scalar_wedge_bivec(Scalar a, Bivec b) {
+	return (Bivec){
+		.e01 = b.e01*a,
+		.e02 = b.e02*a,
+		.e03 = b.e03*a,
+		.e12 = b.e12*a,
+		.e23 = b.e23*a,
+		.e31 = b.e31*a,
+	};
+}
+inline static Trivec scalar_wedge_trivec(Scalar a, Trivec b) {
+	return (Trivec){
+		.e013 = b.e013*a,
+		.e021 = b.e021*a,
+		.e032 = b.e032*a,
+		.e123 = b.e123*a,
+	};
+}
+inline static Pseudo scalar_wedge_pseudo(Scalar a, Pseudo b) {
+	return (Pseudo){
+		.e0123 = b.e0123*a,
+	};
+}
+/* p1∧p2 = (e0 + e1 + e2 + e3)∧(e0 + e1 + e2 + e3) */
+inline static Bivec vec_wedge_vec(Vec a, Vec b) {
+	return (Bivec){
+		.e01 = a.e0*b.e1 - a.e1*b.e0,
+		.e02 = a.e0*b.e2 - a.e2*b.e0,
+		.e03 = a.e0*b.e3 - a.e3*b.e0,
+		.e12 = a.e1*b.e2 - a.e2*b.e1,
+		.e31 = a.e3*b.e1 - a.e1*b.e3,
+		.e23 = a.e2*b.e3 - a.e3*b.e2,
+	};
+}
+/* p∧l = (e0 + e1 + e2 + e3)∧(e23, e31, e12, e01, e02, e03) */
+inline static Trivec vec_wedge_bivec(Vec a, Bivec b) {
+	return (Trivec){
+		.e032 = -a.e0*b.e23 + a.e2*b.e03 - a.e3*b.e02,
+		.e013 = -a.e0*b.e31 - a.e1*b.e03 + a.e3*b.e01,
+		.e021 = -a.e0*b.e12 + a.e1*b.e02 - a.e2*b.e01,
+		.e123 = -a.e1*b.e12 + a.e2*b.e31 + a.e3*b.e12,
+	};
+}
+/* p∧P = (e0 + e1 + e2 + e3)∧(e032 + e013 + e021 + e123) */
+inline static Pseudo vec_wedge_trivec(Vec a, Trivec b) {
+	return (Pseudo){
+		.e0123 = a.e0*b.e123 + a.e1*b.e032 + a.e2*b.e013 + a.e3*b.e021,
+	};
+}
+/* l1∧l2 = (e23, e31, e12, e01, e02, e03)∧(e23, e31, e12, e01, e02, e03) */
+inline static Pseudo bivec_wedge_bivec(Bivec a, Bivec b) {
+	return (Pseudo){
+		.e0123 = a.e23*b.e01 + a.e31*b.e02 + a.e12*b.e03 +
+		         a.e01*b.e23 + a.e02*b.e31 + a.e03*b.e12,
+	};
+}
+inline static Pseudo pseudo_wedge_scalar(Pseudo a, Scalar b) { return scalar_wedge_pseudo(b, a); }
+inline static Vec    vec_wedge_scalar(Vec a, Scalar b)       { return scalar_wedge_vec(b, a);    }
+inline static Bivec  bivec_wedge_scalar(Bivec a, Scalar b)   { return scalar_wedge_bivec(b, a);  }
+inline static Trivec trivec_wedge_scalar(Trivec a, Scalar b) { return scalar_wedge_trivec(b, a); }
+inline static Trivec bivec_wedge_vec(Bivec a, Vec b)         { return vec_wedge_bivec(b, a);     }
+inline static Pseudo trivec_wedge_vec(Trivec a, Vec b)       { return negate(vec_wedge_trivec(b, a)); }
 
-/* vec_triple(v, u, w) -> v ∧ u ∧ w */
-// #define triple(v, u, w) _Generic(v, \
-// 	Vec: _Generic(u, Vec: _Generic(w, Vec: vec4_triple(v, u, w)))
-// inline static TriVec vec3_triple(Vec3 v, Vec3 u, Vec3 w) {
-// 	return (TriVec){
-// 		v.x*u.y*w.z + v.y*u.z*w.x + v.z*u.x*w.y -
-// 		v.x*u.z*w.y - v.y*u.x*w.z - v.z*u.y*w.x
-// 	};
-// }
+/* inner: a, b -> a⋅b */
+#define inner(a, b) _Generic(a,                          \
+		Scalar: _Generic(b, Scalar: scalar_inner_scalar, \
+		                    Vec   : scalar_inner_vec,    \
+		                    Bivec : scalar_inner_bivec,  \
+		                    Trivec: scalar_inner_trivec  \
+		),                                               \
+		Vec: _Generic(b, Scalar: vec_inner_scalar,       \
+		                 Vec   : vec_inner_vec,          \
+		                 Bivec : vec_inner_bivec,        \
+		                 Trivec: vec_inner_trivec        \
+		),                                               \
+		Bivec: _Generic(b, Scalar: bivec_inner_scalar,   \
+		                   Vec   : bivec_inner_vec,      \
+		                   Bivec : bivec_inner_bivec,    \
+		                   Trivec: bivec_inner_trivec    \
+		),                                               \
+		Trivec: _Generic(b, Scalar: trivec_inner_scalar, \
+		                    Vec   : trivec_inner_vec,    \
+		                    Bivec : trivec_inner_bivec,  \
+		                    Trivec: trivec_inner_trivec  \
+		)                                                \
+	)(a, b)
+inline static Scalar scalar_inner_scalar(Scalar a, Scalar b) { return a*b; }
+inline static Vec scalar_inner_vec(Scalar a, Vec b) {
+	return (Vec){
+		.e0 = b.e0*a,
+		.e1 = b.e1*a,
+		.e2 = b.e2*a,
+		.e3 = b.e3*a,
+	};
+}
+inline static Bivec scalar_inner_bivec(Scalar a, Bivec b) {
+	return (Bivec){
+		.e01 = b.e01*a,
+		.e02 = b.e02*a,
+		.e03 = b.e03*a,
+		.e12 = b.e12*a,
+		.e31 = b.e31*a,
+		.e23 = b.e23*a,
+	};
+}
+inline static Trivec scalar_inner_trivec(Scalar a, Trivec b) {
+	return (Trivec){
+		.e013 = b.e013*a,
+		.e032 = b.e032*a,
+		.e021 = b.e021*a,
+		.e123 = b.e123*a,
+	};
+}
+inline static Scalar vec_inner_vec(Vec a, Vec b) {
+	return a.e1*b.e1 + a.e2*b.e2 + a.e3*b.e3;
+}
+/* p⋅l = (e0 + e1 + e2 + e3)⋅(e01 + e02 + e03 + e12 + e31 + e23) */
+inline static Vec vec_inner_bivec(Vec a, Bivec b) {
+	return (Vec){
+		.e0 = -a.e1*b.e01 - a.e2*b.e02 - a.e3*b.e03,
+		.e1 = a.e3*b.e31 - a.e2*b.e12,
+		.e2 = a.e1*b.e12 - a.e3*b.e23,
+		.e3 = a.e2*b.e23 - a.e1*b.e31,
+	};
+}
+/* p⋅P = (e0 + e1 + e2 + e3)⋅(e032 + e013 + e021 + e123) */
+inline static Bivec vec_inner_trivec(Vec a, Trivec b) {
+	return (Bivec){
+		.e01 = a.e3*b.e013 - a.e2*b.e021,
+		.e02 = a.e1*b.e021 - a.e3*b.e032,
+		.e03 = a.e2*b.e032 - a.e1*b.e013,
+		.e12 = a.e3*b.e123,
+		.e23 = a.e1*b.e123,
+		.e31 = a.e2*b.e123,
+	};
+}
+/* l1⋅l2 = (e01 + e02 + e03 + e12 + e31 + e23)⋅(e01 + e02 + e03 + e12 + e31 + e23) */
+inline static Scalar bivec_inner_bivec(Bivec a, Bivec b) {
+	return -a.e12*b.e12 - a.e31*b.e31 - a.e23*b.e23;
+}
+/* l⋅P = (e01 + e02 + e03 + e12 + e31 + e23)⋅(e032 + e013 + e021 + e123) */
+inline static Vec bivec_inner_trivec(Bivec a, Trivec b) {
+	return (Vec){
+		.e0 = a.e12*b.e021 + a.e31*b.e013 + a.e23*b.e032,
+		.e1 = -a.e23*b.e123,
+		.e2 = -a.e31*b.e123,
+		.e3 = -a.e12*b.e123,
+	};
+}
+/* P1⋅P2 = (e032 + e013 + e021 + e123)⋅(e032 + e013 + e021 + e123) */
+inline static Scalar trivec_inner_trivec(Trivec a, Trivec b) {
+	return -a.e123*b.e123;
+}
+inline static Vec    vec_inner_scalar(Vec a, Scalar b)       { return scalar_inner_vec(b, a);        }
+inline static Bivec  bivec_inner_scalar(Bivec a, Scalar b)   { return scalar_inner_bivec(b, a);      }
+inline static Vec    bivec_inner_vec(Bivec a, Vec b)         { return negate(vec_inner_bivec(b, a)); }
+inline static Trivec trivec_inner_scalar(Trivec a, Scalar b) { return scalar_inner_trivec(b, a);     }
+inline static Bivec  trivec_inner_vec(Trivec a, Vec b)       { return vec_inner_trivec(b, a);        }
+inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inner_trivec(b, a);      }
 
-#define distance(a, b) _Generic(a,                   \
-	Vec  : _Generic(b, Vec  : vec_vec_distance(a, b), \
-	BiVec: _Generic(b, BiVec: bivec_bivec_distance(a, b)))
-inline static float vec_vec_distance(Vec3 a, Vec3 b) {
-	return sqrtf((a.x - b.x)*(a.x - b.x) + 
-	             (a.y - b.y)*(a.y - b.y) +
-	             (a.z - b.z)*(a.z - b.z));
+#define pga_print(a) _Generic(a,                                        \
+		Vec2  : print_vec2  , Vec3  : print_vec3 , Vec4  : print_vec4  , \
+		Vec   : print_vec   , Bivec : print_bivec, Trivec: print_trivec,  \
+		Scalar: print_scalar, Pseudo: print_pseudo                         \
+	)(a)
+static void print_vec2(Vec2 v) { printf("vec2: %6.3f, %6.3f\n", v.x, v.y); }
+static void print_vec3(Vec3 v) { printf("vec3: %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z); }
+static void print_vec4(Vec4 v) { printf("vec4: %6.3f, %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z, v.w); }
+static void print_vec(Vec a)   { printf("Vector: %6.3fe1, %6.3fe2, %6.3fe3, %6.3fe0\n", a.x, a.y, a.z, a.w); }
+static void print_bivec(Bivec a) {
+	printf("Bivector: %6.3fe23, %6.3fe31, %6.3fe12, %6.3fe01, %6.3fe02, %6.3fe03\n",
+	       a.e23, a.e31, a.e12, a.e01, a.e02, a.e03);
 }
-/* Signed distance between two lines
- * d = (L1 ∨ L2)/(||v1 ∧ v2||)
- */
-inline static float bivec_bivec_distance(BiVec L1, BiVec L2) {
-	return antiwedge(L1, L2) / magnitude(wedge(L1.v, L2.v));
+static void print_trivec(Trivec a) {
+	printf("Trivector: %6.3fe032, %6.3fe013, %6.3fe021, %6.3fe123\n",
+	       a.e032, a.e013, a.e021, a.e123);
 }
-/* Signed distance between a point and a plane
- * d = (p ∨ f)/(||n||)
- */
-inline static float vec_trivec_distance(Vec3 p, TriVec f) {
-	return antiwedge(p, f) / magnitude(f.n);
-}
+static void print_scalar(Scalar a) { printf("Scalar: %6.3f\n", a); }
+static void print_pseudo(Pseudo a) { printf("Pseudoscalar: %6.3fe0123\n", a.e0123); }
 
 #endif
-
-/* ⎣f◍ ∧ p = Line perpendicular to plane f and passing through point p.
- *   ⎣f◍ = Normal vector of plane f (Weight left complement of f.)
- */
-// static inline BiVec trivec_wedge_vec(TriVec f, Vec4 p) { // !!!
-// 	return (BiVec){
-// 		.wx = -f.x*p.w,          /* e41 */
-// 		.wy = -f.y*p.w,          /* e42 */
-// 		.wz = -f.z*p.w,          /* e43 */
-// 		.yz = f.y*p.z - f.z*p.y, /* e23 */
-// 		.zx = f.z*p.x - f.x*p.z, /* e31 */
-// 		.xy = f.x*p.y - f.y*p.x, /* e12 */
-// 	};
-// }
-/* ⎣L◍ ∧ p = Plane perpendicular to line L and containing point p.
- *   ⎣L◍ = Line at infinity perpendicular to line L. (Weight left complement of f.)
- */
-// static inline TriVec bivec_wedge_vec(BiVec L, Vec4 p) { // !!!
-// 	return (TriVec){
-// 		.wyz = -L.vx*p.w,                      /* e423 */
-// 		.wzx = -L.vy*p.w,                      /* e431 */
-// 		.wxy = -L.vz*p.w,                      /* e412 */
-// 		.zyx = L.vx*p.x + L.vy*p.y + L.vz*p.z, /* e321 */
-// 	};
-// }
-/* ⎣f◍ ∧ L = Plane perpendicular to plane f and containing line L. Zero if L is perpendicular to f.
- *   ⎣f◍ = Normal vector of plane f (Weight left complement of f.)
- */
-// static inline TriVec trivec_wedge_bivec(TriVec f, BiVec L) {
-// 	return (TriVec){
-// 		.wyz =  L.vy*f.z - L.vz*f.y,            /* e423 */
-// 		.wzx =  L.vz*f.x - L.vx*f.z,            /* e431 */
-// 		.wxy =  L.vx*f.y - L.vy*f.x,            /* e412 */
-// 		.zyx = -L.mx*f.x - L.my*f.y - L.mz*f.z, /* e321 */
-// 	};
-// }
