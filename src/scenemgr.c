@@ -45,7 +45,6 @@ void scenemgr_init()
 	ui_build();
 
 	taskmgr_init();
-	switch_scene(SCENE_SCRATCH);
 
 	global_light.ambient[0] = 1.0f;
 	global_light.ambient[1] = 1.0f;
@@ -62,7 +61,7 @@ void scenemgr_init()
 	global_light.colour[2] = 1.0f;
 	glm_vec3_normalize(global_light.colour);
 
-	curr_scene = SCENE_GAME;
+	switch_scene(SCENE_SCRATCH);
 }
 
 noreturn void scenemgr_loop()
@@ -146,10 +145,12 @@ static void load_scratch()
 	curr_cam = &scratch_cam;
 
 	register_global_keys();
-	input_register(SDLK_w, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_FORWARDS , kdown);));
+	input_register(SDLK_w, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_UP       , kdown);));
 	input_register(SDLK_a, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_LEFT     , kdown);));
-	input_register(SDLK_s, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_BACKWARDS, kdown);));
+	input_register(SDLK_s, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_DOWN     , kdown);));
 	input_register(SDLK_d, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_RIGHT    , kdown);));
+	input_register(SDLK_q, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_FORWARDS , kdown);));
+	input_register(SDLK_e, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_BACKWARDS, kdown);));
 	scratch_load();
 
 	renderer_clear_draw_list();

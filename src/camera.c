@@ -32,31 +32,39 @@ void camera_set_persp(struct Camera* cam, float w, float h, float fov)
 
 void camera_move(struct Camera* cam, enum Direction dir, bool kdown)
 {
-	switch (dir) {
-	case DIR_UP:
-	case DIR_DOWN:
-	case DIR_LEFT:
-	case DIR_RIGHT:
-	case DIR_FORWARDS:
-	case DIR_BACKWARDS:
-		if (kdown)
-			cam->dir |= dir;
-		else
-			cam->dir &= ~dir;
-		break;
-	default:
-		ERROR("[CAM] Invalid direction: %d", dir);
-	}
+	if (kdown)
+		cam->dir |= dir;
+	else
+		cam->dir &= ~dir;
 }
 
 void camera_update(struct Camera* cam)
 {
-	Vec3 vel = {
-		cam->dir & DIR_LEFT? 0.1f: cam->dir & DIR_RIGHT? -0.1f: 0.0f,
-		0.0f,
-		cam->dir & (DIR_FORWARDS | DIR_UP)? 0.1f: cam->dir & (DIR_BACKWARDS | DIR_DOWN)? -0.1f: 0.0f,
-	};
-	glm_vec3_add(cam->pos.v, vel.v, cam->pos.v);
+	Vec3 dir = { 0 };
+	if (cam->dir & DIR_FORWARDS || cam->dir & DIR_BACKWARDS) {
+		glm_vec3_sub(cam->pos.v, (vec3){ 0.0f, 0.0f, 0.0f }, dir.v);
+		glm_vec3_normalize(dir.v);
+		if (cam->dir & DIR_FORWARDS)
+			glm_vec3_scale(dir.v, -0.1f, dir.v);
+		else
+			glm_vec3_scale(dir.v, 0.1f, dir.v);
+	}
+	glm_vec3_add(cam->pos.v, dir.v, cam->pos.v);
+
+	if (cam->dir & DIR_LEFT)
+		glm_vec3_rotate(cam->pos.v, -glm_rad(1.0f), cam->up.v);
+	if (cam->dir & DIR_RIGHT)
+		glm_vec3_rotate(cam->pos.v, glm_rad(1.0f), cam->up.v);
+	if (cam->dir & DIR_UP || cam->dir & DIR_DOWN) {
+		Vec3 pv;
+		glm_vec3_sub(cam->pos.v, (vec3){ 0.0f, 0.0f, 0.0f }, pv.v);
+		glm_vec3_cross(cam->up.v, pv.v, pv.v);
+		if (cam->dir & DIR_DOWN)
+			glm_vec3_rotate(cam->pos.v, -glm_rad(1.0f), pv.v);
+		else
+			glm_vec3_rotate(cam->pos.v, glm_rad(1.0f), pv.v);
+	}
+
 	glm_lookat(cam->pos.v, (vec3){ 0.0f, 0.0f, 0.0f }, cam->up.v, cam->mats->view.m);
 }
 

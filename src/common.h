@@ -83,13 +83,15 @@ typedef cnd_t  Condition;
 typedef tss_t  ThreadLocal;
 
 enum Direction {
-	DIR_NONE      = 0x00,
-	DIR_UP        = 0x01,
-	DIR_DOWN      = 0x02,
-	DIR_RIGHT     = 0x04,
-	DIR_LEFT      = 0x08,
-	DIR_FORWARDS  = 0x10,
-	DIR_BACKWARDS = 0x20,
+	DIR_NONE         = 0x00,
+	DIR_UP           = 0x01,
+	DIR_DOWN         = 0x02,
+	DIR_RIGHT        = 0x04,
+	DIR_LEFT         = 0x08,
+	DIR_FORWARDS     = 0x10,
+	DIR_BACKWARDS    = 0x20,
+	DIR_ROTATE_LEFT  = 0x21,
+	DIR_ROTATE_RIGHT = 0x22,
 };
 
 typedef union Colour {
