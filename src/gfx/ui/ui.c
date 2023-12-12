@@ -125,8 +125,9 @@ void ui_update()
 		ui_build();
 }
 
-void ui_record_commands(VkCommandBuffer cmd_buf)
+void ui_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 {
+	(void)cam;
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	for (int i = 0; i < ui_containerc; i++) {
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &ui_containers[i].container.vbo.buf, (VkDeviceSize[]){ 0 });

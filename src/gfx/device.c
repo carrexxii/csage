@@ -67,21 +67,30 @@ void device_init_logical(VkSurfaceKHR surf)
 		};
 
 	VkPhysicalDeviceIndexTypeUint8FeaturesEXT uint8_feature = {
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
-		.indexTypeUint8 = 1,
+		.sType          = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
+		.indexTypeUint8 = true,
+		.pNext          = NULL,
+	};
+	VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT prim_restart_feature = {
+		.sType                        = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
+		.primitiveTopologyListRestart = true,
+		.pNext                        = &uint8_feature,
 	};
 	VkDeviceCreateInfo devi = {
 		.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.flags                = 0,
 		.queueCreateInfoCount = devqic,
 		.pQueueCreateInfos    = devqis,
-		.pEnabledFeatures = (VkPhysicalDeviceFeatures[]){
-			{ .geometryShader = 1, },
+		.pEnabledFeatures = &(VkPhysicalDeviceFeatures){
+			.geometryShader     = true,
+			.tessellationShader = true,
+			.wideLines          = true,
+			.largePoints        = true,
 		},
-		.pNext = (VkPhysicalDeviceShaderDrawParametersFeatures[]){
-			{ .sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-			  .shaderDrawParameters = 1,
-			  .pNext                = &uint8_feature, },
+		.pNext = &(VkPhysicalDeviceShaderDrawParametersFeatures){
+			.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+			.shaderDrawParameters = 1,
+			.pNext                = &prim_restart_feature,
 		},
 		.enabledLayerCount       = VULKAN_LAYER_COUNT,
 		.ppEnabledLayerNames     = VULKAN_LAYERS,
@@ -215,6 +224,8 @@ static void get_device_properties(VkPhysicalDevice dev)
 	DEBUG(1, "[VK] GPU has the following support:");
 	DEBUG(1, "\tMSAA samples     -> %d", max_samples);
 	DEBUG(1, "\tLazy memory      -> %s", STRING_TF(gpu_properties.lazy_mem));
+	DEBUG(1, "\tPoint size range -> %1.2f - %1.2f", devp.limits.pointSizeRange[0], devp.limits.pointSizeRange[1]);
+	DEBUG(1, "\tLine width range -> %1.2f - %1.2f", devp.limits.lineWidthRange[0], devp.limits.lineWidthRange[1]);
 }
 
 static void debug_physical(VkPhysicalDevice dev)

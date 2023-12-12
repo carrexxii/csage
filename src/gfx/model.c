@@ -93,7 +93,7 @@ void models_init(VkRenderPass renderpass)
 	};
 
 	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
-	ubo_bufs[0] = ubo_new(sizeof(mat4));                                /* Camera matrix */
+	ubo_bufs[0] = ubo_new(sizeof(Mat4x4[2]));                           /* Camera matrix */
 	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material));       /* Material data */
 	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));               /* Light data    */
 	ubo_bufs[3] = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform)); /* Joint data    */
@@ -224,7 +224,7 @@ void models_update()
 	}
 }
 
-void models_record_commands(VkCommandBuffer cmd_buf)
+void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 {
 	struct Model*     mdl;
 	struct Mesh*      mesh;
@@ -232,10 +232,8 @@ void models_record_commands(VkCommandBuffer cmd_buf)
 	struct KeyFrame*  curr_frm;
 	struct KeyFrame*  next_frm;
 
-	mat4 vp;
-	camera_get_vp(vp);
 	// TODO: Named buffers, not arrays
-	buffer_update(ubo_bufs[0], sizeof(mat4), vp, 0);
+	buffer_update(ubo_bufs[0], sizeof(Mat4x4[2]), cam->mats, 0);
 	
 	update_mdl_tforms(sbo_buf);
 

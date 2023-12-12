@@ -1,12 +1,11 @@
 #ifndef GFX_PARTICLES_H
 #define GFX_PARTICLES_H
 
-#include "common.h"
 #include "vulkan/vulkan.h"
 
 #include "pipeline.h"
 #include "buffers.h"
-#include <stdalign.h>
+#include "camera.h"
 
 #define MAX_PARTICLE_POOLS     256
 #define MAX_PARTICLES_PER_POOL 128
@@ -43,7 +42,7 @@ ID   particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, fl
 void particles_enable(ID particle_id);
 void particles_disable(ID particle_id);
 void particles_update();
-void particles_record_commands(VkCommandBuffer cmd_buf);
+void particles_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);
 void particles_free();
 void particles_free_pool(ID pool_id);
 

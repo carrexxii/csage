@@ -5,9 +5,14 @@ layout(location = 1) in vec4 Vcolour;
 
 layout(location = 0) out vec4 Fcolour;
 
+layout(binding = 0) uniform CameraBufferUBO {
+	mat4 proj;
+	mat4 view;
+} cam;
+
 void main()
 {
 	Fcolour = Vcolour;
 
-	gl_Position = vec4(Vpos, 1.0);
+	gl_Position = cam.proj * cam.view * vec4(Vpos, 1.0);
 }

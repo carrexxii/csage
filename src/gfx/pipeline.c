@@ -78,12 +78,12 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.primitiveRestartEnable = pipeln->topology && pipeln->topology != VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST? true: false,
 	};
 	VkViewport viewport = {
-		.x        = 0.0,
-		.y        = 0.0,
+		.x        = 0.0f,
+		.y        = 0.0f,
 		.width    = (float)swapchain.ext.width,
 		.height   = (float)swapchain.ext.height,
-		.minDepth = 0.0,
-		.maxDepth = 1.0,
+		.minDepth = 0.0f,
+		.maxDepth = 1.0f,
 	};
 	VkRect2D scissor = {
 		.offset = { 0, 0 },
@@ -100,20 +100,20 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.rasterizerDiscardEnable = false,
 		.polygonMode             = VK_POLYGON_MODE_FILL,
-		.lineWidth               = 1.0,
-		.cullMode                = VK_CULL_MODE_BACK_BIT,
+		.lineWidth               = 5.0f,
+		.cullMode                = VK_CULL_MODE_NONE,
 		.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
 		.depthClampEnable        = false,
 		.depthBiasEnable         = false,
-		.depthBiasClamp          = 0.0,
-		.depthBiasConstantFactor = 0.0,
-		.depthBiasSlopeFactor    = 0.0,
+		.depthBiasClamp          = 0.0f,
+		.depthBiasConstantFactor = 0.0f,
+		.depthBiasSlopeFactor    = 0.0f,
 	};
 	VkPipelineMultisampleStateCreateInfo msci = {
 		.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 		.sampleShadingEnable   = false,
 		.rasterizationSamples  = gpu_properties.max_samples,
-		.minSampleShading      = 1.0,
+		.minSampleShading      = 1.0f,
 		.pSampleMask           = NULL,
 		.alphaToCoverageEnable = false,
 		.alphaToOneEnable      = false,

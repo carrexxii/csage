@@ -1,9 +1,6 @@
 #ifndef MATH_PGA_H
 #define MATH_PGA_H
 
-typedef union { struct { float x, y;       }; float arr[2]; } Vec2;
-typedef union { struct { float x, y, z;    }; float arr[3]; } Vec3;
-typedef union { struct { float x, y, z, w; }; float arr[4]; } Vec4;
 typedef union {
 	struct { float  x,  y,  z; };
 	struct { float E1, E2, E3; };

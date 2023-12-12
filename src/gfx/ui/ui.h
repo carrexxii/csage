@@ -5,7 +5,7 @@
 
 #include "util/string.h"
 #include "gfx/buffers.h"
-#include "input.h"
+#include "camera.h"
 #include "types.h"
 #include "font.h"
 #include "container.h"
@@ -29,7 +29,7 @@ struct UIObject* ui_alloc_object(void);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
 void ui_update(void);
-void ui_record_commands(VkCommandBuffer cmd_buf);
+void ui_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);
 void ui_free(void);
 
 #endif

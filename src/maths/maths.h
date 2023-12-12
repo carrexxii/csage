@@ -1,6 +1,23 @@
 #ifndef UTIL_MATHS_H
 #define UTIL_MATHS_H
 
+#define VEC2(x, y)       (Vec2){ x, y }
+#define VEC3(x, y, z)    (Vec3){ x, y, z }
+#define VEC4(x, y, z, w) (Vec4){ x, y, z, w }
+typedef union { struct { float x, y;       }; float arr[2]; vec2 v; } Vec2;
+typedef union { struct { float x, y, z;    }; float arr[3]; vec3 v; } Vec3;
+typedef union { struct { float x, y, z, w; }; float arr[4]; vec4 v; } Vec4;
+
+typedef union {
+	mat4 m;
+	struct { Vec4 r1, r2, r3, r4; };
+	struct { float m11, m12, m13, m14,
+	               m21, m22, m23, m24,
+	               m31, m32, m33, m34,
+	               m41, m42, m43, m44; };
+	float arr[16];
+} Mat4x4;
+
 #define  RECT(x, y, w, h)  (Rect){ x, y, w, h }
 #define IRECT(x, y, w, h) (IRect){ x, y, w, h }
 typedef struct Rect {

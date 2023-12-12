@@ -34,6 +34,7 @@
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #define CGLM_DEFINE_PRINTS
 #define CGLM_OMIT_NS_FROM_STRUCT_API
+#define CGLM_ALL_UNALIGNED
 #include "cglm/struct.h"
 
 #define FPS                      50.0
@@ -82,19 +83,20 @@ typedef cnd_t  Condition;
 typedef tss_t  ThreadLocal;
 
 enum Direction {
-	DIRECTION_NONE      = 0x00,
-	DIRECTION_UP        = 0x01,
-	DIRECTION_DOWN      = 0x02,
-	DIRECTION_RIGHT     = 0x04,
-	DIRECTION_LEFT      = 0x08,
-	DIRECTION_FORWARDS  = 0x10,
-	DIRECTION_BACKWARDS = 0x20,
+	DIR_NONE      = 0x00,
+	DIR_UP        = 0x01,
+	DIR_DOWN      = 0x02,
+	DIR_RIGHT     = 0x04,
+	DIR_LEFT      = 0x08,
+	DIR_FORWARDS  = 0x10,
+	DIR_BACKWARDS = 0x20,
 };
 
 typedef union Colour {
 	uint32 abgr;
 	struct { uint8 a, b, g, r; };
 } Colour;
+#define COLOUR(hex)      (Colour){ .abgr = hex }
 #define COLOUR_TO_VEC(c) (float[4]){ c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f }
 
 #define EXPR(x) ({ x })

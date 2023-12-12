@@ -20,26 +20,32 @@ static void load_game(void);
 static void load_scratch(void);
 
 static enum SceneType curr_scene;
+static struct Camera* curr_cam;
+static struct Camera game_cam;
+static struct Camera scratch_cam;
 
 void scenemgr_init()
 {
-	VkRenderPass renderpass = renderer_init();
+	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f));
+	camera_set_persp(&scratch_cam, global_config.winw, global_config.winh, glm_rad(69.0f));
+	game_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f));
+	camera_set_persp(&game_cam, global_config.winw, global_config.winh, glm_rad(69.0f));
 
-	camera_init();
+	VkRenderPass renderpass = renderer_init();
 	entities_init();
 	test_init();
 	
 	ui_init(renderpass);
 	font_init(renderpass);
 	particles_init(renderpass);
-	map_init(renderpass);
+	map_init(renderpass, &game_cam);
 	models_init(renderpass);
 	scratch_init(renderpass);
 
 	ui_build();
 
 	taskmgr_init();
-	switch_scene(SCENE_GAME);
+	switch_scene(SCENE_SCRATCH);
 
 	global_light.ambient[0] = 1.0f;
 	global_light.ambient[1] = 1.0f;
@@ -79,7 +85,7 @@ noreturn void scenemgr_loop()
 			while (!taskmgr_reset());
 			acc -= DT_MS;
 		}
-		renderer_draw();
+		renderer_draw(curr_cam);
 	}
 }
 
@@ -110,11 +116,15 @@ static void register_global_keys()
 
 static void load_game()
 {
+	curr_cam = &game_cam;
+
 	register_global_keys();
 	input_register(SDL_BUTTON_LEFT, map_mouse_select);
 	input_register(SDL_BUTTON_RIGHT, map_mouse_deselect);
-
-	camera_init();
+	input_register(SDLK_w, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_UP   , kdown);));
+	input_register(SDLK_a, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_LEFT , kdown);));
+	input_register(SDLK_s, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_DOWN , kdown);));
+	input_register(SDLK_d, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_RIGHT, kdown);));
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(map_record_commands);
@@ -123,20 +133,27 @@ static void load_game()
 	renderer_add_to_draw_list(ui_record_commands);
 	renderer_add_to_draw_list(font_record_commands);
 
-	taskmgr_add_task(camera_update);
 	taskmgr_add_task(ui_update);
 	taskmgr_add_task(map_update);
 	taskmgr_add_task(particles_update);
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
+	taskmgr_add_task(LAMBDA(void, bool kdown, camera_update(&game_cam);));
 }
 
 static void load_scratch()
 {
+	curr_cam = &scratch_cam;
+
 	register_global_keys();
+	input_register(SDLK_w, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_FORWARDS , kdown);));
+	input_register(SDLK_a, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_LEFT     , kdown);));
+	input_register(SDLK_s, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_BACKWARDS, kdown);));
+	input_register(SDLK_d, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_RIGHT    , kdown);));
+	scratch_load();
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(scratch_record_commands);
 
-	taskmgr_add_task(camera_update);
+	taskmgr_add_task(LAMBDA(void, bool kdown, camera_update(&scratch_cam);));
 }

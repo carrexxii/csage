@@ -29,14 +29,14 @@ void init_vulkan(SDL_Window* win)
 {
 	DEBUG(1, "[INIT] Initializing Vulkan...");
 	VkApplicationInfo appi = {
-		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pApplicationName   = APPLICATION_NAME,
 		.applicationVersion = ENGINE_VERSION,
 		.pEngineName        = ENGINE_NAME,
 		.engineVersion      = APPLICATION_VERSION,
 		.apiVersion         = VULKAN_API_VERSION,
 	};
-	
+
 	uint32 extpc;
 	vkEnumerateInstanceExtensionProperties(NULL, &extpc, NULL);
 	VkExtensionProperties extps[extpc];
@@ -142,4 +142,3 @@ void free_vulkan()
 	DEBUG(2, "[VK] Destroying Vulkan instance...");
 	vkDestroyInstance(instance, NULL);
 }
-

@@ -7,6 +7,7 @@
 
 #include "buffers.h"
 #include "texture.h"
+#include "camera.h"
 
 // TODO: rename
 #define MAX_MODELS             16
@@ -92,7 +93,7 @@ struct Model {
 void models_init(VkRenderPass renderpass);
 struct Model* model_new(char* path);
 void models_update();
-void models_record_commands(VkCommandBuffer cmd_buf);
+void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);
 void model_free(ID mdl_id);
 void models_free();
 

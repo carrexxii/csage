@@ -19,12 +19,12 @@
 VkSampler default_sampler;
 struct GlobalLighting global_light;
 
-static void record_commands(int imgi);
-static void create_framebuffers();
-static void create_command_buffers();
-static void create_sync_objects();
+static void record_commands(int imgi, struct Camera* cam);
+static void create_framebuffers(void);
+static void create_command_buffers(void);
+static void create_sync_objects(void);
 
-static void (*draw_fns[RENDERER_MAX_DRAW_FUNCTIONS])(VkCommandBuffer);
+static void (*draw_fns[RENDERER_MAX_DRAW_FUNCTIONS])(VkCommandBuffer, struct Camera*);
 static int draw_fnc = 0;
 static int frame    = 0;
 static struct {
@@ -129,14 +129,14 @@ void renderer_clear_draw_list(void)
 	draw_fnc = 0;
 }
 
-void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer))
+void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*))
 {
 	if (draw_fnc >= RENDERER_MAX_DRAW_FUNCTIONS)
 		ERROR("[GFX] Max draw function count (%d/%d) exceeded", draw_fnc, RENDERER_MAX_DRAW_FUNCTIONS);
 	draw_fns[draw_fnc++] = fn;
 }
 
-void renderer_draw()
+void renderer_draw(struct Camera* cam)
 {
 	vkWaitForFences(logical_gpu, 1, &fences.frames[frame], true, UINT64_MAX);
 	vkResetFences(logical_gpu, 1, &fences.frames[frame]);
@@ -147,7 +147,7 @@ void renderer_draw()
 		ERROR("[VK] Failed to aquire next swapchain image");
 
 	vkResetCommandBuffer(cmd_bufs[frame], 0);
-	record_commands(imgi);
+	record_commands(imgi, cam);
 
 	VkSubmitInfo submiti = {
 		.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -218,7 +218,7 @@ void renderer_free()
 /* Records a command for the given image
  *   imgi - index of the framebuffer image to record the command for
  */
-static void record_commands(int imgi)
+static void record_commands(int imgi, struct Camera* cam)
 {
 	VkCommandBuffer cmd_buf = cmd_bufs[frame];
 	VkCommandBufferBeginInfo begini = {
@@ -247,7 +247,7 @@ static void record_commands(int imgi)
 	vkCmdBeginRenderPass(cmd_buf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
 	for (int i = 0; i < draw_fnc; i++)
-		draw_fns[i](cmd_buf);
+		draw_fns[i](cmd_buf, cam);
 
 	vkCmdEndRenderPass(cmd_buf);
 	if (vkEndCommandBuffer(cmd_buf))

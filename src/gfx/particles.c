@@ -41,7 +41,7 @@ static VkVertexInputAttributeDescription streamvert_attrs[] = {
 void particles_init(VkRenderPass renderpass)
 {
 	texture = texture_new_from_image(TEXTURE_PATH "star.png");
-	ubos[0] = ubo_new(sizeof(mat4));
+	ubos[0] = ubo_new(sizeof(Mat4x4[2]));
 	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "particle.vert"),
@@ -129,11 +129,9 @@ void particles_update()
 	}
 }
 
-void particles_record_commands(VkCommandBuffer cmd_buf)
+void particles_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 {
-	mat4 vp;
-	camera_get_vp(vp);
-	buffer_update(ubos[0], sizeof(mat4), vp, 0);
+	buffer_update(ubos[0], sizeof(Mat4x4[2]), cam->mats, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]) { 0 });

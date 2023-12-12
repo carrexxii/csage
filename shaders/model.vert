@@ -30,7 +30,10 @@ layout(binding = 11) readonly buffer SkinBufferSBO {
 	JointData joints[];
 } skin;
 
-layout(binding = 0) uniform CameraBufferUBO { mat4 vp; } cam;
+layout(binding = 0) uniform CameraBufferUBO {
+	mat4 proj;
+	mat4 view;
+} cam;
 layout(binding = 3) uniform AnimationBufferUBO {
 	TransformData kf1[MAX_JOINTS];
 	TransformData kf2[MAX_JOINTS];
@@ -93,5 +96,5 @@ void main()
 	Fnormal = normalize(vec3(inverse(transpose(mdl)) * final_normal));
 	Fuv     = Vuv;
 
-	gl_Position = cam.vp * mdl * final_pos;
+	gl_Position = cam.proj * cam.view * mdl * final_pos;
 }

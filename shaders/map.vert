@@ -7,7 +7,8 @@ layout(location = 0) out vec3 Fpos;
 layout(location = 1) out vec3 Fnormal;
 
 layout(binding = 0) uniform MapDataUBO {
-	mat4  cam_vp;
+	mat4  proj;
+	mat4  view;
 	ivec4 dim;
 	ivec4 block_dim;
 } map;
@@ -27,5 +28,5 @@ void main()
 	Fpos    = vec3(Vpos + global_pos);
 	Fnormal = vec3(Vnormal);
 
-	gl_Position = map.cam_vp * vec4(Vpos, 1.0);
+	gl_Position = map.proj * map.view * vec4(Vpos, 1.0);
 }

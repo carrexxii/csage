@@ -61,12 +61,15 @@ static int* indcs;
 static int blockc;
 static Rect vxl_sels[MAP_MAX_VOXEL_SELECTIONS];
 static int  vxl_selc;
+static struct Camera* map_cam;
 
-void map_init(VkRenderPass renderpass)
+void map_init(VkRenderPass renderpass, struct Camera* cam)
 {
+	map_cam = cam;
+
 	map_data.block_size = (ivec4s){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH };
-	ubo_bufs[0] = ubo_new(sizeof(map_data));   /* Camera matrix, block dimensions and map dimensions */
-	ubo_bufs[1] = ubo_new(sizeof(vxl_sels)); /* vxl_sels to be highlighted                       */
+	ubo_bufs[0] = ubo_new(sizeof(map_data)); /* Camera matrix, block dimensions and map dimensions */
+	ubo_bufs[1] = ubo_new(sizeof(vxl_sels)); /* vxl_sels to be highlighted                         */
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "map.vert"),
 		.fshader     = create_shader(SHADER_DIR "map.frag"),
@@ -142,7 +145,7 @@ void map_mouse_select(bool kdown)
 	if (vxl_selc >= MAP_MAX_VOXEL_SELECTIONS)
 		return;
 
-	vec2s v = camera_get_map_point(camera_get_mouse_ray(mouse_x, mouse_y));
+	vec2s v = camera_get_map_point(camera_get_mouse_ray(map_cam, mouse_x, mouse_y));
 	if (kdown) {
 		hl_start = vxl_selc++;
 		vxl_sels[hl_start] = RECT(floorf(v.x), floorf(v.y), 1.0f, 1.0f);
@@ -177,7 +180,7 @@ void map_clear_highlight()
 void map_update()
 {
 	// TODO: move to global value calcualted once per frame
-	vec2s v = camera_get_map_point(camera_get_mouse_ray(mouse_x, mouse_y));
+	vec2s v = camera_get_map_point(camera_get_mouse_ray(map_cam, mouse_x, mouse_y));
 	if (hl_start != -1) {
 		Rect* r = &vxl_sels[hl_start];
 		r->w = floorf(v.x + 1.0f - r->x);
@@ -185,9 +188,10 @@ void map_update()
 	}
 }
 
-void map_record_commands(VkCommandBuffer cmd_buf)
+void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 {
-	camera_get_vp(map_data.cam_vp);
+	memcpy(map_data.proj.arr, cam->mats->proj.arr, sizeof(Mat4x4));
+	memcpy(map_data.view.arr, cam->mats->view.arr, sizeof(Mat4x4));
 	buffer_update(ubo_bufs[0], sizeof(map_data), &map_data, 0);
 	buffer_update(ubo_bufs[1], sizeof(vxl_sels), vxl_sels, 0);
 	consts.selc = vxl_selc;

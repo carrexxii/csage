@@ -13,8 +13,9 @@ struct ParticleData {
 };
 
 layout(binding = 0) uniform CameraViewProjectionUBO {
-	mat4 vp;
-} camera;
+	mat4 proj;
+	mat4 view;
+} cam;
 layout(binding = 1) uniform ParticleDataUBO {
 	ParticleData data[MAX_PARTICLES];
 	float scale;
@@ -33,7 +34,7 @@ void main()
 
 		float scale = constants.scale;
 		vec2 s = particles.data[gl_InstanceIndex].s;
-		gl_Position = camera.vp * vec4(Vxy.xy*scale + s, -1.0/gl_InstanceIndex, 1.0);
+		gl_Position = cam.proj * cam.view * vec4(Vxy.xy*scale + s, -1.0/gl_InstanceIndex, 1.0);
 		gl_Position.y = -gl_Position.y;
 	}
 }

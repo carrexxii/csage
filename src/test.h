@@ -14,21 +14,21 @@ static bool path_to_mouse(int type, bool kdown, int x, int y)
 {
 	(void)type;
 	(void)kdown;
-	vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
+	// vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
 
-	struct Path path = {.start = (ivec3s){ 0, 0, 0 }, .end = (ivec3s){ screen.x, screen.y, 0 }};
-	path_new(&path);
+	// struct Path path = {.start = (ivec3s){ 0, 0, 0 }, .end = (ivec3s){ screen.x, screen.y, 0 }};
+	// path_new(&path);
 
 	return false;
 }
 
 static bool move_to_mouse(int type, bool kdown, int x, int y)
 {
-	(void)type;
-	if (kdown) {
-		vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
-		entity_path_to(e, (ivec3s){ screen.x, screen.y, 0 });
-	}
+	// (void)type;
+	// if (kdown) {
+		// vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
+		// entity_path_to(e, (ivec3s){ screen.x, screen.y, 0 });
+	// }
 
 	return true;
 }
