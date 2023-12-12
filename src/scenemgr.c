@@ -32,6 +32,7 @@ void scenemgr_init()
 	camera_set_persp(&game_cam, global_config.winw, global_config.winh, glm_rad(69.0f));
 
 	VkRenderPass renderpass = renderer_init();
+	scratch_init(renderpass);
 	entities_init();
 	test_init();
 	
@@ -40,7 +41,6 @@ void scenemgr_init()
 	particles_init(renderpass);
 	map_init(renderpass, &game_cam);
 	models_init(renderpass);
-	scratch_init(renderpass);
 
 	ui_build();
 
@@ -137,7 +137,7 @@ static void load_game()
 	taskmgr_add_task(particles_update);
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
-	taskmgr_add_task(LAMBDA(void, bool kdown, camera_update(&game_cam);));
+	taskmgr_add_task(LAMBDA(void, void, camera_update(&game_cam);));
 }
 
 static void load_scratch()
@@ -156,5 +156,5 @@ static void load_scratch()
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(scratch_record_commands);
 
-	taskmgr_add_task(LAMBDA(void, bool kdown, camera_update(&scratch_cam);));
+	taskmgr_add_task(LAMBDA(void, void, camera_update(&scratch_cam);));
 }

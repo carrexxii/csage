@@ -74,8 +74,9 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 	};
 	VkPipelineInputAssemblyStateCreateInfo inassci = {
 		.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-		.topology               = pipeln->topology? pipeln->topology: VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.primitiveRestartEnable = pipeln->topology && pipeln->topology != VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST? true: false,
+		.topology               = pipeln->topology,
+		.primitiveRestartEnable = pipeln->topology != VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST &&
+		                          pipeln->topology != VK_PRIMITIVE_TOPOLOGY_LINE_LIST? true: false,
 	};
 	VkViewport viewport = {
 		.x        = 0.0f,
@@ -100,7 +101,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 		.rasterizerDiscardEnable = false,
 		.polygonMode             = VK_POLYGON_MODE_FILL,
-		.lineWidth               = 5.0f,
+		.lineWidth               = 3.0f,
 		.cullMode                = VK_CULL_MODE_NONE,
 		.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
 		.depthClampEnable        = false,

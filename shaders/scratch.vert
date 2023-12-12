@@ -14,5 +14,6 @@ void main()
 {
 	Fcolour = Vcolour;
 
-	gl_Position = cam.proj * cam.view * vec4(Vpos, 1.0);
+	gl_Position  = cam.proj * cam.view * vec4(Vpos, 1.0);
+	gl_PointSize = 10.0f;
 }

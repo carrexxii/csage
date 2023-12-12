@@ -39,6 +39,7 @@ void ui_init(VkRenderPass renderpass)
 		// TODO: Tesselation shader?
 		.vshader    = create_shader(SHADER_DIR "ui.vert"),
 		.fshader    = create_shader(SHADER_DIR "ui.frag"),
+		.topology   = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc = 1,
 		.vert_binds = vert_binds,
 		.vert_attrc = 2,

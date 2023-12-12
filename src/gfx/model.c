@@ -101,6 +101,7 @@ void models_init(VkRenderPass renderpass)
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "model.vert"),
 		.fshader     = create_shader(SHADER_DIR "model.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 5,
 		.vert_binds  = vert_binds,
 		.vert_attrc  = 5,
@@ -115,6 +116,7 @@ void models_init(VkRenderPass renderpass)
 	pipeln_static = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "model_static.vert"),
 		.fshader     = create_shader(SHADER_DIR "model.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 3,
 		.vert_binds  = vert_binds,
 		.vert_attrc  = 3,

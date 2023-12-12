@@ -1,6 +1,12 @@
 #ifndef MATH_PGA_H
 #define MATH_PGA_H
 
+#define SCALAR(a)                     (float)(a)
+#define VEC(x, y, z, w)               (Vec){ x, y, z, w }
+#define BIVEC(E1, E2, E3, e1, e2, e3) (Bivec){ E1, E2, E3, e1, e2, e3 }
+#define TRIVEC(x, y, z, w)            (Trivec){ x, y, z, w }
+#define PSS(a)                        (PsS){ .e0123 = (a) }
+
 typedef union {
 	struct { float  x,  y,  z; };
 	struct { float E1, E2, E3; };
@@ -24,7 +30,7 @@ typedef union {
 	struct { float    x,    y,    z,    w; };
 	float arr[4];
 } Trivec;
-typedef union { float e0123; } Pseudo;
+typedef union { float e0123; } PsS;
 
 static const Vec e0 = { .e0 = 1.0f };
 static const Vec e1 = { .e1 = 1.0f };
@@ -40,7 +46,7 @@ static const Trivec e021 = { .e021 = 1.0f };
 static const Trivec e032 = { .e032 = 1.0f };
 static const Trivec e013 = { .e013 = 1.0f };
 static const Trivec e123 = { .e123 = 1.0f };
-static const Pseudo e0123 = { .e0123 = 1.0f };
+static const PsS e0123 = { .e0123 = 1.0f };
 
 /* -------------------------------------------------------------------- */
 
@@ -50,7 +56,7 @@ static const Pseudo e0123 = { .e0123 = 1.0f };
 		Vec   : negate_vec,     \
 		Bivec : negate_bivec,    \
 		Trivec: negate_trivec,    \
-		Pseudo: negate_pseudo      \
+		PsS: negate_pss      \
 	)(a)
 inline static Scalar negate_scalar(Scalar a) { return -a; }
 inline static Vec negate_vec(Vec a) {
@@ -79,20 +85,20 @@ inline static Trivec negate_trivec(Trivec a) {
 		.e123 = -a.e123,
 	};
 }
-inline static Pseudo negate_pseudo(Pseudo a) {
-	return (Pseudo){
+inline static PsS negate_pss(PsS a) {
+	return (PsS){
 		.e0123 = -a.e0123,
 	};
 }
 
 /* reverse: a -> ~a */
-#define reverse(a) _Generic(a,                                                \
-		Vec   : reverse_vec   , Bivec : reverse_bivec, Trivec: reverse_trivec, \
-		Scalar: reverse_scalar, Pseudo: reverse_pseudo                          \
+#define reverse(a) _Generic(a,                                               \
+		Vec   : reverse_vec   , Bivec: reverse_bivec, Trivec: reverse_trivec, \
+		Scalar: reverse_scalar, PsS  : reverse_pss                             \
 	)(a)
 inline static Scalar reverse_scalar(Scalar a) { return a; }
 inline static Vec    reverse_vec(Vec a)       { return a; }
-inline static Pseudo reverse_pseudo(Pseudo a) { return a; }
+inline static PsS    reverse_pss(PsS a)       { return a; }
 inline static Bivec reverse_bivec(Bivec a) {
 	return (Bivec){
 		.e23 = -a.e23, .e31 = -a.e31, .e12 = -a.e12,
@@ -107,12 +113,12 @@ inline static Trivec reverse_trivec(Trivec a) {
 }
 
 /* dual: a -> a* */
-#define dual(a) _Generic(a,                                                   \
-		Vec   : dual_of_vec   , Bivec : dual_of_bivec, Trivec: dual_of_trivec, \
-		Scalar: dual_of_scalar, Pseudo: dual_of_pseudo                          \
+#define dual(a) _Generic(a,                                                  \
+		Vec   : dual_of_vec   , Bivec: dual_of_bivec, Trivec: dual_of_trivec, \
+		Scalar: dual_of_scalar, PsS  : dual_of_pss                             \
 	)(a)
-inline static Pseudo dual_of_scalar(Scalar a) { return (Pseudo){ .e0123 = a, }; }
-inline static Scalar dual_of_pseudo(Pseudo a) { return a.e0123; }
+inline static PsS    dual_of_scalar(Scalar a) { return (PsS){ .e0123 = a, }; }
+inline static Scalar dual_of_pss(PsS a)       { return a.e0123;              }
 inline static Trivec dual_of_vec(Vec a) {
 	return (Trivec){
 		.e123 = a.e0,
@@ -146,7 +152,7 @@ inline static Vec dual_of_trivec(Trivec a) {
 		                    Vec   : scalar_wedge_vec,    \
 		                    Bivec : scalar_wedge_bivec,  \
 		                    Trivec: scalar_wedge_trivec, \
-		                    Pseudo: scalar_wedge_pseudo  \
+		                    PsS   : scalar_wedge_pss     \
 		),                                               \
 		Vec: _Generic(b, Scalar: vec_wedge_scalar,       \
 		                 Vec   : vec_wedge_vec,          \
@@ -190,8 +196,8 @@ inline static Trivec scalar_wedge_trivec(Scalar a, Trivec b) {
 		.e123 = b.e123*a,
 	};
 }
-inline static Pseudo scalar_wedge_pseudo(Scalar a, Pseudo b) {
-	return (Pseudo){
+inline static PsS scalar_wedge_pss(Scalar a, PsS b) {
+	return (PsS){
 		.e0123 = b.e0123*a,
 	};
 }
@@ -216,24 +222,24 @@ inline static Trivec vec_wedge_bivec(Vec a, Bivec b) {
 	};
 }
 /* p∧P = (e0 + e1 + e2 + e3)∧(e032 + e013 + e021 + e123) */
-inline static Pseudo vec_wedge_trivec(Vec a, Trivec b) {
-	return (Pseudo){
+inline static PsS vec_wedge_trivec(Vec a, Trivec b) {
+	return (PsS){
 		.e0123 = a.e0*b.e123 + a.e1*b.e032 + a.e2*b.e013 + a.e3*b.e021,
 	};
 }
 /* l1∧l2 = (e23, e31, e12, e01, e02, e03)∧(e23, e31, e12, e01, e02, e03) */
-inline static Pseudo bivec_wedge_bivec(Bivec a, Bivec b) {
-	return (Pseudo){
+inline static PsS bivec_wedge_bivec(Bivec a, Bivec b) {
+	return (PsS){
 		.e0123 = a.e23*b.e01 + a.e31*b.e02 + a.e12*b.e03 +
 		         a.e01*b.e23 + a.e02*b.e31 + a.e03*b.e12,
 	};
 }
-inline static Pseudo pseudo_wedge_scalar(Pseudo a, Scalar b) { return scalar_wedge_pseudo(b, a); }
-inline static Vec    vec_wedge_scalar(Vec a, Scalar b)       { return scalar_wedge_vec(b, a);    }
-inline static Bivec  bivec_wedge_scalar(Bivec a, Scalar b)   { return scalar_wedge_bivec(b, a);  }
-inline static Trivec trivec_wedge_scalar(Trivec a, Scalar b) { return scalar_wedge_trivec(b, a); }
-inline static Trivec bivec_wedge_vec(Bivec a, Vec b)         { return vec_wedge_bivec(b, a);     }
-inline static Pseudo trivec_wedge_vec(Trivec a, Vec b)       { return negate(vec_wedge_trivec(b, a)); }
+inline static PsS    pss_wedge_scalar(PsS a, Scalar b)       { return scalar_wedge_pss(b, a);         }
+inline static Vec    vec_wedge_scalar(Vec a, Scalar b)       { return scalar_wedge_vec(b, a);         }
+inline static Bivec  bivec_wedge_scalar(Bivec a, Scalar b)   { return scalar_wedge_bivec(b, a);       }
+inline static Trivec trivec_wedge_scalar(Trivec a, Scalar b) { return scalar_wedge_trivec(b, a);      }
+inline static Trivec bivec_wedge_vec(Bivec a, Vec b)         { return vec_wedge_bivec(b, a);          }
+inline static PsS    trivec_wedge_vec(Trivec a, Vec b)       { return negate(vec_wedge_trivec(b, a)); }
 
 /* inner: a, b -> a⋅b */
 #define inner(a, b) _Generic(a,                          \
@@ -332,14 +338,14 @@ inline static Trivec trivec_inner_scalar(Trivec a, Scalar b) { return scalar_inn
 inline static Bivec  trivec_inner_vec(Trivec a, Vec b)       { return vec_inner_trivec(b, a);        }
 inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inner_trivec(b, a);      }
 
-#define pga_print(a) _Generic(a,                                        \
-		Vec2  : print_vec2  , Vec3  : print_vec3 , Vec4  : print_vec4  , \
-		Vec   : print_vec   , Bivec : print_bivec, Trivec: print_trivec,  \
-		Scalar: print_scalar, Pseudo: print_pseudo                         \
+#define pga_print(a) _Generic(a,                                       \
+		Vec2  : print_vec2  , Vec3 : print_vec3 , Vec4  : print_vec4  , \
+		Vec   : print_vec   , Bivec: print_bivec, Trivec: print_trivec,  \
+		Scalar: print_scalar, PsS  : print_pss                            \
 	)(a)
-static void print_vec2(Vec2 v) { printf("vec2: %6.3f, %6.3f\n", v.x, v.y); }
-static void print_vec3(Vec3 v) { printf("vec3: %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z); }
-static void print_vec4(Vec4 v) { printf("vec4: %6.3f, %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z, v.w); }
+static void print_vec2(Vec2 v) { printf("vec2: %6.3f, %6.3f\n", v.x, v.y);                                   }
+static void print_vec3(Vec3 v) { printf("vec3: %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z);                       }
+static void print_vec4(Vec4 v) { printf("vec4: %6.3f, %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z, v.w);           }
 static void print_vec(Vec a)   { printf("Vector: %6.3fe1, %6.3fe2, %6.3fe3, %6.3fe0\n", a.x, a.y, a.z, a.w); }
 static void print_bivec(Bivec a) {
 	printf("Bivector: %6.3fe23, %6.3fe31, %6.3fe12, %6.3fe01, %6.3fe02, %6.3fe03\n",
@@ -349,7 +355,7 @@ static void print_trivec(Trivec a) {
 	printf("Trivector: %6.3fe032, %6.3fe013, %6.3fe021, %6.3fe123\n",
 	       a.e032, a.e013, a.e021, a.e123);
 }
-static void print_scalar(Scalar a) { printf("Scalar: %6.3f\n", a); }
-static void print_pseudo(Pseudo a) { printf("Pseudoscalar: %6.3fe0123\n", a.e0123); }
+static void print_scalar(Scalar a) { printf("Scalar: %6.3f\n", a);                  }
+static void print_pss(PsS a)       { printf("Pseudoscalar: %6.3fe0123\n", a.e0123); }
 
 #endif

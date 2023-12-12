@@ -1,4 +1,5 @@
 #include "config.h"
+#include "maths/maths.h"
 #include "gfx/ui/font.h"
 #include "camera.h"
 #include "entities/entity.h"
@@ -7,6 +8,7 @@
 #include "input.h"
 #include "map.h"
 #include "gfx/ui/ui.h"
+#include "maths/scratch.h"
 
 static EntityID e;
 
@@ -38,6 +40,8 @@ static void test_init()
 	map_new((ivec3s){ 64, 64, 16 });
 
 	e = entity_new((vec3s){ 5.0, 5.0, -5.0 }, MODEL_PATH "RiggedSimple.glb");
+
+	scratch_add(TRIVEC(1.0f, 1.0f, 1.0f, 1.0f));
 
 	// struct UIStyle test_style = {
 		// .bg = 0xFF00FFFF,

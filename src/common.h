@@ -102,16 +102,24 @@ typedef union Colour {
 #define COLOUR_TO_VEC(c) (float[4]){ c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f }
 
 #define EXPR(x) ({ x })
-#define LAMBDA(type, args, body) EXPR( \
-		type _(args) {                 \
-			body                       \
-		} _;                           \
-	)
+#ifndef __clang__
+	#define LAMBDA(type, args, body) EXPR( \
+			type _(args) {                 \
+				body                       \
+			} _;                           \
+		)
+#else
+	#define LAMBDA(a, b, c) EXPR((a (*)(b))random_int;)
+#endif
 #define LAMBDAV(body) LAMBDA(void, void, body)
 
-#define UNPACK2(x) x[0], x[1]
-#define UNPACK3(x) x[0], x[1], x[2]
-#define UNPACK4(x) x[0], x[1], x[2], x[3]
+#define UNPACK2(_x) _x[0], _x[1]
+#define UNPACK3(_x) _x[0], _x[1], _x[2]
+#define UNPACK4(_x) _x[0], _x[1], _x[2], _x[3]
+#define UNPACK5(_x) _x[0], _x[1], _x[2], _x[3], _x[4]
+#define UNPACK6(_x) _x[0], _x[1], _x[2], _x[3], _x[4], _x[5]
+#define UNPACK7(_x) _x[0], _x[1], _x[2], _x[3], _x[4], _x[5], _x[6]
+#define UNPACK8(_x) _x[0], _x[1], _x[2], _x[3], _x[4], _x[5], _x[6], _x[7]
 
 #ifndef _WIN32
 #define MIN(a, b) ((a) < (b)? (a): (b))

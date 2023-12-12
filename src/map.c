@@ -73,6 +73,7 @@ void map_init(VkRenderPass renderpass, struct Camera* cam)
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "map.vert"),
 		.fshader     = create_shader(SHADER_DIR "map.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
 		.vert_attrc  = ARRAY_SIZE(vertex_attrs),

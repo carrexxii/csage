@@ -46,6 +46,7 @@ void particles_init(VkRenderPass renderpass)
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "particle.vert"),
 		.fshader     = create_shader(SHADER_DIR "particle.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = &streamvert_binds,
 		.vert_attrc  = 2,
