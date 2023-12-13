@@ -69,54 +69,7 @@ static const PsS e0123 = { .e0123 = 1.0f };
 
 /* -------------------------------------------------------------------- */
 
-/* negate: a -> -a */
-#define negate(a) _Generic(a,  \
-		Vec2  : negate_vec2,   \
-		Vec3  : negate_vec3,   \
-		Vec4  : negate_vec4,   \
-		Scalar: negate_scalar, \
-		Vec   : negate_vec,    \
-		Bivec : negate_bivec,  \
-		Trivec: negate_trivec, \
-		PsS   : negate_pss     \
-	)(a)
-inline static Vec2 negate_vec2(Vec2 v) { return VEC2(-v.x, -v.y);             }
-inline static Vec3 negate_vec3(Vec3 v) { return VEC3(-v.x, -v.y, -v.z);       }
-inline static Vec4 negate_vec4(Vec4 v) { return VEC4(-v.x, -v.y, -v.z, -v.w); }
-inline static Scalar negate_scalar(Scalar a) { return -a; }
-inline static Vec negate_vec(Vec a) {
-	return (Vec){
-		.e0 = -a.e0,
-		.e1 = -a.e1,
-		.e2 = -a.e2,
-		.e3 = -a.e3,
-	};
-}
-inline static Bivec negate_bivec(Bivec a) {
-	return (Bivec){
-		.e01 = -a.e01,
-		.e02 = -a.e02,
-		.e03 = -a.e03,
-		.e12 = -a.e12,
-		.e23 = -a.e23,
-		.e31 = -a.e31,
-	};
-}
-inline static Trivec negate_trivec(Trivec a) {
-	return (Trivec){
-		.e021 = -a.e021,
-		.e013 = -a.e013,
-		.e032 = -a.e032,
-		.e123 = -a.e123,
-	};
-}
-inline static PsS negate_pss(PsS a) {
-	return (PsS){
-		.e0123 = -a.e0123,
-	};
-}
-
-/* reverse: a -> ~a */
+/*** reverse: a -> ~a ***/
 #define reverse(a) _Generic(a,                                               \
 		Vec   : reverse_vec   , Bivec: reverse_bivec, Trivec: reverse_trivec, \
 		Scalar: reverse_scalar, PsS  : reverse_pss                             \
@@ -137,7 +90,7 @@ inline static Trivec reverse_trivec(Trivec a) {
 	};
 }
 
-/* dual: a -> a* */
+/*** dual: a -> a* ***/
 #define dual(a) _Generic(a,                                                  \
 		Vec   : dual_of_vec   , Bivec: dual_of_bivec, Trivec: dual_of_trivec, \
 		Scalar: dual_of_scalar, PsS  : dual_of_pss                             \
@@ -171,7 +124,169 @@ inline static Vec dual_of_trivec(Trivec a) {
 	};
 }
 
-/* wedge: a, b -> a∧b */
+/*** add: a, b -> a + b ***/
+#define add(_a, _b) _Generic(_a,                        \
+		Scalar: _Generic(_b, Scalar: scalar_add_scalar, \
+		                     Vec   : scalar_add_vec,    \
+		                     Bivec : scalar_add_bivec,  \
+		                     Trivec: scalar_add_trivec, \
+		                     PsS   : scalar_add_pss     \
+		),                                              \
+		Vec: _Generic(_b, Scalar: vec_add_scalar,       \
+		                  Vec   : vec_add_vec           \
+		),                                              \
+		Bivec: _Generic(_b, Scalar: bivec_add_scalar,   \
+		                    Bivec : bivec_add_bivec     \
+		),                                              \
+		Trivec: _Generic(_b, Scalar: trivec_add_scalar, \
+		                     Trivec: trivec_add_trivec  \
+		),                                              \
+		PsS: _Generic(_b, Scalar: pss_add_scalar,       \
+		                  PsS   : pss_add_pss           \
+		)                                               \
+	)(_a, _b)
+inline static Scalar scalar_add_scalar(Scalar a, Scalar b) { return a + b;                               }
+inline static PsS    scalar_add_pss(Scalar a, PsS b)       { return (PsS){ .e0123 = a + b.e0123 };       }
+inline static PsS    pss_add_pss(PsS a, PsS b)             { return (PsS){ .e0123 = a.e0123 + b.e0123 }; }
+inline static Vec scalar_add_vec(Scalar a, Vec b) {
+	return (Vec){
+		.e1 = b.e1 + a,
+		.e2 = b.e2 + a,
+		.e3 = b.e3 + a,
+		.e0 = b.e0 + a,
+	};
+}
+inline static Bivec scalar_add_bivec(Scalar a, Bivec b) {
+	return (Bivec){
+		.e01 = b.e01 + a,
+		.e02 = b.e02 + a,
+		.e03 = b.e03 + a,
+		.e23 = b.e23 + a,
+		.e31 = b.e31 + a,
+		.e12 = b.e12 + a,
+	};
+}
+inline static Trivec scalar_add_trivec(Scalar a, Trivec b) {
+	return (Trivec){
+		.e032 = b.e032 + a,
+		.e013 = b.e013 + a,
+		.e021 = b.e021 + a,
+		.e123 = b.e123 + a,
+	};
+}
+inline static Vec vec_add_vec(Vec a, Vec b) {
+	return (Vec){
+		.e1 = a.e1 + b.e1, 
+		.e2 = a.e2 + b.e2, 
+		.e3 = a.e3 + b.e3, 
+		.e0 = a.e0 + b.e0, 
+	};
+}
+inline static Bivec bivec_add_bivec(Bivec a, Bivec b) {
+	return (Bivec){
+		.e01 = a.e01 + b.e01,
+		.e02 = a.e02 + b.e02,
+		.e03 = a.e03 + b.e03,
+		.e23 = a.e23 + b.e23,
+		.e31 = a.e31 + b.e31,
+		.e12 = a.e12 + b.e12,
+	};
+}
+inline static Trivec trivec_add_trivec(Trivec a, Trivec b) {
+	return (Trivec){
+		.e032 = a.e032 + b.e032,
+		.e013 = a.e013 + b.e013,
+		.e021 = a.e021 + b.e021,
+		.e123 = a.e123 + b.e123,
+	};
+}
+inline static Vec    vec_add_scalar(Vec a, Scalar b)       { return scalar_add_vec(b, a);    }
+inline static Bivec  bivec_add_scalar(Bivec a, Scalar b)   { return scalar_add_bivec(b, a);  }
+inline static Trivec trivec_add_scalar(Trivec a, Scalar b) { return scalar_add_trivec(b, a); }
+inline static PsS    pss_add_scalar(PsS a, Scalar b)       { return scalar_add_pss(b, a);    }
+
+/*** multiply: a, b -> a * b ***/
+#define multiply(_a, _b) _Generic(_a,                        \
+		Scalar: _Generic(_b, Scalar: scalar_multiply_scalar, \
+		                     Vec   : scalar_multiply_vec,    \
+		                     Bivec : scalar_multiply_bivec,  \
+		                     Trivec: scalar_multiply_trivec, \
+		                     PsS   : scalar_multiply_pss     \
+		),                                                   \
+		Vec: _Generic(_b, Scalar: vec_multiply_scalar,       \
+		                  Vec   : vec_multiply_vec           \
+		),                                                   \
+		Bivec: _Generic(_b, Scalar: bivec_multiply_scalar,   \
+		                    Bivec : bivec_multiply_bivec     \
+		),                                                   \
+		Trivec: _Generic(_b, Scalar: trivec_multiply_scalar, \
+		                     Trivec: trivec_multiply_trivec  \
+		),                                                   \
+		PsS: _Generic(_b, Scalar: pss_multiply_scalar,       \
+		                  PsS   : pss_multiply_pss           \
+		)                                                    \
+	)(_a, _b)
+inline static Scalar scalar_multiply_scalar(Scalar a, Scalar b) { return a * b;                               }
+inline static PsS    scalar_multiply_pss(Scalar a, PsS b)       { return (PsS){ .e0123 = a * b.e0123 };       }
+inline static PsS    pss_multiply_pss(PsS a, PsS b)             { return (PsS){ .e0123 = a.e0123 * b.e0123 }; }
+inline static Vec scalar_multiply_vec(Scalar a, Vec b) {
+	return (Vec){
+		.e1 = b.e1 * a,
+		.e2 = b.e2 * a,
+		.e3 = b.e3 * a,
+		.e0 = b.e0 * a,
+	};
+}
+inline static Bivec scalar_multiply_bivec(Scalar a, Bivec b) {
+	return (Bivec){
+		.e01 = b.e01 * a,
+		.e02 = b.e02 * a,
+		.e03 = b.e03 * a,
+		.e23 = b.e23 * a,
+		.e31 = b.e31 * a,
+		.e12 = b.e12 * a,
+	};
+}
+inline static Trivec scalar_multiply_trivec(Scalar a, Trivec b) {
+	return (Trivec){
+		.e032 = b.e032 * a,
+		.e013 = b.e013 * a,
+		.e021 = b.e021 * a,
+		.e123 = b.e123 * a,
+	};
+}
+inline static Vec vec_multiply_vec(Vec a, Vec b) {
+	return (Vec){
+		.e1 = a.e1 * b.e1, 
+		.e2 = a.e2 * b.e2, 
+		.e3 = a.e3 * b.e3, 
+		.e0 = a.e0 * b.e0, 
+	};
+}
+inline static Bivec bivec_multiply_bivec(Bivec a, Bivec b) {
+	return (Bivec){
+		.e01 = a.e01 * b.e01,
+		.e02 = a.e02 * b.e02,
+		.e03 = a.e03 * b.e03,
+		.e23 = a.e23 * b.e23,
+		.e31 = a.e31 * b.e31,
+		.e12 = a.e12 * b.e12,
+	};
+}
+inline static Trivec trivec_multiply_trivec(Trivec a, Trivec b) {
+	return (Trivec){
+		.e032 = a.e032 * b.e032,
+		.e013 = a.e013 * b.e013,
+		.e021 = a.e021 * b.e021,
+		.e123 = a.e123 * b.e123,
+	};
+}
+inline static Vec    vec_multiply_scalar(Vec a, Scalar b)       { return scalar_multiply_vec(b, a);    }
+inline static Bivec  bivec_multiply_scalar(Bivec a, Scalar b)   { return scalar_multiply_bivec(b, a);  }
+inline static Trivec trivec_multiply_scalar(Trivec a, Scalar b) { return scalar_multiply_trivec(b, a); }
+inline static PsS    pss_multiply_scalar(PsS a, Scalar b)       { return scalar_multiply_pss(b, a);    }
+
+/*** wedge: a, b -> a ∧ b ***/
 #define wedge(_a, _b) _Generic(_a,                        \
 		Scalar: _Generic(_b, Scalar: scalar_wedge_scalar, \
 		                     Vec   : scalar_wedge_vec,    \
@@ -259,12 +374,12 @@ inline static PsS bivec_wedge_bivec(Bivec a, Bivec b) {
 		         a.e01*b.e23 + a.e02*b.e31 + a.e03*b.e12,
 	};
 }
-inline static PsS    pss_wedge_scalar(PsS a, Scalar b)       { return scalar_wedge_pss(b, a);         }
-inline static Vec    vec_wedge_scalar(Vec a, Scalar b)       { return scalar_wedge_vec(b, a);         }
-inline static Bivec  bivec_wedge_scalar(Bivec a, Scalar b)   { return scalar_wedge_bivec(b, a);       }
-inline static Trivec trivec_wedge_scalar(Trivec a, Scalar b) { return scalar_wedge_trivec(b, a);      }
-inline static Trivec bivec_wedge_vec(Bivec a, Vec b)         { return vec_wedge_bivec(b, a);          }
-inline static PsS    trivec_wedge_vec(Trivec a, Vec b)       { return negate(vec_wedge_trivec(b, a)); }
+inline static PsS    pss_wedge_scalar(PsS a, Scalar b)       { return scalar_wedge_pss(b, a);                  }
+inline static Vec    vec_wedge_scalar(Vec a, Scalar b)       { return scalar_wedge_vec(b, a);                  }
+inline static Bivec  bivec_wedge_scalar(Bivec a, Scalar b)   { return scalar_wedge_bivec(b, a);                }
+inline static Trivec trivec_wedge_scalar(Trivec a, Scalar b) { return scalar_wedge_trivec(b, a);               }
+inline static Trivec bivec_wedge_vec(Bivec a, Vec b)         { return vec_wedge_bivec(b, a);                   }
+inline static PsS    trivec_wedge_vec(Trivec a, Vec b)       { return multiply(vec_wedge_trivec(b, a), -1.0f); }
 
 /* inner: a, b -> a⋅b */
 #define inner(a, b) _Generic(a,                          \
@@ -356,12 +471,12 @@ inline static Vec bivec_inner_trivec(Bivec a, Trivec b) {
 inline static Scalar trivec_inner_trivec(Trivec a, Trivec b) {
 	return -a.e123*b.e123;
 }
-inline static Vec    vec_inner_scalar(Vec a, Scalar b)       { return scalar_inner_vec(b, a);        }
-inline static Bivec  bivec_inner_scalar(Bivec a, Scalar b)   { return scalar_inner_bivec(b, a);      }
-inline static Vec    bivec_inner_vec(Bivec a, Vec b)         { return negate(vec_inner_bivec(b, a)); }
-inline static Trivec trivec_inner_scalar(Trivec a, Scalar b) { return scalar_inner_trivec(b, a);     }
-inline static Bivec  trivec_inner_vec(Trivec a, Vec b)       { return vec_inner_trivec(b, a);        }
-inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inner_trivec(b, a);      }
+inline static Vec    vec_inner_scalar(Vec a, Scalar b)       { return scalar_inner_vec(b, a);                 }
+inline static Bivec  bivec_inner_scalar(Bivec a, Scalar b)   { return scalar_inner_bivec(b, a);               }
+inline static Vec    bivec_inner_vec(Bivec a, Vec b)         { return multiply(vec_inner_bivec(b, a), -1.0f); }
+inline static Trivec trivec_inner_scalar(Trivec a, Scalar b) { return scalar_inner_trivec(b, a);              }
+inline static Bivec  trivec_inner_vec(Trivec a, Vec b)       { return vec_inner_trivec(b, a);                 }
+inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inner_trivec(b, a);               }
 
 #define join(a, b) _Generic(a,                        \
 		Trivec: _Generic(b, Trivec: trivec_join_trivec \
