@@ -15,8 +15,12 @@ void scratch_clear(void);
 void scratch_free(void);
 
 #define scratch_add(a) _Generic(a, \
+		Vec   : scratch_add_vec,   \
+		Bivec : scratch_add_bivec, \
 		Trivec: scratch_add_trivec \
 	)(a)
+void scratch_add_vec(Vec a);
+void scratch_add_bivec(Bivec a);
 void scratch_add_trivec(Trivec a);
 
 #endif

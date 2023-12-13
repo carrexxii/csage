@@ -10,7 +10,7 @@
 #include "gfx/ui/ui.h"
 #include "maths/scratch.h"
 
-static EntityID e;
+static EntityID ent;
 
 static bool path_to_mouse(int type, bool kdown, int x, int y)
 {
@@ -35,13 +35,48 @@ static bool move_to_mouse(int type, bool kdown, int x, int y)
 	return true;
 }
 
+static void test_scratch()
+{
+	// var A=point(0,.8,0), B=point(.8,-1,-.8), C=point(-.8,-1,-.8), D=point(.8,-1,.8), E=point(-.8,-1,.8);
+	Trivec a = TRIVEC( 0.0f,  0.8f,  0.0f, 1.0f);
+	Trivec b = TRIVEC( 0.8f, -1.0f, -0.8f, 1.0f);
+	Trivec c = TRIVEC(-0.8f, -1.0f, -0.8f, 1.0f);
+	Trivec d = TRIVEC( 0.8f, -1.0f,  0.8f, 1.0f);
+	Trivec e = TRIVEC(-0.8f, -1.0f,  0.8f, 1.0f);
+
+	/* Points */
+	// scratch_add(a);
+	// scratch_add(b);
+	scratch_add(c);
+	// scratch_add(d);
+	scratch_add(e);
+
+	/* Lines between the points */
+	// scratch_add(join(a, b));
+	// scratch_add(join(b, c));
+	scratch_add(join(e, c));
+	pga_print(join(e, c));
+
+	// Vec v1 = VEC(1.0, 1.0, 1.0, 1.0);
+	// Vec v2 = VEC(2.0, 2.0, 2.0, 1.0);
+	// Vec v3 = VEC(0.0, 0.0, 0.0, 1.0);
+	// Vec v4 = VEC(-5.0, 0.0, 1.0, 1.0);
+	// Bivec b1 = wedge(v1, v2);
+	// Bivec b2 = wedge(v3, v4);
+	// scratch_add(b1);
+	// scratch_add(b2);
+
+	// Vec v = { 0.0, 0.0, 0.0, 1.0 };
+	// scratch_add(v);
+}
+
 static void test_init()
 {
 	map_new((ivec3s){ 64, 64, 16 });
 
-	e = entity_new((vec3s){ 5.0, 5.0, -5.0 }, MODEL_PATH "RiggedSimple.glb");
+	ent = entity_new((vec3s){ 5.0, 5.0, -5.0 }, MODEL_PATH "RiggedSimple.glb");
 
-	scratch_add(TRIVEC(1.0f, 1.0f, 1.0f, 1.0f));
+	test_scratch();
 
 	// struct UIStyle test_style = {
 		// .bg = 0xFF00FFFF,

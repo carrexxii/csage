@@ -1,36 +1,55 @@
-#ifndef MATH_PGA_H
-#define MATH_PGA_H
+#ifndef MATHS_PGA_H
+#define MATHS_PGA_H
 
+#define VEC2(x, y)                    (Vec2){ x, y }
+#define VEC3(x, y, z)                 (Vec3){ x, y, z }
+#define VEC4(x, y, z, w)              (Vec4){ x, y, z, w }
 #define SCALAR(a)                     (float)(a)
 #define VEC(x, y, z, w)               (Vec){ x, y, z, w }
 #define BIVEC(E1, E2, E3, e1, e2, e3) (Bivec){ E1, E2, E3, e1, e2, e3 }
+#define BIVECV(v1, v2)                (Bivec){ v1.x, v1.y, v1.z, v2.x, v2.y, v2.z }
 #define TRIVEC(x, y, z, w)            (Trivec){ x, y, z, w }
 #define PSS(a)                        (PsS){ .e0123 = (a) }
 
-typedef union {
+typedef union Vec2 { struct { float x, y;       }; float arr[2]; vec2 v; } Vec2;
+typedef union Vec3 { struct { float x, y, z;    }; float arr[3]; vec3 v; } Vec3;
+typedef union Vec4 { struct { float x, y, z, w; }; float arr[4]; vec4 v; } Vec4;
+
+typedef union Mat4x4 {
+	mat4 m;
+	struct { Vec4 r1, r2, r3, r4; };
+	struct { float m11, m12, m13, m14,
+	               m21, m22, m23, m24,
+	               m31, m32, m33, m34,
+	               m41, m42, m43, m44; };
+	float arr[16];
+} Mat4x4;
+
+typedef union Point {
 	struct { float  x,  y,  z; };
 	struct { float E1, E2, E3; };
 	float arr[3];
 } Point;
 
 typedef float Scalar;
-typedef union {
+typedef union Vec {
 	struct { float  x,  y,  z,  w; };
 	struct { float e1, e2, e3, e0; };
 	float arr[4];
 } Vec;
-typedef union {
-	struct { float e23, e31, e12, e01, e02, e03; };
-	struct { float  yz,  zx,  xy,  wx,  wy,  wz; };
-	struct { Vec3 E; Vec3 e0; };
+typedef union Bivec {
+	struct { float e01, e02, e03, e23, e31, e12; };
+	struct { float  wx,  wy,  wz,  yz,  zx,  xy; };
+	struct { Vec3 m; Vec3 d; };
+	struct { Vec3 V; Vec3 E; };
 	float arr[6];
 } Bivec;
-typedef union {
+typedef union Trivec {
 	struct { float e032, e013, e021, e123; };
 	struct { float    x,    y,    z,    w; };
 	float arr[4];
 } Trivec;
-typedef union { float e0123; } PsS;
+typedef union PsS { float e0123; } PsS;
 
 static const Vec e0 = { .e0 = 1.0f };
 static const Vec e1 = { .e1 = 1.0f };
@@ -51,13 +70,19 @@ static const PsS e0123 = { .e0123 = 1.0f };
 /* -------------------------------------------------------------------- */
 
 /* negate: a -> -a */
-#define negate(a) _Generic(a, \
+#define negate(a) _Generic(a,  \
+		Vec2  : negate_vec2,   \
+		Vec3  : negate_vec3,   \
+		Vec4  : negate_vec4,   \
 		Scalar: negate_scalar, \
-		Vec   : negate_vec,     \
-		Bivec : negate_bivec,    \
-		Trivec: negate_trivec,    \
-		PsS: negate_pss      \
+		Vec   : negate_vec,    \
+		Bivec : negate_bivec,  \
+		Trivec: negate_trivec, \
+		PsS   : negate_pss     \
 	)(a)
+inline static Vec2 negate_vec2(Vec2 v) { return VEC2(-v.x, -v.y);             }
+inline static Vec3 negate_vec3(Vec3 v) { return VEC3(-v.x, -v.y, -v.z);       }
+inline static Vec4 negate_vec4(Vec4 v) { return VEC4(-v.x, -v.y, -v.z, -v.w); }
 inline static Scalar negate_scalar(Scalar a) { return -a; }
 inline static Vec negate_vec(Vec a) {
 	return (Vec){
@@ -147,26 +172,26 @@ inline static Vec dual_of_trivec(Trivec a) {
 }
 
 /* wedge: a, b -> a∧b */
-#define wedge(a, b) _Generic(a,                          \
-		Scalar: _Generic(b, Scalar: scalar_wedge_scalar, \
-		                    Vec   : scalar_wedge_vec,    \
-		                    Bivec : scalar_wedge_bivec,  \
-		                    Trivec: scalar_wedge_trivec, \
-		                    PsS   : scalar_wedge_pss     \
-		),                                               \
-		Vec: _Generic(b, Scalar: vec_wedge_scalar,       \
-		                 Vec   : vec_wedge_vec,          \
-		                 Bivec : vec_wedge_bivec,        \
-		                 Trivec: vec_wedge_trivec        \
-		),                                               \
-		Bivec: _Generic(b, Scalar: bivec_wedge_scalar,   \
-		                   Vec   : bivec_wedge_vec,      \
-		                   Bivec : bivec_wedge_bivec     \
-		),                                               \
-		Trivec: _Generic(b, Scalar: scalar_wedge_trivec, \
-		                    Vec   : trivec_wedge_vec     \
-		)                                                \
-	)(a, b)
+#define wedge(_a, _b) _Generic(_a,                        \
+		Scalar: _Generic(_b, Scalar: scalar_wedge_scalar, \
+		                     Vec   : scalar_wedge_vec,    \
+		                     Bivec : scalar_wedge_bivec,  \
+		                     Trivec: scalar_wedge_trivec, \
+		                     PsS   : scalar_wedge_pss     \
+		),                                                \
+		Vec: _Generic(_b, Scalar: vec_wedge_scalar,       \
+		                  Vec   : vec_wedge_vec,          \
+		                  Bivec : vec_wedge_bivec,        \
+		                  Trivec: vec_wedge_trivec        \
+		),                                                \
+		Bivec: _Generic(_b, Scalar: bivec_wedge_scalar,   \
+		                    Vec   : bivec_wedge_vec,      \
+		                    Bivec : bivec_wedge_bivec     \
+		)                                                 \
+	)(_a, _b)
+// Trivec: _Generic(_b, Scalar: scalar_wedge_trivec, 
+//                      Vec   : trivec_wedge_vec     
+// )                                                 
 inline static Scalar scalar_wedge_scalar(Scalar a, Scalar b) {
 	return a*b;
 }
@@ -337,6 +362,33 @@ inline static Vec    bivec_inner_vec(Bivec a, Vec b)         { return negate(vec
 inline static Trivec trivec_inner_scalar(Trivec a, Scalar b) { return scalar_inner_trivec(b, a);     }
 inline static Bivec  trivec_inner_vec(Trivec a, Vec b)       { return vec_inner_trivec(b, a);        }
 inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inner_trivec(b, a);      }
+
+#define join(a, b) _Generic(a,                        \
+		Trivec: _Generic(b, Trivec: trivec_join_trivec \
+		)                                               \
+	)(a, b)
+/* a∨b = (e032 + e013 + e021 + e123)∨(e032 + e013 + e021 + e123) */
+/* a∨b = ⋆-(⋆a∧⋆b)
+ *     = (b - a)I3 - e0(a∧b)I3
+ *     = 
+ */
+/* a∨b = (a*∧b*)-*
+ *     = ((-e0 - e1 - e2 - e3)∧(-e0 - e1 - e2 - e3))*
+ *     = ((e0 + e1 + e2 + e3)∧(e0 + e1 + e2 + e3))*
+ */
+inline static Bivec trivec_join_trivec(Trivec a, Trivec b) {
+	Vec ad = dual(a);
+	Vec bd = dual(b);
+	Bivec r =  (Bivec){
+		.e01 = ad.e0*bd.e1 - ad.e1*bd.e0,
+		.e02 = ad.e0*bd.e2 - ad.e2*bd.e0,
+		.e03 = ad.e0*bd.e3 - ad.e3*bd.e0,
+		.e23 = ad.e2*bd.e3 - ad.e3*bd.e2,
+		.e31 = ad.e3*bd.e1 - ad.e1*bd.e3,
+		.e12 = ad.e1*bd.e2 - ad.e2*bd.e1,
+	};
+	return dual(r);
+}
 
 #define pga_print(a) _Generic(a,                                       \
 		Vec2  : print_vec2  , Vec3 : print_vec3 , Vec4  : print_vec4  , \
