@@ -3,7 +3,8 @@
 
 #define VEC2(x, y)                    (Vec2){ x, y }
 #define VEC3(x, y, z)                 (Vec3){ x, y, z }
-#define VEC3V(v)                      (Vec3){ v.x, v.y, v.z }
+#define VEC3V(_v)                     _Generic(_v, Vec : (Vec3){ _v.x/_v.w, _v.y/_v.w, _v.z/_v.w }, \
+                                                   Vec3: (Vec3){ _v.x, _v.y, _v.z })
 #define VEC4(x, y, z, w)              (Vec4){ x, y, z, w }
 #define SCALAR(a)                     (float)(a)
 #define VEC(x, y, z, w)               (Vec){ x, y, z, w }
@@ -543,7 +544,7 @@ inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inne
 	)(_a)
 inline static Scalar scalar_norm(Scalar a) { return sqrtf(norm2(a)); }
 inline static Scalar vec_norm(Vec a)       { return sqrtf(norm2(a)); }
-inline static Scalar vec3_norm(Vec a)      { return sqrtf(norm2(a)); }
+inline static Scalar vec3_norm(Vec3 a)     { return sqrtf(norm2(a)); }
 inline static Scalar bivec_norm(Bivec a)   { return sqrtf(norm2(a)); }
 inline static Scalar trivec_norm(Trivec a) { return sqrtf(norm2(a)); }
 inline static Scalar pss_norm(PsS a)       { return sqrtf(norm2(a)); }
@@ -551,10 +552,12 @@ inline static Scalar pss_norm(PsS a)       { return sqrtf(norm2(a)); }
 /*** normalized: a -> a / ||a|| ***/
 #define normalized(_a) _Generic(_a, \
 		Vec   : vec_normalized,     \
+		Vec3  : vec3_normalized,    \
 		Bivec : bivec_normalized,   \
 		Trivec: trivec_normalized   \
 	)(_a)
 inline static Vec    vec_normalized(Vec a)       { return multiply(a, 1.0f/norm(a)); }
+inline static Vec3   vec3_normalized(Vec3 a)     { return multiply(a, 1.0f/norm(a)); }
 inline static Bivec  bivec_normalized(Bivec a)   { return multiply(a, 1.0f/norm(a)); }
 inline static Trivec trivec_normalized(Trivec a) { return multiply(a, 1.0f/norm(a)); }
 

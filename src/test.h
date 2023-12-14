@@ -67,7 +67,6 @@ static void test_scratch()
 	D;
 	pga_print(join(a, b));
 	pga_print(join(join(a, b), c));
-	exit(0);
 
 	// Vec v1 = VEC(1.0, 1.0, 1.0, 1.0);
 	// Vec v2 = VEC(2.0, 2.0, 2.0, 1.0);

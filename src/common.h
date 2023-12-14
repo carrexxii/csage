@@ -122,8 +122,8 @@ typedef union Colour {
 #define UNPACK8(_x) _x[0], _x[1], _x[2], _x[3], _x[4], _x[5], _x[6], _x[7]
 
 #ifndef _WIN32
-#define MIN(a, b) ((a) < (b)? (a): (b))
-#define MAX(a, b) ((a) > (b)? (a): (b))
+	#define MIN(a, b) ((a) < (b)? (a): (b))
+	#define MAX(a, b) ((a) > (b)? (a): (b))
 #endif
 #define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
 #define CLAMP(a, b, c)   do { ((a) = (a) < (b)? (b): (a) > (c)? (c): (a)); } while (0)

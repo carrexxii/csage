@@ -16,6 +16,7 @@
 
 static void scratch_add_point(float a[7]);
 static void scratch_add_line(float a[7], float b[7]);
+static void scratch_add_plane(float pts[6][7]);
 
 static struct Pipeline point_pipeln;
 static struct Pipeline line_pipeln;
@@ -65,11 +66,11 @@ void scratch_init(VkRenderPass renderpass)
 	point_pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "scratch.vert"),
 		.fshader     = create_shader(SHADER_DIR "scratch.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
 		.vert_attrc  = 2,
 		.vert_attrs  = vert_attrs,
-		.topology    = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
 		.uboc        = 1,
 		.dset_cap    = 1,
 	};
@@ -80,11 +81,11 @@ void scratch_init(VkRenderPass renderpass)
 	line_pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "scratch.vert"),
 		.fshader     = create_shader(SHADER_DIR "scratch.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
 		.vert_attrc  = 2,
 		.vert_attrs  = vert_attrs,
-		.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 		.uboc        = 1,
 		.dset_cap    = 1,
 	};
@@ -95,6 +96,7 @@ void scratch_init(VkRenderPass renderpass)
 	plane_pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "scratch.vert"),
 		.fshader     = create_shader(SHADER_DIR "scratch.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
 		.vert_attrc  = 2,
@@ -118,10 +120,20 @@ void scratch_load()
 
 void scratch_add_vec(Vec a)
 {
-	scratch_add_point((float[7]){ a.x, a.y, a.z, COLOUR_RED, 1.0f, });
+	scratch_add_point((float[7]){ UNPACK3(VEC3V(a).arr), COLOUR_YELLOW, 1.0f, });
 
-	Vec3 p = VEC3V(normalized(a));
-	scratch_add_point((float[7]){ p.x, p.y, p.z, COLOUR_YELLOW, 1.0f, });
+	float d = 1.0f/(norm(a)/a.w);
+	Vec3 n = multiply(normalized(VEC3V(a)), -1.0f*d);
+	scratch_add_point((float[7]){ n.x, n.y, n.z, COLOUR_CYAN, 1.0f, });
+	scratch_add_line((float[7]){ 0.0, 0.0, 0.0, COLOUR_MAGENTA, 1.0f },
+	                 (float[7]){ n.x, n.y, n.z, COLOUR_MAGENTA, 1.0f });
+	float s = a.e0;
+	float p1[7] = { n.x + s, n.y    , n.z - s*(n.x/n.z), COLOUR_MAGENTA, 0.3f, };
+	float p2[7] = { n.x    , n.y + s, n.z - s*(n.y/n.z), COLOUR_MAGENTA, 0.3f, };
+	float p3[7] = { n.x - s, n.y    , n.z + s*(n.x/n.z), COLOUR_MAGENTA, 0.3f, };
+	float p4[7] = { n.x    , n.y - s, n.z + s*(n.y/n.z), COLOUR_MAGENTA, 0.3f, };
+	scratch_add_plane((float[6][7]){ UNPACK7(p1), UNPACK7(p2), UNPACK7(p3),
+	                                 UNPACK7(p3), UNPACK7(p4), UNPACK7(p1), });
 }
 
 void scratch_add_bivec(Bivec a)
@@ -156,7 +168,7 @@ void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 
 	if (points.len > 0) {
 		if (!points_vbo.sz)
-			points_vbo = vbo_new(SCRATCH_VERTEX_SIZE*points.len, points.data, false);
+			points_vbo = vbo_new(points.len*points.elem_sz, points.data, false);
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln.pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln.layout, 0, 1, point_pipeln.dsets, 0, NULL);
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &points_vbo.buf, (VkDeviceSize[]) { 0 });
@@ -176,11 +188,11 @@ void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 
 	if (planes.len > 0) {
 		if (!planes_vbo.sz)
-			planes_vbo = vbo_new(SCRATCH_VERTEX_SIZE*planes.len, planes.data, false);
+			planes_vbo = vbo_new(planes.len*planes.elem_sz, planes.data, false);
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.layout, 0, 1, plane_pipeln.dsets, 0, NULL);
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &planes_vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdDraw(cmd_buf, 6, 1, 0, 0);
+		vkCmdDraw(cmd_buf, 6*planes.len, 1, 0, 0);
 	}
 }
 
@@ -209,4 +221,10 @@ static void scratch_add_point(float a[7])
 static void scratch_add_line(float a[7], float b[7])
 {
 	varray_push(&lines, (float[2][7]){ UNPACK7(a), UNPACK7(b) });
+}
+
+static void scratch_add_plane(float pts[6][7])
+{
+	varray_push(&planes, (float[6][7]){ UNPACK7(pts[0]), UNPACK7(pts[1]), UNPACK7(pts[2]),
+	                                    UNPACK7(pts[3]), UNPACK7(pts[4]), UNPACK7(pts[5]), });
 }
