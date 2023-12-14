@@ -119,16 +119,15 @@ void scratch_load()
 void scratch_add_vec(Vec a)
 {
 	scratch_add_point((float[7]){ a.x, a.y, a.z, COLOUR_RED, 1.0f, });
+
+	Vec3 p = VEC3V(normalized(a));
+	scratch_add_point((float[7]){ p.x, p.y, p.z, COLOUR_YELLOW, 1.0f, });
 }
 
 void scratch_add_bivec(Bivec a)
 {
-	float r = a.d.x*a.d.x + a.d.y*a.d.y + a.d.z*a.d.z;
-	Vec p = { .v = dual(wedge(VEC(a.d.x, a.d.y, a.d.z, 0.0), VEC(a.m.x, a.m.y, a.m.z, 1.0))).m, .h = 1.0f};
-	multiply(p, norm2(a.d));
-	p.x /= r;
-	p.y /= r;
-	p.z /= r;
+	/* p = !(a.d ∧ a.m) / ||a.d||^2 */
+	Vec3 p = multiply(dual(wedge(DVEC(a.d), PVEC(a.m))).m, 1.0f/norm2(a.d));
 	Vec3 s = { p.x - 100.0f*a.d.x, p.y - 100.0f*a.d.y, p.z - 100.0f*a.d.z };
 	Vec3 t = { p.x + 100.0f*a.d.x, p.y + 100.0f*a.d.y, p.z + 100.0f*a.d.z };
 	scratch_add_line((float[7]){ s.x, s.y, s.z, COLOUR_BLUE, 1.0f },
@@ -137,8 +136,8 @@ void scratch_add_bivec(Bivec a)
 
 void scratch_add_trivec(Trivec a)
 {
-	float d = 1.0f / a.w;
-	scratch_add_point((float[7]){ a.x*d, a.y*d, a.z*d, COLOUR_WHITE, 1.0f, });
+	Trivec p = a;
+	scratch_add_point((float[7]){ p.x, p.y, p.z, COLOUR_WHITE, 1.0f, });
 }
 
 void scratch_clear()

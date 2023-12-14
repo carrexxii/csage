@@ -3,9 +3,12 @@
 
 #define VEC2(x, y)                    (Vec2){ x, y }
 #define VEC3(x, y, z)                 (Vec3){ x, y, z }
+#define VEC3V(v)                      (Vec3){ v.x, v.y, v.z }
 #define VEC4(x, y, z, w)              (Vec4){ x, y, z, w }
 #define SCALAR(a)                     (float)(a)
 #define VEC(x, y, z, w)               (Vec){ x, y, z, w }
+#define DVEC(v)                       _Generic(v, Vec3: (Vec){ v.x, v.y, v.z, 0.0f })
+#define PVEC(v)                       _Generic(v, Vec3: (Vec){ v.x, v.y, v.z, 1.0f })
 #define BIVEC(E1, E2, E3, e1, e2, e3) (Bivec){ E1, E2, E3, e1, e2, e3 }
 #define BIVECV(v1, v2)                (Bivec){ v1.x, v1.y, v1.z, v2.x, v2.y, v2.z }
 #define TRIVEC(x, y, z, w)            (Trivec){ x, y, z, w }
@@ -35,7 +38,7 @@ typedef float Scalar;
 typedef union Vec {
 	struct { float  x,  y,  z,  w; };
 	struct { float e1, e2, e3, e0; };
-	struct { Vec3 v; float h; };
+	struct { Vec3 v; float h; }; // TODO: better name than h
 	float arr[4];
 } Vec;
 typedef union Bivec {
@@ -234,12 +237,15 @@ inline static PsS    pss_add_scalar(PsS a, Scalar b)       { return scalar_add_p
 #define multiply(_a, _b) _Generic(_a,                        \
 		Scalar: _Generic(_b, Scalar: scalar_multiply_scalar, \
 		                     Vec   : scalar_multiply_vec,    \
+		                     Vec3  : scalar_multiply_vec3,   \
 		                     Bivec : scalar_multiply_bivec,  \
 		                     Trivec: scalar_multiply_trivec, \
 		                     PsS   : scalar_multiply_pss     \
 		),                                                   \
 		Vec: _Generic(_b, Scalar: vec_multiply_scalar,       \
 		                  Vec   : vec_multiply_vec           \
+		),                                                   \
+		Vec3: _Generic(_b, Scalar: vec3_multiply_scalar      \
 		),                                                   \
 		Bivec: _Generic(_b, Scalar: bivec_multiply_scalar,   \
 		                    Bivec : bivec_multiply_bivec     \
@@ -260,6 +266,13 @@ inline static Vec scalar_multiply_vec(Scalar a, Vec b) {
 		.e2 = b.e2 * a,
 		.e3 = b.e3 * a,
 		.e0 = b.e0 * a,
+	};
+}
+inline static Vec3 scalar_multiply_vec3(Scalar a, Vec3 b) {
+	return (Vec3){
+		.x = b.x * a,
+		.y = b.y * a,
+		.z = b.z * a,
 	};
 }
 inline static Bivec scalar_multiply_bivec(Scalar a, Bivec b) {
@@ -307,6 +320,7 @@ inline static Trivec trivec_multiply_trivec(Trivec a, Trivec b) {
 	};
 }
 inline static Vec    vec_multiply_scalar(Vec a, Scalar b)       { return scalar_multiply_vec(b, a);    }
+inline static Vec3   vec3_multiply_scalar(Vec3 a, Scalar b)     { return scalar_multiply_vec3(b, a);   }
 inline static Bivec  bivec_multiply_scalar(Bivec a, Scalar b)   { return scalar_multiply_bivec(b, a);  }
 inline static Trivec trivec_multiply_scalar(Trivec a, Scalar b) { return scalar_multiply_trivec(b, a); }
 inline static PsS    pss_multiply_scalar(PsS a, Scalar b)       { return scalar_multiply_pss(b, a);    }
@@ -383,7 +397,7 @@ inline static Trivec vec_wedge_bivec(Vec a, Bivec b) {
 		.e032 = -a.e0*b.e23 + a.e2*b.e03 - a.e3*b.e02,
 		.e013 = -a.e0*b.e31 - a.e1*b.e03 + a.e3*b.e01,
 		.e021 = -a.e0*b.e12 + a.e1*b.e02 - a.e2*b.e01,
-		.e123 = -a.e1*b.e12 + a.e2*b.e31 + a.e3*b.e12,
+		.e123 = a.e1*b.e23 + a.e2*b.e31 + a.e3*b.e12,
 	};
 }
 /* p∧P = (e0 + e1 + e2 + e3)∧(e032 + e013 + e021 + e123) */
@@ -525,7 +539,7 @@ inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inne
 		Vec3  : vec3_norm,    \
 		Bivec : bivec_norm,   \
 		Trivec: trivec_norm,  \
-		PsS   : pss_norm,     \
+		PsS   : pss_norm      \
 	)(_a)
 inline static Scalar scalar_norm(Scalar a) { return sqrtf(norm2(a)); }
 inline static Scalar vec_norm(Vec a)       { return sqrtf(norm2(a)); }
@@ -533,6 +547,16 @@ inline static Scalar vec3_norm(Vec a)      { return sqrtf(norm2(a)); }
 inline static Scalar bivec_norm(Bivec a)   { return sqrtf(norm2(a)); }
 inline static Scalar trivec_norm(Trivec a) { return sqrtf(norm2(a)); }
 inline static Scalar pss_norm(PsS a)       { return sqrtf(norm2(a)); }
+
+/*** normalized: a -> a / ||a|| ***/
+#define normalized(_a) _Generic(_a, \
+		Vec   : vec_normalized,     \
+		Bivec : bivec_normalized,   \
+		Trivec: trivec_normalized   \
+	)(_a)
+inline static Vec    vec_normalized(Vec a)       { return multiply(a, 1.0f/norm(a)); }
+inline static Bivec  bivec_normalized(Bivec a)   { return multiply(a, 1.0f/norm(a)); }
+inline static Trivec trivec_normalized(Trivec a) { return multiply(a, 1.0f/norm(a)); }
 
 /*** join: a, b -> a ∨ b ***/
 /* a ∨ b = ⋆-(⋆a ∧ ⋆b) */
@@ -543,18 +567,19 @@ inline static Scalar pss_norm(PsS a)       { return sqrtf(norm2(a)); }
 		Trivec: _Generic(_b, Trivec: trivec_join_trivec \
 		)                                               \
 	)(_a, _b)
-/* a∨b = (e01 + e02 + e03 + e12 + e31 + e23)∨(e032 + e013 + e021 + e123)
+/* a∨b = ⋆-(⋆a∧⋆b)
  *     = ⋆-(e01 + e02 + e03 + e12 + e31 + e23)∧(-e0 - e1 - e2 - e3)
+ *     = -⋆(e01 + e02 + e03 + e12 + e31 + e23)∧(-e0 - e1 - e2 - e3)
  */
 inline static Vec bivec_join_trivec(Bivec a, Trivec b) {
 	return multiply(hodge(wedge(hodge(a), hodge(b))), -1.0f);
 }
-/* a∨b = (a*∧b*)-*
- *     = ((-e0 - e1 - e2 - e3)∧(-e0 - e1 - e2 - e3))*
- *     = ((e0 + e1 + e2 + e3)∧(e0 + e1 + e2 + e3))*
+/* a∨b = ⋆-(⋆a∧⋆b)
+ *     = ⋆-((e0 + e1 + e2 + e3)∧(e0 + e1 + e2 + e3))
+ *     = -⋆((e0 + e1 + e2 + e3)∧(e0 + e1 + e2 + e3))
  */
 inline static Bivec trivec_join_trivec(Trivec a, Trivec b) {
-	return hodge(wedge(hodge(a), hodge(b)));
+	return multiply(hodge(wedge(hodge(a), hodge(b))), -1.0f);
 }
 
 #define pga_print(a) _Generic(a,                                       \
@@ -562,13 +587,13 @@ inline static Bivec trivec_join_trivec(Trivec a, Trivec b) {
 		Vec   : print_vec   , Bivec: print_bivec, Trivec: print_trivec,  \
 		Scalar: print_scalar, PsS  : print_pss                            \
 	)(a)
-static void print_vec2(Vec2 v) { printf("vec2: %6.3f, %6.3f\n", v.x, v.y);                                   }
-static void print_vec3(Vec3 v) { printf("vec3: %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z);                       }
-static void print_vec4(Vec4 v) { printf("vec4: %6.3f, %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z, v.w);           }
-static void print_vec(Vec a)   { printf("Vector: %6.3fe1, %6.3fe2, %6.3fe3, %6.3fe0\n", a.x, a.y, a.z, a.w); }
+static void print_vec2(Vec2 v) { printf("vec2: %6.3f, %6.3f\n", v.x, v.y);                                       }
+static void print_vec3(Vec3 v) { printf("vec3: %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z);                           }
+static void print_vec4(Vec4 v) { printf("vec4: %6.3f, %6.3f, %6.3f, %6.3f\n", v.x, v.y, v.z, v.w);               }
+static void print_vec(Vec a)   { printf("Vector: %6.3fe0, %6.3fe1, %6.3fe2, %6.3fe3\n", a.e0, a.e1, a.e2, a.e3); }
 static void print_bivec(Bivec a) {
-	printf("Bivector: %6.3fe23, %6.3fe31, %6.3fe12, %6.3fe01, %6.3fe02, %6.3fe03\n",
-	       a.e23, a.e31, a.e12, a.e01, a.e02, a.e03);
+	printf("Bivector: %6.3fe01, %6.3fe02, %6.3fe03, %6.3fe23, %6.3fe31, %6.3fe12\n",
+	       a.e01, a.e02, a.e03, a.e23, a.e31, a.e12);
 }
 static void print_trivec(Trivec a) {
 	printf("Trivector: %6.3fe032, %6.3fe013, %6.3fe021, %6.3fe123\n",

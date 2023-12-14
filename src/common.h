@@ -138,11 +138,14 @@ typedef union Colour {
 #define SELECT2(_1, _2, ...) _2
 #define SELECT3(_1, _2, _3, ...) _3
 
-#define COLOUR_WHITE 1.0, 1.0, 1.0
-#define COLOUR_BLACK 0.0, 0.0, 0.0
-#define COLOUR_RED   1.0, 0.0, 0.0
-#define COLOUR_GREEN 0.0, 1.0, 0.0
-#define COLOUR_BLUE  0.0, 0.0, 1.0
+#define COLOUR_WHITE   1.0, 1.0, 1.0
+#define COLOUR_BLACK   0.0, 0.0, 0.0
+#define COLOUR_RED     1.0, 0.0, 0.0
+#define COLOUR_GREEN   0.0, 1.0, 0.0
+#define COLOUR_BLUE    0.0, 0.0, 1.0
+#define COLOUR_MAGENTA 1.0, 0.0, 1.0
+#define COLOUR_YELLOW  1.0, 1.0, 0.0
+#define COLOUR_CYAN    0.0, 1.0, 1.0
 
 #ifndef NO_TERM_COLOUR
 #define TERM_NORMAL  "\x1B[0m"
