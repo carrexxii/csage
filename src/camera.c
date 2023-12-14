@@ -3,11 +3,14 @@
 #include "input.h"
 #include "camera.h"
 
-struct Camera camera_new(Vec3 pos, Vec3 up)
+struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 {
 	struct Camera cam = {
 		.pos  = pos,
 		.up   = up,
+		.fov  = fov,
+		.w    = w,
+		.h    = h,
 		.mats = smalloc(sizeof(Mat4x4[2])),
 	};
 
@@ -18,16 +21,25 @@ struct Camera camera_new(Vec3 pos, Vec3 up)
 	return cam;
 }
 
-void camera_set_ortho(struct Camera* cam, Rect r)
+void camera_set_projection(struct Camera* cam, enum CameraType type)
 {
-	glm_ortho(r.x - r.w/2.0f, r.x + r.w/2.0f,
-	          r.y - r.h/2.0f, r.y + r.h/2.0f,
-	          -1.0f, 1024.0f, cam->mats->proj.m);
-}
-
-void camera_set_persp(struct Camera* cam, float w, float h, float fov)
-{
-	glm_perspective(fov, w / h, 0.1f, 1024.0f, cam->mats->proj.m);
+	cam->type = type;
+	switch (type) {
+	case CAMERA_ORTHOGONAL:
+		float dist = glm_vec3_distance((vec3){ 0.0f }, cam->pos.v);
+		float sz_x = (atan(cam->fov / 2.0f) * 2.0f) * dist;
+		float sz_y = sz_x / (cam->w/cam->h);
+		glm_ortho(-sz_x, sz_x, -sz_y, sz_y,
+		          -dist, 1024.0f, cam->mats->proj.m);
+		break;
+	case CAMERA_PERSPECTIVE:
+		glm_perspective(cam->fov, cam->w / cam->h,
+		                0.1f, 1024.0f, cam->mats->proj.m);
+		break;
+	default:
+		ERROR("Invalid camera type: %d", type);
+		exit(1);
+	}
 }
 
 void camera_move(struct Camera* cam, enum Direction dir, bool kdown)
@@ -66,6 +78,8 @@ void camera_update(struct Camera* cam)
 	}
 
 	glm_lookat(cam->pos.v, (vec3){ 0.0f, 0.0f, 0.0f }, cam->up.v, cam->mats->view.m);
+	if (cam->type == CAMERA_ORTHOGONAL)
+		camera_set_projection(cam, CAMERA_ORTHOGONAL);
 }
 
 struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y)

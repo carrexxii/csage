@@ -26,10 +26,10 @@ static struct Camera scratch_cam;
 
 void scenemgr_init()
 {
-	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f));
-	camera_set_persp(&scratch_cam, global_config.winw, global_config.winh, glm_rad(69.0f));
-	game_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f));
-	camera_set_persp(&game_cam, global_config.winw, global_config.winh, glm_rad(69.0f));
+	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, glm_rad(69.0f));
+	game_cam    = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, glm_rad(69.0f));
+	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
+	camera_set_projection(&game_cam, CAMERA_PERSPECTIVE);
 
 	VkRenderPass renderpass = renderer_init();
 	scratch_init(renderpass);
@@ -111,6 +111,14 @@ static void register_global_keys()
 	input_register(SDLK_ESCAPE, LAMBDA(void, bool kdown, if (kdown) quit();));
 	input_register(SDLK_F1, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_GAME);));
 	input_register(SDLK_F2, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_SCRATCH);));
+
+	input_register(SDLK_F12, LAMBDA(void, bool kdown,
+		if (!kdown)
+			return;
+		struct Camera* cam = curr_scene == SCENE_GAME   ? &game_cam   :
+		                     curr_scene == SCENE_SCRATCH? &scratch_cam: NULL;
+		camera_set_projection(cam, cam->type == CAMERA_PERSPECTIVE? CAMERA_ORTHOGONAL: CAMERA_PERSPECTIVE);
+	));
 }
 
 static void load_game()

@@ -17,16 +17,17 @@ struct Camera {
 	Vec3 pos;
 	Vec3 up;
 	uint dir;
-	bool needs_update;
+	enum CameraType type;
+	float fov;
+	float w, h;
 	struct {
 		Mat4x4 proj;
 		Mat4x4 view;
 	}* mats;
 };
 
-struct Camera camera_new(Vec3 pos, Vec3 up);
-void camera_set_ortho(struct Camera* cam, Rect r);
-void camera_set_persp(struct Camera* cam, float w, float h, float fov);
+struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov);
+void camera_set_projection(struct Camera* cam, enum CameraType type);
 void camera_move(struct Camera* cam, enum Direction dir, bool kdown);
 void camera_update(struct Camera* cam);
 struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y);
