@@ -35,6 +35,7 @@ typedef float Scalar;
 typedef union Vec {
 	struct { float  x,  y,  z,  w; };
 	struct { float e1, e2, e3, e0; };
+	struct { Vec3 v; float h; };
 	float arr[4];
 } Vec;
 typedef union Bivec {
@@ -70,6 +71,7 @@ static const PsS e0123 = { .e0123 = 1.0f };
 /* -------------------------------------------------------------------- */
 
 /*** reverse: a -> ~a ***/
+/* ~a = (-1)^{x(x-1)/2}    (Note: only affects bivecs and trivecs in 3D PGA) */
 #define reverse(a) _Generic(a,                                               \
 		Vec   : reverse_vec   , Bivec: reverse_bivec, Trivec: reverse_trivec, \
 		Scalar: reverse_scalar, PsS  : reverse_pss                             \
@@ -85,7 +87,9 @@ inline static Bivec reverse_bivec(Bivec a) {
 }
 inline static Trivec reverse_trivec(Trivec a) {
 	return (Trivec){
-		.e032 = -a.e032, .e013 = -a.e013, .e021 = -a.e021,
+		.e032 = -a.e032,
+		.e013 = -a.e013,
+		.e021 = -a.e021,
 		.e123 = -a.e123,
 	};
 }
@@ -121,6 +125,27 @@ inline static Vec dual_of_trivec(Trivec a) {
 		.e1 = a.e032,
 		.e2 = a.e013,
 		.e3 = a.e021,
+	};
+}
+
+/*** hodge: a -> ⋆a     (Note: only differs for trivec) ***/
+/* ⋆S = (e0)(S)(I3)(-1)^(s(s+1)/2)
+ *    = e0(S)e123 (* -1 for blades 1 and 2)
+ */
+#define hodge(a) _Generic(a,                                                    \
+		Vec   : hodge_of_vec   , Bivec: hodge_of_bivec, Trivec: hodge_of_trivec, \
+		Scalar: hodge_of_scalar, PsS  : hodge_of_pss                              \
+	)(a)
+inline static PsS    hodge_of_scalar(Scalar a) { return dual_of_scalar(a); }
+inline static Scalar hodge_of_pss(PsS a)       { return dual_of_pss(a);    }
+inline static Trivec hodge_of_vec(Vec a)       { return dual_of_vec(a);    }
+inline static Bivec  hodge_of_bivec(Bivec a)   { return dual_of_bivec(a);  }
+inline static Vec hodge_of_trivec(Trivec a) {
+	return (Vec){
+		.e0 = -a.e123,
+		.e1 = -a.e032,
+		.e2 = -a.e013,
+		.e3 = -a.e021,
 	};
 }
 
@@ -308,37 +333,37 @@ inline static PsS    pss_multiply_scalar(PsS a, Scalar b)       { return scalar_
 //                      Vec   : trivec_wedge_vec     
 // )                                                 
 inline static Scalar scalar_wedge_scalar(Scalar a, Scalar b) {
-	return a*b;
+	return a * b;
 }
 inline static Vec scalar_wedge_vec(Scalar a, Vec b) {
 	return (Vec){
-		.e0 = b.e0*a,
-		.e1 = b.e1*a,
-		.e2 = b.e2*a,
-		.e3 = b.e3*a,
+		.e0 = b.e0 * a,
+		.e1 = b.e1 * a,
+		.e2 = b.e2 * a,
+		.e3 = b.e3 * a,
 	};
 }
 inline static Bivec scalar_wedge_bivec(Scalar a, Bivec b) {
 	return (Bivec){
-		.e01 = b.e01*a,
-		.e02 = b.e02*a,
-		.e03 = b.e03*a,
-		.e12 = b.e12*a,
-		.e23 = b.e23*a,
-		.e31 = b.e31*a,
+		.e01 = b.e01 * a,
+		.e02 = b.e02 * a,
+		.e03 = b.e03 * a,
+		.e12 = b.e12 * a,
+		.e23 = b.e23 * a,
+		.e31 = b.e31 * a,
 	};
 }
 inline static Trivec scalar_wedge_trivec(Scalar a, Trivec b) {
 	return (Trivec){
-		.e013 = b.e013*a,
-		.e021 = b.e021*a,
-		.e032 = b.e032*a,
-		.e123 = b.e123*a,
+		.e013 = b.e013 * a,
+		.e021 = b.e021 * a,
+		.e032 = b.e032 * a,
+		.e123 = b.e123 * a,
 	};
 }
 inline static PsS scalar_wedge_pss(Scalar a, PsS b) {
 	return (PsS){
-		.e0123 = b.e0123*a,
+		.e0123 = b.e0123 * a,
 	};
 }
 /* p1∧p2 = (e0 + e1 + e2 + e3)∧(e0 + e1 + e2 + e3) */
@@ -404,35 +429,39 @@ inline static PsS    trivec_wedge_vec(Trivec a, Vec b)       { return multiply(v
 		                    Trivec: trivec_inner_trivec  \
 		)                                                \
 	)(a, b)
-inline static Scalar scalar_inner_scalar(Scalar a, Scalar b) { return a*b; }
+inline static Scalar scalar_inner_scalar(Scalar a, Scalar b) { return a * b;             }
+inline static Scalar pss_inner_pss(PsS a, PsS b)             { return a.e0123 * b.e0123; }
 inline static Vec scalar_inner_vec(Scalar a, Vec b) {
 	return (Vec){
-		.e0 = b.e0*a,
-		.e1 = b.e1*a,
-		.e2 = b.e2*a,
-		.e3 = b.e3*a,
+		.e0 = b.e0 * a,
+		.e1 = b.e1 * a,
+		.e2 = b.e2 * a,
+		.e3 = b.e3 * a,
 	};
 }
 inline static Bivec scalar_inner_bivec(Scalar a, Bivec b) {
 	return (Bivec){
-		.e01 = b.e01*a,
-		.e02 = b.e02*a,
-		.e03 = b.e03*a,
-		.e12 = b.e12*a,
-		.e31 = b.e31*a,
-		.e23 = b.e23*a,
+		.e01 = b.e01 * a,
+		.e02 = b.e02 * a,
+		.e03 = b.e03 * a,
+		.e12 = b.e12 * a,
+		.e31 = b.e31 * a,
+		.e23 = b.e23 * a,
 	};
 }
 inline static Trivec scalar_inner_trivec(Scalar a, Trivec b) {
 	return (Trivec){
-		.e013 = b.e013*a,
-		.e032 = b.e032*a,
-		.e021 = b.e021*a,
-		.e123 = b.e123*a,
+		.e013 = b.e013 * a,
+		.e032 = b.e032 * a,
+		.e021 = b.e021 * a,
+		.e123 = b.e123 * a,
 	};
 }
 inline static Scalar vec_inner_vec(Vec a, Vec b) {
 	return a.e1*b.e1 + a.e2*b.e2 + a.e3*b.e3;
+}
+inline static Scalar vec3_inner_vec3(Vec3 a, Vec3 b) {
+	return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 /* p⋅l = (e0 + e1 + e2 + e3)⋅(e01 + e02 + e03 + e12 + e31 + e23) */
 inline static Vec vec_inner_bivec(Vec a, Bivec b) {
@@ -469,7 +498,7 @@ inline static Vec bivec_inner_trivec(Bivec a, Trivec b) {
 }
 /* P1⋅P2 = (e032 + e013 + e021 + e123)⋅(e032 + e013 + e021 + e123) */
 inline static Scalar trivec_inner_trivec(Trivec a, Trivec b) {
-	return -a.e123*b.e123;
+	return -a.e123 * b.e123;
 }
 inline static Vec    vec_inner_scalar(Vec a, Scalar b)       { return scalar_inner_vec(b, a);                 }
 inline static Bivec  bivec_inner_scalar(Bivec a, Scalar b)   { return scalar_inner_bivec(b, a);               }
@@ -478,31 +507,54 @@ inline static Trivec trivec_inner_scalar(Trivec a, Scalar b) { return scalar_inn
 inline static Bivec  trivec_inner_vec(Trivec a, Vec b)       { return vec_inner_trivec(b, a);                 }
 inline static Vec    trivec_inner_bivec(Trivec a, Bivec b)   { return bivec_inner_trivec(b, a);               }
 
-#define join(a, b) _Generic(a,                        \
-		Trivec: _Generic(b, Trivec: trivec_join_trivec \
+/*** norm2: a -> ||a||^2 ***/
+/* ||a||^2 = <(a)(~A)>0 */
+#define norm2(_a) _Generic(_a,       \
+		Scalar: scalar_inner_scalar, \
+		Vec   : vec_inner_vec,       \
+		Vec3  : vec3_inner_vec3,     \
+		Bivec : bivec_inner_bivec,   \
+		Trivec: trivec_inner_trivec, \
+		PsS   : pss_inner_pss        \
+	)(_a, _a)
+
+/*** norm: a -> sqrt(norm2(a)) ***/
+#define norm(_a) _Generic(_a, \
+		Scalar: scalar_norm,  \
+		Vec   : vec_norm,     \
+		Vec3  : vec3_norm,    \
+		Bivec : bivec_norm,   \
+		Trivec: trivec_norm,  \
+		PsS   : pss_norm,     \
+	)(_a)
+inline static Scalar scalar_norm(Scalar a) { return sqrtf(norm2(a)); }
+inline static Scalar vec_norm(Vec a)       { return sqrtf(norm2(a)); }
+inline static Scalar vec3_norm(Vec a)      { return sqrtf(norm2(a)); }
+inline static Scalar bivec_norm(Bivec a)   { return sqrtf(norm2(a)); }
+inline static Scalar trivec_norm(Trivec a) { return sqrtf(norm2(a)); }
+inline static Scalar pss_norm(PsS a)       { return sqrtf(norm2(a)); }
+
+/*** join: a, b -> a ∨ b ***/
+/* a ∨ b = ⋆-(⋆a ∧ ⋆b) */
+/* ⋆-S = ⋆S(-1)^(grade(S)d) = ⋆S (* -1 for blades 1 and 3)*/
+#define join(_a, _b) _Generic(_a,                       \
+		Bivec: _Generic(_b, Trivec: bivec_join_trivec   \
+		),                                              \
+		Trivec: _Generic(_b, Trivec: trivec_join_trivec \
 		)                                               \
-	)(a, b)
-/* a∨b = (e032 + e013 + e021 + e123)∨(e032 + e013 + e021 + e123) */
-/* a∨b = ⋆-(⋆a∧⋆b)
- *     = (b - a)I3 - e0(a∧b)I3
- *     = 
+	)(_a, _b)
+/* a∨b = (e01 + e02 + e03 + e12 + e31 + e23)∨(e032 + e013 + e021 + e123)
+ *     = ⋆-(e01 + e02 + e03 + e12 + e31 + e23)∧(-e0 - e1 - e2 - e3)
  */
+inline static Vec bivec_join_trivec(Bivec a, Trivec b) {
+	return multiply(hodge(wedge(hodge(a), hodge(b))), -1.0f);
+}
 /* a∨b = (a*∧b*)-*
  *     = ((-e0 - e1 - e2 - e3)∧(-e0 - e1 - e2 - e3))*
  *     = ((e0 + e1 + e2 + e3)∧(e0 + e1 + e2 + e3))*
  */
 inline static Bivec trivec_join_trivec(Trivec a, Trivec b) {
-	Vec ad = dual(a);
-	Vec bd = dual(b);
-	Bivec r =  (Bivec){
-		.e01 = ad.e0*bd.e1 - ad.e1*bd.e0,
-		.e02 = ad.e0*bd.e2 - ad.e2*bd.e0,
-		.e03 = ad.e0*bd.e3 - ad.e3*bd.e0,
-		.e23 = ad.e2*bd.e3 - ad.e3*bd.e2,
-		.e31 = ad.e3*bd.e1 - ad.e1*bd.e3,
-		.e12 = ad.e1*bd.e2 - ad.e2*bd.e1,
-	};
-	return dual(r);
+	return hodge(wedge(hodge(a), hodge(b)));
 }
 
 #define pga_print(a) _Generic(a,                                       \

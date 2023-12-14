@@ -45,17 +45,24 @@ static void test_scratch()
 	Trivec e = TRIVEC(-0.8f, -1.0f,  0.8f, 1.0f);
 
 	/* Points */
-	// scratch_add(a);
-	// scratch_add(b);
+	scratch_add(a);
+	scratch_add(b);
 	scratch_add(c);
-	// scratch_add(d);
+	scratch_add(d);
 	scratch_add(e);
 
 	/* Lines between the points */
-	// scratch_add(join(a, b));
-	// scratch_add(join(b, c));
+	scratch_add(join(a, b));
+	scratch_add(join(a, c));
+	scratch_add(join(a, d));
+	scratch_add(join(a, e));
+	scratch_add(join(b, c));
 	scratch_add(join(e, c));
-	pga_print(join(e, c));
+	scratch_add(join(b, d));
+	scratch_add(join(d, e));
+
+	scratch_add(join(join(a, b), c));
+	pga_print(join(join(a, b), c));
 
 	// Vec v1 = VEC(1.0, 1.0, 1.0, 1.0);
 	// Vec v2 = VEC(2.0, 2.0, 2.0, 1.0);

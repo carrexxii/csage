@@ -116,11 +116,16 @@ void scratch_load()
 
 }
 
+void scratch_add_vec(Vec a)
+{
+	scratch_add_point((float[7]){ a.x, a.y, a.z, COLOUR_RED, 1.0f, });
+}
+
 void scratch_add_bivec(Bivec a)
 {
 	float r = a.d.x*a.d.x + a.d.y*a.d.y + a.d.z*a.d.z;
-	Vec3 p = dual(wedge(VEC(a.d.x, a.d.y, a.d.z, 0.0), VEC(a.m.x, a.m.y, a.m.z, 1.0))).m;
-	// product(p, norm2(a.d));
+	Vec p = { .v = dual(wedge(VEC(a.d.x, a.d.y, a.d.z, 0.0), VEC(a.m.x, a.m.y, a.m.z, 1.0))).m, .h = 1.0f};
+	multiply(p, norm2(a.d));
 	p.x /= r;
 	p.y /= r;
 	p.z /= r;
