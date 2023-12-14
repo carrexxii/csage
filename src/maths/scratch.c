@@ -39,14 +39,14 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 
 static float axes_verts[][7] = {
 	/* x */
-	{ -100.0f, 0.0f, 0.0f, COLOUR_RED, 1.0f },
-	{  100.0f, 0.0f, 0.0f, COLOUR_RED, 1.0f },
+	{ -100.0f, 0.0f, 0.0f, COLOUR_RED, SCRATCH_AXIS_OPACITY },
+	{  100.0f, 0.0f, 0.0f, COLOUR_RED, SCRATCH_AXIS_OPACITY },
 	/* y */
-	{ 0.0f, -100.0f, 0.0f, COLOUR_GREEN, 1.0f },
-	{ 0.0f,  100.0f, 0.0f, COLOUR_GREEN, 1.0f },
+	{ 0.0f, -100.0f, 0.0f, COLOUR_GREEN, SCRATCH_AXIS_OPACITY },
+	{ 0.0f,  100.0f, 0.0f, COLOUR_GREEN, SCRATCH_AXIS_OPACITY },
 	/* z */
-	{ 0.0f, 0.0f, -100.0f, COLOUR_BLUE, 1.0f },
-	{ 0.0f, 0.0f,  100.0f, COLOUR_BLUE, 1.0f },
+	{ 0.0f, 0.0f, -100.0f, COLOUR_BLUE, SCRATCH_AXIS_OPACITY },
+	{ 0.0f, 0.0f,  100.0f, COLOUR_BLUE, SCRATCH_AXIS_OPACITY },
 };
 
 static UBO cam_ubo;
@@ -57,6 +57,10 @@ static VBO planes_vbo;
 static struct VArray points;
 static struct VArray lines;
 static struct VArray planes;
+static bool axes_on;
+static bool points_on;
+static bool lines_on;
+static bool planes_on;
 
 void scratch_init(VkRenderPass renderpass)
 {
@@ -111,27 +115,31 @@ void scratch_init(VkRenderPass renderpass)
 	points = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[1][7]));
 	lines  = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[2][7]));
 	planes = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[6][7]));
+
+	axes_on   = true;
+	points_on = true;
+	lines_on  = true;
+	planes_on = true;
 }
 
 void scratch_load()
 {
-
+	input_register(SDLK_1, LAMBDA(void, bool kdown, if (kdown) axes_on   = !axes_on;));
+	input_register(SDLK_2, LAMBDA(void, bool kdown, if (kdown) points_on = !points_on;));
+	input_register(SDLK_3, LAMBDA(void, bool kdown, if (kdown) lines_on  = !lines_on;));
+	input_register(SDLK_4, LAMBDA(void, bool kdown, if (kdown) planes_on = !planes_on;));
 }
 
 void scratch_add_vec(Vec a)
 {
-	scratch_add_point((float[7]){ UNPACK3(VEC3V(a).arr), COLOUR_YELLOW, 1.0f, });
-
+	/* A(a + 1) + Bb + C + D = 0 */
+	float s = norm(a)/2.0f;
 	float d = 1.0f/(norm(a)/a.w);
-	Vec3 n = multiply(normalized(VEC3V(a)), -1.0f*d);
-	scratch_add_point((float[7]){ n.x, n.y, n.z, COLOUR_CYAN, 1.0f, });
-	scratch_add_line((float[7]){ 0.0, 0.0, 0.0, COLOUR_MAGENTA, 1.0f },
-	                 (float[7]){ n.x, n.y, n.z, COLOUR_MAGENTA, 1.0f });
-	float s = a.e0;
-	float p1[7] = { n.x + s, n.y    , n.z - s*(n.x/n.z), COLOUR_MAGENTA, 0.3f, };
-	float p2[7] = { n.x    , n.y + s, n.z - s*(n.y/n.z), COLOUR_MAGENTA, 0.3f, };
-	float p3[7] = { n.x - s, n.y    , n.z + s*(n.x/n.z), COLOUR_MAGENTA, 0.3f, };
-	float p4[7] = { n.x    , n.y - s, n.z + s*(n.y/n.z), COLOUR_MAGENTA, 0.3f, };
+	Vec3  n = multiply(normalized(VEC3V(a)), -1.0f*d);
+	float p1[7] = { n.x + s, n.y    , n.z - s*(n.x/n.z), SCRATCH_PLANE_COLOUR, SCRATCH_OPACITY, };
+	float p2[7] = { n.x    , n.y + s, n.z - s*(n.y/n.z), SCRATCH_PLANE_COLOUR, SCRATCH_OPACITY, };
+	float p3[7] = { n.x - s, n.y    , n.z + s*(n.x/n.z), SCRATCH_PLANE_COLOUR, SCRATCH_OPACITY, };
+	float p4[7] = { n.x    , n.y - s, n.z + s*(n.y/n.z), SCRATCH_PLANE_COLOUR, SCRATCH_OPACITY, };
 	scratch_add_plane((float[6][7]){ UNPACK7(p1), UNPACK7(p2), UNPACK7(p3),
 	                                 UNPACK7(p3), UNPACK7(p4), UNPACK7(p1), });
 }
@@ -142,14 +150,27 @@ void scratch_add_bivec(Bivec a)
 	Vec3 p = multiply(dual(wedge(DVEC(a.d), PVEC(a.m))).m, 1.0f/norm2(a.d));
 	Vec3 s = { p.x - 100.0f*a.d.x, p.y - 100.0f*a.d.y, p.z - 100.0f*a.d.z };
 	Vec3 t = { p.x + 100.0f*a.d.x, p.y + 100.0f*a.d.y, p.z + 100.0f*a.d.z };
-	scratch_add_line((float[7]){ s.x, s.y, s.z, COLOUR_BLUE, 1.0f },
-	                 (float[7]){ t.x, t.y, t.z, COLOUR_BLUE, 1.0f });
+	scratch_add_line((float[7]){ s.x, s.y, s.z, SCRATCH_LINE_COLOUR, 1.0f },
+	                 (float[7]){ t.x, t.y, t.z, SCRATCH_LINE_COLOUR, 1.0f });
 }
 
 void scratch_add_trivec(Trivec a)
 {
 	Trivec p = a;
-	scratch_add_point((float[7]){ p.x, p.y, p.z, COLOUR_WHITE, 1.0f, });
+	scratch_add_point((float[7]){ p.x, p.y, p.z, SCRATCH_POINT_COLOUR, 1.0f, });
+}
+
+void scratch_add_trivecs(Trivec as[4])
+{
+	scratch_add_plane((float[6][7]){
+		{ UNPACK3(as[0].arr), SCRATCH_POINT_COLOUR, SCRATCH_OPACITY },
+		{ UNPACK3(as[1].arr), SCRATCH_POINT_COLOUR, SCRATCH_OPACITY },
+		{ UNPACK3(as[2].arr), SCRATCH_POINT_COLOUR, SCRATCH_OPACITY },
+
+		{ UNPACK3(as[2].arr), SCRATCH_POINT_COLOUR, SCRATCH_OPACITY },
+		{ UNPACK3(as[3].arr), SCRATCH_POINT_COLOUR, SCRATCH_OPACITY },
+		{ UNPACK3(as[0].arr), SCRATCH_POINT_COLOUR, SCRATCH_OPACITY },
+	});
 }
 
 void scratch_clear()
@@ -166,7 +187,7 @@ void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 {
 	buffer_update(cam_ubo, cam_ubo.sz, cam->mats, 0);
 
-	if (points.len > 0) {
+	if (points_on && points.len > 0) {
 		if (!points_vbo.sz)
 			points_vbo = vbo_new(points.len*points.elem_sz, points.data, false);
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln.pipeln);
@@ -177,16 +198,18 @@ void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln.layout, 0, 1, line_pipeln.dsets, 0, NULL);
-	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &axes_vbo.buf, (VkDeviceSize[]) { 0 });
-	vkCmdDraw(cmd_buf, 6, 1, 0, 0);
-	if (lines.len > 0) {
+	if (axes_on) {
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &axes_vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdDraw(cmd_buf, 6, 1, 0, 0);
+	}
+	if (lines_on && lines.len > 0) {
 		if (!lines_vbo.sz)
 			lines_vbo = vbo_new(lines.len*lines.elem_sz, lines.data, false);
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &lines_vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdDraw(cmd_buf, 2*lines.len, 1, 0, 0);
 	}
 
-	if (planes.len > 0) {
+	if (planes_on && planes.len > 0) {
 		if (!planes_vbo.sz)
 			planes_vbo = vbo_new(planes.len*planes.elem_sz, planes.data, false);
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.pipeln);

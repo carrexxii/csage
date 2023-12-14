@@ -109,8 +109,8 @@ static void register_global_keys()
 {
 	input_reset();
 	input_register(SDLK_ESCAPE, LAMBDA(void, bool kdown, if (kdown) quit();));
-	input_register(SDLK_1, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_GAME);));
-	input_register(SDLK_2, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_SCRATCH);));
+	input_register(SDLK_F1, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_GAME);));
+	input_register(SDLK_F2, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_SCRATCH);));
 }
 
 static void load_game()
