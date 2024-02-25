@@ -1,0 +1,12 @@
+[submodule "tools/bear"]
+	path = tools/bear
+	url = https://github.com/rizsotto/Bear
+[submodule "lib/cgltf"]
+	path = lib/cgltf
+	url = https://github.com/jkuhlmann/cgltf
+[submodule "lib/stb"]
+	path = lib/stb
+	url = https://github.com/nothings/stb
+[submodule "lib/freetype"]
+	path = lib/freetype
+	url = https://github.com/freetype/freetype

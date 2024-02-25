@@ -1,7 +1,7 @@
 #include "vulkan/vulkan.h"
 #define CGLTF_IMPLEMENTATION
-#include "cgltf.h"
-#include "stb_image.h"
+#include "cgltf/cgltf.h"
+#include "stb/stb_image.h"
 
 #include "maths/maths.h"
 #include "util/arena.h"
@@ -73,7 +73,7 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 /* -------------------------------------------------------------------- */
 
 void (*update_mdl_tforms)(SBO);
-mat4s* mdl_tforms;
+Mat4x4* mdl_tforms;
 struct Material default_mtl;
 
 static struct Pipeline pipeln;
@@ -92,7 +92,7 @@ void models_init(VkRenderPass renderpass)
 		.tex       = texture_new_from_image(TEXTURE_PATH "default.png"),
 	};
 
-	sbo_buf     = sbo_new(MAX_MODELS*sizeof(mat4));
+	sbo_buf     = sbo_new(MAX_MODELS*sizeof(Mat4x4));
 	ubo_bufs[0] = ubo_new(sizeof(Mat4x4[2]));                           /* Camera matrix */
 	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material));       /* Material data */
 	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));               /* Light data    */
@@ -236,7 +236,7 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 
 	// TODO: Named buffers, not arrays
 	buffer_update(ubo_bufs[0], sizeof(Mat4x4[2]), cam->mats, 0);
-	
+
 	update_mdl_tforms(sbo_buf);
 
 	/*** Animated models ***/
@@ -395,7 +395,7 @@ static struct Texture load_material_image(cgltf_image* img)
 			ERROR("[RES] MIME type not supported for image: %s", img->mime_type);
 		}
 	}
-	
+
 	ERROR("[RES] Image does not have either URI or buffer data");
 	return (struct Texture){ 0 };
 }
@@ -528,7 +528,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 
 				/*** Apply the transform to the mesh ***/
 				cgltf_node* node;
-				mat4 trans;
+				Mat4x4 trans;
 				float* vts; /* vts = vertex type that the transform will be applied to */
 				if (prim->attributes[a].type == cgltf_attribute_type_position)
 					vts = verts;
@@ -539,7 +539,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 
 				for (int n = 0; n < (int)data->nodes_count; n++) {
 					node = &data->nodes[n];
-					cgltf_node_transform_world(node, (float*)trans);
+					cgltf_node_transform_world(node, trans.arr);
 					// DEBUG(1, "rot: %d, trans: %d, scale: %d", node->has_rotation, node->has_translation, node->has_scale);
 					// DEBUG(1, "rotation: %.2f, %.2f, %.2f, %.2f", node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]);
 					// DEBUG(1, "translation: %.2f, %.2f, %.2f", node->translation[0], node->translation[1], node->translation[2]);
@@ -549,13 +549,13 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 					// 	printf("%6.2f%s", trans[j/4][j%4], (j + 1) % 4 == 0? "\n": ", ");
 
 					if (node->mesh == mesh) {
-						vec3 v;
-						for (int j = 0; j < vert_max; j++) {
-							v[0] = vts[3*j + 0];
-							v[1] = vts[3*j + 1];
-							v[2] = vts[3*j + 2];
-							glm_mat4_mulv3(trans, v, 1.0f, &vts[3*j]);
-						}
+						// Vec3 v;
+						// for (int j = 0; j < vert_max; j++) {
+						// 	v.x = vts[3*j + 0];
+						// 	v.y = vts[3*j + 1];
+						// 	v.z = vts[3*j + 2];
+						// 	// glm_mat4_mulv3(trans, v, 1.0f, &vts[3*j]);
+						// }
 					}
 				}
 
@@ -632,7 +632,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 static void load_skin(struct Model* model, cgltf_data* data)
 {
 	if (data->skins_count > 1)
-		ERROR("[RES] Warning: only one of the %lu skins will be loaded", data->skins_count); 
+		ERROR("[RES] Warning: only one of the %lu skins will be loaded", data->skins_count);
 
 	cgltf_skin* skin;
 	cgltf_node* node;
@@ -734,10 +734,10 @@ static void load_animations(struct Model* mdl, cgltf_data* data)
 			for (int f = 0, i = 0; f < (int)output->count; f++) {
 				switch (channel->target_path) {
 				case cgltf_animation_path_type_rotation:
-					memcpy(&mdl->anims[a].frms[f].tforms[joint].rot.raw, &verts[i], sizeof(float[4]));
+					memcpy(&mdl->anims[a].frms[f].tforms[joint].rot.arr, &verts[i], sizeof(float[4]));
 					break;
 				case cgltf_animation_path_type_translation:
-					memcpy(&mdl->anims[a].frms[f].tforms[joint].trans.raw, &verts[i], sizeof(float[3]));
+					memcpy(&mdl->anims[a].frms[f].tforms[joint].trans.arr, &verts[i], sizeof(float[3]));
 					break;
 				case cgltf_animation_path_type_scale:
 					mdl->anims[a].frms[f].tforms[joint].scale = verts[i];

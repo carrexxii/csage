@@ -14,11 +14,13 @@ void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*));
 void renderer_draw(struct Camera* cam);
 void renderer_free(void);
 
+#include "maths/maths.h"
+
 extern VkSampler default_sampler;
 extern struct GlobalLighting {
-	vec4 ambient; /* [colour|power] */
-	vec4 pos;     /* [pos|power]    */
-	vec3 colour;
+	Vec4 ambient; /* [colour|power] */
+	Vec4 pos;     /* [pos|power]    */
+	Vec3 colour;
 } global_light;
 
 #endif

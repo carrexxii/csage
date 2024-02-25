@@ -8,14 +8,14 @@
 
 struct PathNode {
 	int g, h;
-	ivec3s pos;
+	Vec3i pos;
 	struct PathNode* parent;
 };
 
-inline static int dist(ivec3s p1, ivec3s p2);
+inline static int dist(Vec3i p1, Vec3i p2);
 inline static void build_path(struct Path* path, int nodec, struct PathNode* nodes, bool is_local);
 
-static ivec3s directions[] = {
+static Vec3i directions[] = {
 	{  1, 0, 0 }, { -1,  0, 0 },
 	{  0, 1, 0 }, {  0, -1, 0 },
 	{  1, 1, 0 }, { -1, -1, 0 },
@@ -24,9 +24,9 @@ static ivec3s directions[] = {
 
 void path_new(struct Path* path)
 {
-	ivec3s start = path->start;
-	ivec3s end   = path->end;
-	if (ivec3s_eq(start, end)) {
+	Vec3i start = path->start;
+	Vec3i end   = path->end;
+	if (equal(start, end)) {
 		ERROR("[ENT] Should not be trying to path with same start and end");
 		return;
 	}
@@ -57,16 +57,16 @@ void path_new(struct Path* path)
 	do {
 		current_node = *(struct PathNode*)minheap_pop(&open_nodes);
 		closed_nodes[closed_nodec++] = current_node;
-		if (!ivec3s_eq(current_node.pos, end)) {
+		if (!equal(current_node.pos, end)) {
 			for (int i = 0; i < (int)ARRAY_SIZE(directions); i++) {
-				new_node.pos = ivec3s_add(directions[i], current_node.pos);
+				new_node.pos = add(directions[i], current_node.pos);
 
 				/* Skip if the cell is either map-blocked or already in closed_nodes */
 				vxl = map_get_voxel(new_node.pos);
 				if (!vxl || !vxl->data)
 					goto skip_node;
 				for (int j = 0; j < closed_nodec; j++)
-					if (ivec3s_eq(closed_nodes[j].pos, new_node.pos))
+					if (equal(closed_nodes[j].pos, new_node.pos))
 						goto skip_node;
 
 				new_node.g = current_node.h + (i <= 3? 10: 14); /* First 4 directions are orthogonal, last 4 are diagonal */
@@ -93,14 +93,14 @@ void path_new(struct Path* path)
 	map_clear_highlight();
 	for (int i = 0; i < closed_nodec; i++) {
 		// DEBUG(1, "[%d] (%d, %d) = %d", i, path->local_path[i][0], path->local_path[i][1], closed_nodes[i].g+closed_nodes[i].h);
-		map_highlight_area((ivec4s){ path->local_path[i][0], path->local_path[i][1], 1, 1 });
+		map_highlight_area((Recti){ path->local_path[i][0], path->local_path[i][1], 1, 1 });
 	}
 
 	sfree(closed_nodes);
 	minheap_free(&open_nodes, NULL);
 }
 
-inline static int dist(ivec3s p1, ivec3s p2)
+inline static int dist(Vec3i p1, Vec3i p2)
 {
 	int dx = abs(p1.x - p2.x);
 	int dy = abs(p1.y - p2.y);

@@ -1,12 +1,4 @@
-.cache/
-data/
-lib/
-obj/
-acv/
-shaders/spirv
-
-csage
+.cache
+lib/include
+build/
 compile_commands.json
-*.sublime-*
-TODO
-*.langb

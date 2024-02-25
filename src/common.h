@@ -31,16 +31,10 @@
 	#include <io.h>
 #endif
 
-#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
-#define CGLM_DEFINE_PRINTS
-#define CGLM_OMIT_NS_FROM_STRUCT_API
-#define CGLM_ALL_UNALIGNED
-#include "cglm/struct.h"
-
-#define FPS                      50.0
-#define DT                       (1.0/FPS)
-#define DT_MS                    (DT*1000.0)
-#define DEBUG_MALLOC_MIN         (128*1024)
+#define FPS              50.0
+#define DT               (1.0/FPS)
+#define DT_MS            (DT*1000.0)
+#define DEBUG_MALLOC_MIN (128*1024)
 
 #define FONT_PATH    "data/"
 #define SHADER_DIR   "shaders/spirv/"
@@ -113,13 +107,13 @@ typedef union Colour {
 #endif
 #define LAMBDAV(body) LAMBDA(void, void, body)
 
-#define UNPACK2(_x) _x[0], _x[1]
-#define UNPACK3(_x) _x[0], _x[1], _x[2]
-#define UNPACK4(_x) _x[0], _x[1], _x[2], _x[3]
-#define UNPACK5(_x) _x[0], _x[1], _x[2], _x[3], _x[4]
-#define UNPACK6(_x) _x[0], _x[1], _x[2], _x[3], _x[4], _x[5]
-#define UNPACK7(_x) _x[0], _x[1], _x[2], _x[3], _x[4], _x[5], _x[6]
-#define UNPACK8(_x) _x[0], _x[1], _x[2], _x[3], _x[4], _x[5], _x[6], _x[7]
+#define UNPACK2(x) x[0], x[1]
+#define UNPACK3(x) x[0], x[1], x[2]
+#define UNPACK4(x) x[0], x[1], x[2], x[3]
+#define UNPACK5(x) x[0], x[1], x[2], x[3], x[4]
+#define UNPACK6(x) x[0], x[1], x[2], x[3], x[4], x[5]
+#define UNPACK7(x) x[0], x[1], x[2], x[3], x[4], x[5], x[6]
+#define UNPACK8(x) x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]
 
 #ifndef _WIN32
 	#define MIN(a, b) ((a) < (b)? (a): (b))

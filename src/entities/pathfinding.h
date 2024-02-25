@@ -1,11 +1,13 @@
 #ifndef ENTITIES_PATHFINDING_H
 #define ENTITIES_PATHFINDING_H
 
+#include "maths/maths.h"
+
 #define PATHFINDING_MAX_LOOKAHEAD 64
 
 struct Path {
-	ivec3s start;
-	ivec3s end;
+	Vec3i start;
+	Vec3i end;
 	int8 block_path_current;
 	int8 block_path[PATHFINDING_MAX_LOOKAHEAD][3];
 	int8 local_path_current;

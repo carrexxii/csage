@@ -1,5 +1,6 @@
 #include <vulkan/vulkan.h>
 
+#include "maths/maths.h"
 #include "vulkan.h"
 #include "pipeline.h"
 #include "camera.h"
@@ -68,7 +69,7 @@ void particles_init(VkRenderPass renderpass)
 	vbo_buf = vbo_new(sizeof(verts), verts, false);
 }
 
-ID particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel, float scale)
+ID particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2 start_pos, Vec2 start_vel, float scale)
 {
 	if (particle_life/interval >= MAX_PARTICLES_PER_POOL)
 		ERROR("[GFX] Potentially too many particles");
@@ -109,10 +110,10 @@ void particles_update()
 				pool->timer -= pool->interval;
 				pool->particles[first_free] = (struct Particle){
 					.life = pool->particle_life,
-					.v[0] = pool->start_vel[0],
-					.v[1] = pool->start_vel[1],
-					.s[0] = pool->start_pos[0],
-					.s[1] = pool->start_pos[1],
+					.v.x = pool->start_vel.x,
+					.v.y = pool->start_vel.y,
+					.s.x = pool->start_pos.x,
+					.s.y = pool->start_pos.y,
 				};
 			} else {
 				pool->timer += DT_MS;
@@ -121,10 +122,10 @@ void particles_update()
 		for (int j = 0; j < MAX_PARTICLES_PER_POOL; j++) {
 			if (pool->particles[j].life <= 0)
 				continue;
-			pool->particles[j].v[0] *= PARTICLE_DAMPNER;
-			pool->particles[j].v[1] *= PARTICLE_DAMPNER;
-			pool->particles[j].s[0] += pool->particles[j].v[0]*DT;
-			pool->particles[j].s[1] += pool->particles[j].v[1]*DT;
+			pool->particles[j].v.x *= PARTICLE_DAMPNER;
+			pool->particles[j].v.y *= PARTICLE_DAMPNER;
+			pool->particles[j].s.x += pool->particles[j].v.x*DT;
+			pool->particles[j].s.y += pool->particles[j].v.y*DT;
 			pool->particles[j].life -= DT_MS;
 		}
 	}

@@ -1,8 +1,8 @@
 #ifndef GFX_PARTICLES_H
 #define GFX_PARTICLES_H
 
+#include "maths/maths.h"
 #include "vulkan/vulkan.h"
-
 #include "pipeline.h"
 #include "buffers.h"
 #include "camera.h"
@@ -16,7 +16,7 @@ enum ParticleType {
 };
 
 struct Particle {
-	vec2  s, v;
+	Vec2  s, v;
 	int32 life;
 	int: 32;
 	int: 32;
@@ -30,15 +30,15 @@ struct ParticlePool {
 	int32  particle_life;
 	int32  interval;
 	int32  timer;
-	float* start_pos;
-	float* start_vel;
+	Vec2   start_pos;
+	Vec2   start_vel;
 
 	struct Particle particles[MAX_PARTICLES_PER_POOL];
 	float scale;
 };
 
 void particles_init(VkRenderPass renderpass);
-ID   particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, float* start_pos, float* start_vel, float scale);
+ID   particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2 start_pos, Vec2 start_vel, float scale);
 void particles_enable(ID particle_id);
 void particles_disable(ID particle_id);
 void particles_update();

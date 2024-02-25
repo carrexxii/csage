@@ -68,7 +68,7 @@ struct UIContext {
 	struct UIMouse mouse_pressed;
 	struct UIMouse mouse_released;
 	struct UIObject* clicked_obj;
-	vec2 mouse_pos;
+	Vec2 mouse_pos;
 };
 
 struct UIStyle {

@@ -3,8 +3,9 @@
 
 #include <vulkan/vulkan.h>
 #undef CGLTF_IMPLEMENTATION
-#include "cgltf.h"
+#include "cgltf/cgltf.h"
 
+#include "maths/maths.h"
 #include "buffers.h"
 #include "texture.h"
 #include "camera.h"
@@ -98,7 +99,7 @@ void model_free(ID mdl_id);
 void models_free();
 
 extern void (*update_mdl_tforms)(SBO); // TODO: make this static
-extern mat4s* mdl_tforms;
+extern Mat4x4* mdl_tforms;
 
 extern struct Material default_mtl;
 
