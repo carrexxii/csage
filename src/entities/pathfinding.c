@@ -59,7 +59,10 @@ void path_new(struct Path* path)
 		closed_nodes[closed_nodec++] = current_node;
 		if (!equal(current_node.pos, end)) {
 			for (int i = 0; i < (int)ARRAY_SIZE(directions); i++) {
-				new_node.pos = add(directions[i], current_node.pos);
+				// new_node.pos = add(current_node.pos, directions[i]);
+				new_node.pos = VEC3I(current_node.pos.x + directions[i].x,
+				                     current_node.pos.y + directions[i].y,
+									 current_node.pos.z + directions[i].z);
 
 				/* Skip if the cell is either map-blocked or already in closed_nodes */
 				vxl = map_get_voxel(new_node.pos);

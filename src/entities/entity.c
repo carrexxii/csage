@@ -68,7 +68,7 @@ void entity_path_to(EntityID e, Vec3i pos)
 {
 	struct Entity entity = ENTITY(e);
 	struct Path* path = &ENTITY_PATH(entity.path);
-	path->start = ivec3s_of_vec3s(ENTITY_BODY(entity.body).pos);
+	path->start = VEC3I_V(ENTITY_BODY(entity.body).pos);
 	path->end   = pos;
 	path_new(path);
 }
@@ -84,11 +84,11 @@ void entities_update()
 		if (!path->complete) {
 			body = &ENTITY_BODY(entity->body);
 
-			Vec3 current_dest = VEC3(UNPACK3(path->local_path[path->local_path_current]));
-			if (distance2(body->pos, VEC3V(path->end)) > ENTITY_PATH_EPSILON) {
+			Vec3 current_dest = VEC3_A(path->local_path[path->local_path_current]);
+			if (distance2(body->pos, VEC3_V3(path->end)) > ENTITY_PATH_EPSILON) {
 				if (distance2(body->pos, current_dest) <= ENTITY_PATH_EPSILON) {
 					path->local_path_current++;
-					current_dest = VEC3(UNPACK3(path->local_path[path->local_path_current]));
+					current_dest = VEC3_A(path->local_path[path->local_path_current]);
 				}
 				body->moving = true;
 				body->facing = sub(current_dest, body->pos);

@@ -80,9 +80,9 @@ static void test_scratch()
 
 static void test_init()
 {
-	map_new((ivec3s){ 64, 64, 16 });
+	map_new(VEC3I(64, 64, 16));
 
-	ent = entity_new((vec3s){ 5.0, 5.0, -5.0 }, MODEL_PATH "RiggedSimple.glb");
+	ent = entity_new(VEC3(5.0, 5.0, -5.0), MODEL_PATH "RiggedSimple.glb");
 
 	test_scratch();
 

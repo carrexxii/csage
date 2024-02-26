@@ -26,8 +26,8 @@ static struct Camera scratch_cam;
 
 void scenemgr_init()
 {
-	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, glm_rad(69.0f));
-	game_cam    = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, glm_rad(69.0f));
+	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(69.0f));
+	game_cam    = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(69.0f));
 	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
 	camera_set_projection(&game_cam, CAMERA_PERSPECTIVE);
 
@@ -35,7 +35,7 @@ void scenemgr_init()
 	scratch_init(renderpass);
 	entities_init();
 	test_init();
-	
+
 	ui_init(renderpass);
 	font_init(renderpass);
 	particles_init(renderpass);
@@ -46,20 +46,9 @@ void scenemgr_init()
 
 	taskmgr_init();
 
-	global_light.ambient[0] = 1.0f;
-	global_light.ambient[1] = 1.0f;
-	global_light.ambient[2] = 1.0f;
-	global_light.ambient[3] = 0.1f;
-	glm_vec3_normalize(global_light.ambient);
-
-	global_light.pos[0] = 10.0f;
-	global_light.pos[1] = 0.0f;
-	global_light.pos[2] = 20.0f;
-	global_light.pos[3] = 0.5f;
-	global_light.colour[0] = 1.0f;
-	global_light.colour[1] = 1.0f;
-	global_light.colour[2] = 1.0f;
-	glm_vec3_normalize(global_light.colour);
+	global_light.pos     = VEC4(10.0f, 0.0f, 20.0f, 0.5f);
+	global_light.ambient = normalized(VEC4(1.0f, 1.0f, 1.0f, 0.1f));
+	global_light.colour  = normalized(VEC3(1.0f, 1.0f, 1.0f));
 
 	switch_scene(SCENE_SCRATCH);
 }

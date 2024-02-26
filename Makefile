@@ -13,12 +13,12 @@ TOOL_DIR   = ./tools
 
 COMPILE_WITH = -DDEBUG_LEVEL=5
 
-WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict        \
+WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict                      \
            -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration \
            -Wmissing-prototypes -Wstrict-prototypes -Wunsafe-loop-optimizations -Wbad-function-cast -Wmissing-noreturn  \
-           -Wdisabled-optimization -Wno-unused-variable -Wno-bad-function-cast # Optimization: -Winline
-CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR)                        \
-         -I$(LIB_DIR)/include -ftabstop=4 -include $(SRC_DIR)/common.h $(COMPILE_WITH) \
+           -Wdisabled-optimization # Optimization: -Winline
+CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR)         \
+         -isystem$(LIB_DIR)/include -ftabstop=4 -include $(SRC_DIR)/common.h $(COMPILE_WITH)            \
          -fstack-protector-strong -fstack-clash-protection -fno-omit-frame-pointer -fsanitize=undefined
 
 LFLAGS   = -fuse-ld=gold -L$(LIB_DIR) -Wl,-O0 -lm -lSDL2 -lvulkan -lfreetype -fno-omit-frame-pointer -fsanitize=undefined
@@ -115,6 +115,8 @@ libs:
 
 .PHONY: restore
 restore:
+	@mkdir -p $(SHADER_DIR)/spirv/
+
 	@git submodule update --remote --merge
 	@make libs
 
@@ -146,3 +148,7 @@ remove:	clean
 	@echo "Libraries removed"
 	@rm -rf $(TOOL_DIR)/*
 	@echo "Tools removed"
+
+.PHONY: cloc
+cloc:
+	cloc --vcs=git

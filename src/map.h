@@ -36,8 +36,10 @@ void map_free(void);
 extern struct MapData {
 	Mat4x4 proj;
 	Mat4x4 view;
-	Recti map_size;
-	Recti block_size;
+	Vec3i map_size;
+	float pad1;
+	Vec3i block_size;
+	float pad2;
 } map_data;
 extern struct VoxelBlock* map_blocks;
 

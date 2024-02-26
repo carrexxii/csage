@@ -67,7 +67,7 @@ void map_init(VkRenderPass renderpass, struct Camera* cam)
 {
 	map_cam = cam;
 
-	map_data.block_size = (ivec4s){ MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH };
+	map_data.block_size = VEC3I(MAP_BLOCK_WIDTH, MAP_BLOCK_HEIGHT, MAP_BLOCK_DEPTH);
 	ubo_bufs[0] = ubo_new(sizeof(map_data)); /* Camera matrix, block dimensions and map dimensions */
 	ubo_bufs[1] = ubo_new(sizeof(vxl_sels)); /* vxl_sels to be highlighted                         */
 	pipeln = (struct Pipeline){
@@ -91,13 +91,11 @@ void map_init(VkRenderPass renderpass, struct Camera* cam)
 }
 
 // TODO: need to free old data on subsequent calls
-void map_new(ivec3s dim)
+void map_new(Vec3i dim)
 {
-	map_data.map_size = (ivec4s){
-		ceil((float)dim.x/(float)MAP_BLOCK_WIDTH),
-		ceil((float)dim.y/(float)MAP_BLOCK_HEIGHT),
-		ceil((float)dim.z/(float)MAP_BLOCK_DEPTH),
-	};
+	map_data.map_size = VEC3I(ceil((float)dim.x / (float)MAP_BLOCK_WIDTH),
+	                          ceil((float)dim.y / (float)MAP_BLOCK_HEIGHT),
+	                          ceil((float)dim.z / (float)MAP_BLOCK_DEPTH));
 	blockc = map_data.map_size.x*map_data.map_size.y*map_data.map_size.z;
 
 	map_blocks = scalloc(blockc, sizeof(struct VoxelBlock));
@@ -106,7 +104,7 @@ void map_new(ivec3s dim)
 		for (int z = 0; z < MAP_BLOCK_DEPTH; z++)
 			for (int y = 0; y < MAP_BLOCK_HEIGHT; y++)
 				for (int x = 0; x < MAP_BLOCK_WIDTH; x++)
-					map_get_voxel((ivec3s){ x, y, z })->data = 1;
+					map_get_voxel(VEC3I(x, y, z))->data = 1;
 					// map_get_voxel((ivec3s){ x, y, z })->data = x == 0 || x == MAP_BLOCK_WIDTH-1 || y == 0 || y == MAP_BLOCK_HEIGHT-1? 1: 0;
 	}
 
@@ -146,7 +144,7 @@ void map_mouse_select(bool kdown)
 	if (vxl_selc >= MAP_MAX_VOXEL_SELECTIONS)
 		return;
 
-	vec2s v = camera_get_map_point(camera_get_mouse_ray(map_cam, mouse_x, mouse_y));
+	Vec2 v = camera_get_map_point(camera_get_mouse_ray(map_cam, mouse_x, mouse_y));
 	if (kdown) {
 		hl_start = vxl_selc++;
 		vxl_sels[hl_start] = RECT(floorf(v.x), floorf(v.y), 1.0f, 1.0f);
@@ -164,7 +162,7 @@ void map_mouse_deselect(bool kdown)
 	}
 }
 
-int map_highlight_area(ivec4s area)
+int map_highlight_area(Recti area)
 {
 	// vxl_sels[vxl_selc] = area;
 
@@ -181,7 +179,7 @@ void map_clear_highlight()
 void map_update()
 {
 	// TODO: move to global value calcualted once per frame
-	vec2s v = camera_get_map_point(camera_get_mouse_ray(map_cam, mouse_x, mouse_y));
+	Vec2 v = camera_get_map_point(camera_get_mouse_ray(map_cam, mouse_x, mouse_y));
 	if (hl_start != -1) {
 		Rect* r = &vxl_sels[hl_start];
 		r->w = floorf(v.x + 1.0f - r->x);
@@ -247,12 +245,12 @@ static void remesh_block(int b)
 			for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = map_get_voxel((ivec3s){ x, y, z })->data) || !is_visible(x, y, z, 2))
+				if (!(current_vxl = map_get_voxel(VEC3I(x, y, z))->data) || !is_visible(x, y, z, 2))
 					continue;
 
 				next_vxl = current_vxl;
 				while (x < MAP_BLOCK_WIDTH) {
-					next_vxl = map_get_voxel((ivec3s){ x, y, z })->data;
+					next_vxl = map_get_voxel(VEC3I(x, y, z))->data;
 					if (next_vxl != current_vxl)
 						break;
 					x++;
@@ -268,12 +266,12 @@ static void remesh_block(int b)
 			for (int x = 0; x < MAP_BLOCK_WIDTH; x++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = map_get_voxel((ivec3s){ x, y, z })->data) || !is_visible(x, y, z, 1))
+				if (!(current_vxl = map_get_voxel(VEC3I(x, y, z))->data) || !is_visible(x, y, z, 1))
 					continue;
 
 				next_vxl = current_vxl;
 				while (x < MAP_BLOCK_WIDTH) {
-					next_vxl = map_get_voxel((ivec3s){ x, y, z })->data;
+					next_vxl = map_get_voxel(VEC3I(x, y, z))->data;
 					if (next_vxl != current_vxl)
 						break;
 					x++;
@@ -289,12 +287,12 @@ static void remesh_block(int b)
 			for (int y = 0; y < MAP_BLOCK_HEIGHT; y++) {
 				x0 = x;
 				y0 = y;
-				if (!(current_vxl = map_get_voxel((ivec3s){ x, y, z })->data) || !is_visible(x, y, z, 0))
+				if (!(current_vxl = map_get_voxel(VEC3I(x, y, z))->data) || !is_visible(x, y, z, 0))
 					continue;
 
 				next_vxl = current_vxl;
 				while (y < MAP_BLOCK_HEIGHT) {
-					next_vxl = map_get_voxel((ivec3s){ x, y, z })->data;
+					next_vxl = map_get_voxel(VEC3I(x, y, z))->data;
 					if (next_vxl != current_vxl)
 						break;
 					y++;
@@ -349,7 +347,7 @@ static void mesh_quad(int16* inds, int x1, int y1, int z1, int x2, int y2, int z
 
 inline static bool is_visible(int x, int y, int z, int axis)
 {
-	if (!map_get_voxel((ivec3s){ x, y, z })->data)
+	if (!map_get_voxel(VEC3I(x, y, z))->data)
 		return false;
 
 	switch (axis) {
@@ -357,17 +355,17 @@ inline static bool is_visible(int x, int y, int z, int axis)
 			if (x + 1 >= MAP_BLOCK_WIDTH)
 				return true;
 			else
-				return map_get_voxel((ivec3s){ x + 1, y, z })->data == 0;
+				return map_get_voxel(VEC3I(x + 1, y, z))->data == 0;
 		case 1: /* y-axis */
 			if (y + 1 >= MAP_BLOCK_HEIGHT)
 				return true;
 			else
-				return map_get_voxel((ivec3s){ x, y + 1, z })->data == 0;
+				return map_get_voxel(VEC3I(x, y + 1, z))->data == 0;
 		case 2: /* z-axis */
 			if (z == 0)
 				return true;
 			else
-				return map_get_voxel((ivec3s){ x, y, z - 1 })->data == 0;
+				return map_get_voxel(VEC3I(x, y, z - 1))->data == 0;
 		default: // TODO: some sort of ray cast check for diagonals?
 			return true;
 	}

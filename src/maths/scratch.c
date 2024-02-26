@@ -135,7 +135,7 @@ void scratch_add_vec(Vec a)
 	/* A(a + 1) + Bb + C + D = 0 */
 	float s = norm(a)/2.0f;
 	float d = 1.0f/(norm(a)/a.w);
-	Vec3  n = multiply(normalized(VEC3V(a)), -1.0f*d);
+	Vec3  n = multiply(normalized(a.v), -1.0f*d);
 	float p1[7] = { n.x + s, n.y    , n.z - s*(n.x/n.z), SCRATCH_PLANE_COLOUR, SCRATCH_OPACITY, };
 	float p2[7] = { n.x    , n.y + s, n.z - s*(n.y/n.z), SCRATCH_PLANE_COLOUR, SCRATCH_OPACITY, };
 	float p3[7] = { n.x - s, n.y    , n.z + s*(n.x/n.z), SCRATCH_PLANE_COLOUR, SCRATCH_OPACITY, };

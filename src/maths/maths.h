@@ -22,40 +22,43 @@
 #define print_rect(r) _Generic((r), \
 	Rect : print_rect_rect,         \
 	Recti: print_rect_recti)(r)
-inline static void print_rect_rect(Rect rect) {
+static inline void print_rect_rect(Rect rect) {
 	printf("Rect -> [%.2f, %.2f, %.2f, %.2f]\n", rect.x, rect.y, rect.w, rect.h);
 }
-inline static void print_rect_recti(Recti rect) {
+static inline void print_rect_recti(Recti rect) {
 	printf("Recti -> [%d, %d, %d, %d]\n", rect.x, rect.y, rect.w, rect.h);
 }
 
-// inline static ivec3s ivec3s_of_vec3s(vec3s v)  { return (ivec3s){ .x = (int)v.x, .y = (int)v.y, .z = (int)v.z }; }
-// inline static vec3s  vec3s_of_ivec3s(ivec3s v) { return (vec3s){ .x = (float)v.x, .y = (float)v.y, .z = (float)v.z }; }
-// inline static vec3s  vec3s_of_int8(int8 v[3])  { return (vec3s){ .x = (float)v[0], .y = (float)v[1], .z = (float)v[2] }; }
+static inline float deg_to_rad(float d) { return d/360.0f * 2.0f*PI; }
+static inline float rad_to_deg(float r) { return r/2.0f*PI * 360.0f; }
 
-// inline static void ivec3_copy_vec3(vec3 v, ivec3 u) {
+// static inline ivec3s ivec3s_of_vec3s(vec3s v)  { return (ivec3s){ .x = (int)v.x, .y = (int)v.y, .z = (int)v.z }; }
+// static inline vec3s  vec3s_of_ivec3s(ivec3s v) { return (vec3s){ .x = (float)v.x, .y = (float)v.y, .z = (float)v.z }; }
+// static inline vec3s  vec3s_of_int8(int8 v[3])  { return (vec3s){ .x = (float)v[0], .y = (float)v[1], .z = (float)v[2] }; }
+
+// static inline void ivec3_copy_vec3(vec3 v, ivec3 u) {
 // 	u[0] = (int)v[0];
 // 	u[1] = (int)v[1];
 // 	u[2] = (int)v[2];
 // }
 
-// inline static bool vec3_is_zero(vec3 v) {
+// static inline bool vec3_is_zero(vec3 v) {
 // 	return (fabs(v[0]) < GLM_FLT_EPSILON &&
 // 	        fabs(v[1]) < GLM_FLT_EPSILON &&
 // 	        fabs(v[2]) < GLM_FLT_EPSILON);
 // }
 
-// inline static void vec3_clamp(vec3 v, vec3 vmax, vec3 vmin) {
+// static inline void vec3_clamp(vec3 v, vec3 vmax, vec3 vmin) {
 // 	CLAMP(v[0], vmin[0], vmax[0]);
 // 	CLAMP(v[1], vmin[1], vmax[1]);
 // 	CLAMP(v[2], vmin[2], vmax[2]);
 // }
 
-// inline static bool ivec3s_eq(ivec3s v, ivec3s u) {
+// static inline bool ivec3s_eq(ivec3s v, ivec3s u) {
 // 	return v.x == u.x && v.y == u.y && v.z == u.z;
 // }
 
-// inline static ivec3s ivec3s_add(ivec3s v, ivec3s u) {
+// static inline ivec3s ivec3s_add(ivec3s v, ivec3s u) {
 // 	return (ivec3s){
 // 		.x = v.x + u.x,
 // 		.y = v.y + u.y,
@@ -101,7 +104,7 @@ static bool line_line_nearest_points(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4, Vec3 pa
 	return true;
 }
 
-inline static struct Ray ray_from_points(Vec3 p1, Vec3 p2) {
+static inline struct Ray ray_from_points(Vec3 p1, Vec3 p2) {
 	Vec3 d = sub(p2, p1);
 	struct Ray r = {
 		.p = p1,
@@ -117,8 +120,8 @@ static void ray_print(struct Ray r) {
 }
 
 /* t = -(L (*) p)/(L (*) v) */
-inline static Vec3 ray_plane_intersection(struct Ray r, Vec4 L) {
-	float t = -dot(VEC3V(L), r.p) / dot(VEC3V(L), r.v);
+static inline Vec3 ray_plane_intersection(struct Ray r, Vec4 L) {
+	float t = -dot(VEC3_V4(L), r.p) / dot(VEC3_V4(L), r.v);
 
 	// glm_vec3_copy(r.p, out);
 	// glm_vec3_muladds(r.v, t, out);
@@ -126,7 +129,7 @@ inline static Vec3 ray_plane_intersection(struct Ray r, Vec4 L) {
 }
 
 /* out will be the point on the capsule's line segment */
-inline static Vec3 ray_capsule_intersection(struct Ray r, struct Capsule cap) {
+static inline Vec3 ray_capsule_intersection(struct Ray r, struct Capsule cap) {
 	Vec3 pa = r.p;
 	Vec3 pb = r.p;
 	// glm_vec3_muladds(r.v,  100.0, pa);
@@ -138,12 +141,12 @@ inline static Vec3 ray_capsule_intersection(struct Ray r, struct Capsule cap) {
 	// return intersects && (glm_vec3_distance2(pa, pb) <= cap.r*cap.r);
 }
 
-inline static bool point_in_rect(Vec2 p, Rect rect) {
+static inline bool point_in_rect(Vec2 p, Rect rect) {
 	return ((p.x >= rect.x && p.x <= rect.w) &&
 	        (p.y >= rect.y && p.y <= rect.h));
 }
 
-inline static float polygon_moment(int vertc, Vec2 verts, Vec2 cm, float m)
+static inline float polygon_moment(int vertc, Vec2 verts, Vec2 cm, float m)
 {
 	float I = 0;
 	float r;
