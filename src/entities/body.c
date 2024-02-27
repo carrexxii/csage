@@ -1,5 +1,4 @@
 #include "maths/maths.h"
-#include "map.h"
 #include "body.h"
 
 void bodies_update(int bodyc, struct Body* bodies)

@@ -1,6 +1,7 @@
-#include <SDL2/SDL.h>
 #include <vulkan/vulkan.h>
+#include "SDL3/SDL.h"
 
+#include "SDL3/SDL_init.h"
 #include "config.h"
 #include "taskmgr.h"
 #include "gfx/vulkan.h"
@@ -44,30 +45,29 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
-	srand(SDL_GetTicks64());
+	srand(SDL_GetTicks());
 
 	init_vulkan(window);
 	scenemgr_init();
 
 	scenemgr_loop();
- 
+
 	return 0;
 }
 #endif /* TESTING */
 
 void init_sdl()
 {
-	SDL_version sdlversion;
+	SDL_Version sdlversion;
 	SDL_GetVersion(&sdlversion);
 	DEBUG(1, "[INFO] SDL version: %u.%u.%u", sdlversion.major, sdlversion.minor, sdlversion.patch);
 
-	if (SDL_Init(SDL_INIT_EVERYTHING))
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
 		ERROR("[INIT] Failed to initialize SDL (%s)", SDL_GetError());
 	else
 		DEBUG(1, "[INIT] Initialized SDL");
 
-	window = SDL_CreateWindow("CSage", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-	                          global_config.winw, global_config.winh, SDL_WINDOW_VULKAN);
+	window = SDL_CreateWindow("CSage", global_config.winw, global_config.winh, SDL_WINDOW_VULKAN);
 	if (!window)
 		ERROR("[INIT] Failed to create window (%s)", SDL_GetError());
 	else
@@ -80,7 +80,6 @@ noreturn void quit()
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
-	map_free();
 	entities_free();
 	free_vulkan();
 	SDL_Quit();

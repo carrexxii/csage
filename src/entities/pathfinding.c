@@ -1,6 +1,5 @@
 #include "maths/maths.h"
 #include "util/minheap.h"
-#include "map.h"
 #include "pathfinding.h"
 
 #define HEAP_STARTING_DEPTH    10
@@ -30,12 +29,12 @@ void path_new(struct Path* path)
 		ERROR("[ENT] Should not be trying to path with same start and end");
 		return;
 	}
-	if (!BETWEEN(end.x, 0, MAP_BLOCK_WIDTH  - 1) ||
-		!BETWEEN(end.y, 0, MAP_BLOCK_HEIGHT - 1) ||
-		!BETWEEN(end.z, 0, MAP_BLOCK_DEPTH  - 1)) {
-		ERROR("[ENT] Cannot find path to (%d, %d, %d)", end.x, end.y, end.z);
-		return;
-	}
+	// if (!BETWEEN(end.x, 0, MAP_BLOCK_WIDTH  - 1) ||
+	// 	!BETWEEN(end.y, 0, MAP_BLOCK_HEIGHT - 1) ||
+	// 	!BETWEEN(end.z, 0, MAP_BLOCK_DEPTH  - 1)) {
+	// 	ERROR("[ENT] Cannot find path to (%d, %d, %d)", end.x, end.y, end.z);
+	// 	return;
+	// }
 
 	if (start.z != end.z)
 		ERROR("[ENT] Traversing z-levels is not completed");
@@ -65,12 +64,12 @@ void path_new(struct Path* path)
 									 current_node.pos.z + directions[i].z);
 
 				/* Skip if the cell is either map-blocked or already in closed_nodes */
-				vxl = map_get_voxel(new_node.pos);
-				if (!vxl || !vxl->data)
-					goto skip_node;
-				for (int j = 0; j < closed_nodec; j++)
-					if (equal(closed_nodes[j].pos, new_node.pos))
-						goto skip_node;
+				// vxl = map_get_voxel(new_node.pos);
+				// if (!vxl || !vxl->data)
+				// 	goto skip_node;
+				// for (int j = 0; j < closed_nodec; j++)
+				// 	if (equal(closed_nodes[j].pos, new_node.pos))
+				// 		goto skip_node;
 
 				new_node.g = current_node.h + (i <= 3? 10: 14); /* First 4 directions are orthogonal, last 4 are diagonal */
 				new_node.h = dist(new_node.pos, end);
@@ -93,11 +92,11 @@ void path_new(struct Path* path)
 	path->complete = false;
 	build_path(path, closed_nodec, closed_nodes, true);
 
-	map_clear_highlight();
-	for (int i = 0; i < closed_nodec; i++) {
-		// DEBUG(1, "[%d] (%d, %d) = %d", i, path->local_path[i][0], path->local_path[i][1], closed_nodes[i].g+closed_nodes[i].h);
-		map_highlight_area((Recti){ path->local_path[i][0], path->local_path[i][1], 1, 1 });
-	}
+	// map_clear_highlight();
+	// for (int i = 0; i < closed_nodec; i++) {
+	// 	// DEBUG(1, "[%d] (%d, %d) = %d", i, path->local_path[i][0], path->local_path[i][1], closed_nodes[i].g+closed_nodes[i].h);
+	// 	map_highlight_area((Recti){ path->local_path[i][0], path->local_path[i][1], 1, 1 });
+	// }
 
 	sfree(closed_nodes);
 	minheap_free(&open_nodes, NULL);

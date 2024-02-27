@@ -16,8 +16,7 @@ struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 	};
 
 	cam.mats->proj = MAT4X4_IDENTITY;
-
-	// glm_translate_make(cam.mats->view.m, pos.v);
+	cam.mats->view = translate_make(pos);
 	camera_update(&cam);
 
 	return cam;
@@ -31,13 +30,11 @@ void camera_set_projection(struct Camera* cam, enum CameraType type)
 	case CAMERA_ORTHOGONAL:
 		dist = distance(VEC3_ZERO, cam->pos);
 		sz_x = (atan(cam->fov / 2.0f) * 2.0f) * dist;
-		sz_y = sz_x / (cam->w/cam->h);
-		// glm_ortho(-sz_x, sz_x, -sz_y, sz_y,
-		//           -dist, 1024.0f, cam->mats->proj.m);
+		sz_y = sz_x / (cam->w / cam->h);
+		cam->mats->proj = cam_orthogonal(-sz_x, sz_x, -sz_y, sz_y, -dist, 1024.0f);
 		break;
 	case CAMERA_PERSPECTIVE:
-		// glm_perspective(cam->fov, cam->w / cam->h,
-		//                 0.1f, 1024.0f, cam->mats->proj.m);
+		cam->mats->proj = cam_perspective(cam->fov, cam->w / cam->h, 0.1f, 1024.0f);
 		break;
 	default:
 		ERROR("Invalid camera type: %d", type);
@@ -57,33 +54,28 @@ void camera_update(struct Camera* cam)
 {
 	Vec3 dir = { 0 };
 	if (cam->dir & DIR_FORWARDS || cam->dir & DIR_BACKWARDS) {
-		dir = normalized(sub(cam->pos, VEC3(0.0f, 0.0f, 0.0f)));
+		dir = normalized(sub(cam->pos, VEC3_ZERO));
 		if (cam->dir & DIR_FORWARDS)
 			dir = multiply(dir, -0.1f);
 		else
 			dir = multiply(dir, 0.1f);
 	}
 	cam->pos = add(cam->pos, dir);
-	add(VEC3(1,2,3), 1.0f);
-	add(VEC3(1,2,3), VEC3(1,2,3));
-	Vec3 p = VEC3(1,2,3);
-	Vec3 o = VEC3(1,2,3);
-	add(p, o);
 
 	if (cam->dir & DIR_LEFT)
-		;// glm_vec3_rotate(cam->pos.v, -glm_rad(1.0f), cam->up.v);
+		cam->pos = rotate(cam->pos, -deg_to_rad(1.0f), cam->up);
 	if (cam->dir & DIR_RIGHT)
-		;// glm_vec3_rotate(cam->pos.v, glm_rad(1.0f), cam->up.v);
+		cam->pos = rotate(cam->pos, deg_to_rad(1.0f), cam->up);
 	if (cam->dir & DIR_UP || cam->dir & DIR_DOWN) {
-		Vec3 pv = sub(cam->pos, VEC3(0.0f, 0.0f, 0.0f));
-		// glm_vec3_cross(cam->up.v, pv.v, pv.v);
+		Vec3 pv = sub(cam->pos, VEC3_ZERO);
+		     pv = cross(cam->up, pv);
 		if (cam->dir & DIR_DOWN)
-			;// glm_vec3_rotate(cam->pos.v, -glm_rad(1.0f), pv.v);
+			cam->pos = rotate(cam->pos, -deg_to_rad(1.0f), pv);
 		else
-			;// glm_vec3_rotate(cam->pos.v, glm_rad(1.0f), pv.v);
+			cam->pos = rotate(cam->pos, deg_to_rad(1.0f), pv);
 	}
 
-	cam->mats->view = lookat(cam->pos, VEC3(0.0f, 0.0f, 0.0f), cam->up);
+	cam->mats->view = lookat(cam->pos, VEC3_ZERO, cam->up);
 	if (cam->type == CAMERA_ORTHOGONAL)
 		camera_set_projection(cam, CAMERA_ORTHOGONAL);
 }

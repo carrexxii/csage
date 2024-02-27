@@ -31,16 +31,12 @@
 	#include <io.h>
 #endif
 
+#include "config.h"
+
 #define FPS              50.0
 #define DT               (1.0/FPS)
 #define DT_MS            (DT*1000.0)
 #define DEBUG_MALLOC_MIN (128*1024)
-
-#define FONT_PATH    "data/"
-#define SHADER_DIR   "shaders/spirv/"
-#define MODEL_PATH   "data/models/"
-#define TEXTURE_PATH "data/textures/"
-#define SCRIPT_PATH  "scripts/"
 
 /*  +------------------------------------------+
  *  |           Integral Types Chart           |
@@ -94,18 +90,6 @@ typedef union Colour {
 } Colour;
 #define COLOUR(hex)      (Colour){ .abgr = hex }
 #define COLOUR_TO_VEC(c) (float[4]){ c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f }
-
-#define EXPR(x) ({ x })
-#ifndef __clang__
-	#define LAMBDA(type, args, body) EXPR( \
-			type _(args) {                 \
-				body                       \
-			} _;                           \
-		)
-#else
-	#define LAMBDA(a, b, c) EXPR((a (*)(b))random_int;)
-#endif
-#define LAMBDAV(body) LAMBDA(void, void, body)
 
 #define UNPACK2(x) x[0], x[1]
 #define UNPACK3(x) x[0], x[1], x[2]
@@ -179,10 +163,11 @@ typedef union Colour {
 #define D DEBUG(1, TERM_RED "<debug marker>" TERM_NORMAL)
 #define DEBUG(_lvl, ...) do {                                        \
 			if (_lvl <= DEBUG_LEVEL && SELECT1(__VA_ARGS__, "")[0]) { \
-				DEBUG_COLOUR(SELECT1(__VA_ARGS__, ""));                \
-				fprintf(stderr, __VA_ARGS__);                           \
-				fprintf(stderr, "\n" TERM_NORMAL);                       \
-			}                                                             \
+				fprintf(stderr, __FILE__ ":%d ", __LINE__);            \
+				DEBUG_COLOUR(SELECT1(__VA_ARGS__, ""));                 \
+				fprintf(stderr, __VA_ARGS__);                            \
+				fprintf(stderr, "\n" TERM_NORMAL);                        \
+			}                                                              \
 		} while (0)
 #define DEBUG_VALUE(x) do {                                                                \
 			fprintf(stderr, _Generic((x),                                                   \

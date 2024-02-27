@@ -19,7 +19,11 @@
 #define VEC4_V4(v)  (Vec4){ v.x   , v.y   , v.z   , v.w     }
 #define VEC4_A(arr) (Vec4){ arr[0], arr[1], arr[2], arr[3]  }
 
-#define VEC3_ZERO (Vec3){ 0 }
+#define VEC3_ZERO (Vec3){ .x = 0.0f, .y = 0.0f, .z = 0.0f }
+#define VEC3_ONE  (Vec3){ .x = 1.0f, .y = 1.0f, .z = 1.0f }
+#define VEC3_X    (Vec3){ .x = 1.0f, .y = 0.0f, .z = 0.0f }
+#define VEC3_Y    (Vec3){ .x = 0.0f, .y = 1.0f, .z = 0.0f }
+#define VEC3_Z    (Vec3){ .x = 0.0f, .y = 0.0f, .z = 1.0f }
 #define MAT4X4_IDENTITY (Mat4x4){ 1.0f, 0.0f, 0.0f, 0.0f, \
                                   0.0f, 1.0f, 0.0f, 0.0f, \
 								  0.0f, 0.0f, 1.0f, 0.0f, \
@@ -133,7 +137,8 @@ static inline Mat4x4 mat4x4_multiply_mat4x4(Mat4x4 a, Mat4x4 b) {
 
 /* -------------------------------------------------------------------- */
 
-static inline Mat4x4 lookat(Vec3 eye, Vec3 center, Vec3 up) {
+static Mat4x4 lookat(Vec3 eye, Vec3 center, Vec3 up)
+{
 	Vec3 f = vec3_normalized(sub(center, eye));
 	Vec3 s = vec3_normalized(cross(f, up));
 	Vec3 u = cross(s, f);
@@ -146,6 +151,66 @@ static inline Mat4x4 lookat(Vec3 eye, Vec3 center, Vec3 up) {
 		.m43 =  dot(f, eye),
 		.m44 = 1.0f,
 	};
+}
+
+static Mat4x4 cam_orthogonal(float left, float right, float bot, float top, float near, float far)
+{
+	float x = 2.0f / (right - left);
+	float y = 2.0f / (bot - top);
+	float z = 1.0f / (near - far);
+	float px = -(right + left) / (right - left);
+	float py = -(bot   + top)  / (bot   - top);
+	float pz = near / (near - far);
+	return (Mat4x4){
+		x   , 0.0f, 0.0f, 0.0f,
+		0.0f, y   , 0.0f, 0.0f,
+		0.0f, 0.0f, z   , 0.0f,
+		px  , py  , pz  , 1.0f,
+	};
+}
+
+static Mat4x4 cam_perspective(float ar, float fov, float near, float far)
+{
+	float f  = 1.0f / tanf(0.5f*fov);
+	float z  = far / (near - far);
+	float nf = (near*far) / (near - far);
+	return (Mat4x4){
+		f/ar, 0.0f, 0.0f,  0.0f,
+		0.0f, -f  , 0.0f,  0.0f,
+		0.0f, 0.0f, z   , -1.0f,
+		0.0f, 0.0f, nf  ,  0.0f,
+	};
+}
+
+static inline void translate(Mat4x4* a, Vec3 v)
+{
+	a->m41 = v.x;
+	a->m42 = v.y;
+	a->m43 = v.z;
+}
+
+static Mat4x4 translate_make(Vec3 v)
+{
+	return (Mat4x4){
+		.m41 = v.x,
+		.m42 = v.y,
+		.m43 = v.z,
+		.m44 = 1.0f,
+	};
+}
+
+/* Rodrigues' rotation formula:
+ *   v = vcos(t) + (k×v)sin(t) + k(k⋅v)(1 - cos(t))
+ */
+static inline Vec3 rotate(Vec3 v, float angle, Vec3 axis) {
+	Vec3 k = vec3_normalized(axis);
+	float cost = cosf(angle);
+	float sint = sinf(angle);
+
+	Vec3 res = vec3_multiply_scalar(v, cost);
+	     res = vec3_add_vec3(res, vec3_multiply_scalar(cross(k, v), sint));
+	     res = vec3_add_vec3(res, vec3_multiply_scalar(vec3_multiply_scalar(k, dot(k, v)), 1.0f - cost));
+	return res;
 }
 
 #endif

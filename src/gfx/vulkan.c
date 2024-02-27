@@ -1,5 +1,5 @@
-#include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
+#include "SDL3/SDL_vulkan.h"
 
 #include "config.h"
 #include "util/file.h"
@@ -99,7 +99,7 @@ void init_vulkan(SDL_Window* win)
 	DEBUG(3, "[VK] Created debug callback");
 #endif
 
-	if (!SDL_Vulkan_CreateSurface(win, instance, &surface))
+	if (!SDL_Vulkan_CreateSurface(win, instance, NULL, &surface))
 		ERROR("[VK] SDL failed to create a surface (%s)", SDL_GetError());
 
 	device_init_physical(instance, surface);

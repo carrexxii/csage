@@ -1,5 +1,5 @@
-#include <SDL2/SDL.h>
 #include <vulkan/vulkan.h>
+#include "SDL3/SDL.h"
 
 #include "config.h"
 #include "vulkan.h"
@@ -12,7 +12,6 @@
 #include "ui/ui.h"
 #include "model.h"
 #include "particles.h"
-#include "map.h"
 #include "maths/scratch.h"
 #include "renderer.h"
 
@@ -20,7 +19,7 @@ VkSampler default_sampler;
 struct GlobalLighting global_light;
 
 static void record_commands(int imgi, struct Camera* cam);
-static void create_framebuffers(void);
+static void create_frame_buffers(void);
 static void create_command_buffers(void);
 static void create_sync_objects(void);
 
@@ -116,8 +115,8 @@ VkRenderPass renderer_init()
 		ERROR("[VK] Failed to create render pass");
 	else
 		DEBUG(1, "[VK] Created render pass");
-	
-	create_framebuffers();
+
+	create_frame_buffers();
 	create_command_buffers();
 	create_sync_objects();
 
@@ -136,6 +135,7 @@ void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*))
 	draw_fns[draw_fnc++] = fn;
 }
 
+// [[gcc::no_sanitize("address")]]
 void renderer_draw(struct Camera* cam)
 {
 	vkWaitForFences(logical_gpu, 1, &fences.frames[frame], true, UINT64_MAX);
@@ -143,8 +143,8 @@ void renderer_draw(struct Camera* cam)
 
 	/* TODO: recreate swapchain for out of date */
 	uint imgi;
-	if (vkAcquireNextImageKHR(logical_gpu, swapchain.swapchain, UINT64_MAX, semas.imgavail[frame], NULL, &imgi))
-		ERROR("[VK] Failed to aquire next swapchain image");
+	if ((vk_err = vkAcquireNextImageKHR(logical_gpu, swapchain.swapchain, UINT64_MAX, semas.imgavail[frame], NULL, &imgi)))
+		ERROR("[VK] Failed to aquire next swapchain image: \n\t\"%d\"", vk_err);
 
 	vkResetCommandBuffer(cmd_bufs[frame], 0);
 	record_commands(imgi, cam);
@@ -161,8 +161,8 @@ void renderer_draw(struct Camera* cam)
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 		},
 	};
-	if (vkQueueSubmit(graphicsq, 1, &submiti, fences.frames[frame]))
-		ERROR("[VK] Failed to submit draw command");
+	if ((vk_err = vkQueueSubmit(graphicsq, 1, &submiti, fences.frames[frame])))
+		ERROR("[VK] Failed to submit draw command: \n\t\"%d\"", vk_err);
 
 	VkPresentInfoKHR presi = {
 		.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -226,8 +226,8 @@ static void record_commands(int imgi, struct Camera* cam)
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 		.pInheritanceInfo = NULL,
 	};
-	if (vkBeginCommandBuffer(cmd_buf, &begini))
-		ERROR("[VK] Failed to begin command buffer for image %u", imgi);
+	if ((vk_err = vkBeginCommandBuffer(cmd_buf, &begini)))
+		ERROR("[VK] Failed to begin command buffer for image %u: \n\t\"%d\"", imgi, vk_err);
 
 	VkRenderPassBeginInfo renderpassi = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -254,7 +254,7 @@ static void record_commands(int imgi, struct Camera* cam)
 		ERROR("[VK] Failed to record comand buffer");
 }
 
-static void create_framebuffers()
+static void create_frame_buffers()
 {
 	frame_bufs = smalloc(swapchain.imgc*sizeof(VkFramebuffer));
 	for (uint i = 0; i < swapchain.imgc; i++) {

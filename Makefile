@@ -17,11 +17,12 @@ WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overf
            -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration \
            -Wmissing-prototypes -Wstrict-prototypes -Wunsafe-loop-optimizations -Wbad-function-cast -Wmissing-noreturn  \
            -Wdisabled-optimization # Optimization: -Winline
-CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR)         \
-         -isystem$(LIB_DIR)/include -ftabstop=4 -include $(SRC_DIR)/common.h $(COMPILE_WITH)            \
-         -fstack-protector-strong -fstack-clash-protection -fno-omit-frame-pointer -fsanitize=undefined
+CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR) \
+         -isystem$(LIB_DIR)/include -ftabstop=4 -include $(SRC_DIR)/common.h $(COMPILE_WITH)    \
+         -fstack-protector-strong -fstack-clash-protection -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined
 
-LFLAGS   = -fuse-ld=gold -L$(LIB_DIR) -Wl,-O0 -lm -lSDL2 -lvulkan -lfreetype -fno-omit-frame-pointer -fsanitize=undefined
+LFLAGS   = -L$(LIB_DIR) -Wl,-rpath,$(LIB_DIR) -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined \
+           -lm -lvulkan -lSDL3 -lfreetype -lasan -lubsan
 DEPFLAGS = -MT $@ -MMD -MF $(BUILD_DIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED
@@ -106,10 +107,17 @@ libs:
 	@cp $(LIB_DIR)/cgltf/*.h $(LIB_DIR)/include/cgltf
 
 	@mkdir -p $(LIB_DIR)/include/freetype
-	@cmake -S $(LIB_DIR)/freetype -B $(LIB_DIR)/freetype/build
-	@make -C $(LIB_DIR)/freetype/build -j8
-	@cp $(LIB_DIR)/freetype/build/libfreetype.a $(LIB_DIR)/freetype
+	@cmake -S $(LIB_DIR)/freetype -B $(LIB_DIR)/freetype/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true
+	@cmake --build $(LIB_DIR)/freetype/build
+	@cp $(LIB_DIR)/freetype/build/*.so $(LIB_DIR)/
 	@cp -r $(LIB_DIR)/freetype/include/* $(LIB_DIR)/include
+
+	@mkdir -p $(LIB_DIR)/include/SDL3
+	@cmake -S $(LIB_DIR)/sdl -B $(LIB_DIR)/sdl/build -DCMAKE_BUILD_TYPE=Release \
+	       -DSDL_SHARED=ON -DSDL_STATIC=OFF -DSDL_TEST_LIBRARY=OFF -DSDL_DISABLE_INSTALL=ON
+	@cmake --build $(LIB_DIR)/sdl/build
+	@cp $(LIB_DIR)/sdl/include/SDL3/* $(LIB_DIR)/include/SDL3
+	@cp $(LIB_DIR)/sdl/build/*.so $(LIB_DIR)/
 
 	@echo "Finished building libs"
 
@@ -127,7 +135,7 @@ restore:
 		--library     $(TOOL_DIR)/bear/stage/lib/bear/libexec.so \
 		--wrapper     $(TOOL_DIR)/bear/stage/lib/bear/wrapper    \
 		--wrapper-dir $(TOOL_DIR)/bear/stage/lib/bear/wrapper.d  \
-		-- make game
+		-- make -j8
 
 	@echo "Restore complete"
 

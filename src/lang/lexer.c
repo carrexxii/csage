@@ -2,14 +2,14 @@
 #include "util/string.h"
 #include "lexer.h"
 
-#define NEXT() EXPR(         \
+#define NEXT() ({            \
 		tknz->col++;          \
 		c = fgetc(tknz->file); \
-	)
-#define BACK(c) EXPR(        \
+	})
+#define BACK(c) ({           \
 		tknz->col--;          \
 		ungetc(c, tknz->file); \
-	)
+	})
 #define TOKEN(t, l, len) (struct Token){ \
 		.type   = t,                     \
 		.lexeme = l,                     \

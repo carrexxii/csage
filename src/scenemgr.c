@@ -9,7 +9,6 @@
 #include "gfx/particles.h"
 #include "maths/scratch.h"
 #include "entities/entity.h"
-#include "map.h"
 #include "scenemgr.h"
 
 #include "test.h"
@@ -33,13 +32,12 @@ void scenemgr_init()
 
 	VkRenderPass renderpass = renderer_init();
 	scratch_init(renderpass);
-	entities_init();
-	test_init();
-
-	ui_init(renderpass);
 	font_init(renderpass);
+	ui_init(renderpass);
 	particles_init(renderpass);
-	map_init(renderpass, &game_cam);
+	entities_init();
+
+	test_init();
 	models_init(renderpass);
 
 	ui_build();
@@ -56,11 +54,11 @@ void scenemgr_init()
 noreturn void scenemgr_loop()
 {
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
-	           "--------------------------------------", SDL_GetTicks64());
+	           "--------------------------------------", SDL_GetTicks());
 	uint64 dt, nt, ot = 0.0, acc = 0.0;
 	while (1) {
 		input_poll();
-		nt = SDL_GetTicks64();
+		nt = SDL_GetTicks();
 		dt = nt - ot;
 		ot = nt;
 		acc += dt;
@@ -94,64 +92,77 @@ static void switch_scene(enum SceneType scene)
 	}
 }
 
+static noreturn void cb_quit(bool) { quit(); }
+static void cb_switch_scene_game(bool kdown)    { if (kdown) switch_scene(SCENE_GAME);    }
+static void cb_switch_scene_scratch(bool kdown) { if (kdown) switch_scene(SCENE_SCRATCH); }
+static void cb_toggle_view(bool kdown) {
+	if (!kdown)
+		return;
+	D;
+	struct Camera* cam = curr_scene == SCENE_GAME   ? &game_cam   :
+	                     curr_scene == SCENE_SCRATCH? &scratch_cam: NULL;
+	camera_set_projection(cam, cam->type == CAMERA_PERSPECTIVE? CAMERA_ORTHOGONAL: CAMERA_PERSPECTIVE);
+}
 static void register_global_keys()
 {
 	input_reset();
-	input_register(SDLK_ESCAPE, LAMBDA(void, bool kdown, if (kdown) quit();));
-	input_register(SDLK_F1, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_GAME);));
-	input_register(SDLK_F2, LAMBDA(void, bool kdown, if (kdown) switch_scene(SCENE_SCRATCH);));
+	input_register(SDLK_ESCAPE, cb_quit);
+	input_register(SDLK_F1, cb_switch_scene_game);
+	input_register(SDLK_F2, cb_switch_scene_scratch);
 
-	input_register(SDLK_F12, LAMBDA(void, bool kdown,
-		if (!kdown)
-			return;
-		struct Camera* cam = curr_scene == SCENE_GAME   ? &game_cam   :
-		                     curr_scene == SCENE_SCRATCH? &scratch_cam: NULL;
-		camera_set_projection(cam, cam->type == CAMERA_PERSPECTIVE? CAMERA_ORTHOGONAL: CAMERA_PERSPECTIVE);
-	));
+	input_register(SDLK_F12, cb_toggle_view);
 }
 
+static void cb_game_move_up(bool kdown)    { camera_move(&scratch_cam, DIR_UP   , kdown); }
+static void cb_game_move_left(bool kdown)  { camera_move(&scratch_cam, DIR_LEFT , kdown); }
+static void cb_game_move_down(bool kdown)  { camera_move(&scratch_cam, DIR_DOWN , kdown); }
+static void cb_game_move_right(bool kdown) { camera_move(&scratch_cam, DIR_RIGHT, kdown); }
+static void cb_game_cam_update() { ;}//camera_update(&game_cam); }
 static void load_game()
 {
 	curr_cam = &game_cam;
 
 	register_global_keys();
-	input_register(SDL_BUTTON_LEFT, map_mouse_select);
-	input_register(SDL_BUTTON_RIGHT, map_mouse_deselect);
-	input_register(SDLK_w, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_UP   , kdown);));
-	input_register(SDLK_a, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_LEFT , kdown);));
-	input_register(SDLK_s, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_DOWN , kdown);));
-	input_register(SDLK_d, LAMBDA(void, bool kdown, camera_move(&game_cam, DIR_RIGHT, kdown);));
+	input_register(SDLK_w, cb_game_move_up);
+	input_register(SDLK_a, cb_game_move_left);
+	input_register(SDLK_s, cb_game_move_down);
+	input_register(SDLK_d, cb_game_move_right);
 
 	renderer_clear_draw_list();
-	renderer_add_to_draw_list(map_record_commands);
 	renderer_add_to_draw_list(models_record_commands);
 	renderer_add_to_draw_list(particles_record_commands);
 	renderer_add_to_draw_list(ui_record_commands);
 	renderer_add_to_draw_list(font_record_commands);
 
 	taskmgr_add_task(ui_update);
-	taskmgr_add_task(map_update);
 	taskmgr_add_task(particles_update);
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
-	taskmgr_add_task(LAMBDA(void, void, camera_update(&game_cam);));
+	taskmgr_add_task(cb_game_cam_update);
 }
 
+static void cb_scratch_move_up(bool kdown)        { camera_move(&scratch_cam, DIR_UP       , kdown); }
+static void cb_scratch_move_left(bool kdown)      { camera_move(&scratch_cam, DIR_LEFT     , kdown); }
+static void cb_scratch_move_down(bool kdown)      { camera_move(&scratch_cam, DIR_DOWN     , kdown); }
+static void cb_scratch_move_right(bool kdown)     { camera_move(&scratch_cam, DIR_RIGHT    , kdown); }
+static void cb_scratch_move_forwards(bool kdown)  { camera_move(&scratch_cam, DIR_FORWARDS , kdown); }
+static void cb_scratch_move_backwards(bool kdown) { camera_move(&scratch_cam, DIR_BACKWARDS, kdown); }
+static void cb_scratch_cam_update() { camera_update(&scratch_cam); }
 static void load_scratch()
 {
 	curr_cam = &scratch_cam;
 
 	register_global_keys();
-	input_register(SDLK_w, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_UP       , kdown);));
-	input_register(SDLK_a, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_LEFT     , kdown);));
-	input_register(SDLK_s, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_DOWN     , kdown);));
-	input_register(SDLK_d, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_RIGHT    , kdown);));
-	input_register(SDLK_q, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_FORWARDS , kdown);));
-	input_register(SDLK_e, LAMBDA(void, bool kdown, camera_move(&scratch_cam, DIR_BACKWARDS, kdown);));
+	input_register(SDLK_w, cb_scratch_move_up);
+	input_register(SDLK_a, cb_scratch_move_left);
+	input_register(SDLK_s, cb_scratch_move_down);
+	input_register(SDLK_d, cb_scratch_move_right);
+	input_register(SDLK_q, cb_scratch_move_forwards);
+	input_register(SDLK_e, cb_scratch_move_backwards);
 	scratch_load();
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(scratch_record_commands);
 
-	taskmgr_add_task(LAMBDA(void, void, camera_update(&scratch_cam);));
+	taskmgr_add_task(cb_scratch_cam_update);
 }

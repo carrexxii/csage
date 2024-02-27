@@ -1,4 +1,4 @@
-#include "SDL2/SDL.h"
+#include "SDL3/SDL.h"
 
 #include "config.h"
 #include "input.h"
@@ -10,8 +10,8 @@ struct Event {
 
 inline static bool is_button_down(SDL_EventType event_type);
 
-int mouse_x;
-int mouse_y;
+float mouse_x;
+float mouse_y;
 
 static int eventc;
 static struct Event events[MAX_EVENT_CALLBACKS];
@@ -22,13 +22,13 @@ void input_poll(void)
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
-		case SDL_QUIT:
+		case SDL_EVENT_QUIT:
 			quit();
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEWHEEL:
+		case SDL_EVENT_KEY_DOWN:
+		case SDL_EVENT_KEY_UP:
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+		case SDL_EVENT_MOUSE_WHEEL:
 			for (int i = 0; i < eventc; i++)
 				if (events[i].sym == event.key.keysym.sym || events[i].sym == event.button.button)
 					events[i].fn(is_button_down(event.type));
@@ -70,5 +70,5 @@ void input_reset()
 
 inline static bool is_button_down(SDL_EventType event_type)
 {
-	return event_type == SDL_KEYDOWN || event_type == SDL_MOUSEBUTTONDOWN;
+	return event_type == SDL_EVENT_KEY_DOWN || event_type == SDL_EVENT_MOUSE_BUTTON_DOWN;
 }

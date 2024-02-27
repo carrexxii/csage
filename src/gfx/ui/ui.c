@@ -33,6 +33,10 @@ int ui_containerc = 0;
 
 static struct VArray ui_objs;
 
+static void cb_mouse_left(bool kdown) {
+	ui_context.mouse_pressed.lmb  =  kdown;
+	ui_context.mouse_released.lmb = !kdown;
+}
 void ui_init(VkRenderPass renderpass)
 {
 	pipeln = (struct Pipeline){
@@ -49,10 +53,7 @@ void ui_init(VkRenderPass renderpass)
 
 	ui_objs = varray_new(UI_DEFAULT_OBJECT_COUNT, sizeof(struct UIObject));
 
-	input_register(SDL_BUTTON_LEFT, LAMBDA(void, bool kdown,
-			ui_context.mouse_pressed.lmb  =  kdown;
-			ui_context.mouse_released.lmb = !kdown;
-		));
+	input_register(SDL_BUTTON_LEFT, cb_mouse_left);
 
 	DEBUG(2, "[UI] Initialized UI");
 }

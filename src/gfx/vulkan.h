@@ -1,8 +1,8 @@
 #ifndef GFX_VULKAN_H
 #define GFX_VULKAN_H
 
-#include <SDL2/SDL.h>
 #include <vulkan/vulkan.h>
+#include "SDL3/SDL.h"
 
 #include "device.h"
 #include "pipeline.h"
@@ -18,11 +18,10 @@
 	#ifdef _WIN32
 		#define VULKAN_LAYER_COUNT 2
 		#define VULKAN_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
-		                                         "VK_LAYER_LUNARG_monitor" }
+		                                             "VK_LAYER_LUNARG_monitor" }
 	#else
-		#define VULKAN_LAYER_COUNT 2
-		#define VULKAN_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation", \
-		                                         "VK_LAYER_LUNARG_monitor", }
+		#define VULKAN_LAYER_COUNT 1
+		#define VULKAN_LAYERS (char const* const[]){ "VK_LAYER_KHRONOS_validation" }
 	#endif
 #else
 	#define VULKAN_LAYER_COUNT 0
@@ -137,7 +136,7 @@
 	 (x) == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR                         ? "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR"                         : \
 	 (x) == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR                        ? "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR"                        : \
 	 "Unknown")
-         
+
 void           init_vulkan(SDL_Window* window);
 VkShaderModule create_shader(char* restrict file);
 void           free_vulkan(void);

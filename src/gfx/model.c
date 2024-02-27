@@ -25,6 +25,7 @@ static void load_skin(struct Model* mdl, cgltf_data* data);
 static void load_animations(struct Model* mdl, cgltf_data* data);
 
 /* -------------------------------------------------------------------- */
+
 static VkVertexInputBindingDescription vert_binds[] = {
 	/* [3:xyz][3:nnn][2:uv][4:joint ids][4:joint weights] */
 	{ .binding   = 0,
@@ -70,6 +71,7 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 	  .format   = VK_FORMAT_R32G32B32A32_SFLOAT,
 	  .offset   = 0, },
 };
+
 /* -------------------------------------------------------------------- */
 
 void (*update_mdl_tforms)(SBO);
@@ -137,20 +139,21 @@ void models_init(VkRenderPass renderpass)
 			if (!img_view)
 				img_view = default_mtl.tex.image_view;
 
-			if (mdls[i].skin->jointc)
-				mdls[i].mtls[j].dset = pipeln_create_dset(&pipeln,
-				                                          4, ubo_bufs,
-				                                          2, (SBO[]){ sbo_buf, mdls[i].skin->sbo },
-				                                          1, &img_view);
+			struct Material* mtl = &mdls[i].mtls[j];
+			if (mdls[i].skin)
+				mtl->dset = pipeln_create_dset(&pipeln,
+				                               4, ubo_bufs,
+				                               2, (SBO[]){ sbo_buf, mdls[i].skin->sbo },
+				                               1, &img_view);
 			else
-				mdls[i].mtls[j].dset = pipeln_create_dset(&pipeln_static,
-				                                          3, ubo_bufs,
-				                                          1, (SBO[]){ sbo_buf },
-				                                          1, &img_view);
+				mtl->dset = pipeln_create_dset(&pipeln_static,
+				                               3, ubo_bufs,
+				                               1, (SBO[]){ sbo_buf },
+				                               1, &img_view);
 		}
 	}
-	pipeln_init(&pipeln, renderpass);
-	// pipeln_init(&pipeln_static, renderpass);
+	// pipeln_init(&pipeln, renderpass);
+	pipeln_init(&pipeln_static, renderpass);
 }
 
 // TODO: this doesnt work properly for removing elements
@@ -201,7 +204,7 @@ struct Model* model_new(char* path)
 
 	cgltf_free(data);
 	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
-	      path, mdl->meshc, total_indc, total_indc/3, mdl->animc, mdl->skin->jointc? mdl->skin->jointc: 0, total_framec);
+	      path, mdl->meshc, total_indc, total_indc/3, mdl->animc, mdl->skin? mdl->skin->jointc: 0, total_framec);
 	// exit(0);
 	return mdl;
 }
@@ -240,61 +243,61 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 	update_mdl_tforms(sbo_buf);
 
 	/*** Animated models ***/
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
-	for (int i = 0; i < mdlc; i++) {
-		mdl      = &mdls[i];
-		anim     = &mdl->anims[mdl->curr_anim];
-		curr_frm = &anim->frms[anim->curr_frm];
-		next_frm = &anim->frms[(anim->curr_frm + 1)%anim->frmc];
-		if (!mdl->skin->jointc)
-			continue;
-		buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
-		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
-		buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), curr_frm->tforms, 0);
-		buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), next_frm->tforms, MODEL_MAX_JOINTS*sizeof(struct Transform));
-		for (int m = 0; m < mdls[i].meshc; m++) {
-			mesh = &mdl->meshes[m];
-			push_consts.mtli  = mesh->mtli;
-			push_consts.timer = mdl->timer;
-			// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
-			// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
-			// DEBUG(1, "[%d Animated] Drawing %d vertices", i, mdls[i].meshes[m].vertc);
-
-			// TODO: these vbos need to be named
-			vkCmdBindVertexBuffers(cmd_buf, 0, 5, (VkBuffer[]){ mesh->vbos[0].buf,
-			                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
-			                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
-			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &push_consts);
-			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
-		}
-	}
-
-	/*** Static Models ***/
-	// vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.pipeln);
-	// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0, 1, pipeln_static.dsets, 0, NULL);
+	// vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
+	// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 	// for (int i = 0; i < mdlc; i++) {
-	// 	mdl = &mdls[i];
-	// 	if (mdl->skin)
+	// 	mdl      = &mdls[i];
+	// 	anim     = &mdl->anims[mdl->curr_anim];
+	// 	curr_frm = &anim->frms[anim->curr_frm];
+	// 	next_frm = &anim->frms[(anim->curr_frm + 1)%anim->frmc];
+	// 	if (!mdl->skin->jointc)
 	// 		continue;
 	// 	buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
 	// 	buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
-
+	// 	buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), curr_frm->tforms, 0);
+	// 	buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), next_frm->tforms, MODEL_MAX_JOINTS*sizeof(struct Transform));
 	// 	for (int m = 0; m < mdls[i].meshc; m++) {
 	// 		mesh = &mdl->meshes[m];
-	// 		push_consts.mtli = mesh->mtli;
-	// 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 1,
-	// 		                        1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
-	// 		// DEBUG(1, "[%d Static] Drawing %d vertices", i, mdls[i].meshes[m].indc);
+	// 		push_consts.mtli  = mesh->mtli;
+	// 		push_consts.timer = mdl->timer;
+	// 		// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
+	// 		// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+	// 		// DEBUG(1, "[%d Animated] Drawing %d vertices", i, mdls[i].meshes[m].vertc);
 
-	// 		vkCmdBindVertexBuffers(cmd_buf, 0, 3, (VkBuffer[]){ mesh->vbos[0].buf,
-	// 		                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
+	// 		// TODO: these vbos need to be named
+	// 		vkCmdBindVertexBuffers(cmd_buf, 0, 5, (VkBuffer[]){ mesh->vbos[0].buf,
+	// 		                       mesh->vbos[1].buf, mesh->vbos[2].buf, mesh->vbos[3].buf, mesh->vbos[4].buf },
+	// 		                       (VkDeviceSize[]){ 0, 0, 0, 0, 0 });
 	// 		vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-	// 		vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.push_stages, 0, pipeln_static.push_sz, &push_consts);
+	// 		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &push_consts);
 	// 		vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
 	// 	}
 	// }
+
+	/*** Static Models ***/
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.pipeln);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0, 1, pipeln_static.dsets, 0, NULL);
+	for (int i = 0; i < mdlc; i++) {
+		mdl = &mdls[i];
+		if (mdl->skin)
+			continue;
+		buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
+		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
+
+		for (int m = 0; m < mdls[i].meshc; m++) {
+			mesh = &mdl->meshes[m];
+			push_consts.mtli = mesh->mtli;
+			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 1,
+			                        1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
+			// DEBUG(1, "[%d Static] Drawing %d vertices", i, mdls[i].meshes[m].indc);
+
+			vkCmdBindVertexBuffers(cmd_buf, 0, 3, (VkBuffer[]){ mesh->vbos[0].buf,
+			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
+			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdPushConstants(cmd_buf, pipeln_static.layout, pipeln_static.push_stages, 0, pipeln_static.push_sz, &push_consts);
+			vkCmdDrawIndexed(cmd_buf, mesh->indc, 1, 0, 0, 0);
+		}
+	}
 }
 
 void model_free(ID mdl_id)
@@ -312,7 +315,7 @@ void model_free(ID mdl_id)
 		if (mdl->mtls[i].tex.image)
 			texture_free(&mdl->mtls[i].tex);
 	for (int i = 0; i < mdlc; i++)
-		if (mdls[i].skin->jointc)
+		if (mdls[i].skin)
 			sbo_free(&mdls[i].skin->sbo);
 	mdl->meshc = 0;
 }
@@ -448,6 +451,8 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 				uvert16 = (uint16*)attr->buffer_view->buffer->data + attr->buffer_view->offset/sizeof(uint16) + attr->offset/sizeof(uint16);
 				int i = 0;
 				for (int v = 0; v < (int)attr->count; v++) {
+					static bool tangent_err = false;
+					static bool colour_err  = false;
 					switch(prim->attributes[a].type) {
 					case cgltf_attribute_type_position:
 						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec3)
@@ -507,14 +512,12 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 						i += (int)(attr->stride/sizeof(float));
 						break;
 					case cgltf_attribute_type_tangent:
-						static bool tangent_err = false;
 						if (!tangent_err) {
 							ERROR("[GFX] Tangent loading from GLTF files not implemented");
 							tangent_err = true;
 						}
 						break;
 					case cgltf_attribute_type_color:
-						static bool colour_err = false;
 						if (!colour_err) {
 							ERROR("[GFX] Colour loading from GLTF files not implemented");
 							colour_err = true;
@@ -633,6 +636,8 @@ static void load_skin(struct Model* model, cgltf_data* data)
 {
 	if (data->skins_count > 1)
 		ERROR("[RES] Warning: only one of the %lu skins will be loaded", data->skins_count);
+	else
+		DEBUG(5, "\tModel has %lu skins", data->skins_count);
 
 	cgltf_skin* skin;
 	cgltf_node* node;
@@ -672,6 +677,7 @@ static void load_skin(struct Model* model, cgltf_data* data)
 
 static void load_animations(struct Model* mdl, cgltf_data* data)
 {
+	DEBUG(5, "\tModel has %lu animations", data->animations_count);
 	mdl->animc = data->animations_count;
 	mdl->anims = scalloc(data->animations_count, sizeof(struct Animation));
 

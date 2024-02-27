@@ -122,12 +122,16 @@ void scratch_init(VkRenderPass renderpass)
 	planes_on = true;
 }
 
+static void cb_toggle_axes(bool kdown)   { if (kdown) axes_on   = !axes_on;   }
+static void cb_toggle_points(bool kdown) { if (kdown) points_on = !points_on; }
+static void cb_toggle_lines(bool kdown)  { if (kdown) lines_on  = !lines_on;  }
+static void cb_toggle_planes(bool kdown) { if (kdown) planes_on = !lines_on;  }
 void scratch_load()
 {
-	input_register(SDLK_1, LAMBDA(void, bool kdown, if (kdown) axes_on   = !axes_on;));
-	input_register(SDLK_2, LAMBDA(void, bool kdown, if (kdown) points_on = !points_on;));
-	input_register(SDLK_3, LAMBDA(void, bool kdown, if (kdown) lines_on  = !lines_on;));
-	input_register(SDLK_4, LAMBDA(void, bool kdown, if (kdown) planes_on = !planes_on;));
+	input_register(SDLK_1, cb_toggle_axes);
+	input_register(SDLK_2, cb_toggle_lines);
+	input_register(SDLK_3, cb_toggle_planes);
+	input_register(SDLK_4, cb_toggle_points);
 }
 
 void scratch_add_vec(Vec a)
@@ -192,20 +196,20 @@ void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 			points_vbo = vbo_new(points.len*points.elem_sz, points.data, false);
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln.pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln.layout, 0, 1, point_pipeln.dsets, 0, NULL);
-		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &points_vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &points_vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, points.len, 1, 0, 0);
 	}
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln.layout, 0, 1, line_pipeln.dsets, 0, NULL);
 	if (axes_on) {
-		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &axes_vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &axes_vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, 6, 1, 0, 0);
 	}
 	if (lines_on && lines.len > 0) {
 		if (!lines_vbo.sz)
 			lines_vbo = vbo_new(lines.len*lines.elem_sz, lines.data, false);
-		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &lines_vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &lines_vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, 2*lines.len, 1, 0, 0);
 	}
 
@@ -214,7 +218,7 @@ void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 			planes_vbo = vbo_new(planes.len*planes.elem_sz, planes.data, false);
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.layout, 0, 1, plane_pipeln.dsets, 0, NULL);
-		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &planes_vbo.buf, (VkDeviceSize[]) { 0 });
+		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &planes_vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, 6*planes.len, 1, 0, 0);
 	}
 }
@@ -226,6 +230,7 @@ void scratch_free()
 	if (points_vbo.sz) vbo_free(&points_vbo);
 	if (lines_vbo.sz)  vbo_free(&lines_vbo);
 	if (planes_vbo.sz) vbo_free(&planes_vbo);
+	pipeln_free(&point_pipeln);
 	pipeln_free(&line_pipeln);
 	pipeln_free(&plane_pipeln);
 

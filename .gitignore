@@ -1,5 +1,7 @@
 .cache
 lib/include
 build/
+shaders/spirv
 compile_commands.json
 csage
+*.so*

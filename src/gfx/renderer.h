@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "maths/types.h"
 #include "camera.h"
 
 #define FRAMES_IN_FLIGHT            2
@@ -13,8 +14,6 @@ void renderer_clear_draw_list(void);
 void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*));
 void renderer_draw(struct Camera* cam);
 void renderer_free(void);
-
-#include "maths/maths.h"
 
 extern VkSampler default_sampler;
 extern struct GlobalLighting {
