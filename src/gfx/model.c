@@ -1,6 +1,6 @@
-#include "vulkan/vulkan.h"
 #define CGLTF_IMPLEMENTATION
 #include "cgltf/cgltf.h"
+#include "vulkan/vulkan.h"
 #include "stb/stb_image.h"
 
 #include "maths/maths.h"
@@ -82,7 +82,10 @@ static struct Pipeline pipeln;
 static struct Pipeline pipeln_static;
 static struct Model mdls[MAX_MODELS];
 static intptr mdlc = 0;
-static UBO ubo_bufs[4];
+static UBO ubo_cam;
+static UBO ubo_mtls;
+static UBO ubo_lights;
+static UBO ubo_joints;
 static SBO sbo_buf;
 
 void models_init(VkRenderPass renderpass)
@@ -94,11 +97,11 @@ void models_init(VkRenderPass renderpass)
 		.tex       = texture_new_from_image(TEXTURE_PATH "default.png"),
 	};
 
-	sbo_buf     = sbo_new(MAX_MODELS*sizeof(Mat4x4));
-	ubo_bufs[0] = ubo_new(sizeof(Mat4x4[2]));                           /* Camera matrix */
-	ubo_bufs[1] = ubo_new(MAX_MATERIALS*sizeof(struct Material));       /* Material data */
-	ubo_bufs[2] = ubo_new(sizeof(struct GlobalLighting));               /* Light data    */
-	ubo_bufs[3] = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform)); /* Joint data    */
+	sbo_buf    = sbo_new(MAX_MODELS*sizeof(Mat4x4));
+	ubo_cam    = ubo_new(sizeof(Mat4x4[2]));
+	ubo_mtls   = ubo_new(MAX_MATERIALS*sizeof(struct Material));
+	ubo_lights = ubo_new(sizeof(struct GlobalLighting));
+	ubo_joints = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform));
 
 	pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "model.vert"),
@@ -110,7 +113,7 @@ void models_init(VkRenderPass renderpass)
 		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 		.push_sz     = sizeof(struct PushConstants),
-		.dset_cap    = 1,
+		.dset_cap    = 4,
 		.uboc        = 4,
 		.sboc        = 2,
 		.imgc        = 1,
@@ -125,12 +128,12 @@ void models_init(VkRenderPass renderpass)
 		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.push_sz     = sizeof(struct PushConstants),
-		.dset_cap    = 1,
+		.dset_cap    = 4,
 		.uboc        = 3,
 		.sboc        = 1,
-		.imgc        = 1,
+		.imgc        = 2,
 	};
-	pipeln_alloc_dsets(&pipeln);
+	// pipeln_alloc_dsets(&pipeln);
 	pipeln_alloc_dsets(&pipeln_static);
 	VkImageView img_view;
 	for (int i = 0; i < mdlc; i++) {
@@ -139,15 +142,16 @@ void models_init(VkRenderPass renderpass)
 			if (!img_view)
 				img_view = default_mtl.tex.image_view;
 
+			UBO ubos[] = { ubo_cam, ubo_mtls, ubo_lights, ubo_joints };
 			struct Material* mtl = &mdls[i].mtls[j];
 			if (mdls[i].skin)
 				mtl->dset = pipeln_create_dset(&pipeln,
-				                               4, ubo_bufs,
+				                               4, ubos,
 				                               2, (SBO[]){ sbo_buf, mdls[i].skin->sbo },
 				                               1, &img_view);
 			else
 				mtl->dset = pipeln_create_dset(&pipeln_static,
-				                               3, ubo_bufs,
+				                               3, ubos,
 				                               1, (SBO[]){ sbo_buf },
 				                               1, &img_view);
 		}
@@ -203,30 +207,30 @@ struct Model* model_new(char* path)
 #endif
 
 	cgltf_free(data);
-	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles) and %d animations (%d joints) with %d total frames",
-	      path, mdl->meshc, total_indc, total_indc/3, mdl->animc, mdl->skin? mdl->skin->jointc: 0, total_framec);
+	DEBUG(3, "[GFX] Loaded file \"%s\" with %d meshes (%d vertices/%d triangles), %d materials and %d animations (%d joints) with %d total frames",
+	      path, mdl->meshc, total_indc, total_indc/3, mdl->mtlc, mdl->animc, mdl->skin? mdl->skin->jointc: 0, total_framec);
 	// exit(0);
 	return mdl;
 }
 
 void models_update()
 {
-	struct Model*     mdl;
-	struct Animation* anim;
-	for (int m = 0; m < mdlc; m++) {
-		mdl  = &mdls[m];
-		anim = &mdl->anims[mdl->curr_anim];
-		mdl->timer += DT;
-		if (mdl->timer >= anim->frms[anim->curr_frm].time)
-			anim->curr_frm++;
+	// struct Model*     mdl;
+	// struct Animation* anim;
+	// for (int m = 0; m < mdlc; m++) {
+	// 	mdl  = &mdls[m];
+	// 	anim = &mdl->anims[mdl->curr_anim];
+	// 	mdl->timer += DT;
+	// 	if (mdl->timer >= anim->frms[anim->curr_frm].time)
+	// 		anim->curr_frm++;
 
-		if (anim->curr_frm >= anim->frmc) {
-			anim->curr_frm = 0;
-			mdl->timer = 0;
-		}
+	// 	if (anim->curr_frm >= anim->frmc) {
+	// 		anim->curr_frm = 0;
+	// 		mdl->timer = 0;
+	// 	}
 
-		buffer_update(mdl->skin->sbo, mdl->skin->sbo.sz, mdl->skin, 0);
-	}
+	// 	buffer_update(mdl->skin->sbo, mdl->skin->sbo.sz, mdl->skin, 0);
+	// }
 }
 
 void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
@@ -237,8 +241,7 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 	struct KeyFrame*  curr_frm;
 	struct KeyFrame*  next_frm;
 
-	// TODO: Named buffers, not arrays
-	buffer_update(ubo_bufs[0], sizeof(Mat4x4[2]), cam->mats, 0);
+	buffer_update(ubo_cam, sizeof(Mat4x4[2]), cam->mats, 0);
 
 	update_mdl_tforms(sbo_buf);
 
@@ -252,15 +255,15 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 	// 	next_frm = &anim->frms[(anim->curr_frm + 1)%anim->frmc];
 	// 	if (!mdl->skin->jointc)
 	// 		continue;
-	// 	buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
-	// 	buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
-	// 	buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), curr_frm->tforms, 0);
-	// 	buffer_update(ubo_bufs[3], mdl->skin->jointc*sizeof(struct Transform), next_frm->tforms, MODEL_MAX_JOINTS*sizeof(struct Transform));
+	// 	buffer_update(ubo_mtls, mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
+	// 	buffer_update(ubo_lights, sizeof(struct GlobalLighting), &global_light, 0);
+	// 	buffer_update(ubo_joints, mdl->skin->jointc*sizeof(struct Transform), curr_frm->tforms, 0);
+	// 	// buffer_update(ubo_joints, mdl->skin->jointc*sizeof(struct Transform), next_frm->tforms, MODEL_MAX_JOINTS*sizeof(struct Transform));
 	// 	for (int m = 0; m < mdls[i].meshc; m++) {
 	// 		mesh = &mdl->meshes[m];
 	// 		push_consts.mtli  = mesh->mtli;
 	// 		push_consts.timer = mdl->timer;
-	// 		// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
+	// 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
 	// 		// vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 	// 		// DEBUG(1, "[%d Animated] Drawing %d vertices", i, mdls[i].meshes[m].vertc);
 
@@ -281,16 +284,16 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 		mdl = &mdls[i];
 		if (mdl->skin)
 			continue;
-		buffer_update(ubo_bufs[1], mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
-		buffer_update(ubo_bufs[2], sizeof(struct GlobalLighting), &global_light, 0);
+		buffer_update(ubo_mtls, mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
+		buffer_update(ubo_lights, sizeof(struct GlobalLighting), &global_light, 0);
 
 		for (int m = 0; m < mdls[i].meshc; m++) {
 			mesh = &mdl->meshes[m];
 			push_consts.mtli = mesh->mtli;
-			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 1,
+			vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln_static.layout, 0,
 			                        1, &mdl->mtls[mesh->mtli].dset, 0, NULL);
-			// DEBUG(1, "[%d Static] Drawing %d vertices", i, mdls[i].meshes[m].indc);
 
+			// DEBUG(1, "[%d Static] Drawing %d vertices", i, mdls[i].meshes[m].indc);
 			vkCmdBindVertexBuffers(cmd_buf, 0, 3, (VkBuffer[]){ mesh->vbos[0].buf,
 			                       mesh->vbos[1].buf, mesh->vbos[2].buf }, (VkDeviceSize[]){ 0, 0, 0 });
 			vkCmdBindIndexBuffer(cmd_buf, mesh->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
@@ -326,8 +329,10 @@ void models_free()
 		model_free(i);
 
 	sbo_free(&sbo_buf);
-	for (int i = 0; i < (int)ARRAY_SIZE(ubo_bufs); i++)
-		ubo_free(&ubo_bufs[i]);
+	ubo_free(&ubo_cam);
+	ubo_free(&ubo_mtls);
+	ubo_free(&ubo_lights);
+	ubo_free(&ubo_joints);
 
 	pipeln_free(&pipeln);
 	pipeln_free(&pipeln_static);
@@ -393,7 +398,9 @@ static struct Texture load_material_image(cgltf_image* img)
 			int w, h, ch;
 			byte* pxs = stbi_load_from_memory((byte*)img->buffer_view->buffer->data + img->buffer_view->offset,
 			                                  img->buffer_view->size, &w, &h, &ch, 4);
-			return texture_new(pxs, w, h);
+			struct Texture tex = texture_new(pxs, w, h);
+			free(pxs);
+			return tex;
 		} else {
 			ERROR("[RES] MIME type not supported for image: %s", img->mime_type);
 		}
@@ -461,7 +468,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 						verts[3*v + 0] = vert[i + 0];
 						verts[3*v + 1] = vert[i + 1];
 						verts[3*v + 2] = vert[i + 2];
-						i += (int)(attr->stride/sizeof(float));
+						i += (int)(attr->stride / sizeof(float));
 						break;
 					case cgltf_attribute_type_normal:
 						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec3)
@@ -470,7 +477,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 						normals[3*v + 0] = vert[i + 0];
 						normals[3*v + 1] = vert[i + 1];
 						normals[3*v + 2] = vert[i + 2];
-						i += (int)(attr->stride/sizeof(float));
+						i += (int)(attr->stride / sizeof(float));
 						break;
 					case cgltf_attribute_type_texcoord:
 						if (attr->component_type != cgltf_component_type_r_32f || attr->type != cgltf_type_vec2)
@@ -478,7 +485,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 							      cgltf_type_vec2, attr->type, cgltf_component_type_r_32f, attr->component_type);
 						uvs[2*v + 0] = vert[i + 0];
 						uvs[2*v + 1] = vert[i + 1];
-						i += (int)(attr->stride/sizeof(float));
+						i += (int)(attr->stride / sizeof(float));
 						break;
 					case cgltf_attribute_type_joints:
 						if (attr->type != cgltf_type_vec4)
@@ -489,13 +496,13 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 							joint_ids[4*v + 1] = uvert8[i + 1];
 							joint_ids[4*v + 2] = uvert8[i + 2];
 							joint_ids[4*v + 3] = uvert8[i + 3];
-							i += (int)(attr->stride/sizeof(uint8));
+							i += (int)(attr->stride / sizeof(uint8));
 						} else if (attr->component_type == cgltf_component_type_r_16u) {
 							joint_ids[4*v + 0] = uvert16[i + 0];
 							joint_ids[4*v + 1] = uvert16[i + 1];
 							joint_ids[4*v + 2] = uvert16[i + 2];
 							joint_ids[4*v + 3] = uvert16[i + 3];
-							i += (int)(attr->stride/sizeof(uint16));
+							i += (int)(attr->stride / sizeof(uint16));
 						} else {
 							ERROR("[RES] Joint attribute has unsupported component type (expect u8 (%d) or u16 (%d) -> got %d",
 							      cgltf_component_type_r_8u, cgltf_component_type_r_16u, attr->component_type);
@@ -509,7 +516,7 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 						joint_weights[4*v + 1] = vert[i + 1];
 						joint_weights[4*v + 2] = vert[i + 2];
 						joint_weights[4*v + 3] = vert[i + 3];
-						i += (int)(attr->stride/sizeof(float));
+						i += (int)(attr->stride / sizeof(float));
 						break;
 					case cgltf_attribute_type_tangent:
 						if (!tangent_err) {
@@ -618,9 +625,10 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 			}
 
 			/* Assign materials to their meshes */
-			for (int i = 0; i < (int)data->materials_count; i++)
-				if (&data->materials[i] == data->meshes[i].primitives[p].material)
+			for (int i = 0; i < (int)data->materials_count; i++) {
+				if (&data->materials[i] == data->meshes[m].primitives[p].material) // !
 					model->meshes[i].mtli = i;
+			}
 		}
 
 		/* Make sure there's a dummy vbo for uvs if there aren't any */

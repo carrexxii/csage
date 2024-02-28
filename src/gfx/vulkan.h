@@ -139,7 +139,7 @@
 
 void           init_vulkan(SDL_Window* window);
 VkShaderModule create_shader(char* restrict file);
-void           free_vulkan(void);
+void           vulkan_free(void);
 
 extern VkInstance   instance;
 extern VkSurfaceKHR surface;

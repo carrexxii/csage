@@ -114,7 +114,8 @@ static inline Mat4x4 mat4x4_multiply_scalar(Mat4x4 a, float s) {
 }
 static inline Mat4x4 scalar_multiply_mat4x4(float s, Mat4x4 a) { return mat4x4_multiply_scalar(a, s); }
 
-static inline Mat4x4 mat4x4_multiply_mat4x4(Mat4x4 a, Mat4x4 b) {
+static inline Mat4x4 mat4x4_multiply_mat4x4(Mat4x4 a, Mat4x4 b)
+{
 	return (Mat4x4){
 		.m11 = a.m11*b.m11 + a.m11*b.m21 + a.m12*b.m31 + a.m14*b.m41,
 		.m12 = a.m11*b.m12 + a.m12*b.m22 + a.m13*b.m32 + a.m14*b.m42,
@@ -202,7 +203,8 @@ static Mat4x4 translate_make(Vec3 v)
 /* Rodrigues' rotation formula:
  *   v = vcos(t) + (k×v)sin(t) + k(k⋅v)(1 - cos(t))
  */
-static inline Vec3 rotate(Vec3 v, float angle, Vec3 axis) {
+static inline Vec3 rotate(Vec3 v, float angle, Vec3 axis)
+{
 	Vec3 k = vec3_normalized(axis);
 	float cost = cosf(angle);
 	float sint = sinf(angle);
@@ -211,6 +213,14 @@ static inline Vec3 rotate(Vec3 v, float angle, Vec3 axis) {
 	     res = vec3_add_vec3(res, vec3_multiply_scalar(cross(k, v), sint));
 	     res = vec3_add_vec3(res, vec3_multiply_scalar(vec3_multiply_scalar(k, dot(k, v)), 1.0f - cost));
 	return res;
+}
+
+static void print_mat4x4(Mat4x4 a)
+{
+	fprintf(stderr, "Mat4x4: %5.2f, %5.2f, %5.2f, %5.2f\n", a.m11, a.m12, a.m13, a.m14);
+	fprintf(stderr, "        %5.2f, %5.2f, %5.2f, %5.2f\n", a.m21, a.m22, a.m23, a.m24);
+	fprintf(stderr, "        %5.2f, %5.2f, %5.2f, %5.2f\n", a.m31, a.m32, a.m33, a.m34);
+	fprintf(stderr, "        %5.2f, %5.2f, %5.2f, %5.2f\n", a.m41, a.m42, a.m43, a.m44);
 }
 
 #endif

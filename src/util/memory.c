@@ -1,5 +1,8 @@
 #include <stdlib.h>
 
+/* Fix for asan: https://github.com/google/sanitizers/issues/89 */
+int dlclose(void*) { return 0; }
+
 /* TODO: Fix printout bug + add levels for bigger allocs */
 
 static isize malloced = 0;

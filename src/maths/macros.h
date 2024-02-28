@@ -192,10 +192,11 @@ static inline noreturn void not_implemented(void) { assert(false); }
 		Trivec: _Generic(b, Trivec: trivec_join_trivec)  \
 	)(a, b)
 
-#define print(a) _Generic(a,                                          \
-		Vec2 : print_vec2  , Vec3 : print_vec3 , Vec4  : print_vec4  , \
-		Vec  : print_vec   , Bivec: print_bivec, Trivec: print_trivec,  \
-		float: print_scalar, PsS  : print_pss                            \
+#define print(a) _Generic(a,                                           \
+		Vec2  : print_vec2  , Vec3 : print_vec3 , Vec4  : print_vec4  , \
+		Mat4x4: print_mat4x4,                                            \
+		Vec   : print_vec   , Bivec: print_bivec, Trivec: print_trivec,   \
+		float : print_scalar, PsS  : print_pss                             \
 	)(a)
 
 /* -------------------------------------------------------------------- */

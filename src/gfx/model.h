@@ -14,7 +14,7 @@
 #define MAX_MODELS             16
 #define MAX_MATERIALS          8
 #define MODEL_MAX_IMAGES       8
-#define MODEL_MAX_JOINTS       32
+#define MODEL_MAX_JOINTS       48
 #define ANIMATION_MAX_NAME_LEN 32
 #define JOINT_MAX_NAME_LEN     32
 #define MAX_ANIMATION_FRAMES   64

@@ -80,17 +80,17 @@ static void test_scratch()
 static void cb_test() { DEBUG(1, "Hello"); }
 static void test_init()
 {
-	ent = entity_new(VEC3(5.0, 5.0, -5.0), MODEL_PATH "fish.glb");
+	ent = entity_new(VEC3(5.0, 5.0, -5.0), MODEL_PATH "test.glb");
 
-	test_scratch();
+	// test_scratch();
 
-	struct UIStyle test_style = {
-		.bg = 0xFF00FFFF,
-		.fg = 0xDDDDDDFF,
-	};
-	struct UIObject* c1 = container_new(RECT(-1.0, -1.0, 1.0, 1.0), NULL, NULL);
-	button_new(STRING("Hello1"), RECT(1.0, 1.0, 100.0, 40.0), cb_test, NULL, c1);
-	button_new(STRING("Hello2"), RECT(-1.0, 1.0, 100.0, 40.0), cb_test, NULL, c1);
-	String str1 = STRING("Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple linesTesting textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines");
-	textbox_new(str1, RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
+	// struct UIStyle test_style = {
+	// 	.bg = 0xFF00FFFF,
+	// 	.fg = 0xDDDDDDFF,
+	// };
+	// struct UIObject* c1 = container_new(RECT(-1.0, -1.0, 1.0, 1.0), NULL, NULL);
+	// button_new(STRING("Hello1"), RECT(1.0, 1.0, 100.0, 40.0), cb_test, NULL, c1);
+	// button_new(STRING("Hello2"), RECT(-1.0, 1.0, 100.0, 40.0), cb_test, NULL, c1);
+	// String str1 = STRING("Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple linesTesting textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines");
+	// textbox_new(str1, RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
 }

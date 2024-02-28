@@ -31,16 +31,16 @@ void scenemgr_init()
 	camera_set_projection(&game_cam, CAMERA_PERSPECTIVE);
 
 	VkRenderPass renderpass = renderer_init();
-	scratch_init(renderpass);
-	font_init(renderpass);
-	ui_init(renderpass);
-	particles_init(renderpass);
+	// scratch_init(renderpass);
+	// font_init(renderpass);
+	// ui_init(renderpass);
+	// particles_init(renderpass);
 	entities_init();
 
 	test_init();
 	models_init(renderpass);
 
-	ui_build();
+	// ui_build();
 
 	taskmgr_init();
 
@@ -48,7 +48,7 @@ void scenemgr_init()
 	global_light.ambient = normalized(VEC4(1.0f, 1.0f, 1.0f, 0.1f));
 	global_light.colour  = normalized(VEC3(1.0f, 1.0f, 1.0f));
 
-	switch_scene(SCENE_SCRATCH);
+	switch_scene(SCENE_GAME);
 }
 
 noreturn void scenemgr_loop()
@@ -98,7 +98,6 @@ static void cb_switch_scene_scratch(bool kdown) { if (kdown) switch_scene(SCENE_
 static void cb_toggle_view(bool kdown) {
 	if (!kdown)
 		return;
-	D;
 	struct Camera* cam = curr_scene == SCENE_GAME   ? &game_cam   :
 	                     curr_scene == SCENE_SCRATCH? &scratch_cam: NULL;
 	camera_set_projection(cam, cam->type == CAMERA_PERSPECTIVE? CAMERA_ORTHOGONAL: CAMERA_PERSPECTIVE);
@@ -113,11 +112,11 @@ static void register_global_keys()
 	input_register(SDLK_F12, cb_toggle_view);
 }
 
-static void cb_game_move_up(bool kdown)    { camera_move(&scratch_cam, DIR_UP   , kdown); }
-static void cb_game_move_left(bool kdown)  { camera_move(&scratch_cam, DIR_LEFT , kdown); }
-static void cb_game_move_down(bool kdown)  { camera_move(&scratch_cam, DIR_DOWN , kdown); }
-static void cb_game_move_right(bool kdown) { camera_move(&scratch_cam, DIR_RIGHT, kdown); }
-static void cb_game_cam_update() { ;}//camera_update(&game_cam); }
+static void cb_game_move_up(bool kdown)    { camera_move(&game_cam, DIR_UP   , kdown); }
+static void cb_game_move_left(bool kdown)  { camera_move(&game_cam, DIR_LEFT , kdown); }
+static void cb_game_move_down(bool kdown)  { camera_move(&game_cam, DIR_DOWN , kdown); }
+static void cb_game_move_right(bool kdown) { camera_move(&game_cam, DIR_RIGHT, kdown); }
+static void cb_game_cam_update() { camera_update(&game_cam); }
 static void load_game()
 {
 	curr_cam = &game_cam;
@@ -130,14 +129,14 @@ static void load_game()
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(models_record_commands);
-	renderer_add_to_draw_list(particles_record_commands);
-	renderer_add_to_draw_list(ui_record_commands);
-	renderer_add_to_draw_list(font_record_commands);
+	// renderer_add_to_draw_list(ui_record_commands);
+	// renderer_add_to_draw_list(particles_record_commands);
+	// renderer_add_to_draw_list(font_record_commands);
 
-	taskmgr_add_task(ui_update);
-	taskmgr_add_task(particles_update);
-	taskmgr_add_task(entities_update);
 	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
+	// taskmgr_add_task(ui_update);
+	// taskmgr_add_task(particles_update);
+	// taskmgr_add_task(entities_update);
 	taskmgr_add_task(cb_game_cam_update);
 }
 

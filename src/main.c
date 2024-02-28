@@ -15,7 +15,7 @@
 #include "gfx/particles.h"
 #include "test.h"
 
-void init_sdl();
+void init_sdl(void);
 
 struct GlobalConfig global_config;
 SDL_Renderer* renderer;
@@ -81,7 +81,7 @@ noreturn void quit()
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
 	entities_free();
-	free_vulkan();
+	vulkan_free();
 	SDL_Quit();
 	exit(0);
 }

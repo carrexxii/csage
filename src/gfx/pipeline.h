@@ -20,12 +20,11 @@
  * - No values must be changed once `pipeln_init` has been called
  */
 struct Pipeline {
-	VkPipeline             pipeln;
-	VkPipelineLayout       layout;
-	VkDescriptorPool       dpool;
-	VkDescriptorSetLayout* dset_layouts;
-	VkDescriptorSet*       dsets;
-	isize dset_layoutc;
+	VkPipeline            pipeln;
+	VkPipelineLayout      layout;
+	VkDescriptorPool      dpool;
+	VkDescriptorSetLayout dset_layout;
+	VkDescriptorSet*      dsets;
 	isize dsetc;
 
 	/*** Caller-defined values ***/

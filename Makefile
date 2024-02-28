@@ -19,10 +19,11 @@ WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overf
            -Wdisabled-optimization # Optimization: -Winline
 CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR) \
          -isystem$(LIB_DIR)/include -ftabstop=4 -include $(SRC_DIR)/common.h $(COMPILE_WITH)    \
-         -fstack-protector-strong -fstack-clash-protection -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined
+         -fstack-protector-strong -fstack-clash-protection -fno-omit-frame-pointer               \
+         -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope
 
-LFLAGS   = -L$(LIB_DIR) -Wl,-rpath,$(LIB_DIR) -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined \
-           -lm -lvulkan -lSDL3 -lfreetype -lasan -lubsan
+LFLAGS   = -L$(LIB_DIR) -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope \
+           -lasan -lubsan -lm -lvulkan -Wl,-rpath,$(LIB_DIR) -lSDL3 -lfreetype
 DEPFLAGS = -MT $@ -MMD -MF $(BUILD_DIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED

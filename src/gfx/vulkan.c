@@ -127,7 +127,7 @@ VkShaderModule create_shader(char* restrict path)
 	return module;
 }
 
-void free_vulkan()
+void vulkan_free()
 {
 #if DEBUG_LEVEL > 0
 	VK_GET_EXT(dbgfn, vkDestroyDebugReportCallbackEXT);
