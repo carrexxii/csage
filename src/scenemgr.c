@@ -26,9 +26,9 @@ static struct Camera scratch_cam;
 void scenemgr_init()
 {
 	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(69.0f));
-	game_cam    = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(69.0f));
+	game_cam    = camera_new(VEC3(-5.0f, 2.0f, -5.0f), VEC3(0.0f, -0.1f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(45.0f));
 	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
-	camera_set_projection(&game_cam, CAMERA_PERSPECTIVE);
+	camera_set_projection(&game_cam, CAMERA_ORTHOGONAL);
 
 	VkRenderPass renderpass = renderer_init();
 	// scratch_init(renderpass);

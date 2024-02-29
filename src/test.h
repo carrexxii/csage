@@ -8,6 +8,7 @@
 #include "input.h"
 #include "gfx/ui/ui.h"
 #include "maths/scratch.h"
+#include "map.h"
 
 static EntityID ent;
 
@@ -80,7 +81,8 @@ static void test_scratch()
 static void cb_test() { DEBUG(1, "Hello"); }
 static void test_init()
 {
-	ent = entity_new(VEC3(5.0, 5.0, -5.0), MODEL_PATH "test.glb");
+	map_new("test");
+	ent = entity_new(VEC3(0.0, 0.0, 0.0), MODEL_PATH "tile.glb");
 
 	// test_scratch();
 

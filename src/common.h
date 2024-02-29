@@ -169,7 +169,8 @@ typedef union Colour {
 				fprintf(stderr, "\n" TERM_NORMAL);                        \
 			}                                                              \
 		} while (0)
-#define DEBUG_VALUE(x) do {                                                                \
+#define DEBUG_VALUE(x) do {                                                               \
+			fprintf(stderr, __FILE__ ":%d ", __LINE__);                                    \
 			fprintf(stderr, _Generic((x),                                                   \
 			         char: "Char: \"%c\"\n",               signed char: "SChar: \"%hhd\"\n", \
 			        _Bool: "Bool: %d\n",                 unsigned char: "UChar: \"%hhu\"\n",  \

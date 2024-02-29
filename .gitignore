@@ -5,3 +5,4 @@ shaders/spirv
 compile_commands.json
 csage
 *.so*
+*.tiled-session

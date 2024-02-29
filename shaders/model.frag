@@ -48,7 +48,8 @@ void main()
 	vec3 specular    = global_light.colour * spec_str * pow(max(dot(Fnormal, halfway_dir), 0.0), shininess);
 	specular *= obj_colour.xyz;
 
-	// obj_colour = texture(sampler2D(Ftexture, Fsampler), Fuv);
-	FragColor = vec4(ambient + diffuse + specular, obj_colour.w);
+	obj_colour = texture(sampler2D(Ftexture, Fsampler), Fuv);
+	FragColor = obj_colour;
+	// FragColor = vec4(ambient + diffuse + specular, obj_colour.w);
 	// FragColor = vec4(Fnormal, 1.0);
 }

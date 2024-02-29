@@ -107,6 +107,9 @@ libs:
 	@mkdir -p $(LIB_DIR)/include/cgltf
 	@cp $(LIB_DIR)/cgltf/*.h $(LIB_DIR)/include/cgltf
 
+	@mkdir -p $(LIB_DIR)/include/jsmn
+	@cp $(LIB_DIR)/jsmn/*.h $(LIB_DIR)/include/jsmn
+
 	@mkdir -p $(LIB_DIR)/include/freetype
 	@cmake -S $(LIB_DIR)/freetype -B $(LIB_DIR)/freetype/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true
 	@cmake --build $(LIB_DIR)/freetype/build

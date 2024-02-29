@@ -20,7 +20,7 @@ inline static struct VArray varray_new(isize elemc, isize elem_sz);
 inline static void* varray_set(struct VArray* restrict arr, isize i, const void* restrict elem);
 inline static void* varray_get(struct VArray* arr, isize i);
 inline static isize varray_push(struct VArray* restrict arr, const void* restrict data);
-inline static void varray_resize(struct VArray** arr, isize new_sz);
+inline static void  varray_resize(struct VArray** arr, isize new_sz);
 inline static void  varray_free(struct VArray* arr);
 
 // TODO: flags for slow grow/no grow/...

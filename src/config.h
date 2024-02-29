@@ -6,6 +6,7 @@
 #define MODEL_PATH   "gfx/models/"
 #define TEXTURE_PATH "gfx/textures/"
 #define SCRIPT_PATH  "scripts/"
+#define MAP_PATH     "maps/"
 
 #define ASPECT_RATIO ((float)global_config.winw/global_config.winh)
 
