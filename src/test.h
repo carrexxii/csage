@@ -78,10 +78,11 @@ static void test_scratch()
 	// scratch_add(v);
 }
 
+static struct Map map;
 static void cb_test() { DEBUG(1, "Hello"); }
 static void test_init()
 {
-	map_new("test");
+	map = map_new("test");
 	ent = entity_new(VEC3(0.0, 0.0, 0.0), MODEL_PATH "tile.glb");
 
 	// test_scratch();
@@ -95,4 +96,9 @@ static void test_init()
 	// button_new(STRING("Hello2"), RECT(-1.0, 1.0, 100.0, 40.0), cb_test, NULL, c1);
 	// String str1 = STRING("Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple linesTesting textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines Testing textbox where the text goes on for a long ass time until it needs to go over multiple lines");
 	// textbox_new(str1, RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
+}
+
+static void test_free()
+{
+	map_free(&map);
 }

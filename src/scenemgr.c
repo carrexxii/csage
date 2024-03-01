@@ -9,6 +9,7 @@
 #include "gfx/particles.h"
 #include "maths/scratch.h"
 #include "entities/entity.h"
+#include "map.h"
 #include "scenemgr.h"
 
 #include "test.h"
@@ -31,6 +32,7 @@ void scenemgr_init()
 	camera_set_projection(&game_cam, CAMERA_ORTHOGONAL);
 
 	VkRenderPass renderpass = renderer_init();
+	maps_init(renderpass);
 	// scratch_init(renderpass);
 	// font_init(renderpass);
 	// ui_init(renderpass);

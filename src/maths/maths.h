@@ -17,7 +17,7 @@
 #define SQRT1_2 0.70710678118654752440
 
 #define  RECT(x, y, w, h)  (Rect){ x, y, w, h }
-#define Recti(x, y, w, h) (Recti){ x, y, w, h }
+#define RECTI(x, y, w, h) (Recti){ x, y, w, h }
 
 #define print_rect(r) _Generic((r), \
 	Rect : print_rect_rect,         \

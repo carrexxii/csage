@@ -1,13 +1,19 @@
-#include "lang/lexer.h"
+#include "vulkan/vulkan.h"
 #define JSMN_PARENT_LINKS
 #include "jsmn/jsmn.h"
 
 #include "util/file.h"
 #include "util/varray.h"
+#include "maths/maths.h"
+#include "gfx/vulkan.h"
+#include "gfx/buffers.h"
+#include "gfx/pipeline.h"
 #include "map.h"
 
-#define BUFFER_SIZE 4096
-#define MAX_CHUNKS 256
+#define VERTEX_ELEMENTS 6
+#define SIZEOF_VERTEX   sizeof(int8[VERTEX_ELEMENTS])
+#define BUFFER_SIZE     4096
+#define MAX_CHUNKS      256
 
 #define STRING_OF_JSMN_TYPE(x) (           \
 	x == JSMN_UNDEFINED? "JSMN_UNDEFINED": \
@@ -21,9 +27,60 @@ static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize toke
 static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tokens);
 static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tokens);
 static int parse_data(uint8* data, int i, char* json, jsmntok_t* tokens);
-static int parse_tilesets(struct Tileset* tset, int i, char* json, jsmntok_t* tokens);
+static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tokens);
+static void build_mesh(struct Map* map);
+static void mesh_tile(int16* inds, Vec3i v);
 
-static char buf[4096];
+static VkRenderPass renderpass;
+static struct Pipeline pipeln;
+static VkVertexInputBindingDescription vert_binds[] = {
+	{ .binding   = 0,
+	  .stride    = SIZEOF_VERTEX, /* xyznnn */
+	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, }
+};
+static VkVertexInputAttributeDescription vert_attrs[] = {
+	{ .binding  = 0,
+	  .location = 0,
+	  .format   = VK_FORMAT_R8G8B8_SINT, /* xyz */
+	  .offset   = 0, },
+	{ .binding  = 0,
+	  .location = 1,
+	  .format   = VK_FORMAT_R8G8B8_SINT, /* normal */
+	  .offset   = sizeof(int8[3]), },
+};
+
+static VBO lattice_vbo;
+static char buf[BUFFER_SIZE];
+
+void maps_init(VkRenderPass rpass)
+{
+	renderpass = rpass;
+
+	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
+	int w = MAP_CHUNK_WIDTH  + 1;
+	int h = MAP_CHUNK_HEIGHT + 1;
+	intptr vert_size = 3*w*h*2;
+	int8* verts = scalloc(vert_size, sizeof(int8[VERTEX_ELEMENTS]));
+	int i;
+	for (int dir = 0; dir < 3; dir++) {
+		for (int z = 0; z < 2; z++) {
+			for (int y = 0; y < h; y++) {
+				for (int x = 0; x < w; x++) {
+					i = VERTEX_ELEMENTS*(z*w*h + y*w + x) + VERTEX_ELEMENTS*dir*(w*h*2);
+					verts[i + 0] = x;
+					verts[i + 1] = y;
+					verts[i + 2] = z;
+					verts[i + 3 + dir] = 1;
+					// DEBUG(1, "[%d] %hhd %hhd %hhd (%hhd %hhd %hhd)", i, verts[i], verts[i+1], verts[i+2], verts[i+3], verts[i+4], verts[i+5]);
+				}
+			}
+		}
+	}
+	lattice_vbo = vbo_new(vert_size, verts, false);
+	free(verts);
+
+	DEBUG(3, "[MAP] Map system initialized");
+}
 
 struct Map map_new(const char* name)
 {
@@ -62,6 +119,7 @@ struct Map map_new(const char* name)
 	}
 
 	parse_map(&map, json, tokens, tokenc);
+	build_mesh(&map);
 
 cleanup:
 	if (tokens) {
@@ -69,32 +127,40 @@ cleanup:
 		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map.w, map.h, tokenc);
 	}
 
-	DEBUG(1, "Map: %dx%d w/%d layers and %d tilesets", map.w, map.h, map.layerc, map.tilesetc);
-	struct Tileset  tileset;
-	struct MapLayer layer;
-	struct MapChunk chunk;
-	for (int i = 0; i < map.tilesetc; i++) {
-		tileset = map.tilesets[i];
-		DEBUG(1, "\tTileset \"%s\" %d (%dx%d tiles): \"%s\"",
-		      tileset.name, i, tileset.tw, tileset.th, tileset.image);
-	}
-	for (int i = 0; i < map.layerc; i++) {
-		layer = map.layers[i];
-		DEBUG(1, "\tLayer \"%s\" %d (%d, %d -> %dx%d) w/%d chunks",
-		      layer.name, i, layer.x, layer.y, layer.w, layer.h, layer.chunkc);
-		for (int j = 0; j < layer.chunkc; j++) {
-			chunk = layer.chunks[j];
-			DEBUG(1, "\t\t Chunk %d (%d, %d -> %dx%d)", j, chunk.x, chunk.y, chunk.w, chunk.h);
-			fprintf(stderr, "\t\t");
-			for (int k = 0; k < 256; k++) {
-				fprintf(stderr, "%d, ", chunk.data[k]);
-			}
-			fprintf(stderr, "\n");
-		}
-	}
+	// DEBUG(1, "Map: %dx%d w/%d layers and %d tilesets", map.w, map.h, map.layerc, map.tilesetc);
+	// struct Tileset  tileset;
+	// struct MapLayer layer;
+	// struct MapChunk chunk;
+	// DEBUG(1, "\tTileset \"%s\" (%dx%d tiles): \"%s\"", tileset.name, tileset.tw, tileset.th, tileset.image);
+	// for (int i = 0; i < map.layerc; i++) {
+	// 	layer = map.layers[i];
+	// 	DEBUG(1, "\tLayer \"%s\" %d (%d, %d -> %dx%d) w/%d chunks",
+	// 	      layer.name, i, layer.x, layer.y, layer.w, layer.h, layer.chunkc);
+	// 	for (int j = 0; j < layer.chunkc; j++) {
+	// 		chunk = layer.chunks[j];
+	// 		DEBUG(1, "\t\t Chunk %d (%d, %d)", j, chunk.x, chunk.y);
+	// 		fprintf(stderr, "\t\t");
+	// 		for (int k = 0; k < MAP_CHUNK_SIZE; k++)
+	// 			fprintf(stderr, "%d, ", chunk.data[k]);
+	// 		fprintf(stderr, "\n");
+	// 	}
+	// }
 
 	exit(0);
 	return map;
+}
+
+void map_free(struct Map* map)
+{
+	for (int i = 0; i < map->layerc; i++)
+		free(map->layers[i].chunks);
+	free(map->layers);
+	*map = (struct Map){ 0 };
+}
+
+void maps_free()
+{
+	vbo_free(&lattice_vbo);
 }
 
 /* -------------------------------------------------------------------- */
@@ -107,16 +173,12 @@ cleanup:
 
 static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize tokenc)
 {
-	struct VArray layers   = varray_new(8, sizeof(struct MapLayer));
-	struct VArray tilesets = varray_new(4, sizeof(struct Tileset));
-
 	jsmntok_t token = tokens[0];
 	isize len = token.size;
 	int i = 0;
 	NEXT();
 	NEXT();
 	for (int j = 0; j < len; j++) {
-		// DEBUG_VALUE(buf);
 		switch (token.type) {
 		case JSMN_PRIMITIVE:
 		case JSMN_STRING:
@@ -138,25 +200,19 @@ static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize toke
 				DEBUG(1, "[MAP] TODO: compressionlevel (%s)", buf);
 				NEXT();
 			} else if (!strcmp(buf, "tilesets")) {
-				struct Tileset tset;
 				NEXT();
 				int tsetc = token.size;
+				if (tsetc > 1)
+					ERROR("[MAP] Only one tileset supported, got: %d tilesets", tsetc);
 				NEXT();
-				for (int ts = 0; ts < tsetc; ts++) {
-					tset = (struct Tileset){ 0 };
-					i = parse_tilesets(&tset, i, json, tokens);
-					varray_push(&tilesets, &tset);
-				}
+				i = parse_tileset(&map->tileset, i, json, tokens);
 			} else if (!strcmp(buf, "layers")) {
-				struct MapLayer layer;
 				int layerc = tokens[i].size;
+				map->layers = smalloc(layerc * sizeof(struct MapLayer));
 				NEXT();
 				NEXT();
-				for (int l = 0; l < layerc; l++) {
-					layer = (struct MapLayer){ 0 };
-					i = parse_layer(&layer, i, json, tokens);
-					varray_push(&layers, &layer);
-				}
+				for (int l = 0; l < layerc; l++)
+					i = parse_layer(&map->layers[map->layerc++], i, json, tokens);
 				i--;
 			}
 			else if (!strcmp(buf, "width"))      { NEXT(); map->w  = atoi(buf); }
@@ -186,16 +242,6 @@ static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize toke
 			i += token.size + 1;
 		}
 	}
-
-	map->tilesetc = tilesets.len;
-	map->tilesets = smalloc(map->tilesetc*sizeof(struct Tileset));
-	memcpy(map->tilesets, tilesets.data, map->tilesetc*sizeof(struct Tileset));
-	varray_free(&tilesets);
-
-	map->layerc = layers.len;
-	map->layers = smalloc(map->layerc*sizeof(struct MapLayer));
-	memcpy(map->layers, layers.data, map->layerc*sizeof(struct MapLayer));
-	varray_free(&layers);
 }
 
 static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tokens)
@@ -237,8 +283,8 @@ static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tok
 	}
 
 	layer->chunkc = chunks.len;
-	layer->chunks = smalloc(layer->chunkc*sizeof(struct MapChunk));
-	memcpy(layer->chunks, chunks.data, layer->chunkc*sizeof(struct MapChunk));
+	layer->chunks = smalloc(chunks.len*sizeof(struct MapChunk));
+	memcpy(layer->chunks, chunks.data, chunks.len*sizeof(struct MapChunk));
 	varray_free(&chunks);
 	return i;
 }
@@ -246,7 +292,6 @@ static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tok
 static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tokens)
 {
 	jsmntok_t token = tokens[i - 1];
-	char* start;
 
 	int len = token.size;
 	NEXT();
@@ -256,8 +301,8 @@ static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tok
 				ERROR("[MAP] Map chunks need to be <= 256 tiles");
 			i = parse_data(chunk->data, i, json, tokens);
 		}
-		else if (!strcmp(buf, "width"))  { NEXT(); chunk->w = atoi(buf); NEXT(); }
-		else if (!strcmp(buf, "height")) { NEXT(); chunk->h = atoi(buf); NEXT(); }
+		else if (!strcmp(buf, "width"))  { NEXT(); NEXT(); }
+		else if (!strcmp(buf, "height")) { NEXT(); NEXT(); }
 		else if (!strcmp(buf, "x"))      { NEXT(); chunk->x = atoi(buf); NEXT(); }
 		else if (!strcmp(buf, "y"))      { NEXT(); chunk->y = atoi(buf); NEXT(); }
 		else {
@@ -288,7 +333,7 @@ static int parse_data(uint8* data, int i, char* json, jsmntok_t* tokens)
 		tset_token = tset_tokens[k++];                                                           \
 		snprintf(buf, tset_token.end - tset_token.start + 1, "%s", tset_json + tset_token.start); \
 	} while (0)
-static int parse_tilesets(struct Tileset* tset, int i, char* json, jsmntok_t* tokens)
+static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tokens)
 {
 	jsmntok_t token = tokens[i - 1];
 	int len = token.size;
@@ -330,12 +375,12 @@ static int parse_tilesets(struct Tileset* tset, int i, char* json, jsmntok_t* to
 						strcpy(tset->image, buf);
 					}
 					else if (!strcmp(buf, "name"))       { TSET_NEXT(); strcpy(tset->name, buf); }
-					else if (!strcmp(buf, "firstgid"))   { TSET_NEXT(); tset->first_gid = atoi(buf); }
 					else if (!strcmp(buf, "margin"))     { TSET_NEXT(); tset->margin    = atoi(buf); }
 					else if (!strcmp(buf, "spacing"))    { TSET_NEXT(); tset->spacing   = atoi(buf); }
 					else if (!strcmp(buf, "columns"))    { TSET_NEXT(); tset->columns   = atoi(buf); }
 					else if (!strcmp(buf, "tilewidth"))  { TSET_NEXT(); tset->tw        = atoi(buf); }
 					else if (!strcmp(buf, "tileheight")) { TSET_NEXT(); tset->th        = atoi(buf); }
+					else if (!strcmp(buf, "firstgid"))     { TSET_NEXT(); }
 					else if (!strcmp(buf, "imagewidth"))   { TSET_NEXT(); }
 					else if (!strcmp(buf, "imageheight"))  { TSET_NEXT(); }
 					else if (!strcmp(buf, "tilecount"))    { TSET_NEXT(); }
@@ -350,10 +395,63 @@ static int parse_tilesets(struct Tileset* tset, int i, char* json, jsmntok_t* to
 			}
 		} else if (!strcmp(buf, "firstgid")) {
 			NEXT();
-			tset->first_gid = atoi(buf);
 			NEXT();
 		}
 	}
 
 	return i;
+}
+
+static void build_mesh(struct Map* map)
+{
+	int16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*2*sizeof(int16[18]));
+	isize indc;
+	struct MapLayer* layer;
+	struct MapChunk* chunk;
+	for (int i = 0; i < map->layerc; i++) {
+		layer = &map->layers[i];
+		for (int j = 0; j < layer->chunkc; j++) {
+			chunk = &layer->chunks[j];
+			indc = 0;
+			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
+				if (chunk->data[k]) {
+					mesh_tile(inds, VEC3I(k % MAP_CHUNK_WIDTH,
+					                      k / MAP_CHUNK_WIDTH,
+					                      chunk->z));
+					inds += 18;
+					indc += 18;
+					// DEBUG(1, "[%d] %d, %d, %d", k, k % MAP_CHUNK_WIDTH, k / MAP_CHUNK_WIDTH, chunk->z);
+				}
+			}
+			chunk->tilec = indc / 18;
+			chunk->ibo = ibo_new(indc*sizeof(inds[0]), inds);
+		}
+	}
+}
+
+/* 0 = x-axis; 1 = y-axis; 2 = z-axis */
+#define VERTEX_INDEX(x, y, z, axis) ((z)*(MAP_CHUNK_WIDTH+1) + (y)*(MAP_CHUNK_HEIGHT+1) + (x) + axis*2)
+static void mesh_tile(int16* inds, Vec3i v)
+{
+	/* Left side triangles */
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z    , 0);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z + 1, 0);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z    , 0);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z    , 0);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z + 1, 0);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z + 1, 0);
+	/* Right side triangles */
+	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z    , 1);
+	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z + 1, 1);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z    , 1);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z    , 1);
+	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z + 1, 1);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z + 1, 1);
+	/* Top triangles */
+	*inds++ = VERTEX_INDEX(v.x    , v.y    , v.z, 2);
+	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z, 2);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z, 2);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z, 2);
+	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z, 2);
+	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z, 2);
 }
