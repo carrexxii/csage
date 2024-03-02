@@ -1,4 +1,4 @@
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 
 #include "taskmgr.h"
 #include "input.h"
@@ -14,6 +14,14 @@
 
 #include "test.h"
 
+#define MAX_DEFER_FUNCTIONS 32
+
+struct SceneDefer {
+	void (*fn)(void*);
+	void* data;
+};
+
+static void scene_exec_defer(void);
 static void switch_scene(enum SceneType type);
 static void register_global_keys(void);
 static void load_game(void);
@@ -23,6 +31,9 @@ static enum SceneType curr_scene;
 static struct Camera* curr_cam;
 static struct Camera game_cam;
 static struct Camera scratch_cam;
+
+static isize deferc;
+static struct SceneDefer defers[MAX_DEFER_FUNCTIONS];
 
 void scenemgr_init()
 {
@@ -77,11 +88,35 @@ noreturn void scenemgr_loop()
 	}
 }
 
+void scenemgr_defer(void (*fn)(void*), void* data)
+{
+	defers[deferc++] = (struct SceneDefer){
+		.fn   = fn,
+		.data = data,
+	};
+}
+
+void scenemgr_free()
+{
+	scene_exec_defer();
+}
+
 /* -------------------------------------------------------------------- */
+
+static void scene_exec_defer()
+{
+	struct SceneDefer defer;
+	while (deferc) {
+		defer = defers[--deferc];
+		defer.fn(defer.data);
+	}
+}
 
 static void switch_scene(enum SceneType scene)
 {
 	if (scene != curr_scene) {
+		scene_exec_defer();
+
 		taskmgr_clear();
 		curr_scene = scene;
 		switch (scene) {
@@ -114,6 +149,7 @@ static void register_global_keys()
 	input_register(SDLK_F12, cb_toggle_view);
 }
 
+static struct Map map;
 static void cb_game_move_up(bool kdown)    { camera_move(&game_cam, DIR_UP   , kdown); }
 static void cb_game_move_left(bool kdown)  { camera_move(&game_cam, DIR_LEFT , kdown); }
 static void cb_game_move_down(bool kdown)  { camera_move(&game_cam, DIR_DOWN , kdown); }
@@ -123,11 +159,15 @@ static void load_game()
 {
 	curr_cam = &game_cam;
 
+	map_new(&map, "test");
+	scenemgr_defer((void (*)(void*))map_free, &map);
+
 	register_global_keys();
 	input_register(SDLK_w, cb_game_move_up);
 	input_register(SDLK_a, cb_game_move_left);
 	input_register(SDLK_s, cb_game_move_down);
 	input_register(SDLK_d, cb_game_move_right);
+
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(models_record_commands);

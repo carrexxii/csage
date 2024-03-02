@@ -165,7 +165,7 @@ inline static struct LangVar new_literal(struct AST* ast, struct Token tok)
 	} else if (tok.type == TOKEN_STRING) {
 		lit = (struct LangVar){
 			.type    = LANG_STR,
-			.val.str = string_new_ptr(tok.lexeme.data, tok.lexeme.len),
+			.val.str = string_new_cstr(tok.lexeme.data, tok.lexeme.len),
 		};
 	} else {
 		error_expected("literal value", tok);

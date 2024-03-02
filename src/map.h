@@ -4,6 +4,9 @@
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/pipeline.h"
+#include "gfx/texture.h"
+#include "maths/types.h"
+#include "camera.h"
 
 #define MAP_CHUNK_WIDTH  16
 #define MAP_CHUNK_HEIGHT 16
@@ -12,6 +15,7 @@
 typedef int MapTile;
 
 struct Tileset {
+	struct Texture texture;
 	char image[64];
 	char name[32];
 	int margin;
@@ -23,7 +27,7 @@ struct Tileset {
 struct MapChunk {
 	IBO ibo;
 	int tilec;
-	uint16 x, y, z;
+	Vec3i pos;
 	uint8 data[MAP_CHUNK_SIZE];
 };
 
@@ -34,7 +38,16 @@ struct MapLayer {
 	struct MapChunk* chunks;
 };
 
+struct MapData {
+	Mat4x4 proj;
+	Mat4x4 view;
+	Vec3i  block_size;
+	float pad1;
+};
+
 struct Map {
+	struct MapData data;
+	UBO ubo;
 	int w, h, tw, th;
 	int tilesetc;
 	int layerc;
@@ -44,7 +57,8 @@ struct Map {
 };
 
 void maps_init(VkRenderPass renderpass);
-struct Map map_new(const char* name);
+void map_new(struct Map* map, const char* name);
+void map_record_commands(struct Map* map, struct Camera* cam, VkCommandBuffer cmd_buf);
 void map_free(struct Map* map);
 void maps_free(void);
 

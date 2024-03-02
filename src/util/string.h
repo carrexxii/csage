@@ -19,10 +19,11 @@ typedef struct { char data[64]; } String64;
 
 // TODO: Add allocator parameters
 String  string_new(char* src, isize len);
-String* string_new_ptr(char* src, isize len);
+String* string_new_cstr(char* src, isize len);
 String  string_new_split(char* src, char sep, int index);
 String  string_copy(String src);
 int     string_contains(String str, char c);
+int     string_remove(String str, char c);
 void    string_free(String str);
 
 bool starts_with(char* restrict str, char* restrict start);

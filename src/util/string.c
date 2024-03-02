@@ -12,7 +12,7 @@ String string_new(char* src, isize len)
 	return str;
 }
 
-String* string_new_ptr(char* src, isize len)
+String* string_new_cstr(char* src, isize len)
 {
 	// TODO:
 	// String* str = smalloc(sizeof(String) + len + 1);
@@ -68,6 +68,21 @@ int string_contains(String str, char c)
 		if (str.data[i] == c)
 			return i;
 	return -1;
+}
+
+/* Remove character `c` from `str` and return the number of characters removed */
+int string_remove(String str, char c)
+{
+	int i, j = 0;
+	for (i = 0; i < str.len; i++)
+		if (str.data[i] != c)
+			str.data[j++] = str.data[i];
+
+	int count = i - j;
+	while (j < i)
+		str.data[j++] = '\0';
+
+	return count;
 }
 
 void string_free(String str) {

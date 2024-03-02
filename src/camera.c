@@ -4,6 +4,8 @@
 #include "input.h"
 #include "camera.h"
 
+// TODO: make camera the set-0 global uniform
+
 struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 {
 	struct Camera cam = {

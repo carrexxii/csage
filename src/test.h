@@ -82,7 +82,6 @@ static struct Map map;
 static void cb_test() { DEBUG(1, "Hello"); }
 static void test_init()
 {
-	map = map_new("test");
 	ent = entity_new(VEC3(0.0, 0.0, 0.0), MODEL_PATH "tile.glb");
 
 	// test_scratch();

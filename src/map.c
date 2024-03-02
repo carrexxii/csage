@@ -1,13 +1,18 @@
+#include "gfx/texture.h"
 #include "vulkan/vulkan.h"
+#include <vulkan/vulkan_core.h>
 #define JSMN_PARENT_LINKS
 #include "jsmn/jsmn.h"
 
 #include "util/file.h"
+#include "util/string.h"
 #include "util/varray.h"
 #include "maths/maths.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/pipeline.h"
+#include "gfx/model.h" // TODO: move materials to separate file
+#include "camera.h"
 #include "map.h"
 
 #define VERTEX_ELEMENTS 6
@@ -32,7 +37,6 @@ static void build_mesh(struct Map* map);
 static void mesh_tile(int16* inds, Vec3i v);
 
 static VkRenderPass renderpass;
-static struct Pipeline pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SIZEOF_VERTEX, /* xyznnn */
@@ -49,12 +53,15 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 	  .offset   = sizeof(int8[3]), },
 };
 
+static UBO cam_ubo;
 static VBO lattice_vbo;
 static char buf[BUFFER_SIZE];
 
 void maps_init(VkRenderPass rpass)
 {
 	renderpass = rpass;
+
+	cam_ubo = ubo_new(sizeof(Mat4x4[2]));
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
 	int w = MAP_CHUNK_WIDTH  + 1;
@@ -82,11 +89,9 @@ void maps_init(VkRenderPass rpass)
 	DEBUG(3, "[MAP] Map system initialized");
 }
 
-struct Map map_new(const char* name)
+void map_new(struct Map* map, const char* name)
 {
-	struct Map map = { 0 };
-
-	char path[128];
+	char path[256];
 	sprintf(path, MAP_PATH "%s.tmj", name);
 	FILE* file = file_open(path, "r");
 
@@ -118,13 +123,34 @@ struct Map map_new(const char* name)
 		goto cleanup;
 	}
 
-	parse_map(&map, json, tokens, tokenc);
-	build_mesh(&map);
+	parse_map(map, json, tokens, tokenc);
+	build_mesh(map);
+
+	map->ubo = ubo_new(sizeof(struct MapData));
+
+	map->pipeln = (struct Pipeline){
+		.vshader     = create_shader(SHADER_DIR "map.vert"),
+		.fshader     = create_shader(SHADER_DIR "map.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.vert_bindc  = 1,
+		.vert_binds  = vert_binds,
+		.vert_attrc  = 2,
+		.vert_attrs  = vert_attrs,
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
+		.push_sz     = sizeof(Vec3i),
+		.dset_cap    = 1,
+		.uboc        = 2,
+		.sboc        = 0,
+		.imgc        = 1,
+	};
+	pipeln_alloc_dsets(&map->pipeln);
+	pipeln_create_dset(&map->pipeln, 2, (UBO[]){ cam_ubo, map->ubo }, 0, NULL, 1, &map->tileset.texture.image_view);
+	pipeln_init(&map->pipeln, renderpass);
 
 cleanup:
 	if (tokens) {
 		free(tokens);
-		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map.w, map.h, tokenc);
+		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map->w, map->h, tokenc);
 	}
 
 	// DEBUG(1, "Map: %dx%d w/%d layers and %d tilesets", map.w, map.h, map.layerc, map.tilesetc);
@@ -145,21 +171,49 @@ cleanup:
 	// 		fprintf(stderr, "\n");
 	// 	}
 	// }
+}
 
-	exit(0);
-	return map;
+void map_record_commands(struct Map* map, struct Camera* cam, VkCommandBuffer cmd_buf)
+{
+	memcpy(&map->data.view, &cam->mats->view, sizeof(Mat4x4));
+	memcpy(&map->data.proj, &cam->mats->proj, sizeof(Mat4x4));
+	buffer_update(map->ubo , sizeof(struct MapData), &map->data, 0);
+
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.pipeln);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.layout, 0, 1, map->pipeln.dsets, 0, NULL);
+
+	struct MapLayer* layer;
+	struct MapChunk* chunk;
+	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &lattice_vbo.buf, (VkDeviceSize[]){ 0 });
+	for (int i = 0; i < map->layerc; i++) {
+		layer = &map->layers[i];
+		for (int j = 0; j < layer->chunkc; j++) {
+			chunk = &layer->chunks[j];
+			// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
+			vkCmdBindIndexBuffer(cmd_buf, layer->chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdPushConstants(cmd_buf, map->pipeln.layout, map->pipeln.push_stages, 0, map->pipeln.push_sz, &chunk->pos);
+			vkCmdDrawIndexed(cmd_buf, chunk->tilec*18, 1, 0, 0, 0);
+		}
+	}
 }
 
 void map_free(struct Map* map)
 {
-	for (int i = 0; i < map->layerc; i++)
+	for (int i = 0; i < map->layerc; i++) {
+		for (int j = 0; j < map->layers[i].chunkc; j++)
+			ibo_free(&map->layers[i].chunks[j].ibo);
 		free(map->layers[i].chunks);
+	}
 	free(map->layers);
+	ubo_free(&map->ubo);
+	texture_free(&map->tileset.texture);
+	pipeln_free(&map->pipeln);
 	*map = (struct Map){ 0 };
 }
 
 void maps_free()
 {
+	ubo_free(&cam_ubo);
 	vbo_free(&lattice_vbo);
 }
 
@@ -303,8 +357,8 @@ static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tok
 		}
 		else if (!strcmp(buf, "width"))  { NEXT(); NEXT(); }
 		else if (!strcmp(buf, "height")) { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "x"))      { NEXT(); chunk->x = atoi(buf); NEXT(); }
-		else if (!strcmp(buf, "y"))      { NEXT(); chunk->y = atoi(buf); NEXT(); }
+		else if (!strcmp(buf, "x"))      { NEXT(); chunk->pos.x = atoi(buf); NEXT(); }
+		else if (!strcmp(buf, "y"))      { NEXT(); chunk->pos.y = atoi(buf); NEXT(); }
 		else {
 			ERROR("[MAP] Unmatched chunk token: \"%s\"", buf);
 			NEXT();
@@ -339,7 +393,7 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 	int len = token.size;
 
 	NEXT();
-	char path[128];
+	char path[256];
 	jsmntok_t tset_tokens[256];
 	for (int j = 0; j < len; j++) {
 		if (!strcmp(buf, "source")) {
@@ -372,7 +426,10 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 					TSET_NEXT();
 					if (!strcmp(buf, "image")) {
 						TSET_NEXT();
-						strcpy(tset->image, buf);
+						string_remove((String){ .data = buf, .len = strlen(buf) }, '\\');
+						sprintf(path, MAP_PATH "%s", buf);
+						strcpy(tset->image, path);
+						tset->texture = texture_new_from_image(path);
 					}
 					else if (!strcmp(buf, "name"))       { TSET_NEXT(); strcpy(tset->name, buf); }
 					else if (!strcmp(buf, "margin"))     { TSET_NEXT(); tset->margin    = atoi(buf); }
@@ -417,7 +474,7 @@ static void build_mesh(struct Map* map)
 				if (chunk->data[k]) {
 					mesh_tile(inds, VEC3I(k % MAP_CHUNK_WIDTH,
 					                      k / MAP_CHUNK_WIDTH,
-					                      chunk->z));
+					                      chunk->pos.z));
 					inds += 18;
 					indc += 18;
 					// DEBUG(1, "[%d] %d, %d, %d", k, k % MAP_CHUNK_WIDTH, k / MAP_CHUNK_WIDTH, chunk->z);
