@@ -15,10 +15,14 @@
 #include "camera.h"
 #include "map.h"
 
-#define VERTEX_ELEMENTS 6
-#define SIZEOF_VERTEX   sizeof(int8[VERTEX_ELEMENTS])
-#define BUFFER_SIZE     4096
-#define MAX_CHUNKS      256
+#define VERTEX_ELEMENTS    4
+#define SIZEOF_VERTEX      sizeof(uint8[VERTEX_ELEMENTS])
+#define BUFFER_SIZE        4096
+#define MAX_CHUNKS         256
+#define VERTEX_WIDTH       (MAP_CHUNK_WIDTH  + 1)
+#define VERTEX_HEIGHT      (MAP_CHUNK_HEIGHT + 1)
+#define VERTEX_DEPTH       (MAP_CHUNK_DEPTH  + 1)
+#define VERTICES_PER_CHUNK (VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH)
 
 #define STRING_OF_JSMN_TYPE(x) (           \
 	x == JSMN_UNDEFINED? "JSMN_UNDEFINED": \
@@ -34,23 +38,19 @@ static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tok
 static int parse_data(uint8* data, int i, char* json, jsmntok_t* tokens);
 static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tokens);
 static void build_mesh(struct Map* map);
-static void mesh_tile(int16* inds, Vec3i v);
+static void mesh_tile(uint16* inds, Vec3i v);
 
 static VkRenderPass renderpass;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
-	  .stride    = SIZEOF_VERTEX, /* xyznnn */
+	  .stride    = SIZEOF_VERTEX, /* xyzn */
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, }
 };
 static VkVertexInputAttributeDescription vert_attrs[] = {
 	{ .binding  = 0,
 	  .location = 0,
-	  .format   = VK_FORMAT_R8G8B8_SINT, /* xyz */
+	  .format   = VK_FORMAT_R8G8B8A8_UINT, /* xyzn */
 	  .offset   = 0, },
-	{ .binding  = 0,
-	  .location = 1,
-	  .format   = VK_FORMAT_R8G8B8_SINT, /* normal */
-	  .offset   = sizeof(int8[3]), },
 };
 
 static UBO cam_ubo;
@@ -64,26 +64,24 @@ void maps_init(VkRenderPass rpass)
 	cam_ubo = ubo_new(sizeof(Mat4x4[2]));
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
-	int w = MAP_CHUNK_WIDTH  + 1;
-	int h = MAP_CHUNK_HEIGHT + 1;
-	intptr vert_size = 3*w*h*2;
-	int8* verts = scalloc(vert_size, sizeof(int8[VERTEX_ELEMENTS]));
+	intptr vert_size = 3*VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH;
+	uint8* verts = scalloc(vert_size, sizeof(uint8[VERTEX_ELEMENTS]));
 	int i;
 	for (int dir = 0; dir < 3; dir++) {
-		for (int z = 0; z < 2; z++) {
-			for (int y = 0; y < h; y++) {
-				for (int x = 0; x < w; x++) {
-					i = VERTEX_ELEMENTS*(z*w*h + y*w + x) + VERTEX_ELEMENTS*dir*(w*h*2);
+		for (int z = 0; z < VERTEX_DEPTH; z++) {
+			for (int y = 0; y < VERTEX_HEIGHT; y++) {
+				for (int x = 0; x < VERTEX_WIDTH; x++) {
+					i = VERTEX_ELEMENTS*(z*VERTEX_WIDTH*VERTEX_HEIGHT + y*VERTEX_WIDTH + x) + VERTEX_ELEMENTS*dir*VERTICES_PER_CHUNK;
 					verts[i + 0] = x;
 					verts[i + 1] = y;
 					verts[i + 2] = z;
-					verts[i + 3 + dir] = 1;
-					// DEBUG(1, "[%d] %hhd %hhd %hhd (%hhd %hhd %hhd)", i, verts[i], verts[i+1], verts[i+2], verts[i+3], verts[i+4], verts[i+5]);
+					verts[i + 3] = dir;
+					// DEBUG(1, "[%d] %hhd %hhd %hhd %hhd", i, verts[i], verts[i+1], verts[i+2], verts[i+3]);
 				}
 			}
 		}
 	}
-	lattice_vbo = vbo_new(vert_size, verts, false);
+	lattice_vbo = vbo_new(vert_size*sizeof(uint8[VERTEX_ELEMENTS]), verts, false);
 	free(verts);
 
 	DEBUG(3, "[MAP] Map system initialized");
@@ -134,7 +132,7 @@ void map_new(struct Map* map, const char* name)
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
-		.vert_attrc  = 2,
+		.vert_attrc  = 1,
 		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(Vec3i),
@@ -148,6 +146,8 @@ void map_new(struct Map* map, const char* name)
 	pipeln_init(&map->pipeln, renderpass);
 
 cleanup:
+	if (json)
+		free(json);
 	if (tokens) {
 		free(tokens);
 		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map->w, map->h, tokenc);
@@ -173,11 +173,10 @@ cleanup:
 	// }
 }
 
-void map_record_commands(struct Map* map, struct Camera* cam, VkCommandBuffer cmd_buf)
+void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map)
 {
-	memcpy(&map->data.view, &cam->mats->view, sizeof(Mat4x4));
-	memcpy(&map->data.proj, &cam->mats->proj, sizeof(Mat4x4));
-	buffer_update(map->ubo , sizeof(struct MapData), &map->data, 0);
+	buffer_update(cam_ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
+	buffer_update(map->ubo, sizeof(struct MapData), &map->data, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.layout, 0, 1, map->pipeln.dsets, 0, NULL);
@@ -189,7 +188,7 @@ void map_record_commands(struct Map* map, struct Camera* cam, VkCommandBuffer cm
 		layer = &map->layers[i];
 		for (int j = 0; j < layer->chunkc; j++) {
 			chunk = &layer->chunks[j];
-			// DEBUG(1, "[%d] Drawing %d vertices", i, models[i].meshes[m].vertc);
+			// DEBUG(1, "[%d] Drawing %d tiles (%d)", j, chunk->tilec, chunk->tilec*18);
 			vkCmdBindIndexBuffer(cmd_buf, layer->chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, map->pipeln.layout, map->pipeln.push_stages, 0, map->pipeln.push_sz, &chunk->pos);
 			vkCmdDrawIndexed(cmd_buf, chunk->tilec*18, 1, 0, 0, 0);
@@ -431,12 +430,12 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 						strcpy(tset->image, path);
 						tset->texture = texture_new_from_image(path);
 					}
-					else if (!strcmp(buf, "name"))       { TSET_NEXT(); strcpy(tset->name, buf); }
-					else if (!strcmp(buf, "margin"))     { TSET_NEXT(); tset->margin    = atoi(buf); }
-					else if (!strcmp(buf, "spacing"))    { TSET_NEXT(); tset->spacing   = atoi(buf); }
-					else if (!strcmp(buf, "columns"))    { TSET_NEXT(); tset->columns   = atoi(buf); }
-					else if (!strcmp(buf, "tilewidth"))  { TSET_NEXT(); tset->tw        = atoi(buf); }
-					else if (!strcmp(buf, "tileheight")) { TSET_NEXT(); tset->th        = atoi(buf); }
+					else if (!strcmp(buf, "name"))       { TSET_NEXT(); strcpy(tset->name, buf);   }
+					else if (!strcmp(buf, "margin"))     { TSET_NEXT(); tset->margin  = atoi(buf); }
+					else if (!strcmp(buf, "spacing"))    { TSET_NEXT(); tset->spacing = atoi(buf); }
+					else if (!strcmp(buf, "columns"))    { TSET_NEXT(); tset->columns = atoi(buf); }
+					else if (!strcmp(buf, "tilewidth"))  { TSET_NEXT(); tset->tw      = atoi(buf); }
+					else if (!strcmp(buf, "tileheight")) { TSET_NEXT(); tset->th      = atoi(buf); }
 					else if (!strcmp(buf, "firstgid"))     { TSET_NEXT(); }
 					else if (!strcmp(buf, "imagewidth"))   { TSET_NEXT(); }
 					else if (!strcmp(buf, "imageheight"))  { TSET_NEXT(); }
@@ -450,6 +449,8 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 					}
 				}
 			}
+
+			free(tset_json);
 		} else if (!strcmp(buf, "firstgid")) {
 			NEXT();
 			NEXT();
@@ -461,34 +462,39 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 
 static void build_mesh(struct Map* map)
 {
-	int16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*2*sizeof(int16[18]));
-	isize indc;
+	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*2*sizeof(uint16[18]));
+	// isize indc;
 	struct MapLayer* layer;
 	struct MapChunk* chunk;
 	for (int i = 0; i < map->layerc; i++) {
 		layer = &map->layers[i];
 		for (int j = 0; j < layer->chunkc; j++) {
 			chunk = &layer->chunks[j];
-			indc = 0;
+			// indc = 0;
 			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
 				if (chunk->data[k]) {
-					mesh_tile(inds, VEC3I(k % MAP_CHUNK_WIDTH,
-					                      k / MAP_CHUNK_WIDTH,
-					                      chunk->pos.z));
-					inds += 18;
-					indc += 18;
-					// DEBUG(1, "[%d] %d, %d, %d", k, k % MAP_CHUNK_WIDTH, k / MAP_CHUNK_WIDTH, chunk->z);
+					mesh_tile(&inds[18*chunk->tilec++], VEC3I(k % MAP_CHUNK_WIDTH,
+					                                          k / MAP_CHUNK_WIDTH,
+					                                          chunk->pos.z));
+					// indc += 18;
+					DEBUG(1, "[%d] %d, %d, %d", k, k % MAP_CHUNK_WIDTH, k / MAP_CHUNK_WIDTH, chunk->pos.z);
 				}
 			}
-			chunk->tilec = indc / 18;
-			chunk->ibo = ibo_new(indc*sizeof(inds[0]), inds);
+			chunk->ibo = ibo_new(18*chunk->tilec*sizeof(inds[0]), inds);
+			for (int q = 0; q < 18*chunk->tilec; q++) {
+				DEBUG_VALUE(inds[q]);
+			}
+			// DEBUG_VALUE(indc / 18);
+			// DEBUG_VALUE(indc*sizeof(inds[0]));
 		}
 	}
+
+	free(inds);
 }
 
 /* 0 = x-axis; 1 = y-axis; 2 = z-axis */
-#define VERTEX_INDEX(x, y, z, axis) ((z)*(MAP_CHUNK_WIDTH+1) + (y)*(MAP_CHUNK_HEIGHT+1) + (x) + axis*2)
-static void mesh_tile(int16* inds, Vec3i v)
+#define VERTEX_INDEX(x, y, z, axis) ((z)*VERTEX_WIDTH*VERTEX_HEIGHT + (y)*VERTEX_WIDTH + (x) + (axis)*VERTICES_PER_CHUNK)
+static void mesh_tile(uint16* inds, Vec3i v)
 {
 	/* Left side triangles */
 	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z    , 0);

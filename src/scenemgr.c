@@ -1,3 +1,4 @@
+#include "common.h"
 #include "vulkan/vulkan.h"
 
 #include "taskmgr.h"
@@ -150,11 +151,16 @@ static void register_global_keys()
 }
 
 static struct Map map;
-static void cb_game_move_up(bool kdown)    { camera_move(&game_cam, DIR_UP   , kdown); }
-static void cb_game_move_left(bool kdown)  { camera_move(&game_cam, DIR_LEFT , kdown); }
-static void cb_game_move_down(bool kdown)  { camera_move(&game_cam, DIR_DOWN , kdown); }
-static void cb_game_move_right(bool kdown) { camera_move(&game_cam, DIR_RIGHT, kdown); }
+static void cb_game_move_up(bool kdown)        { camera_move(&game_cam, DIR_UP       , kdown); }
+static void cb_game_move_left(bool kdown)      { camera_move(&game_cam, DIR_LEFT     , kdown); }
+static void cb_game_move_down(bool kdown)      { camera_move(&game_cam, DIR_DOWN     , kdown); }
+static void cb_game_move_right(bool kdown)     { camera_move(&game_cam, DIR_RIGHT    , kdown); }
+static void cb_game_move_forwards(bool kdown)  { camera_move(&game_cam, DIR_FORWARDS , kdown); }
+static void cb_game_move_backwards(bool kdown) { camera_move(&game_cam, DIR_BACKWARDS, kdown); }
 static void cb_game_cam_update() { camera_update(&game_cam); }
+static void cb_game_map_record(VkCommandBuffer cmd_buf, struct Camera *cam) {
+	map_record_commands(cmd_buf, cam, &map);
+}
 static void load_game()
 {
 	curr_cam = &game_cam;
@@ -167,10 +173,13 @@ static void load_game()
 	input_register(SDLK_a, cb_game_move_left);
 	input_register(SDLK_s, cb_game_move_down);
 	input_register(SDLK_d, cb_game_move_right);
+	input_register(SDLK_q, cb_game_move_forwards);
+	input_register(SDLK_e, cb_game_move_backwards);
 
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(models_record_commands);
+	renderer_add_to_draw_list(cb_game_map_record);
 	// renderer_add_to_draw_list(ui_record_commands);
 	// renderer_add_to_draw_list(particles_record_commands);
 	// renderer_add_to_draw_list(font_record_commands);

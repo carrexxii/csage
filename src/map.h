@@ -10,7 +10,8 @@
 
 #define MAP_CHUNK_WIDTH  16
 #define MAP_CHUNK_HEIGHT 16
-#define MAP_CHUNK_SIZE   (MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT)
+#define MAP_CHUNK_DEPTH  1
+#define MAP_CHUNK_SIZE   (MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH)
 
 typedef int MapTile;
 
@@ -39,9 +40,7 @@ struct MapLayer {
 };
 
 struct MapData {
-	Mat4x4 proj;
-	Mat4x4 view;
-	Vec3i  block_size;
+	Vec3i block_size;
 	float pad1;
 };
 
@@ -58,7 +57,7 @@ struct Map {
 
 void maps_init(VkRenderPass renderpass);
 void map_new(struct Map* map, const char* name);
-void map_record_commands(struct Map* map, struct Camera* cam, VkCommandBuffer cmd_buf);
+void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map);
 void map_free(struct Map* map);
 void maps_free(void);
 
