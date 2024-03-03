@@ -197,6 +197,9 @@ static Mat4x4 translate_make(Vec3 v)
 		.m41 = v.x,
 		.m42 = v.y,
 		.m43 = v.z,
+		.m11 = 1.0f,
+		.m22 = 1.0f,
+		.m33 = 1.0f,
 		.m44 = 1.0f,
 	};
 }

@@ -76,20 +76,23 @@ void maps_init(VkRenderPass rpass)
 			for (int x = 0; x < MAP_CHUNK_WIDTH; x++) {
 				/* For uvs: 0 = 0.0f; 1 = 0.25f; 2 = 0.5f; 3 = 0.75f; 4 = 1.0f */
 				#define V(vi) verts[VERTEX_STRIDE*i + vi]
-				V(0 ) = x    ; V(1 ) = y    ; V(2 ) = z    ; V(3 ) = 2; V(4 ) = 4;
-				V(5 ) = x + 1; V(6 ) = y    ; V(7 ) = z    ; V(8 ) = 0; V(9 ) = 3;
-				V(10) = x + 1; V(11) = y + 1; V(12) = z    ; V(13) = 0; V(14) = 1;
-				V(15) = x    ; V(16) = y + 1; V(17) = z    ; V(18) = 2; V(19) = 2;
+				/* Left */
+				V(0 ) = x    ; V(1 ) = y    ; V(2 ) = z    ; V(43) = 2; V(44) = 2;
+				V(5 ) = x + 1; V(6 ) = y    ; V(7 ) = z    ; V(48) = 4; V(49) = 1;
+				V(10) = x + 1; V(11) = y + 1; V(12) = z    ; V(53) = 4; V(54) = 3;
+				V(15) = x    ; V(16) = y + 1; V(17) = z    ; V(58) = 2; V(59) = 4;
 
-				V(20) = x    ; V(21) = y + 1; V(22) = z    ; V(23) = 2; V(24) = 2;
-				V(25) = x + 1; V(26) = y + 1; V(27) = z    ; V(28) = 0; V(29) = 1;
-				V(30) = x + 1; V(31) = y + 1; V(32) = z + 1; V(33) = 2; V(34) = 0;
-				V(35) = x    ; V(36) = y + 1; V(37) = z + 1; V(38) = 4; V(39) = 1;
+				/* Top */
+				V(20) = x    ; V(21) = y + 1; V(22) = z    ; V(23) = 0; V(24) = 1;
+				V(25) = x + 1; V(26) = y + 1; V(27) = z    ; V(28) = 2; V(29) = 2;
+				V(30) = x + 1; V(31) = y + 1; V(32) = z + 1; V(33) = 2; V(34) = 4;
+				V(35) = x    ; V(36) = y + 1; V(37) = z + 1; V(38) = 0; V(39) = 3;
 
-				V(40) = x + 1; V(41) = y + 1; V(42) = z    ; V(43) = 2; V(44) = 2;
-				V(45) = x + 1; V(46) = y    ; V(47) = z    ; V(48) = 2; V(49) = 4;
-				V(50) = x + 1; V(51) = y    ; V(52) = z + 1; V(53) = 4; V(54) = 3;
-				V(55) = x + 1; V(56) = y + 1; V(57) = z + 1; V(58) = 4; V(59) = 1;
+				/* Right */
+				V(40) = x + 1; V(41) = y + 1; V(42) = z    ; V(3 ) = 2; V(4 ) = 0;
+				V(45) = x + 1; V(46) = y    ; V(47) = z    ; V(8 ) = 4; V(9 ) = 1;
+				V(50) = x + 1; V(51) = y    ; V(52) = z + 1; V(13) = 2; V(14) = 2;
+				V(55) = x + 1; V(56) = y + 1; V(57) = z + 1; V(18) = 0; V(19) = 1;
 				#undef V
 				i++;
 			}
@@ -459,7 +462,7 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 
 static void build_mesh(struct Map* map)
 {
-	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*2*sizeof(uint16[18]));
+	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH*sizeof(uint16[18]));
 	struct MapLayer* layer;
 	struct MapChunk* chunk;
 	for (int i = 0; i < map->layerc; i++) {
@@ -482,18 +485,18 @@ static void build_mesh(struct Map* map)
 
 static void mesh_tile(uint16* inds, Vec3i v)
 {
-	#define V(vi) (vert_start + vi - 1)
-	int vert_start = ((v.z)*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT + (v.y)*MAP_CHUNK_WIDTH + v.x);
+	#define V(vi) (12*tile_index + vi)
+	int tile_index = ((v.z)*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT + (v.y)*MAP_CHUNK_WIDTH + v.x);
 	/* Top: 0-3 */
-	*inds++ = V(0); *inds++ = V(1); *inds++ = V(2);
-	*inds++ = V(0); *inds++ = V(3); *inds++ = V(2);
+	*inds++ = V(0); *inds++ = V(3); *inds++ = V(1);
+	*inds++ = V(2); *inds++ = V(1); *inds++ = V(3);
 
 	/* Left: 4-7 */
-	*inds++ = V(4); *inds++ = V(5); *inds++ = V(6);
-	*inds++ = V(6); *inds++ = V(7); *inds++ = V(4);
+	*inds++ = V(4); *inds++ = V(7); *inds++ = V(5);
+	*inds++ = V(6); *inds++ = V(5); *inds++ = V(7);
 
 	/* Right: 8-11 */
-	*inds++ = V(8 ); *inds++ = V(9 ); *inds++ = V(10);
-	*inds++ = V(10); *inds++ = V(11); *inds++ = V(8 );
+	*inds++ = V(8 ); *inds++ = V(11); *inds++ = V(9 );
+	*inds++ = V(10); *inds++ = V(9 ); *inds++ = V(11);
 	#undef V
 }

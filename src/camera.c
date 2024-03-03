@@ -21,7 +21,6 @@ struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 		.mats       = smalloc(sizeof(Mat4x4[2])),
 	};
 
-	// cam.mats->proj = cam_orthogonal(-16.0f / pos.z, 16.0f / pos.z, -9.0f / pos.z, 9.0f / pos.z, -16.0f, 1024.0f);
 	camera_set_projection(&cam, CAMERA_ORTHOGONAL);
 	cam.mats->view = translate_make(pos);
 	camera_update(&cam);
@@ -38,7 +37,7 @@ void camera_set_projection(struct Camera* cam, enum CameraType type)
 		CLAMP(cam->zoom, CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM);
 		cam->mats->proj = cam_orthogonal(-16.0f / cam->zoom, 16.0f / cam->zoom,
 		                                 -9.0f  / cam->zoom, 9.0f  / cam->zoom,
-										 -16.0f, 1024.0f);
+										 -1024.0f, 1024.0f);
 		// dist = distance(VEC3_ZERO, cam->pos);
 		// sz_x = (atan(cam->fov / 2.0f) * 2.0f) * dist;
 		// sz_y = sz_x / (cam->w / cam->h);
@@ -89,28 +88,22 @@ void camera_update(struct Camera* cam)
 		cam->zoom -= cam->zoom_speed;
 
 	if (cam->dir & DIR_LEFT) {
-		cam->pos.x    += cam->pan_speed / 2.0f;
-		cam->target.x += cam->pan_speed / 2.0f;
-
-		cam->pos.z    -= cam->pan_speed / 2.0f;
-		cam->target.z -= cam->pan_speed / 2.0f;
+		cam->pos.x += cam->pan_speed / 2.0f;
+		cam->pos.y -= cam->pan_speed / 2.0f;
 		// cam->pos = rotate(cam->pos, cam->up, -deg_to_rad(1.0f));
 	}
 	if (cam->dir & DIR_RIGHT) {
-		cam->pos.x    -= cam->pan_speed / 2.0f;
-		cam->target.x -= cam->pan_speed / 2.0f;
-
-		cam->pos.z    += cam->pan_speed / 2.0f;
-		cam->target.z += cam->pan_speed / 2.0f;
+		cam->pos.x -= cam->pan_speed / 2.0f;
+		cam->pos.y += cam->pan_speed / 2.0f;
 		// cam->pos = rotate(cam->pos, cam->up, deg_to_rad(1.0f));
 	}
 	if (cam->dir & DIR_UP) {
-		cam->pos.y    += cam->pan_speed;
-		cam->target.y += cam->pan_speed;
+		cam->pos.y += cam->pan_speed / 2.0f;
+		cam->pos.x += cam->pan_speed / 2.0f;
 	}
 	if (cam->dir & DIR_DOWN) {
-		cam->pos.y    -= cam->pan_speed;
-		cam->target.y -= cam->pan_speed;
+		cam->pos.y -= cam->pan_speed / 2.0f;
+		cam->pos.x -= cam->pan_speed / 2.0f;
 	}
 	// if (cam->dir & DIR_UP || cam->dir & DIR_DOWN) {
 	// 	Vec3 pv = sub(cam->pos, VEC3_ZERO);
@@ -121,7 +114,11 @@ void camera_update(struct Camera* cam)
 	// 		cam->pos = rotate(cam->pos, pv, deg_to_rad(1.0f));
 	// }
 
-	cam->mats->view = lookat(cam->pos, cam->target, cam->up);
+	cam->mats->view = translate_make(cam->pos);
+	cam->mats->view = rotate(cam->mats->view, VEC3_Y,  deg_to_rad(180.0f));
+	cam->mats->view = rotate(cam->mats->view, VEC3_Z, -deg_to_rad(135.0f));
+	cam->mats->view = rotate(cam->mats->view, VEC3_X,  deg_to_rad(60.0f));
+
 	if (cam->type == CAMERA_ORTHOGONAL)
 		camera_set_projection(cam, CAMERA_ORTHOGONAL);
 }
