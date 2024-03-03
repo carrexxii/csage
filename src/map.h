@@ -40,12 +40,10 @@ struct MapLayer {
 };
 
 struct MapData {
-	Vec3i block_size;
-	float pad1;
+	uint8 block_data[MAP_CHUNK_SIZE];
 };
 
 struct Map {
-	struct MapData data;
 	UBO ubo;
 	int w, h, tw, th;
 	int tilesetc;
@@ -53,6 +51,7 @@ struct Map {
 	struct Tileset   tileset;
 	struct Pipeline  pipeln;
 	struct MapLayer* layers;
+	struct MapData data;
 };
 
 void maps_init(VkRenderPass renderpass);

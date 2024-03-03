@@ -121,7 +121,7 @@ libs:
 	       -DSDL_SHARED=ON -DSDL_STATIC=OFF -DSDL_TEST_LIBRARY=OFF -DSDL_DISABLE_INSTALL=ON
 	@cmake --build $(LIB_DIR)/sdl/build
 	@cp $(LIB_DIR)/sdl/include/SDL3/* $(LIB_DIR)/include/SDL3
-	@cp $(LIB_DIR)/sdl/build/*.so $(LIB_DIR)/
+	@cp $(LIB_DIR)/sdl/build/*.so* $(LIB_DIR)/
 
 	@echo "Finished building libs"
 
@@ -132,7 +132,7 @@ restore:
 	@git submodule update --remote --merge
 	@make libs
 
-	@cmake -S $(TOOL_DIR)/bear -B $(TOOL_DIR)/bear
+	@cmake -S $(TOOL_DIR)/bear -B $(TOOL_DIR)/bear -DENABLE_UNIT_TESTS=OFF -DENABLE_FUNC_TESTS=OFF
 	@make -C $(TOOL_DIR)/bear -j8
 	@$(TOOL_DIR)/bear/stage/bin/bear                             \
 		--bear-path   $(TOOL_DIR)/bear/stage/bin/bear            \

@@ -11,7 +11,7 @@
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h);
 
-struct Texture texture_new(uint8* pxs, int w, int h)
+struct Texture texture_new(byte* pxs, int w, int h)
 {
 	DEBUG(2, "[VK] Creating new texture (%dx%d)", w, h);
 	struct Texture tex;

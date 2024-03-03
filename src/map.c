@@ -1,6 +1,4 @@
-#include "gfx/texture.h"
 #include "vulkan/vulkan.h"
-#include <vulkan/vulkan_core.h>
 #define JSMN_PARENT_LINKS
 #include "jsmn/jsmn.h"
 
@@ -11,11 +9,12 @@
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/pipeline.h"
+#include "gfx/texture.h"
 #include "gfx/model.h" // TODO: move materials to separate file
 #include "camera.h"
 #include "map.h"
 
-#define VERTEX_ELEMENTS    4
+#define VERTEX_ELEMENTS    5
 #define SIZEOF_VERTEX      sizeof(uint8[VERTEX_ELEMENTS])
 #define BUFFER_SIZE        4096
 #define MAX_CHUNKS         256
@@ -23,6 +22,7 @@
 #define VERTEX_HEIGHT      (MAP_CHUNK_HEIGHT + 1)
 #define VERTEX_DEPTH       (MAP_CHUNK_DEPTH  + 1)
 #define VERTICES_PER_CHUNK (VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH)
+#define VERTEX_STRIDE      (12*VERTEX_ELEMENTS)
 
 #define STRING_OF_JSMN_TYPE(x) (           \
 	x == JSMN_UNDEFINED? "JSMN_UNDEFINED": \
@@ -43,14 +43,18 @@ static void mesh_tile(uint16* inds, Vec3i v);
 static VkRenderPass renderpass;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
-	  .stride    = SIZEOF_VERTEX, /* xyzn */
+	  .stride    = SIZEOF_VERTEX, /* xyzuv */
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, }
 };
 static VkVertexInputAttributeDescription vert_attrs[] = {
 	{ .binding  = 0,
 	  .location = 0,
-	  .format   = VK_FORMAT_R8G8B8A8_UINT, /* xyzn */
+	  .format   = VK_FORMAT_R8G8B8_UINT, /* xyz */
 	  .offset   = 0, },
+	{ .binding  = 0,
+	  .location = 1,
+	  .format   = VK_FORMAT_R8G8_UINT, /* uv */
+	  .offset   = sizeof(uint8[3]), },
 };
 
 static UBO cam_ubo;
@@ -64,24 +68,34 @@ void maps_init(VkRenderPass rpass)
 	cam_ubo = ubo_new(sizeof(Mat4x4[2]));
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
-	intptr vert_size = 3*VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH;
-	uint8* verts = scalloc(vert_size, sizeof(uint8[VERTEX_ELEMENTS]));
-	int i;
-	for (int dir = 0; dir < 3; dir++) {
-		for (int z = 0; z < VERTEX_DEPTH; z++) {
-			for (int y = 0; y < VERTEX_HEIGHT; y++) {
-				for (int x = 0; x < VERTEX_WIDTH; x++) {
-					i = VERTEX_ELEMENTS*(z*VERTEX_WIDTH*VERTEX_HEIGHT + y*VERTEX_WIDTH + x) + VERTEX_ELEMENTS*dir*VERTICES_PER_CHUNK;
-					verts[i + 0] = x;
-					verts[i + 1] = y;
-					verts[i + 2] = z;
-					verts[i + 3] = dir;
-					// DEBUG(1, "[%d] %hhd %hhd %hhd %hhd", i, verts[i], verts[i+1], verts[i+2], verts[i+3]);
-				}
+	intptr vertc = 12*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH;
+	uint8* verts = scalloc(vertc, sizeof(uint8[VERTEX_ELEMENTS]));
+	int i = 0;
+	for (int z = 0; z < MAP_CHUNK_DEPTH; z++) {
+		for (int y = 0; y < MAP_CHUNK_HEIGHT; y++) {
+			for (int x = 0; x < MAP_CHUNK_WIDTH; x++) {
+				/* For uvs: 0 = 0.0f; 1 = 0.25f; 2 = 0.5f; 3 = 0.75f; 4 = 1.0f */
+				#define V(vi) verts[VERTEX_STRIDE*i + vi]
+				V(0 ) = x    ; V(1 ) = y    ; V(2 ) = z    ; V(3 ) = 2; V(4 ) = 4;
+				V(5 ) = x + 1; V(6 ) = y    ; V(7 ) = z    ; V(8 ) = 0; V(9 ) = 3;
+				V(10) = x + 1; V(11) = y + 1; V(12) = z    ; V(13) = 0; V(14) = 1;
+				V(15) = x    ; V(16) = y + 1; V(17) = z    ; V(18) = 2; V(19) = 2;
+
+				V(20) = x    ; V(21) = y + 1; V(22) = z    ; V(23) = 2; V(24) = 2;
+				V(25) = x + 1; V(26) = y + 1; V(27) = z    ; V(28) = 0; V(29) = 1;
+				V(30) = x + 1; V(31) = y + 1; V(32) = z + 1; V(33) = 2; V(34) = 0;
+				V(35) = x    ; V(36) = y + 1; V(37) = z + 1; V(38) = 4; V(39) = 1;
+
+				V(40) = x + 1; V(41) = y + 1; V(42) = z    ; V(43) = 2; V(44) = 2;
+				V(45) = x + 1; V(46) = y    ; V(47) = z    ; V(48) = 2; V(49) = 4;
+				V(50) = x + 1; V(51) = y    ; V(52) = z + 1; V(53) = 4; V(54) = 3;
+				V(55) = x + 1; V(56) = y + 1; V(57) = z + 1; V(58) = 4; V(59) = 1;
+				#undef V
+				i++;
 			}
 		}
 	}
-	lattice_vbo = vbo_new(vert_size*sizeof(uint8[VERTEX_ELEMENTS]), verts, false);
+	lattice_vbo = vbo_new(vertc*sizeof(uint8[VERTEX_ELEMENTS]), verts, false);
 	free(verts);
 
 	DEBUG(3, "[MAP] Map system initialized");
@@ -132,7 +146,7 @@ void map_new(struct Map* map, const char* name)
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
-		.vert_attrc  = 1,
+		.vert_attrc  = 2,
 		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(Vec3i),
@@ -152,31 +166,11 @@ cleanup:
 		free(tokens);
 		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map->w, map->h, tokenc);
 	}
-
-	// DEBUG(1, "Map: %dx%d w/%d layers and %d tilesets", map.w, map.h, map.layerc, map.tilesetc);
-	// struct Tileset  tileset;
-	// struct MapLayer layer;
-	// struct MapChunk chunk;
-	// DEBUG(1, "\tTileset \"%s\" (%dx%d tiles): \"%s\"", tileset.name, tileset.tw, tileset.th, tileset.image);
-	// for (int i = 0; i < map.layerc; i++) {
-	// 	layer = map.layers[i];
-	// 	DEBUG(1, "\tLayer \"%s\" %d (%d, %d -> %dx%d) w/%d chunks",
-	// 	      layer.name, i, layer.x, layer.y, layer.w, layer.h, layer.chunkc);
-	// 	for (int j = 0; j < layer.chunkc; j++) {
-	// 		chunk = layer.chunks[j];
-	// 		DEBUG(1, "\t\t Chunk %d (%d, %d)", j, chunk.x, chunk.y);
-	// 		fprintf(stderr, "\t\t");
-	// 		for (int k = 0; k < MAP_CHUNK_SIZE; k++)
-	// 			fprintf(stderr, "%d, ", chunk.data[k]);
-	// 		fprintf(stderr, "\n");
-	// 	}
-	// }
 }
 
 void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map)
 {
 	buffer_update(cam_ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
-	buffer_update(map->ubo, sizeof(struct MapData), &map->data, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.layout, 0, 1, map->pipeln.dsets, 0, NULL);
@@ -188,6 +182,9 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 		layer = &map->layers[i];
 		for (int j = 0; j < layer->chunkc; j++) {
 			chunk = &layer->chunks[j];
+			memcpy(map->data.block_data, chunk->data, sizeof(map->data.block_data));
+			buffer_update(map->ubo, sizeof(struct MapData), &map->data, 0);
+
 			// DEBUG(1, "[%d] Drawing %d tiles (%d)", j, chunk->tilec, chunk->tilec*18);
 			vkCmdBindIndexBuffer(cmd_buf, layer->chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, map->pipeln.layout, map->pipeln.push_stages, 0, map->pipeln.push_sz, &chunk->pos);
@@ -463,58 +460,40 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 static void build_mesh(struct Map* map)
 {
 	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*2*sizeof(uint16[18]));
-	// isize indc;
 	struct MapLayer* layer;
 	struct MapChunk* chunk;
 	for (int i = 0; i < map->layerc; i++) {
 		layer = &map->layers[i];
 		for (int j = 0; j < layer->chunkc; j++) {
 			chunk = &layer->chunks[j];
-			// indc = 0;
 			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
 				if (chunk->data[k]) {
 					mesh_tile(&inds[18*chunk->tilec++], VEC3I(k % MAP_CHUNK_WIDTH,
 					                                          k / MAP_CHUNK_WIDTH,
 					                                          chunk->pos.z));
-					// indc += 18;
-					DEBUG(1, "[%d] %d, %d, %d", k, k % MAP_CHUNK_WIDTH, k / MAP_CHUNK_WIDTH, chunk->pos.z);
 				}
 			}
 			chunk->ibo = ibo_new(18*chunk->tilec*sizeof(inds[0]), inds);
-			for (int q = 0; q < 18*chunk->tilec; q++) {
-				DEBUG_VALUE(inds[q]);
-			}
-			// DEBUG_VALUE(indc / 18);
-			// DEBUG_VALUE(indc*sizeof(inds[0]));
 		}
 	}
 
 	free(inds);
 }
 
-/* 0 = x-axis; 1 = y-axis; 2 = z-axis */
-#define VERTEX_INDEX(x, y, z, axis) ((z)*VERTEX_WIDTH*VERTEX_HEIGHT + (y)*VERTEX_WIDTH + (x) + (axis)*VERTICES_PER_CHUNK)
 static void mesh_tile(uint16* inds, Vec3i v)
 {
-	/* Left side triangles */
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z    , 0);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z + 1, 0);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z    , 0);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z    , 0);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z + 1, 0);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z + 1, 0);
-	/* Right side triangles */
-	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z    , 1);
-	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z + 1, 1);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z    , 1);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z    , 1);
-	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z + 1, 1);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z + 1, 1);
-	/* Top triangles */
-	*inds++ = VERTEX_INDEX(v.x    , v.y    , v.z, 2);
-	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z, 2);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z, 2);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y    , v.z, 2);
-	*inds++ = VERTEX_INDEX(v.x    , v.y + 1, v.z, 2);
-	*inds++ = VERTEX_INDEX(v.x + 1, v.y + 1, v.z, 2);
+	#define V(vi) (vert_start + vi - 1)
+	int vert_start = ((v.z)*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT + (v.y)*MAP_CHUNK_WIDTH + v.x);
+	/* Top: 0-3 */
+	*inds++ = V(0); *inds++ = V(1); *inds++ = V(2);
+	*inds++ = V(0); *inds++ = V(3); *inds++ = V(2);
+
+	/* Left: 4-7 */
+	*inds++ = V(4); *inds++ = V(5); *inds++ = V(6);
+	*inds++ = V(6); *inds++ = V(7); *inds++ = V(4);
+
+	/* Right: 8-11 */
+	*inds++ = V(8 ); *inds++ = V(9 ); *inds++ = V(10);
+	*inds++ = V(10); *inds++ = V(11); *inds++ = V(8 );
+	#undef V
 }

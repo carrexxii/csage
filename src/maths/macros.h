@@ -217,4 +217,9 @@ static inline noreturn void not_implemented(void) { assert(false); }
 		Vec3: vec3_distance_vec3   \
 	)(a, b)
 
+#define rotate(a, axis, angle) _Generic(a, \
+		Vec3  : rotate_vec3,               \
+		Mat4x4: rotate_mat4x4              \
+	)(a, axis, angle)
+
 #endif

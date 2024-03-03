@@ -1,4 +1,5 @@
 #include "common.h"
+#include "maths/maths.h"
 #include "vulkan/vulkan.h"
 
 #include "taskmgr.h"
@@ -39,9 +40,8 @@ static struct SceneDefer defers[MAX_DEFER_FUNCTIONS];
 void scenemgr_init()
 {
 	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(69.0f));
-	game_cam    = camera_new(VEC3(-5.0f, 2.0f, -5.0f), VEC3(0.0f, -0.1f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(45.0f));
+	game_cam    = camera_new(VEC3(1.0f, 1.0f, 1.0f), VEC3(0.0f, -0.1f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(45.0f));
 	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
-	camera_set_projection(&game_cam, CAMERA_ORTHOGONAL);
 
 	VkRenderPass renderpass = renderer_init();
 	maps_init(renderpass);
@@ -52,7 +52,7 @@ void scenemgr_init()
 	entities_init();
 
 	test_init();
-	models_init(renderpass);
+	// models_init(renderpass);
 
 	// ui_build();
 
@@ -178,13 +178,13 @@ static void load_game()
 
 
 	renderer_clear_draw_list();
-	renderer_add_to_draw_list(models_record_commands);
+	// renderer_add_to_draw_list(models_record_commands);
 	renderer_add_to_draw_list(cb_game_map_record);
 	// renderer_add_to_draw_list(ui_record_commands);
 	// renderer_add_to_draw_list(particles_record_commands);
 	// renderer_add_to_draw_list(font_record_commands);
 
-	taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
+	// taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
 	// taskmgr_add_task(ui_update);
 	// taskmgr_add_task(particles_update);
 	// taskmgr_add_task(entities_update);

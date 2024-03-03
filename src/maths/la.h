@@ -114,10 +114,11 @@ static inline Mat4x4 mat4x4_multiply_scalar(Mat4x4 a, float s) {
 }
 static inline Mat4x4 scalar_multiply_mat4x4(float s, Mat4x4 a) { return mat4x4_multiply_scalar(a, s); }
 
+static void print_mat4x4(Mat4x4 a);
 static inline Mat4x4 mat4x4_multiply_mat4x4(Mat4x4 a, Mat4x4 b)
 {
 	return (Mat4x4){
-		.m11 = a.m11*b.m11 + a.m11*b.m21 + a.m12*b.m31 + a.m14*b.m41,
+		.m11 = a.m11*b.m11 + a.m12*b.m21 + a.m13*b.m31 + a.m14*b.m41,
 		.m12 = a.m11*b.m12 + a.m12*b.m22 + a.m13*b.m32 + a.m14*b.m42,
 		.m13 = a.m11*b.m13 + a.m12*b.m23 + a.m13*b.m33 + a.m14*b.m43,
 		.m14 = a.m11*b.m14 + a.m12*b.m24 + a.m13*b.m34 + a.m14*b.m44,
@@ -200,10 +201,24 @@ static Mat4x4 translate_make(Vec3 v)
 	};
 }
 
+// https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle:~:text=Rotation%20matrix%20from%20axis%20and%20angle%5Bedit%5D
+/* Axis should be normalized */
+static Mat4x4 rotate_make(Vec3 v, float angle)
+{
+	float s = sinf(angle);
+	float c = cosf(angle);
+	return (Mat4x4){
+		c + v.x*v.x*(1.0f - c)    , v.x*v.y*(1.0f - c) - v.z*s, v.x*v.z*(1.0f - c) + v.y*s, 0.0f,
+		v.y*v.x*(1.0f - c) + v.z*s, c + v.y*v.y*(1.0f - c)    , v.y*v.z*(1.0f - c) - v.x*s, 0.0f,
+		v.z*v.x*(1.0f - c) - v.y*s, v.z*v.y*(1.0f - c) + v.x*s, c + v.z*v.z*(1.0f - c)    , 0.0f,
+		0.0f                      ,                       0.0f,                       0.0f, 1.0f,
+	};
+}
+
 /* Rodrigues' rotation formula:
  *   v = vcos(t) + (k×v)sin(t) + k(k⋅v)(1 - cos(t))
  */
-static inline Vec3 rotate(Vec3 v, float angle, Vec3 axis)
+static inline Vec3 rotate_vec3(Vec3 v, Vec3 axis, float angle)
 {
 	Vec3 k = vec3_normalized(axis);
 	float cost = cosf(angle);
@@ -213,6 +228,10 @@ static inline Vec3 rotate(Vec3 v, float angle, Vec3 axis)
 	     res = vec3_add_vec3(res, vec3_multiply_scalar(cross(k, v), sint));
 	     res = vec3_add_vec3(res, vec3_multiply_scalar(vec3_multiply_scalar(k, dot(k, v)), 1.0f - cost));
 	return res;
+}
+
+static inline Mat4x4 rotate_mat4x4(Mat4x4 a, Vec3 axis, float angle) {
+	return mat4x4_multiply_mat4x4(a, rotate_make(axis, angle));
 }
 
 static void print_mat4x4(Mat4x4 a)

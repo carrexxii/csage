@@ -13,7 +13,7 @@
         ],
         "executable": "/home/charles/Projects/csage/csage",
         "inject": false,
-        "numQueuedFrames": 0,
+        "numQueuedFrames": 1,
         "options": {
             "allowFullscreen": true,
             "allowVSync": true,
@@ -28,7 +28,7 @@
             "softMemoryLimit": 512,
             "verifyBufferAccess": false
         },
-        "queuedFrameCap": 0,
+        "queuedFrameCap": 30,
         "workingDir": ""
     }
 }

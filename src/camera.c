@@ -1,3 +1,4 @@
+#include "common.h"
 #include "config.h"
 #include "maths/la.h"
 #include "maths/maths.h"
@@ -9,15 +10,19 @@
 struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 {
 	struct Camera cam = {
-		.pos  = pos,
-		.up   = up,
-		.fov  = fov,
-		.w    = w,
-		.h    = h,
-		.mats = smalloc(sizeof(Mat4x4[2])),
+		.pos        = pos,
+		.up         = up,
+		.pan_speed  = CAMERA_DEFAULT_PAN_SPEED,
+		.zoom       = CAMERA_DEFAULT_ZOOM,
+		.zoom_speed = CAMERA_DEFAULT_ZOOM_SPEED,
+		.fov        = fov,
+		.w          = w,
+		.h          = h,
+		.mats       = smalloc(sizeof(Mat4x4[2])),
 	};
 
-	cam.mats->proj = MAT4X4_IDENTITY;
+	// cam.mats->proj = cam_orthogonal(-16.0f / pos.z, 16.0f / pos.z, -9.0f / pos.z, 9.0f / pos.z, -16.0f, 1024.0f);
+	camera_set_projection(&cam, CAMERA_ORTHOGONAL);
 	cam.mats->view = translate_make(pos);
 	camera_update(&cam);
 
@@ -30,10 +35,14 @@ void camera_set_projection(struct Camera* cam, enum CameraType type)
 	cam->type = type;
 	switch (type) {
 	case CAMERA_ORTHOGONAL:
-		dist = distance(VEC3_ZERO, cam->pos);
-		sz_x = (atan(cam->fov / 2.0f) * 2.0f) * dist;
-		sz_y = sz_x / (cam->w / cam->h);
-		cam->mats->proj = cam_orthogonal(-sz_x, sz_x, -sz_y, sz_y, -dist, 1024.0f);
+		CLAMP(cam->zoom, CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM);
+		cam->mats->proj = cam_orthogonal(-16.0f / cam->zoom, 16.0f / cam->zoom,
+		                                 -9.0f  / cam->zoom, 9.0f  / cam->zoom,
+										 -16.0f, 1024.0f);
+		// dist = distance(VEC3_ZERO, cam->pos);
+		// sz_x = (atan(cam->fov / 2.0f) * 2.0f) * dist;
+		// sz_y = sz_x / (cam->w / cam->h);
+		// cam->mats->proj = cam_orthogonal(-sz_x, sz_x, -sz_y, sz_y, -dist, 1024.0f);
 		break;
 	case CAMERA_PERSPECTIVE:
 		cam->mats->proj = cam_perspective(cam->fov, cam->w / cam->h, 0.1f, 1024.0f);
@@ -52,32 +61,67 @@ void camera_move(struct Camera* cam, enum Direction dir, bool kdown)
 		cam->dir &= ~dir;
 }
 
+void camera_rotate(struct Camera* cam, enum Axis axis, float angle)
+{
+	switch (axis) {
+	case AXIS_X: cam->pos = rotate(cam->pos, VEC3_X, angle); break;
+	case AXIS_Y: cam->pos = rotate(cam->pos, VEC3_Y, angle); break;
+	case AXIS_Z: cam->pos = rotate(cam->pos, VEC3_Z, angle); break;
+	default: ERROR("[CAM] Invalid axis value: %d", axis);
+	}
+}
+
 void camera_update(struct Camera* cam)
 {
 	Vec3 dir = { 0 };
 	if (cam->dir & DIR_FORWARDS || cam->dir & DIR_BACKWARDS) {
-		dir = normalized(sub(cam->pos, VEC3_ZERO));
-		if (cam->dir & DIR_FORWARDS)
-			dir = multiply(dir, -0.1f);
-		else
-			dir = multiply(dir, 0.1f);
+		// dir = normalized(sub(cam->pos, VEC3_ZERO));
+		// if (cam->dir & DIR_FORWARDS)
+		// 	dir = multiply(dir, -0.1f);
+		// else
+		// 	dir = multiply(dir, 0.1f);
 	}
 	cam->pos = add(cam->pos, dir);
 
-	if (cam->dir & DIR_LEFT)
-		cam->pos = rotate(cam->pos, -deg_to_rad(1.0f), cam->up);
-	if (cam->dir & DIR_RIGHT)
-		cam->pos = rotate(cam->pos, deg_to_rad(1.0f), cam->up);
-	if (cam->dir & DIR_UP || cam->dir & DIR_DOWN) {
-		Vec3 pv = sub(cam->pos, VEC3_ZERO);
-		     pv = cross(cam->up, pv);
-		if (cam->dir & DIR_DOWN)
-			cam->pos = rotate(cam->pos, -deg_to_rad(1.0f), pv);
-		else
-			cam->pos = rotate(cam->pos, deg_to_rad(1.0f), pv);
-	}
+	if (cam->dir & DIR_FORWARDS)
+		cam->zoom += cam->zoom_speed;
+	if (cam->dir & DIR_BACKWARDS)
+		cam->zoom -= cam->zoom_speed;
 
-	cam->mats->view = lookat(cam->pos, VEC3_ZERO, cam->up);
+	if (cam->dir & DIR_LEFT) {
+		cam->pos.x    += cam->pan_speed / 2.0f;
+		cam->target.x += cam->pan_speed / 2.0f;
+
+		cam->pos.z    -= cam->pan_speed / 2.0f;
+		cam->target.z -= cam->pan_speed / 2.0f;
+		// cam->pos = rotate(cam->pos, cam->up, -deg_to_rad(1.0f));
+	}
+	if (cam->dir & DIR_RIGHT) {
+		cam->pos.x    -= cam->pan_speed / 2.0f;
+		cam->target.x -= cam->pan_speed / 2.0f;
+
+		cam->pos.z    += cam->pan_speed / 2.0f;
+		cam->target.z += cam->pan_speed / 2.0f;
+		// cam->pos = rotate(cam->pos, cam->up, deg_to_rad(1.0f));
+	}
+	if (cam->dir & DIR_UP) {
+		cam->pos.y    += cam->pan_speed;
+		cam->target.y += cam->pan_speed;
+	}
+	if (cam->dir & DIR_DOWN) {
+		cam->pos.y    -= cam->pan_speed;
+		cam->target.y -= cam->pan_speed;
+	}
+	// if (cam->dir & DIR_UP || cam->dir & DIR_DOWN) {
+	// 	Vec3 pv = sub(cam->pos, VEC3_ZERO);
+	// 	     pv = cross(cam->up, pv);
+	// 	if (cam->dir & DIR_DOWN)
+	// 		cam->pos = rotate(cam->pos, pv, -deg_to_rad(1.0f));
+	// 	else
+	// 		cam->pos = rotate(cam->pos, pv, deg_to_rad(1.0f));
+	// }
+
+	cam->mats->view = lookat(cam->pos, cam->target, cam->up);
 	if (cam->type == CAMERA_ORTHOGONAL)
 		camera_set_projection(cam, CAMERA_ORTHOGONAL);
 }
