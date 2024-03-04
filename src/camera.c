@@ -125,11 +125,10 @@ void camera_update(struct Camera* cam)
 
 struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y)
 {
-	Mat4x4 vp = multiply(cam->mats->proj, cam->mats->view);
+	Mat4x4 cam_vp = multiply(cam->mats->proj, cam->mats->view);
 
-	Vec3 p1, p2;
-	// glm_unproject((vec3){ x, y, 0.0 }, vp, (float[]){ 0.0, 0.0, global_config.winw, global_config.winh }, p1);
-	// glm_unproject((vec3){ x, y, 1.0 }, vp, (float[]){ 0.0, 0.0, global_config.winw, global_config.winh }, p2);
+	Vec3 p1 = unproject(VEC3(x, y, 0.0), cam_vp, RECT(0.0, 0.0, global_config.winw, global_config.winh));
+	Vec3 p2 = unproject(VEC3(x, y, 1.0), cam_vp, RECT(0.0, 0.0, global_config.winw, global_config.winh));
 
 	return ray_from_points(p1, p2);
 }

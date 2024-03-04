@@ -12,29 +12,6 @@
 
 static EntityID ent;
 
-static bool path_to_mouse(int type, bool kdown, int x, int y)
-{
-	(void)type;
-	(void)kdown;
-	// vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
-
-	// struct Path path = {.start = (ivec3s){ 0, 0, 0 }, .end = (ivec3s){ screen.x, screen.y, 0 }};
-	// path_new(&path);
-
-	return false;
-}
-
-static bool move_to_mouse(int type, bool kdown, int x, int y)
-{
-	// (void)type;
-	// if (kdown) {
-		// vec2s screen = camera_get_map_point(camera_get_mouse_ray(x, y));
-		// entity_path_to(e, (ivec3s){ screen.x, screen.y, 0 });
-	// }
-
-	return true;
-}
-
 static void test_scratch()
 {
 	// var A=point(0,.8,0), B=point(.8,-1,-.8), C=point(-.8,-1,-.8), D=point(.8,-1,.8), E=point(-.8,-1,.8);

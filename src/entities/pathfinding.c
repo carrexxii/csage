@@ -1,5 +1,6 @@
-#include "maths/maths.h"
+#include "maths/types.h"
 #include "util/minheap.h"
+#include "map.h"
 #include "pathfinding.h"
 
 #define HEAP_STARTING_DEPTH    10
@@ -21,7 +22,7 @@ static Vec3i directions[] = {
 	{ -1, 1, 0 }, {  1, -1, 0 },
 };
 
-void path_new(struct Path* path)
+void path_new(struct Path* path, struct Map* map)
 {
 	Vec3i start = path->start;
 	Vec3i end   = path->end;
@@ -50,7 +51,7 @@ void path_new(struct Path* path)
 	};
 	minheap_push(&open_nodes, 0, &current_node);
 
-	struct Voxel*    vxl;
+	MapTile tile;
 	struct PathNode  new_node;
 	struct PathNode* old_node;
 	do {
@@ -64,12 +65,13 @@ void path_new(struct Path* path)
 									 current_node.pos.z + directions[i].z);
 
 				/* Skip if the cell is either map-blocked or already in closed_nodes */
-				// vxl = map_get_voxel(new_node.pos);
-				// if (!vxl || !vxl->data)
-				// 	goto skip_node;
-				// for (int j = 0; j < closed_nodec; j++)
-				// 	if (equal(closed_nodes[j].pos, new_node.pos))
-				// 		goto skip_node;
+				// TODO: update this for tilemap
+				tile = map_get_tile(map, new_node.pos);
+				if (!tile)
+					goto skip_node;
+				for (int j = 0; j < closed_nodec; j++)
+					if (equal(closed_nodes[j].pos, new_node.pos))
+						goto skip_node;
 
 				new_node.g = current_node.h + (i <= 3? 10: 14); /* First 4 directions are orthogonal, last 4 are diagonal */
 				new_node.h = dist(new_node.pos, end);

@@ -62,6 +62,17 @@ String string_copy(String src) {
 	return string_new(src.data, src.len);
 }
 
+int string_blit_cstr(char* restrict dst, char* restrict src, isize max_len)
+{
+	isize charc = snprintf(dst, max_len, "%s", src);
+	if (charc >= max_len) {
+		ERROR("`src` contains more characters than allowed by `max_len`: %ld >= %ld", charc, max_len);
+		return -1;
+	}
+
+	return 0;
+}
+
 int string_contains(String str, char c)
 {
 	for (int i = 0; i < str.len; i++)
@@ -107,5 +118,5 @@ void file_extension(char* restrict file, char* restrict name, char* restrict ext
 	} else {
 		while (*++file != '.');
 	}
-	while (*ext++ = *++file);
+	while ((*ext++ = *++file));
 }

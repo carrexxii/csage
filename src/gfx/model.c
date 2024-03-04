@@ -537,39 +537,39 @@ static void load_meshes(struct Model* model, cgltf_data* data)
 				}
 
 				/*** Apply the transform to the mesh ***/
-				cgltf_node* node;
-				Mat4x4 trans;
-				float* vts; /* vts = vertex type that the transform will be applied to */
-				if (prim->attributes[a].type == cgltf_attribute_type_position)
-					vts = verts;
-				else if (prim->attributes[a].type == cgltf_attribute_type_normal)
-					vts = normals;
-				else
-					goto skip_transform;
+				// cgltf_node* node;
+				// Mat4x4 trans;
+				// float* vts; /* vts = vertex type that the transform will be applied to */
+				// if (prim->attributes[a].type == cgltf_attribute_type_position)
+				// 	vts = verts;
+				// else if (prim->attributes[a].type == cgltf_attribute_type_normal)
+				// 	vts = normals;
+				// else
+				// 	goto skip_transform;
 
-				for (int n = 0; n < (int)data->nodes_count; n++) {
-					node = &data->nodes[n];
-					cgltf_node_transform_world(node, trans.arr);
-					// DEBUG(1, "rot: %d, trans: %d, scale: %d", node->has_rotation, node->has_translation, node->has_scale);
-					// DEBUG(1, "rotation: %.2f, %.2f, %.2f, %.2f", node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]);
-					// DEBUG(1, "translation: %.2f, %.2f, %.2f", node->translation[0], node->translation[1], node->translation[2]);
-					// DEBUG(1, "scale: %.2f, %.2f, %.2f", node->scale[0], node->scale[1], node->scale[2]);
-					// DEBUG(1, "Transform matrix for %p (current mesh: %p):", node->mesh, mesh);
-					// for (int j = 0; j < 16; j++)
-					// 	printf("%6.2f%s", trans[j/4][j%4], (j + 1) % 4 == 0? "\n": ", ");
+				// for (int n = 0; n < (int)data->nodes_count; n++) {
+				// 	node = &data->nodes[n];
+				// 	cgltf_node_transform_world(node, trans.arr);
+				// 	// DEBUG(1, "rot: %d, trans: %d, scale: %d", node->has_rotation, node->has_translation, node->has_scale);
+				// 	// DEBUG(1, "rotation: %.2f, %.2f, %.2f, %.2f", node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]);
+				// 	// DEBUG(1, "translation: %.2f, %.2f, %.2f", node->translation[0], node->translation[1], node->translation[2]);
+				// 	// DEBUG(1, "scale: %.2f, %.2f, %.2f", node->scale[0], node->scale[1], node->scale[2]);
+				// 	// DEBUG(1, "Transform matrix for %p (current mesh: %p):", node->mesh, mesh);
+				// 	// for (int j = 0; j < 16; j++)
+				// 	// 	printf("%6.2f%s", trans[j/4][j%4], (j + 1) % 4 == 0? "\n": ", ");
 
-					if (node->mesh == mesh) {
-						// Vec3 v;
-						// for (int j = 0; j < vert_max; j++) {
-						// 	v.x = vts[3*j + 0];
-						// 	v.y = vts[3*j + 1];
-						// 	v.z = vts[3*j + 2];
-						// 	// glm_mat4_mulv3(trans, v, 1.0f, &vts[3*j]);
-						// }
-					}
-				}
+				// 	if (node->mesh == mesh) {
+				// 		// Vec3 v;
+				// 		// for (int j = 0; j < vert_max; j++) {
+				// 			// v.x = vts[3*j + 0];
+				// 			// v.y = vts[3*j + 1];
+				// 			// v.z = vts[3*j + 2];
+				// 			// glm_mat4_mulv3(trans, v, 1.0f, &vts[3*j]);
+				// 		// }
+				// 	}
+				// }
 
-			skip_transform:
+			// skip_transform:
 				switch(prim->attributes[a].type) {
 				case cgltf_attribute_type_position:
 					mdls->meshes[m].vbos[0] = vbo_new(attr->count*sizeof(float[3]), verts, false);

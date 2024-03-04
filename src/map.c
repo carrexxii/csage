@@ -106,7 +106,7 @@ void maps_init(VkRenderPass rpass)
 
 void map_new(struct Map* map, const char* name)
 {
-	char path[256];
+	char path[PATH_BUFFER_SIZE];
 	sprintf(path, MAP_PATH "%s.tmj", name);
 	FILE* file = file_open(path, "r");
 
@@ -169,6 +169,13 @@ cleanup:
 		free(tokens);
 		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map->w, map->h, tokenc);
 	}
+}
+
+noreturn MapTile map_get_tile(struct Map* map, Vec3i pos)
+{
+	(void)map;
+	(void)pos;
+	assert(false);
 }
 
 static struct MapData map_data;
@@ -394,12 +401,13 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 	int len = token.size;
 
 	NEXT();
-	char path[256];
+	char path[PATH_BUFFER_SIZE];
 	jsmntok_t tset_tokens[256];
 	for (int j = 0; j < len; j++) {
 		if (!strcmp(buf, "source")) {
 			NEXT();
-			sprintf(path, MAP_PATH "%s", buf);
+			if (string_blit_cstr(path, buf, PATH_BUFFER_SIZE))
+				ERROR("[MAP] Path \"%s\" is greater than PATH_BUFFER_SIZE (%d)", buf, PATH_BUFFER_SIZE);
 			FILE* file = file_open(path, "r");
 
 			isize tset_len  = file_size(file);
@@ -428,7 +436,8 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 					if (!strcmp(buf, "image")) {
 						TSET_NEXT();
 						string_remove((String){ .data = buf, .len = strlen(buf) }, '\\');
-						sprintf(path, MAP_PATH "%s", buf);
+						if (string_blit_cstr(path, buf, PATH_BUFFER_SIZE))
+							ERROR("[MAP] Path \"%s\" is greater than PATH_BUFFER_SIZE (%d)", buf, PATH_BUFFER_SIZE);
 						strcpy(tset->image, path);
 						tset->texture = texture_new_from_image(path);
 					}

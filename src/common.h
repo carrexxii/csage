@@ -33,6 +33,8 @@
 
 #include "config.h"
 
+#define PATH_BUFFER_SIZE 256
+
 #define FPS              50.0
 #define DT               (1.0/FPS)
 #define DT_MS            (DT*1000.0)

@@ -1,7 +1,8 @@
 #ifndef ENTITIES_PATHFINDING_H
 #define ENTITIES_PATHFINDING_H
 
-#include "maths/maths.h"
+#include "maths/types.h"
+#include "map.h"
 
 #define PATHFINDING_MAX_LOOKAHEAD 64
 
@@ -15,6 +16,6 @@ struct Path {
 	bool complete;
 };
 
-void path_new(struct Path* path);
+void path_new(struct Path* path, struct Map* map);
 
 #endif

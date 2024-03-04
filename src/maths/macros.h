@@ -35,47 +35,47 @@ static inline noreturn void not_implemented(void) { assert(false); }
 	)(a)
 
 /*** add: a, b -> a + b ***/
-#define add(a, b) _Generic((a),                           \
-		float: _Generic((b), float : scalar_add_scalar,   \
-		                   Vec   : scalar_add_vec,      \
-		                   Vec2  : scalar_add_vec2,     \
-		                   Vec3  : scalar_add_vec3,     \
-		                   Vec4  : scalar_add_vec4,     \
-		                   Vec2i : scalar_add_vec2i,    \
-		                   Vec3i : scalar_add_vec3i,    \
-		                   Vec4i : scalar_add_vec4i,    \
-		                   Bivec : scalar_add_bivec,    \
-		                   Trivec: scalar_add_trivec,   \
-		                   PsS   : scalar_add_pss),     \
-		Vec2: _Generic((b), float: vec2_add_scalar,       \
-		                  Vec3 : not_implemented,         \
-		                  Vec2 : vec2_add_vec2),        \
-		Vec3: _Generic((b), float: vec3_add_scalar,       \
-		                  Vec3 : vec3_add_vec3),        \
-		Vec4: _Generic((b), float: vec4_add_scalar,       \
-		                  Vec3 : not_implemented,         \
-		                  Vec4 : vec4_add_vec4),        \
-		Vec2i: _Generic((b), float: vec2i_add_scalar,     \
-		                  Vec3 : not_implemented,         \
-		                   Vec2i: vec2i_add_vec2i),     \
-		Vec3i: _Generic((b), float: vec3i_add_scalar,     \
-		                  Vec3 : not_implemented,         \
-		                   Vec3i: vec3i_add_vec3i),     \
-		Vec4i: _Generic((b), float: vec4i_add_scalar,     \
-		                  Vec3 : not_implemented,         \
-		                   Vec4i: vec4i_add_vec4i),     \
-		Vec: _Generic((b), float: vec_add_scalar,         \
-		                  Vec3 : not_implemented,         \
-		                 Vec  : vec_add_vec),           \
-		Bivec: _Generic((b), float: bivec_add_scalar,     \
-		                  Vec3 : not_implemented,         \
-		                   Bivec: bivec_add_bivec),     \
-		Trivec: _Generic((b), float : trivec_add_scalar,  \
-		                  Vec3 : not_implemented,         \
-		                    Trivec: trivec_add_trivec), \
-		PsS: _Generic((b), float: pss_add_scalar,         \
-		                  Vec3 : not_implemented,         \
-		                 PsS  : pss_add_pss)            \
+#define add(a, b) _Generic((a),                          \
+		float: _Generic((b), float : scalar_add_scalar,  \
+		                   Vec   : scalar_add_vec,       \
+		                   Vec2  : scalar_add_vec2,      \
+		                   Vec3  : scalar_add_vec3,      \
+		                   Vec4  : scalar_add_vec4,      \
+		                   Vec2i : scalar_add_vec2i,     \
+		                   Vec3i : scalar_add_vec3i,     \
+		                   Vec4i : scalar_add_vec4i,     \
+		                   Bivec : scalar_add_bivec,     \
+		                   Trivec: scalar_add_trivec,    \
+		                   PsS   : scalar_add_pss),      \
+		Vec2: _Generic((b), float: vec2_add_scalar,      \
+		                  Vec3 : not_implemented,        \
+		                  Vec2 : vec2_add_vec2),         \
+		Vec3: _Generic((b), float: vec3_add_scalar,      \
+		                  Vec3 : vec3_add_vec3),         \
+		Vec4: _Generic((b), float: vec4_add_scalar,      \
+		                  Vec3 : not_implemented,        \
+		                  Vec4 : vec4_add_vec4),         \
+		Vec2i: _Generic((b), float: vec2i_add_scalar,    \
+		                  Vec3 : not_implemented,        \
+		                   Vec2i: vec2i_add_vec2i),      \
+		Vec3i: _Generic((b), float: vec3i_add_scalar,    \
+		                  Vec3 : not_implemented,        \
+		                   Vec3i: vec3i_add_vec3i),      \
+		Vec4i: _Generic((b), float: vec4i_add_scalar,    \
+		                  Vec3 : not_implemented,        \
+		                   Vec4i: vec4i_add_vec4i),      \
+		Vec: _Generic((b), float: vec_add_scalar,        \
+		                  Vec3 : not_implemented,        \
+		                 Vec  : vec_add_vec),            \
+		Bivec: _Generic((b), float: bivec_add_scalar,    \
+		                  Vec3 : not_implemented,        \
+		                   Bivec: bivec_add_bivec),      \
+		Trivec: _Generic((b), float : trivec_add_scalar, \
+		                  Vec3 : not_implemented,        \
+		                    Trivec: trivec_add_trivec),  \
+		PsS: _Generic((b), float: pss_add_scalar,        \
+		                  Vec3 : not_implemented,        \
+		                 PsS  : pss_add_pss)             \
 	)((a), (b))
 
 #define sub(a, b) _Generic(a, \
@@ -85,69 +85,70 @@ static inline noreturn void not_implemented(void) { assert(false); }
 	)(a, b)
 
 /*** multiply: a, b -> a * b ***/
-#define multiply(a, b) _Generic(a,                           \
-		float: _Generic(b, float: scalar_multiply_scalar,  \
-		                    Vec2  : scalar_multiply_vec2,    \
-		                    Vec3  : scalar_multiply_vec3,    \
-		                    Vec4  : scalar_multiply_vec4,    \
-		                    Mat4x4: scalar_multiply_mat4x4,  \
-		                    Vec   : scalar_multiply_vec,     \
-		                    Bivec : scalar_multiply_bivec,   \
-		                    Trivec: scalar_multiply_trivec,  \
-		                    PsS   : scalar_multiply_pss),    \
-		Vec2: _Generic(b, float : vec2_multiply_scalar,    \
-		                  Mat4x4: not_implemented),     \
-		Vec3: _Generic(b, float: vec3_multiply_scalar,    \
-		                  Mat4x4: not_implemented),     \
-		Vec4: _Generic(b, float: vec4_multiply_scalar,    \
-		                  Mat4x4: not_implemented),     \
-		Mat4x4: _Generic((b), float : mat4x4_multiply_scalar,    \
+#define multiply(a, b) _Generic(a,                             \
+		float: _Generic(b, float: scalar_multiply_scalar,      \
+		                    Vec2  : scalar_multiply_vec2,      \
+		                    Vec3  : scalar_multiply_vec3,      \
+		                    Vec4  : scalar_multiply_vec4,      \
+		                    Mat4x4: scalar_multiply_mat4x4,    \
+		                    Vec   : scalar_multiply_vec,       \
+		                    Bivec : scalar_multiply_bivec,     \
+		                    Trivec: scalar_multiply_trivec,    \
+		                    PsS   : scalar_multiply_pss),      \
+		Vec2: _Generic(b, float : vec2_multiply_scalar,        \
+		                  Mat4x4: not_implemented),            \
+		Vec3: _Generic(b, float: vec3_multiply_scalar,         \
+		                  Mat4x4: not_implemented),            \
+		Vec4: _Generic(b, float: vec4_multiply_scalar,         \
+		                  Mat4x4: vec4_multiply_mat4x4),       \
+		Mat4x4: _Generic((b), float : mat4x4_multiply_scalar,  \
+		                      Vec4  : mat4x4_multiply_vec4,    \
 		                      Mat4x4: mat4x4_multiply_mat4x4), \
-		Vec: _Generic(b, float: vec_multiply_scalar,        \
-		                 Vec   : vec_multiply_vec,    \
-		                  Mat4x4: not_implemented),          \
-		Bivec: _Generic(b, float: bivec_multiply_scalar,    \
-		                   Bivec : bivec_multiply_bivec,    \
-		                  Mat4x4: not_implemented),    \
-		Trivec: _Generic(b, float: trivec_multiply_scalar,  \
+		Vec: _Generic(b, float: vec_multiply_scalar,           \
+		                 Vec   : vec_multiply_vec,             \
+		                  Mat4x4: not_implemented),            \
+		Bivec: _Generic(b, float: bivec_multiply_scalar,       \
+		                   Bivec : bivec_multiply_bivec,       \
+		                  Mat4x4: not_implemented),            \
+		Trivec: _Generic(b, float: trivec_multiply_scalar,     \
 		                    Trivec: trivec_multiply_trivec,    \
-		                  Mat4x4: not_implemented), \
-		PsS: _Generic(b, float: pss_multiply_scalar,        \
-		                 PsS   : pss_multiply_pss,    \
-		                  Mat4x4: not_implemented)           \
+		                  Mat4x4: not_implemented),            \
+		PsS: _Generic(b, float: pss_multiply_scalar,           \
+		                 PsS   : pss_multiply_pss,             \
+		                  Mat4x4: not_implemented)             \
 	)(a, b)
 
 /*** wedge: a, b -> a ∧ b ***/
-#define wedge(a, b) _Generic(a,                        \
-		float: _Generic(b, float: scalar_wedge_scalar, \
+#define wedge(a, b) _Generic(a,                           \
+		float: _Generic(b, float: scalar_wedge_scalar,    \
 		                     Vec   : scalar_wedge_vec,    \
 		                     Bivec : scalar_wedge_bivec,  \
 		                     Trivec: scalar_wedge_trivec, \
 		                     PsS   : scalar_wedge_pss),   \
-		Vec: _Generic(b, float: vec_wedge_scalar,       \
+		Vec: _Generic(b, float: vec_wedge_scalar,         \
 		                  Vec   : vec_wedge_vec,          \
 		                  Bivec : vec_wedge_bivec,        \
 		                  Trivec: vec_wedge_trivec),      \
-		Bivec: _Generic(b, float: bivec_wedge_scalar,   \
+		Bivec: _Generic(b, float: bivec_wedge_scalar,     \
 		                    Vec   : bivec_wedge_vec,      \
 		                    Bivec : bivec_wedge_bivec)    \
 	)(a, b)
 
 /* inner: a, b -> a⋅b */
 #define inner(a, b) _Generic(a,                           \
-		float: _Generic(b, float: scalar_inner_scalar,  \
+		float: _Generic(b, float: scalar_inner_scalar,    \
 		                    Vec   : scalar_inner_vec,     \
 		                    Bivec : scalar_inner_bivec,   \
 		                    Trivec: scalar_inner_trivec), \
-		Vec: _Generic(b, float: vec_inner_scalar,        \
+		Vec: _Generic(b, float: vec_inner_scalar,         \
 		                 Vec   : vec_inner_vec,           \
 		                 Bivec : vec_inner_bivec,         \
 		                 Trivec: vec_inner_trivec),       \
-		Bivec: _Generic(b, float: bivec_inner_scalar,    \
+		Bivec: _Generic(b, float: bivec_inner_scalar,     \
 		                   Vec   : bivec_inner_vec,       \
 		                   Bivec : bivec_inner_bivec,     \
 		                   Trivec: bivec_inner_trivec),   \
-		Trivec: _Generic(b, float: trivec_inner_scalar,  \
+		Trivec: _Generic(b, float: trivec_inner_scalar,   \
 		                    Vec   : trivec_inner_vec,     \
 		                    Bivec : trivec_inner_bivec,   \
 		                    Trivec: trivec_inner_trivec)  \
@@ -156,7 +157,7 @@ static inline noreturn void not_implemented(void) { assert(false); }
 /*** norm2: a -> ||a||^2 ***/
 /* ||a||^2 = <(a)(~A)>0 */
 #define norm2(a) _Generic(a,         \
-		float: scalar_inner_scalar, \
+		float: scalar_inner_scalar,  \
 		Vec   : vec_inner_vec,       \
 		Vec3  : vec3_inner_vec3,     \
 		Bivec : bivec_inner_bivec,   \
@@ -192,6 +193,12 @@ static inline noreturn void not_implemented(void) { assert(false); }
 		Trivec: _Generic(b, Trivec: trivec_join_trivec)  \
 	)(a, b)
 
+#define is_zero(a) _Generic(a, \
+		Vec2: vec2_is_zero,    \
+		Vec3: vec3_is_zero,    \
+		Vec4: vec4_is_zero     \
+	)(a)
+
 #define print(a) _Generic(a,                                           \
 		Vec2  : print_vec2  , Vec3 : print_vec3 , Vec4  : print_vec4  , \
 		Mat4x4: print_mat4x4,                                            \
@@ -221,5 +228,9 @@ static inline noreturn void not_implemented(void) { assert(false); }
 		Vec3  : rotate_vec3,               \
 		Mat4x4: rotate_mat4x4              \
 	)(a, axis, angle)
+
+#define inverse(a) _Generic(a, \
+		Mat4x4: mat4x4_inverse \
+	)(a)
 
 #endif

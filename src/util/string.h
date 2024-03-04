@@ -22,6 +22,7 @@ String  string_new(char* src, isize len);
 String* string_new_cstr(char* src, isize len);
 String  string_new_split(char* src, char sep, int index);
 String  string_copy(String src);
+int     string_blit_cstr(char* restrict dst, char* restrict src, isize max_len);
 int     string_contains(String str, char c);
 int     string_remove(String str, char c);
 void    string_free(String str);

@@ -31,11 +31,11 @@
 
 /* -------------------------------------------------------------------- */
 
-#define is_zero(a, b) (fabsf(a - b) <= FLT_EPSILON)
-static inline bool vec2_equal_vec2(Vec2 v, Vec2 u) { return is_zero(v.x, u.x) && is_zero(v.y, u.y);                                           }
-static inline bool vec3_equal_vec3(Vec3 v, Vec3 u) { return is_zero(v.x, u.x) && is_zero(v.y, u.y) && is_zero(v.z, u.z);                      }
-static inline bool vec4_equal_vec4(Vec4 v, Vec4 u) { return is_zero(v.x, u.x) && is_zero(v.y, u.y) && is_zero(v.z, u.z) && is_zero(v.w, u.w); }
-#undef is_zero
+#define IZ(a, b) (fabsf(a - b) <= FLT_EPSILON)
+static inline bool vec2_equal_vec2(Vec2 v, Vec2 u) { return IZ(v.x, u.x) && IZ(v.y, u.y);                                 }
+static inline bool vec3_equal_vec3(Vec3 v, Vec3 u) { return IZ(v.x, u.x) && IZ(v.y, u.y) && IZ(v.z, u.z);                 }
+static inline bool vec4_equal_vec4(Vec4 v, Vec4 u) { return IZ(v.x, u.x) && IZ(v.y, u.y) && IZ(v.z, u.z) && IZ(v.w, u.w); }
+#undef IZ
 static inline bool vec2i_equal_vec2i(Vec2i v, Vec2i u) { return !(v.x - u.x) && !(v.y - u.y);                                 }
 static inline bool vec3i_equal_vec3i(Vec3i v, Vec3i u) { return !(v.x - u.x) && !(v.y - u.y) && !(v.z - u.z);                 }
 static inline bool vec4i_equal_vec4i(Vec4i v, Vec4i u) { return !(v.x - u.x) && !(v.y - u.y) && !(v.z - u.z) && !(v.w - u.w); }
@@ -105,6 +105,12 @@ static inline Vec3 cross(Vec3 v, Vec3 u) {
 	};
 }
 
+#define IZ(a) (fabs(a) <= FLT_EPSILON)
+static inline bool vec2_is_zero(Vec2 v) { return IZ(v.x) && IZ(v.y);                       }
+static inline bool vec3_is_zero(Vec3 v) { return IZ(v.x) && IZ(v.y) && IZ(v.z);            }
+static inline bool vec4_is_zero(Vec4 v) { return IZ(v.x) && IZ(v.y) && IZ(v.z) && IZ(v.w); }
+#undef IZ
+
 /* -------------------------------------------------------------------- */
 
 static inline Mat4x4 mat4x4_multiply_scalar(Mat4x4 a, float s) {
@@ -114,7 +120,6 @@ static inline Mat4x4 mat4x4_multiply_scalar(Mat4x4 a, float s) {
 }
 static inline Mat4x4 scalar_multiply_mat4x4(float s, Mat4x4 a) { return mat4x4_multiply_scalar(a, s); }
 
-static void print_mat4x4(Mat4x4 a);
 static inline Mat4x4 mat4x4_multiply_mat4x4(Mat4x4 a, Mat4x4 b)
 {
 	return (Mat4x4){
@@ -136,6 +141,17 @@ static inline Mat4x4 mat4x4_multiply_mat4x4(Mat4x4 a, Mat4x4 b)
 		.m44 = a.m41*b.m14 + a.m42*b.m24 + a.m43*b.m34 + a.m44*b.m44,
 	};
 }
+
+static inline Vec4 mat4x4_multiply_vec4(Mat4x4 a, Vec4 v)
+{
+	return (Vec4){
+		a.m11*v.x + a.m21*v.y + a.m31*v.z + a.m41*v.w,
+		a.m12*v.x + a.m22*v.y + a.m32*v.z + a.m42*v.w,
+		a.m13*v.x + a.m23*v.y + a.m33*v.z + a.m43*v.w,
+		a.m14*v.x + a.m24*v.y + a.m34*v.z + a.m44*v.w,
+	};
+}
+static inline Vec4 vec4_multiply_mat4x4(Vec4 v, Mat4x4 a) { return mat4x4_multiply_vec4(a, v); }
 
 /* -------------------------------------------------------------------- */
 
@@ -243,6 +259,67 @@ static void print_mat4x4(Mat4x4 a)
 	fprintf(stderr, "        %5.2f, %5.2f, %5.2f, %5.2f\n", a.m21, a.m22, a.m23, a.m24);
 	fprintf(stderr, "        %5.2f, %5.2f, %5.2f, %5.2f\n", a.m31, a.m32, a.m33, a.m34);
 	fprintf(stderr, "        %5.2f, %5.2f, %5.2f, %5.2f\n", a.m41, a.m42, a.m43, a.m44);
+}
+
+/* https://stackoverflow.com/a/44446912 */
+static Mat4x4 mat4x4_inverse(Mat4x4 a)
+{
+	float a2323 = a.m33*a.m44 - a.m34*a.m43;
+	float a1323 = a.m32*a.m44 - a.m34*a.m42;
+	float a1223 = a.m32*a.m43 - a.m33*a.m42;
+	float a0323 = a.m31*a.m44 - a.m34*a.m41;
+	float a0223 = a.m31*a.m43 - a.m33*a.m41;
+	float a0123 = a.m31*a.m42 - a.m32*a.m41;
+	float a2313 = a.m23*a.m44 - a.m24*a.m43;
+	float a1313 = a.m22*a.m44 - a.m24*a.m42;
+	float a1213 = a.m22*a.m43 - a.m23*a.m42;
+	float a2312 = a.m23*a.m34 - a.m24*a.m33;
+	float a1312 = a.m22*a.m34 - a.m24*a.m32;
+	float a1212 = a.m22*a.m33 - a.m23*a.m32;
+	float a0313 = a.m21*a.m44 - a.m24*a.m41;
+	float a0213 = a.m21*a.m43 - a.m23*a.m41;
+	float a0312 = a.m21*a.m34 - a.m24*a.m31;
+	float a0212 = a.m21*a.m33 - a.m23*a.m31;
+	float a0113 = a.m21*a.m42 - a.m22*a.m41;
+	float a0112 = a.m21*a.m32 - a.m22*a.m31;
+
+	float det = a.m11 * (a.m22*a2323 - a.m23*a1323 + a.m24*a1223) -
+	            a.m12 * (a.m21*a2323 - a.m23*a0323 + a.m24*a0223) +
+	            a.m13 * (a.m21*a1323 - a.m22*a0323 + a.m24*a0123) -
+	            a.m14 * (a.m21*a1223 - a.m22*a0223 + a.m23*a0123);
+	det = 1.0f / det;
+
+	return (Mat4x4){
+		.m11 = det *  (a.m22*a2323 - a.m23*a1323 + a.m24*a1223),
+		.m12 = det * -(a.m12*a2323 - a.m13*a1323 + a.m14*a1223),
+		.m13 = det *  (a.m12*a2313 - a.m13*a1313 + a.m14*a1213),
+		.m14 = det * -(a.m12*a2312 - a.m13*a1312 + a.m14*a1212),
+		.m21 = det * -(a.m21*a2323 - a.m23*a0323 + a.m24*a0223),
+		.m22 = det *  (a.m11*a2323 - a.m13*a0323 + a.m14*a0223),
+		.m23 = det * -(a.m11*a2313 - a.m13*a0313 + a.m14*a0213),
+		.m24 = det *  (a.m11*a2312 - a.m13*a0312 + a.m14*a0212),
+		.m31 = det *  (a.m21*a1323 - a.m22*a0323 + a.m24*a0123),
+		.m32 = det * -(a.m11*a1323 - a.m12*a0323 + a.m14*a0123),
+		.m33 = det *  (a.m11*a1313 - a.m12*a0313 + a.m14*a0113),
+		.m34 = det * -(a.m11*a1312 - a.m12*a0312 + a.m14*a0112),
+		.m41 = det * -(a.m21*a1223 - a.m22*a0223 + a.m23*a0123),
+		.m42 = det *  (a.m11*a1223 - a.m12*a0223 + a.m13*a0123),
+		.m43 = det * -(a.m11*a1213 - a.m12*a0213 + a.m13*a0113),
+		.m44 = det *  (a.m11*a1212 - a.m12*a0212 + a.m13*a0112),
+	};
+}
+
+static inline Vec3 unproject(Vec3 v, Mat4x4 a, Rect vp)
+{
+	Mat4x4 a_inv = mat4x4_inverse(a);
+	Vec4 u = VEC4(2.0f*(v.x - vp.x) / vp.w - 1.0f,
+	              2.0f*(v.y - vp.y) / vp.h - 1.0f,
+				  v.z,
+				  1.0f);
+	u = mat4x4_multiply_vec4(a_inv, u);
+	u = vec4_multiply_scalar(u, 1.0f / u.w);
+
+	return VEC3_V4(u);
 }
 
 #endif

@@ -70,7 +70,7 @@ void entity_path_to(EntityID e, Vec3i pos)
 	struct Path* path = &ENTITY_PATH(entity.path);
 	path->start = VEC3I_V(ENTITY_BODY(entity.body).pos);
 	path->end   = pos;
-	path_new(path);
+	// path_new(path);
 }
 
 void entities_update()

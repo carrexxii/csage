@@ -70,15 +70,15 @@ static inline float rad_to_deg(float r) { return r/2.0f*PI * 360.0f; }
  * Calculate the line segment p1p2 that is the shortest route between two lines p1p2 and p3p4.
  * Returns false if no solution exists.
  */
-static bool line_line_nearest_points(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4, Vec3 pa, Vec3 pb)
+static bool line_line_nearest_points(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4, Vec3* pa, Vec3* pb)
 {
 	Vec3 p13 = sub(p1, p3);
 	Vec3 p43 = sub(p4, p3);
-	// if (vec3_is_zero(p43))
-		// return false;
+	if (vec3_is_zero(p43))
+		return false;
 	Vec3 p21 = sub(p2, p1);
-	// if (vec3_is_zero(p21))
-	// 	return false;
+	if (vec3_is_zero(p21))
+		return false;
 
 	float d1343 = dot(p13, p43);
 	float d4321 = dot(p43, p21);
@@ -94,12 +94,12 @@ static bool line_line_nearest_points(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4, Vec3 pa
 	float s = numer / denom;
 	float t = (d1343 + d4321*s) / d4343;
 
-	pa.x = p1.x + s*p21.x;
-	pa.y = p1.y + s*p21.y;
-	pa.z = p1.z + s*p21.z;
-	pb.x = p3.x + t*p43.x;
-	pb.y = p3.y + t*p43.y;
-	pb.z = p3.z + t*p43.z;
+	pa->x = p1.x + s*p21.x;
+	pa->y = p1.y + s*p21.y;
+	pa->z = p1.z + s*p21.z;
+	pb->x = p3.x + t*p43.x;
+	pb->y = p3.y + t*p43.y;
+	pb->z = p3.z + t*p43.z;
 
 	return true;
 }
@@ -122,23 +122,7 @@ static void ray_print(struct Ray r) {
 /* t = -(L (*) p)/(L (*) v) */
 static inline Vec3 ray_plane_intersection(struct Ray r, Vec4 L) {
 	float t = -dot(VEC3_V4(L), r.p) / dot(VEC3_V4(L), r.v);
-
-	// glm_vec3_copy(r.p, out);
-	// glm_vec3_muladds(r.v, t, out);
-	return multiply(r.v, t);
-}
-
-/* out will be the point on the capsule's line segment */
-static inline Vec3 ray_capsule_intersection(struct Ray r, struct Capsule cap) {
-	Vec3 pa = r.p;
-	Vec3 pb = r.p;
-	// glm_vec3_muladds(r.v,  100.0, pa);
-	// glm_vec3_muladds(r.v, -100.0, pb);
-	// bool intersects = line_line_nearest_points(cap.p1, cap.p2, rp1, rp2, pa, pb);
-	// vec3_clamp(pa, cap.p1, cap.p2);
-	// glm_vec3_copy(pa, out);
-
-	// return intersects && (glm_vec3_distance2(pa, pb) <= cap.r*cap.r);
+	return add(r.p, multiply(r.v, t));
 }
 
 static inline bool point_in_rect(Vec2 p, Rect rect) {
@@ -150,8 +134,10 @@ static inline float polygon_moment(int vertc, Vec2 verts, Vec2 cm, float m)
 {
 	float I = 0;
 	float r;
+	float* v;
 	for (int i = 0; i < vertc/2; i++) {
-		// r = glm_vec2_distance(cm, verts + i);
+		v = (float*)verts.arr + i;
+		r = distance(cm, VEC2(v[0], v[1]));
 		I += r*r;
 	}
 
