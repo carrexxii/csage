@@ -77,10 +77,10 @@ noreturn void scenemgr_loop()
 		ot = nt;
 		acc += dt;
 		while (acc >= DT_MS) {
-			// static float dir = 1.0;
-			// global_light.pos[0] += dir;
-			// if (fabs(global_light.pos[0]) > 50.0)
-			// 	dir = -dir;
+			static float dir = 1.0;
+			global_light.pos.x += dir;
+			if (fabs(global_light.pos.x) > 50.0)
+				dir = -dir;
 
 			while (!taskmgr_reset());
 			acc -= DT_MS;

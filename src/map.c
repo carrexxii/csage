@@ -1,4 +1,8 @@
+#include "common.h"
+#include "config.h"
+#include "gfx/renderer.h"
 #include "vulkan/vulkan.h"
+#include <vulkan/vulkan_core.h>
 #define JSMN_PARENT_LINKS
 #include "jsmn/jsmn.h"
 
@@ -14,7 +18,7 @@
 #include "camera.h"
 #include "map.h"
 
-#define VERTEX_ELEMENTS    6
+#define VERTEX_ELEMENTS    7
 #define SIZEOF_VERTEX      sizeof(uint8[VERTEX_ELEMENTS])
 #define BUFFER_SIZE        4096
 #define MAX_CHUNKS         256
@@ -49,15 +53,24 @@ static VkVertexInputBindingDescription vert_binds[] = {
 static VkVertexInputAttributeDescription vert_attrs[] = {
 	{ .binding  = 0,
 	  .location = 0,
-	  .format   = VK_FORMAT_R8G8B8A8_UINT, /* xyzt */
+	  .format   = VK_FORMAT_R8G8B8_UINT, /* xyz */
 	  .offset   = 0, },
 	{ .binding  = 0,
 	  .location = 1,
-	  .format   = VK_FORMAT_R8G8_UINT, /* uv */
+	  .format   = VK_FORMAT_R8_UINT, /* normal: 0, 1, 2 = x, y, z */
+	  .offset   = sizeof(uint8[3]), },
+	{ .binding  = 0,
+	  .location = 2,
+	  .format   = VK_FORMAT_R8_UINT, /* tile number */
 	  .offset   = sizeof(uint8[4]), },
+	{ .binding  = 0,
+	  .location = 3,
+	  .format   = VK_FORMAT_R8G8_UINT, /* uv */
+	  .offset   = sizeof(uint8[5]), },
 };
 
 static UBO cam_ubo;
+static UBO light_ubo;
 static VBO lattice_vbo;
 static char buf[BUFFER_SIZE];
 
@@ -65,36 +78,41 @@ void maps_init(VkRenderPass rpass)
 {
 	renderpass = rpass;
 
-	cam_ubo = ubo_new(sizeof(Mat4x4[2]));
+	cam_ubo   = ubo_new(sizeof(Mat4x4[2]));
+	light_ubo = ubo_new(sizeof(struct GlobalLighting));
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
-	intptr vertc = 12*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH;
+	isize vertc = 12*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH;
 	uint8* verts = scalloc(vertc, sizeof(uint8[VERTEX_ELEMENTS]));
+	isize vc;
 	int i = 0;
 	for (int z = 0; z < MAP_CHUNK_DEPTH; z++) {
 		for (int y = 0; y < MAP_CHUNK_HEIGHT; y++) {
 			for (int x = 0; x < MAP_CHUNK_WIDTH; x++) {
 				/* For uvs: 0 = 0.0f; 1 = 0.25f; 2 = 0.5f; 3 = 0.75f; 4 = 1.0f */
 				#define V(vi) verts[VERTEX_STRIDE*i + vi]
+				vc = 0;
+
 				/* Left */
-				V(0 ) = x    ; V(1 ) = y    ; V(2 ) = z; V(3 ) = i; V(4 ) = 2; V(5 ) = 0;
-				V(6 ) = x + 1; V(7 ) = y    ; V(8 ) = z; V(9 ) = i; V(10) = 4; V(11) = 1;
-				V(12) = x + 1; V(13) = y + 1; V(14) = z; V(15) = i; V(16) = 2; V(17) = 2;
-				V(18) = x    ; V(19) = y + 1; V(20) = z; V(21) = i; V(22) = 0; V(23) = 1;
+				V(vc++) = x    ; V(vc++) = y    ; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 2; V(vc++) = 0;
+				V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 4; V(vc++) = 1;
+				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
+				V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 0; V(vc++) = 1;
 
 				/* Top */
-				V(24) = x    ; V(25) = y + 1; V(26) = z    ; V(27) = i; V(28) = 0; V(29) = 1;
-				V(30) = x + 1; V(31) = y + 1; V(32) = z    ; V(33) = i; V(34) = 2; V(35) = 2;
-				V(36) = x + 1; V(37) = y + 1; V(38) = z + 1; V(39) = i; V(40) = 2; V(41) = 4;
-				V(42) = x    ; V(43) = y + 1; V(44) = z + 1; V(45) = i; V(46) = 0; V(47) = 3;
+				V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = z    ; V(vc++) = 0; V(vc++) = i; V(vc++) = 0; V(vc++) = 1;
+				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z    ; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
+				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 4;
+				V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = z + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 0; V(vc++) = 3;
 
 				/* Right */
-				V(48) = x + 1; V(49) = y + 1; V(50) = z    ; V(51) = i; V(52) = 2; V(53) = 2;
-				V(54) = x + 1; V(55) = y    ; V(56) = z    ; V(57) = i; V(58) = 4; V(59) = 1;
-				V(60) = x + 1; V(61) = y    ; V(62) = z + 1; V(63) = i; V(64) = 4; V(65) = 3;
-				V(66) = x + 1; V(67) = y + 1; V(68) = z + 1; V(69) = i; V(70) = 2; V(71) = 4;
-				#undef V
+				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z    ; V(vc++) = 1; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
+				V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = z    ; V(vc++) = 1; V(vc++) = i; V(vc++) = 4; V(vc++) = 1;
+				V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = z + 1; V(vc++) = 1; V(vc++) = i; V(vc++) = 4; V(vc++) = 3;
+				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z + 1; V(vc++) = 1; V(vc++) = i; V(vc++) = 2; V(vc++) = 4;
+
 				i++;
+				#undef V
 			}
 		}
 	}
@@ -107,7 +125,7 @@ void maps_init(VkRenderPass rpass)
 void map_new(struct Map* map, const char* name)
 {
 	char path[PATH_BUFFER_SIZE];
-	sprintf(path, MAP_PATH "%s.tmj", name);
+	snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "%s.tmj", name);
 	FILE* file = file_open(path, "r");
 
 	isize len  = file_size(file);
@@ -149,17 +167,20 @@ void map_new(struct Map* map, const char* name)
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
-		.vert_attrc  = 2,
+		.vert_attrc  = 4,
 		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(Vec3i),
 		.dset_cap    = 1,
-		.uboc        = 2,
+		.uboc        = 3,
 		.sboc        = 0,
-		.imgc        = 1,
+		.imgc        = 2,
 	};
 	pipeln_alloc_dsets(&map->pipeln);
-	pipeln_create_dset(&map->pipeln, 2, (UBO[]){ cam_ubo, map->ubo }, 0, NULL, 1, &map->tileset.texture.image_view);
+	pipeln_create_dset(&map->pipeln, 3, (UBO[]){ cam_ubo, light_ubo, map->ubo },
+	                                 0, NULL,
+	                                 2, (VkImageView[]){ map->tileset.diffuse.image_view,
+	                                                     map->tileset.normal.image_view });
 	pipeln_init(&map->pipeln, renderpass);
 
 cleanup:
@@ -181,8 +202,8 @@ noreturn MapTile map_get_tile(struct Map* map, Vec3i pos)
 static struct MapData map_data;
 void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map)
 {
-
 	buffer_update(cam_ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
+	buffer_update(light_ubo, sizeof(struct GlobalLighting), &global_light, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.layout, 0, 1, map->pipeln.dsets, 0, NULL);
@@ -214,7 +235,8 @@ void map_free(struct Map* map)
 	}
 	free(map->layers);
 	ubo_free(&map->ubo);
-	texture_free(&map->tileset.texture);
+	texture_free(&map->tileset.diffuse);
+	texture_free(&map->tileset.normal);
 	pipeln_free(&map->pipeln);
 	*map = (struct Map){ 0 };
 }
@@ -222,6 +244,7 @@ void map_free(struct Map* map)
 void maps_free()
 {
 	ubo_free(&cam_ubo);
+	ubo_free(&light_ubo);
 	vbo_free(&lattice_vbo);
 }
 
@@ -401,12 +424,12 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 	int len = token.size;
 
 	NEXT();
-	char path[PATH_BUFFER_SIZE];
+	char path[PATH_BUFFER_SIZE] = MAP_PATH;
 	jsmntok_t tset_tokens[256];
 	for (int j = 0; j < len; j++) {
 		if (!strcmp(buf, "source")) {
 			NEXT();
-			if (string_blit_cstr(path, buf, PATH_BUFFER_SIZE))
+			if (snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "%s", buf) >= PATH_BUFFER_SIZE)
 				ERROR("[MAP] Path \"%s\" is greater than PATH_BUFFER_SIZE (%d)", buf, PATH_BUFFER_SIZE);
 			FILE* file = file_open(path, "r");
 
@@ -436,10 +459,14 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 					if (!strcmp(buf, "image")) {
 						TSET_NEXT();
 						string_remove((String){ .data = buf, .len = strlen(buf) }, '\\');
-						if (string_blit_cstr(path, buf, PATH_BUFFER_SIZE))
+						if (snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "%s", buf) >= PATH_BUFFER_SIZE)
 							ERROR("[MAP] Path \"%s\" is greater than PATH_BUFFER_SIZE (%d)", buf, PATH_BUFFER_SIZE);
+
 						strcpy(tset->image, path);
-						tset->texture = texture_new_from_image(path);
+						tset->diffuse = texture_new_from_image(path);
+
+						strcpy(path + strlen(path) - sizeof(".png") + 1, "_normals.png");
+						tset->normal = texture_new_from_image(path);
 					}
 					else if (!strcmp(buf, "name"))       { TSET_NEXT(); strcpy(tset->name, buf);   }
 					else if (!strcmp(buf, "margin"))     { TSET_NEXT(); tset->margin  = atoi(buf); }

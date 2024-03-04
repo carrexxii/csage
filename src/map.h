@@ -16,7 +16,8 @@
 typedef int MapTile;
 
 struct Tileset {
-	struct Texture texture;
+	struct Texture diffuse;
+	struct Texture normal;
 	char image[64];
 	char name[32];
 	int margin;
