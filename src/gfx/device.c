@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "vulkan.h"
 #include "swapchain.h"
@@ -66,32 +67,22 @@ void device_init_logical(VkSurfaceKHR surf)
 			.queueCount       = 1,
 		};
 
-	VkPhysicalDeviceIndexTypeUint8FeaturesEXT uint8_feature = {
-		.sType          = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT,
-		.indexTypeUint8 = true,
-		.pNext          = NULL,
-	};
-	VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT prim_restart_feature = {
-		.sType                        = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
-		.primitiveTopologyListRestart = true,
-		.pNext                        = &uint8_feature,
-	};
 	VkDeviceCreateInfo devi = {
 		.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.flags                = 0,
 		.queueCreateInfoCount = devqic,
 		.pQueueCreateInfos    = devqis,
 		.pEnabledFeatures = &(VkPhysicalDeviceFeatures){
-			.geometryShader     = true,
-			.tessellationShader = true,
+			// .geometryShader     = true,
+			// .tessellationShader = true,
 			.wideLines          = true,
 			.largePoints        = true,
 		},
-		.pNext = &(VkPhysicalDeviceShaderDrawParametersFeatures){
-			.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-			.shaderDrawParameters = 1,
-			.pNext                = &prim_restart_feature,
-		},
+		// .pNext = &(VkPhysicalDeviceShaderDrawParametersFeatures){
+		// 	.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+		// 	.shaderDrawParameters = 1,
+		// 	.pNext                = NULL,
+		// },
 		.enabledLayerCount       = VULKAN_LAYER_COUNT,
 		.ppEnabledLayerNames     = VULKAN_LAYERS,
 		.enabledExtensionCount   = 1,
@@ -104,7 +95,7 @@ void device_init_logical(VkSurfaceKHR surf)
 
 	vkGetDeviceQueue(logical_gpu, qinds.present , 0, &presentq);
 	vkGetDeviceQueue(logical_gpu, qinds.graphics, 0, &graphicsq);
-	// vkGetDeviceQueue(logical_gpu, qinds.transfer, 0, &transferq);
+	vkGetDeviceQueue(logical_gpu, qinds.transfer, 0, &transferq);
 }
 
 int device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop)

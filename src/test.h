@@ -97,7 +97,3 @@ static void test_init()
 	// textbox_new(str1, RECT(-0.8, -0.8, 1.6, 1.2), NULL, c1);
 }
 
-static void test_free()
-{
-	map_free(&map);
-}

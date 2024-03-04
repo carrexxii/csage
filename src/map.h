@@ -29,7 +29,7 @@ struct MapChunk {
 	IBO ibo;
 	int tilec;
 	Vec3i pos;
-	uint8 data[MAP_CHUNK_SIZE];
+	uint32 data[MAP_CHUNK_SIZE];
 };
 
 struct MapLayer {
@@ -40,7 +40,7 @@ struct MapLayer {
 };
 
 struct MapData {
-	uint8 block_data[MAP_CHUNK_SIZE];
+	uint32 block_data[MAP_CHUNK_SIZE];
 };
 
 struct Map {
@@ -51,7 +51,6 @@ struct Map {
 	struct Tileset   tileset;
 	struct Pipeline  pipeln;
 	struct MapLayer* layers;
-	struct MapData data;
 };
 
 void maps_init(VkRenderPass renderpass);

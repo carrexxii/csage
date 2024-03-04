@@ -14,7 +14,7 @@
 #include "camera.h"
 #include "map.h"
 
-#define VERTEX_ELEMENTS    5
+#define VERTEX_ELEMENTS    6
 #define SIZEOF_VERTEX      sizeof(uint8[VERTEX_ELEMENTS])
 #define BUFFER_SIZE        4096
 #define MAX_CHUNKS         256
@@ -35,7 +35,7 @@
 static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize tokenc);
 static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tokens);
 static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tokens);
-static int parse_data(uint8* data, int i, char* json, jsmntok_t* tokens);
+static int parse_data(uint32* data, int i, char* json, jsmntok_t* tokens);
 static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tokens);
 static void build_mesh(struct Map* map);
 static void mesh_tile(uint16* inds, Vec3i v);
@@ -43,18 +43,18 @@ static void mesh_tile(uint16* inds, Vec3i v);
 static VkRenderPass renderpass;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
-	  .stride    = SIZEOF_VERTEX, /* xyzuv */
+	  .stride    = SIZEOF_VERTEX, /* xyztuv */
 	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, }
 };
 static VkVertexInputAttributeDescription vert_attrs[] = {
 	{ .binding  = 0,
 	  .location = 0,
-	  .format   = VK_FORMAT_R8G8B8_UINT, /* xyz */
+	  .format   = VK_FORMAT_R8G8B8A8_UINT, /* xyzt */
 	  .offset   = 0, },
 	{ .binding  = 0,
 	  .location = 1,
 	  .format   = VK_FORMAT_R8G8_UINT, /* uv */
-	  .offset   = sizeof(uint8[3]), },
+	  .offset   = sizeof(uint8[4]), },
 };
 
 static UBO cam_ubo;
@@ -77,22 +77,22 @@ void maps_init(VkRenderPass rpass)
 				/* For uvs: 0 = 0.0f; 1 = 0.25f; 2 = 0.5f; 3 = 0.75f; 4 = 1.0f */
 				#define V(vi) verts[VERTEX_STRIDE*i + vi]
 				/* Left */
-				V(0 ) = x    ; V(1 ) = y    ; V(2 ) = z    ; V(43) = 2; V(44) = 2;
-				V(5 ) = x + 1; V(6 ) = y    ; V(7 ) = z    ; V(48) = 4; V(49) = 1;
-				V(10) = x + 1; V(11) = y + 1; V(12) = z    ; V(53) = 4; V(54) = 3;
-				V(15) = x    ; V(16) = y + 1; V(17) = z    ; V(58) = 2; V(59) = 4;
+				V(0 ) = x    ; V(1 ) = y    ; V(2 ) = z; V(3 ) = i; V(4 ) = 2; V(5 ) = 0;
+				V(6 ) = x + 1; V(7 ) = y    ; V(8 ) = z; V(9 ) = i; V(10) = 4; V(11) = 1;
+				V(12) = x + 1; V(13) = y + 1; V(14) = z; V(15) = i; V(16) = 2; V(17) = 2;
+				V(18) = x    ; V(19) = y + 1; V(20) = z; V(21) = i; V(22) = 0; V(23) = 1;
 
 				/* Top */
-				V(20) = x    ; V(21) = y + 1; V(22) = z    ; V(23) = 0; V(24) = 1;
-				V(25) = x + 1; V(26) = y + 1; V(27) = z    ; V(28) = 2; V(29) = 2;
-				V(30) = x + 1; V(31) = y + 1; V(32) = z + 1; V(33) = 2; V(34) = 4;
-				V(35) = x    ; V(36) = y + 1; V(37) = z + 1; V(38) = 0; V(39) = 3;
+				V(24) = x    ; V(25) = y + 1; V(26) = z    ; V(27) = i; V(28) = 0; V(29) = 1;
+				V(30) = x + 1; V(31) = y + 1; V(32) = z    ; V(33) = i; V(34) = 2; V(35) = 2;
+				V(36) = x + 1; V(37) = y + 1; V(38) = z + 1; V(39) = i; V(40) = 2; V(41) = 4;
+				V(42) = x    ; V(43) = y + 1; V(44) = z + 1; V(45) = i; V(46) = 0; V(47) = 3;
 
 				/* Right */
-				V(40) = x + 1; V(41) = y + 1; V(42) = z    ; V(3 ) = 2; V(4 ) = 0;
-				V(45) = x + 1; V(46) = y    ; V(47) = z    ; V(8 ) = 4; V(9 ) = 1;
-				V(50) = x + 1; V(51) = y    ; V(52) = z + 1; V(13) = 2; V(14) = 2;
-				V(55) = x + 1; V(56) = y + 1; V(57) = z + 1; V(18) = 0; V(19) = 1;
+				V(48) = x + 1; V(49) = y + 1; V(50) = z    ; V(51) = i; V(52) = 2; V(53) = 2;
+				V(54) = x + 1; V(55) = y    ; V(56) = z    ; V(57) = i; V(58) = 4; V(59) = 1;
+				V(60) = x + 1; V(61) = y    ; V(62) = z + 1; V(63) = i; V(64) = 4; V(65) = 3;
+				V(66) = x + 1; V(67) = y + 1; V(68) = z + 1; V(69) = i; V(70) = 2; V(71) = 4;
 				#undef V
 				i++;
 			}
@@ -171,8 +171,10 @@ cleanup:
 	}
 }
 
+static struct MapData map_data;
 void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map)
 {
+
 	buffer_update(cam_ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.pipeln);
@@ -185,8 +187,8 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 		layer = &map->layers[i];
 		for (int j = 0; j < layer->chunkc; j++) {
 			chunk = &layer->chunks[j];
-			memcpy(map->data.block_data, chunk->data, sizeof(map->data.block_data));
-			buffer_update(map->ubo, sizeof(struct MapData), &map->data, 0);
+			memcpy(map_data.block_data, chunk->data, sizeof(map_data.block_data));
+			buffer_update(map->ubo, sizeof(struct MapData), &map_data, 0);
 
 			// DEBUG(1, "[%d] Drawing %d tiles (%d)", j, chunk->tilec, chunk->tilec*18);
 			vkCmdBindIndexBuffer(cmd_buf, layer->chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
@@ -351,7 +353,7 @@ static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tok
 	for (int j = 0; j < len; j++) {
 		if (!strcmp(buf, "data")) {
 			if (token.size > UINT8_MAX + 1)
-				ERROR("[MAP] Map chunks need to be <= 256 tiles");
+				ERROR("[MAP] Map chunks should be <= 256 tiles");
 			i = parse_data(chunk->data, i, json, tokens);
 		}
 		else if (!strcmp(buf, "width"))  { NEXT(); NEXT(); }
@@ -367,7 +369,7 @@ static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tok
 	return i;
 }
 
-static int parse_data(uint8* data, int i, char* json, jsmntok_t* tokens)
+static int parse_data(uint32* data, int i, char* json, jsmntok_t* tokens)
 {
 	jsmntok_t token;
 
