@@ -100,7 +100,7 @@ void models_init(VkRenderPass renderpass)
 	sbo_buf    = sbo_new(MAX_MODELS*sizeof(Mat4x4));
 	ubo_cam    = ubo_new(sizeof(Mat4x4[2]));
 	ubo_mtls   = ubo_new(MAX_MATERIALS*sizeof(struct Material));
-	ubo_lights = ubo_new(sizeof(struct GlobalLighting));
+	ubo_lights = ubo_new(sizeof(struct Light));
 	ubo_joints = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform));
 
 	pipeln = (struct Pipeline){
@@ -285,7 +285,7 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 		if (mdl->skin)
 			continue;
 		buffer_update(ubo_mtls, mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
-		buffer_update(ubo_lights, sizeof(struct GlobalLighting), &global_light, 0);
+		buffer_update(ubo_lights, sizeof(struct Light), &global_light, 0);
 
 		for (int m = 0; m < mdls[i].meshc; m++) {
 			mesh = &mdl->meshes[m];

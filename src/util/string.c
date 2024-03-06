@@ -1,10 +1,12 @@
 #include "string.h"
 
-String string_new(char* src, isize len)
+/* Length is calculated if it is <= 0 */
+String string_new(char* src, isize len, struct Arena* arena)
 {
+	len = len > 0? len: strlen(src);
 	String str = {
-		.data = smalloc(len + 1),
-		.len  = len > 0? len: (isize)strlen(src),
+		.data = arena? arena_alloc(arena, len + 1): smalloc(len + 1),
+		.len  = len,
 	};
 	memcpy(str.data, src, str.len);
 	str.data[str.len] = '\0';
@@ -12,26 +14,19 @@ String string_new(char* src, isize len)
 	return str;
 }
 
-String* string_new_cstr(char* src, isize len)
+String* string_new_ptr(char* src, isize len, struct Arena* arena)
 {
-	// TODO:
-	// String* str = smalloc(sizeof(String) + len + 1);
-	// string_new(src, len, str->data);
-	// return str;
-
-	String* str = smalloc(sizeof(String) + len + 1);
-	str->data = (void*)(str + 1);
-	str->len = len > 0? len: (isize)strlen(src);
-	memcpy(str->data, src, str->len);
-	str->data[str->len] = '\0';
-
-	return str;
+	len = len > 0? len: strlen(src);
+	String* str = arena? arena_alloc(arena, sizeof(String) + len): smalloc(sizeof(String) + len);
+	str->len = len;
+	memcpy(str + sizeof(String), src, len);
+	str->data = (char*)&str[1];
 }
 
 /* Create a new string by splitting up `src` on `sep`s and using `index`.
  *   - If `index` is -1, the last part of the string is given.
  */
-String string_new_split(char* src, char sep, int index)
+String string_new_split(char* src, char sep, int index, struct Arena* arena)
 {
 	index = index == -1? INT_MAX: index;
 
@@ -50,16 +45,16 @@ String string_new_split(char* src, char sep, int index)
 		if (sepc == index) {
 			while (*src && *src++ != sep)
 				len++;
-			return len? string_new(start, len): (String){ 0 };
+			return len? string_new(start, len, arena): (String){ 0 };
 		}
 		src++;
 	}
 
-	return string_new(start, 0);
+	return string_new(start, 0, arena);
 }
 
-String string_copy(String src) {
-	return string_new(src.data, src.len);
+String string_copy(String src, struct Arena* arena) {
+	return string_new(src.data, src.len, arena);
 }
 
 int string_blit_cstr(char* restrict dst, char* restrict src, isize max_len)

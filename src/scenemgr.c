@@ -1,15 +1,13 @@
-#include "common.h"
-#include "maths/maths.h"
 #include "vulkan/vulkan.h"
 
 #include "taskmgr.h"
-#include "input.h"
-#include "camera.h"
+#include "maths/maths.h"
 #include "gfx/renderer.h"
 #include "gfx/ui/ui.h"
 #include "gfx/model.h"
 #include "gfx/particles.h"
-#include "maths/scratch.h"
+#include "input.h"
+#include "camera.h"
 #include "entities/entity.h"
 #include "map.h"
 #include "scenemgr.h"
@@ -58,7 +56,7 @@ void scenemgr_init()
 
 	taskmgr_init();
 
-	global_light.pos     = VEC4(10.0f, 0.0f, 20.0f, 0.5f);
+	global_light.pos     = VEC4(5.0f, 0.0f, 10.0f, 0.3f);
 	global_light.ambient = normalized(VEC4(1.0f, 1.0f, 1.0f, 0.1f));
 	global_light.colour  = normalized(VEC3(1.0f, 1.0f, 1.0f));
 
@@ -79,7 +77,7 @@ noreturn void scenemgr_loop()
 		while (acc >= DT_MS) {
 			static float dir = 1.0;
 			global_light.pos.x += dir;
-			if (fabs(global_light.pos.x) > 50.0)
+			if (fabs(global_light.pos.x) > 80.0)
 				dir = -dir;
 
 			while (!taskmgr_reset());

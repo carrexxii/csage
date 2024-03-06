@@ -1,4 +1,4 @@
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 #include "SDL3/SDL.h"
 
 #include "config.h"
@@ -15,8 +15,10 @@
 #include "maths/scratch.h"
 #include "renderer.h"
 
+#define FRAMES_IN_FLIGHT 2
+
 VkSampler default_sampler;
-struct GlobalLighting global_light;
+struct Light global_light;
 
 static void record_commands(int imgi, struct Camera* cam);
 static void create_frame_buffers(void);
@@ -37,6 +39,7 @@ static struct {
 static VkRenderPass     renderpass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
+static struct Light     lights[RENDERER_MAX_LIGHTS];
 
 VkRenderPass renderer_init()
 {

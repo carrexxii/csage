@@ -165,7 +165,7 @@ inline static struct LangVar new_literal(struct AST* ast, struct Token tok)
 	} else if (tok.type == TOKEN_STRING) {
 		lit = (struct LangVar){
 			.type    = LANG_STR,
-			.val.str = string_new_cstr(tok.lexeme.data, tok.lexeme.len),
+			.val.str = string_new_ptr(tok.lexeme.data, tok.lexeme.len, NULL), // TODO: arena
 		};
 	} else {
 		error_expected("literal value", tok);
@@ -208,17 +208,18 @@ static struct ASTNode* parse_expr(struct AST* ast)
 {
 	struct Token tok = lexer_next(ast->tknz);
 	struct ASTNode* node = new_node();
+	struct LangVar lit;
 	switch (tok.type) {
 	case TOKEN_NUMBER:
 	case TOKEN_STRING:
-		struct LangVar lit = new_literal(ast, tok);
+		lit = new_literal(ast, tok);
 		node->type    = (enum ASTType)lit.type;
 		node->literal = lit.val;
-		node->lexeme  = string_copy(tok.lexeme);
+		node->lexeme  = string_copy(tok.lexeme, NULL); // TODO: arena
 		return node;
 	case TOKEN_IDENT:
 		node->type   = AST_CALL;
-		node->lexeme = string_copy(tok.lexeme);
+		node->lexeme = string_copy(tok.lexeme, NULL); // TODO: arena
 		node->params = parse_expr_list(ast, 1); // TODO: find # of params from tables
 		return node;
 		break;
@@ -246,7 +247,7 @@ static struct ASTNode parse_assign(struct AST* ast, enum ASTType type)
 {
 	struct ASTNode node = {
 		.type   = type,
-		.lexeme = string_copy(match_ident(ast))
+		.lexeme = string_copy(match_ident(ast), NULL), // TODO: arena
 	};
 	match_eq(ast);
 	node.expr = parse_expr(ast);
@@ -268,7 +269,7 @@ static struct ASTNode parse_fun(struct AST* ast)
 {
 	struct ASTNode node = {
 		.type   = AST_FUN,
-		.lexeme = string_copy(match_ident(ast)),
+		.lexeme = string_copy(match_ident(ast), NULL), // TODO: arena
 	};
 	// TODO: parse paramter list here
 	match_eq(ast);

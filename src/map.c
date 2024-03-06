@@ -2,13 +2,13 @@
 #include "config.h"
 #include "gfx/renderer.h"
 #include "vulkan/vulkan.h"
-#include <vulkan/vulkan_core.h>
 #define JSMN_PARENT_LINKS
 #include "jsmn/jsmn.h"
 
 #include "util/file.h"
 #include "util/string.h"
 #include "util/varray.h"
+#include "util/arena.h"
 #include "maths/maths.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
@@ -36,11 +36,48 @@
 	x == JSMN_PRIMITIVE? "JSMN_PRIMITIVE": \
 	"<Not a JSMN type>")
 
+#define PROPERTY_TYPE_OF_STRING(x) (         \
+	!strcmp((x), "int")   ? PROPERTY_INT   : \
+	!strcmp((x), "float") ? PROPERTY_FLOAT : \
+	!strcmp((x), "bool")  ? PROPERTY_BOOL  : \
+	!strcmp((x), "string")? PROPERTY_STRING: \
+	!strcmp((x), "color") ? PROPERTY_COLOUR: \
+	!strcmp((x), "file")  ? PROPERTY_FILE  : \
+	!strcmp((x), "object")? PROPERTY_OBJECT: \
+	!strcmp((x), "class") ? PROPERTY_CLASS : \
+	PROPERTY_NONE)
+enum PropertyType {
+	PROPERTY_NONE,
+	PROPERTY_INT,
+	PROPERTY_FLOAT,
+	PROPERTY_BOOL,
+	PROPERTY_STRING,
+	PROPERTY_COLOUR,
+	PROPERTY_FILE,
+	PROPERTY_OBJECT,
+	PROPERTY_CLASS,
+};
+struct Property {
+	String key;
+	enum PropertyType type;
+	union {
+		int64  vint;
+		double vfloat;
+		bool   vbool;
+		String vstring;
+		uint8  vcolour[4];
+		String vfile;
+		struct Property* vobject;
+	} value;
+};
+
 static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize tokenc);
 static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tokens);
 static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tokens);
 static int parse_data(uint32* data, int i, char* json, jsmntok_t* tokens);
+static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tokens);
 static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tokens);
+static int parse_property(struct Property* prop, int i, char* json, jsmntok_t* tokens);
 static void build_mesh(struct Map* map);
 static void mesh_tile(uint16* inds, Vec3i v);
 
@@ -70,16 +107,19 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 };
 
 static UBO cam_ubo;
-static UBO light_ubo;
+static UBO lights_ubo;
 static VBO lattice_vbo;
 static char buf[BUFFER_SIZE];
+static struct Arena* arena;
 
 void maps_init(VkRenderPass rpass)
 {
 	renderpass = rpass;
 
-	cam_ubo   = ubo_new(sizeof(Mat4x4[2]));
-	light_ubo = ubo_new(sizeof(struct GlobalLighting));
+	cam_ubo    = ubo_new(sizeof(Mat4x4[2]));
+	lights_ubo = ubo_new(sizeof(struct Light[MAP_LIGHTS_PER_CHUNK + 1]));
+
+	arena = arena_new(16*1024, 0);
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
 	isize vertc = 12*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH;
@@ -177,7 +217,7 @@ void map_new(struct Map* map, const char* name)
 		.imgc        = 2,
 	};
 	pipeln_alloc_dsets(&map->pipeln);
-	pipeln_create_dset(&map->pipeln, 3, (UBO[]){ cam_ubo, light_ubo, map->ubo },
+	pipeln_create_dset(&map->pipeln, 3, (UBO[]){ cam_ubo, lights_ubo, map->ubo },
 	                                 0, NULL,
 	                                 2, (VkImageView[]){ map->tileset.diffuse.image_view,
 	                                                     map->tileset.normal.image_view });
@@ -190,6 +230,7 @@ cleanup:
 		free(tokens);
 		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map->w, map->h, tokenc);
 	}
+	arena_reset(arena);
 }
 
 noreturn MapTile map_get_tile(struct Map* map, Vec3i pos)
@@ -203,7 +244,7 @@ static struct MapData map_data;
 void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map)
 {
 	buffer_update(cam_ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
-	buffer_update(light_ubo, sizeof(struct GlobalLighting), &global_light, 0);
+	buffer_update(lights_ubo, sizeof(struct Light), &global_light, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.layout, 0, 1, map->pipeln.dsets, 0, NULL);
@@ -213,13 +254,13 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &lattice_vbo.buf, (VkDeviceSize[]){ 0 });
 	for (int i = 0; i < map->layerc; i++) {
 		layer = &map->layers[i];
-		for (int j = 0; j < layer->chunkc; j++) {
-			chunk = &layer->chunks[j];
-			memcpy(map_data.block_data, chunk->data, sizeof(map_data.block_data));
-			buffer_update(map->ubo, sizeof(struct MapData), &map_data, 0);
+		for (int j = 0; j < layer->tile.chunkc; j++) {
+			chunk = &layer->tile.chunks[j];
+			buffer_update(map->ubo, sizeof(struct MapData), chunk->data, 0);
+			buffer_update(lights_ubo, sizeof(struct Light[MAP_LIGHTS_PER_CHUNK]), chunk->lights, sizeof(struct Light));
 
 			// DEBUG(1, "[%d] Drawing %d tiles (%d)", j, chunk->tilec, chunk->tilec*18);
-			vkCmdBindIndexBuffer(cmd_buf, layer->chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdBindIndexBuffer(cmd_buf, layer->tile.chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, map->pipeln.layout, map->pipeln.push_stages, 0, map->pipeln.push_sz, &chunk->pos);
 			vkCmdDrawIndexed(cmd_buf, chunk->tilec*18, 1, 0, 0, 0);
 		}
@@ -228,11 +269,11 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 
 void map_free(struct Map* map)
 {
-	for (int i = 0; i < map->layerc; i++) {
-		for (int j = 0; j < map->layers[i].chunkc; j++)
-			ibo_free(&map->layers[i].chunks[j].ibo);
-		free(map->layers[i].chunks);
-	}
+	// for (int i = 0; i < map->layerc; i++) {
+	// 	for (int j = 0; j < map->layers[i].chunkc; j++)
+	// 		ibo_free(&map->layers[i].chunks[j].ibo);
+	// 	free(map->layers[i].chunks);
+	// }
 	free(map->layers);
 	ubo_free(&map->ubo);
 	texture_free(&map->tileset.diffuse);
@@ -244,8 +285,9 @@ void map_free(struct Map* map)
 void maps_free()
 {
 	ubo_free(&cam_ubo);
-	ubo_free(&light_ubo);
+	ubo_free(&lights_ubo);
 	vbo_free(&lattice_vbo);
+	arena_free(arena);
 }
 
 /* -------------------------------------------------------------------- */
@@ -298,6 +340,7 @@ static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize toke
 				NEXT();
 				for (int l = 0; l < layerc; l++)
 					i = parse_layer(&map->layers[map->layerc++], i, json, tokens);
+					// i = parse_layer(i, json, tokens);
 				i--;
 			}
 			else if (!strcmp(buf, "width"))      { NEXT(); map->w  = atoi(buf); }
@@ -332,12 +375,15 @@ static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize toke
 static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tokens)
 {
 	jsmntok_t token = tokens[i - 1];
-	struct VArray chunks = varray_new(16, sizeof(struct MapChunk));
+	String compression = { 0 };
+	struct VArray chunks;
+	struct VArray objects;
 
 	int len = token.size;
 	NEXT();
 	for (int j = 0; j < len; j++) {
 		if (!strcmp(buf, "chunks")) {
+			chunks = varray_new(8, sizeof(struct MapChunk));
 			struct MapChunk chunk;
 			NEXT();
 			int chunkc = token.size;
@@ -346,30 +392,60 @@ static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tok
 				chunk = (struct MapChunk){ 0 };
 				i = parse_chunk(&chunk, i, json, tokens);
 				varray_push(&chunks, &chunk);
+				// varray_push(&layer_buf.chunks, &chunk);
 			}
+			continue;
+		} else if (!strcmp(buf, "objects")) {
+			objects = varray_new(32, sizeof(struct MapObject));
+			struct MapObject obj;
+			NEXT();
+			int objc = token.size;
+			for (int o = 0; o < objc; o++) {
+				obj = (struct MapObject){ 0 };
+				i = parse_object(&obj, i, json, tokens);
+				varray_push(&objects, &obj);
+			}
+			continue;
+		} else if (!strcmp(buf, "properties")) {
+
+		} else if (!strcmp(buf, "image")) {
+			NEXT();
 		}
-		else if (!strcmp(buf, "name"))    { NEXT(); strncpy(layer->name, buf, sizeof(layer->name)); NEXT(); }
-		else if (!strcmp(buf, "id"))      { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "type"))    { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "opacity")) { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "visible")) { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "width"))   { NEXT(); layer->w = atoi(buf); NEXT(); }
-		else if (!strcmp(buf, "height"))  { NEXT(); layer->h = atoi(buf); NEXT(); }
-		else if (!strcmp(buf, "x"))       { NEXT(); layer->x = atoi(buf); NEXT(); }
-		else if (!strcmp(buf, "y"))       { NEXT(); layer->y = atoi(buf); NEXT(); }
-		else if (!strcmp(buf, "startx"))  { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "starty"))  { NEXT(); NEXT(); }
+		else if (!strcmp(buf, "type"))        { NEXT(); layer->type = LAYER_TYPE_OF_STRING(buf) ; }
+		else if (!strcmp(buf, "name"))        { NEXT(); strncpy(layer->name, buf, MAP_NAME_LEN) ; }
+		else if (!strcmp(buf, "compression")) { NEXT(); compression = string_new(buf, -1, arena); }
+		else if (!strcmp(buf, "width"))       { NEXT(); layer->w    = atoi(buf); }
+		else if (!strcmp(buf, "height"))      { NEXT(); layer->h    = atoi(buf); }
+		else if (!strcmp(buf, "parallaxx"))   { NEXT(); layer->px   = atof(buf); }
+		else if (!strcmp(buf, "parallaxy"))   { NEXT(); layer->py   = atof(buf); }
+		else if (!strcmp(buf, "startx"))      { NEXT(); layer->x    = atoi(buf); }
+		else if (!strcmp(buf, "starty"))      { NEXT(); layer->y    = atoi(buf); }
+		else if (!strcmp(buf, "id"))        NEXT();
+		else if (!strcmp(buf, "opacity"))   NEXT();
+		else if (!strcmp(buf, "visible"))   NEXT();
+		else if (!strcmp(buf, "x"))         NEXT();
+		else if (!strcmp(buf, "y"))         NEXT();
+		else if (!strcmp(buf, "draworder")) NEXT();
 		else {
 			ERROR("[MAP] Unmatched layer token : \"%s\"", buf);
 			NEXT();
 			ERROR("[MAP] \"%s\"", buf);
-			NEXT();
 		}
+		NEXT();
 	}
 
-	layer->chunkc = chunks.len;
-	layer->chunks = smalloc(chunks.len*sizeof(struct MapChunk));
-	memcpy(layer->chunks, chunks.data, chunks.len*sizeof(struct MapChunk));
+	if (compression.len > 0)
+		ERROR("!! Compression: %s", compression.data);
+
+	switch (layer->type) {
+	case MAP_LAYER_TILE:
+		layer->tile.chunkc = chunks.len;
+		layer->tile.chunks = smalloc(chunks.len*sizeof(struct MapChunk));
+		memcpy(layer->tile.chunks, chunks.data, chunks.len*sizeof(struct MapChunk));
+		break;
+	default:
+		ERROR("[MAP] Unhandled layer of type %d", layer->type);
+	}
 	varray_free(&chunks);
 	return i;
 }
@@ -411,6 +487,48 @@ static int parse_data(uint32* data, int i, char* json, jsmntok_t* tokens)
 	}
 
 	NEXT();
+	return i;
+}
+
+static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tokens)
+{
+	jsmntok_t token;
+
+	NEXT();
+	int len = token.size;
+	NEXT();
+	for (int j = 0; j < len; j++) {
+		if (!strcmp(buf, "properties")) {
+			struct Property prop;
+			NEXT();
+			int propc = token.size;
+			NEXT();
+			for (int p = 0; p < propc; p++) {
+				prop = (struct Property){ 0 };
+				i = parse_property(&prop, i, json, tokens);
+			}
+			continue;
+		} else if (!strcmp(buf, "point")) {
+			NEXT();
+			if (!strcmp(buf, "true"))
+				obj->type = MAP_OBJECT_POINT;
+		}
+		else if (!strcmp(buf, "x"))        { NEXT(); obj->x = atof(buf); }
+		else if (!strcmp(buf, "y"))        { NEXT(); obj->y = atof(buf); }
+		else if (!strcmp(buf, "width"))    { NEXT(); obj->w = atoi(buf); }
+		else if (!strcmp(buf, "height"))   { NEXT(); obj->h = atoi(buf); }
+		else if (!strcmp(buf, "rotation")) { NEXT(); obj->rotation = atof(buf); }
+		else if (!strcmp(buf, "id"))      NEXT();
+		else if (!strcmp(buf, "name"))    NEXT();
+		else if (!strcmp(buf, "type"))    NEXT();
+		else if (!strcmp(buf, "visible")) NEXT();
+		else {
+			ERROR("[MAP] Unmatched token: \"%s\"", buf);
+			NEXT();
+		}
+		NEXT();
+	}
+
 	return i;
 }
 
@@ -498,6 +616,47 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 	return i;
 }
 
+static int parse_property(struct Property* prop, int i, char* json, jsmntok_t* tokens)
+{
+	jsmntok_t token;
+	String    value;
+
+	NEXT();
+	for (int j = 0; j < 3; j++) {
+		if      (!strcmp(buf, "type"))  { NEXT(); prop->type = PROPERTY_TYPE_OF_STRING(buf); }
+		else if (!strcmp(buf, "name"))  { NEXT(); prop->key  = string_new(buf, -1, arena)  ; }
+		else if (!strcmp(buf, "value")) { NEXT(); value = string_new(buf, -1, arena)       ; }
+		else ERROR("[MAP] Unhandled token: \"%s\"", buf);
+		NEXT();
+	}
+
+	// DEBUG_VALUE(prop->type);
+	uint colour;
+	switch (prop->type) {
+	case PROPERTY_INT   : prop->value.vint    = atoi(value.data)        ; break;
+	case PROPERTY_FLOAT : prop->value.vfloat  = atof(value.data)        ; break;
+	case PROPERTY_STRING: prop->value.vstring = string_copy(value, NULL); break;
+	case PROPERTY_COLOUR:
+		/* +1 to skip the `#` */
+		colour = strtoul(value.data + 1, NULL, 16);
+		prop->value.vcolour[3] = (colour >> 0 ) & 0xFF;
+		prop->value.vcolour[2] = (colour >> 8 ) & 0xFF;
+		prop->value.vcolour[1] = (colour >> 16) & 0xFF;
+		prop->value.vcolour[0] = (colour >> 24) & 0xFF;
+		break;
+	case PROPERTY_BOOL:
+		if (!strcmp(value.data, "true"))
+			prop->value.vbool = true;
+		else
+			prop->value.vbool = false;
+		break;
+	default:
+		ERROR("[MAP] Unhandled property type: \"%d\" (%s)", prop->type, value.data);
+	}
+
+	return i;
+}
+
 static void build_mesh(struct Map* map)
 {
 	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH*sizeof(uint16[18]));
@@ -505,8 +664,11 @@ static void build_mesh(struct Map* map)
 	struct MapChunk* chunk;
 	for (int i = 0; i < map->layerc; i++) {
 		layer = &map->layers[i];
-		for (int j = 0; j < layer->chunkc; j++) {
-			chunk = &layer->chunks[j];
+		if (layer->type != MAP_LAYER_TILE)
+			continue;
+
+		for (int j = 0; j < layer->tile.chunkc; j++) {
+			chunk = &layer->tile.chunks[j];
 			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
 				if (chunk->data[k]) {
 					mesh_tile(&inds[18*chunk->tilec++], VEC3I(k % MAP_CHUNK_WIDTH,

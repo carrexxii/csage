@@ -66,7 +66,7 @@ inline static struct HPair* htable_insert(struct HTable* htable, String key, int
 		} while (pair);
 	}
 	if (!pair->key.data)
-		pair->key = string_copy(key);
+		pair->key = string_copy(key, NULL); // TODO: arena
 	pair->val = val;
 
 	return pair;

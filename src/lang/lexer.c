@@ -34,11 +34,11 @@ inline static bool can_match(char c1, char c2);
 
 struct Tokenizer lexer_load_file(char* fname)
 {
-	String64 path;
-	snprintf(path.data, sizeof(path), SCRIPT_PATH "%s", fname);
+	char path[64];
+	snprintf(path, sizeof(path), SCRIPT_PATH "%s", fname);
 	struct Tokenizer tokenizer = {
-		.file      = file_open(path.data, "r"),
-		.file_name = string_new_split(path.data, '/', -1),
+		.file      = file_open(path, "r"),
+		.file_name = string_new_split(path, '/', -1, NULL), // TODO: arena
 		.line      = 1,
 		.col       = 1,
 	};
@@ -117,7 +117,7 @@ inline static struct Token read_number(struct Tokenizer* tknz, char c)
 	}
 
 	BACK(c);
-	return TOKEN(TOKEN_NUMBER, string_new(buf, len), len);
+	return TOKEN(TOKEN_NUMBER, string_new(buf, len, NULL), len); // TODO: arena
 }
 
 inline static struct Token read_string(struct Tokenizer* tknz, char c)
@@ -134,7 +134,7 @@ inline static struct Token read_string(struct Tokenizer* tknz, char c)
 		NEXT();
 	}
 
-	return TOKEN(TOKEN_STRING, string_new(buf, len), len);
+	return TOKEN(TOKEN_STRING, string_new(buf, len, NULL), len); // TODO: arena
 }
 
 #define CHECK(t, l)                                             \
@@ -159,7 +159,7 @@ inline static struct Token read_ident(struct Tokenizer* tknz, char c)
 	CHECK(TOKEN_THEN, "then");
 	CHECK(TOKEN_ELSE, "else");
 	CHECK(TOKEN_OF  , "of");
-	return TOKEN(TOKEN_IDENT, string_new(buf, len), len);
+	return TOKEN(TOKEN_IDENT, string_new(buf, len, NULL), len); // TODO: arena
 }
 
 inline static struct Token read_symbol(struct Tokenizer* tknz, char c)
@@ -179,7 +179,7 @@ inline static struct Token read_symbol(struct Tokenizer* tknz, char c)
 		NEXT();
 	} while (1);
 
-	return TOKEN(TOKEN_SYMBOL, string_new(buf, len), len);
+	return TOKEN(TOKEN_SYMBOL, string_new(buf, len, NULL), len); // TODO: arena
 }
 
 inline static bool can_match(char c1, char c2) {
