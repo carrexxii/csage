@@ -56,9 +56,8 @@ void scenemgr_init()
 
 	taskmgr_init();
 
-	global_light.pos     = VEC4(5.0f, 0.0f, 10.0f, 0.3f);
-	global_light.ambient = normalized(VEC4(1.0f, 1.0f, 1.0f, 0.1f));
-	global_light.colour  = normalized(VEC3(1.0f, 1.0f, 1.0f));
+	renderer_set_global_lighting(VEC3(-1.0f, -1.0f, 1.0f), 1.5f,
+	                             VEC3(1.0f, 1.0f, 1.0f), 0.0f);
 
 	switch_scene(SCENE_GAME);
 }
@@ -75,10 +74,8 @@ noreturn void scenemgr_loop()
 		ot = nt;
 		acc += dt;
 		while (acc >= DT_MS) {
-			static float dir = 1.0;
-			global_light.pos.x += dir;
-			if (fabs(global_light.pos.x) > 80.0)
-				dir = -dir;
+			Vec3 dir = VEC3(2*mouse_x/global_config.winw - 1.0f, 2*mouse_y/global_config.winh - 1.0f, 1.0f);
+			renderer_set_global_lighting(dir, 0.2f, VEC3(1.0f, 1.0f, 1.0f), 0.0f);
 
 			while (!taskmgr_reset());
 			acc -= DT_MS;

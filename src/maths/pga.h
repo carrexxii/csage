@@ -8,15 +8,6 @@
 #include "la.h"
 #include "macros.h"
 
-#define SCALAR(a)                     (float)(a)
-#define VEC(x, y, z, w)               (Vec){ x, y, z, w }
-#define DVEC(v)                       _Generic(v, Vec3: (Vec){ v.x, v.y, v.z, 0.0f })
-#define PVEC(v)                       _Generic(v, Vec3: (Vec){ v.x, v.y, v.z, 1.0f })
-#define BIVEC(E1, E2, E3, e1, e2, e3) (Bivec){ E1, E2, E3, e1, e2, e3 }
-#define BIVECV(v1, v2)                (Bivec){ v1.x, v1.y, v1.z, v2.x, v2.y, v2.z }
-#define TRIVEC(x, y, z, w)            (Trivec){ x, y, z, w }
-#define PSS(a)                        (PsS){ .e0123 = (a) }
-
 static const Vec e0 = { .e0 = 1.0f };
 static const Vec e1 = { .e1 = 1.0f };
 static const Vec e2 = { .e2 = 1.0f };

@@ -18,7 +18,9 @@
 #define FRAMES_IN_FLIGHT 2
 
 VkSampler default_sampler;
-struct Light global_light;
+Vec4 global_light;
+Vec4 global_ambient;
+UBO  global_light_ubo;
 
 static void record_commands(int imgi, struct Camera* cam);
 static void create_frame_buffers(void);
@@ -39,7 +41,7 @@ static struct {
 static VkRenderPass     renderpass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
-static struct Light     lights[RENDERER_MAX_LIGHTS];
+// static struct Light     lights[RENDERER_MAX_LIGHTS];
 
 VkRenderPass renderer_init()
 {
@@ -123,6 +125,8 @@ VkRenderPass renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
+	global_light_ubo = ubo_new(sizeof(Vec4[2]));
+
 	return renderpass;
 }
 
@@ -136,6 +140,16 @@ void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*))
 	if (draw_fnc >= RENDERER_MAX_DRAW_FUNCTIONS)
 		ERROR("[GFX] Max draw function count (%d/%d) exceeded", draw_fnc, RENDERER_MAX_DRAW_FUNCTIONS);
 	draw_fns[draw_fnc++] = fn;
+}
+
+void renderer_set_global_lighting(Vec3 light, float power, Vec3 ambient_colour, float ambient_power)
+{
+	Vec3 dir    = normalized(light);
+	Vec3 colour = normalized(ambient_colour);
+
+	global_light   = (Vec4){ UNPACK3(dir.arr)   , power         };
+	global_ambient = (Vec4){ UNPACK3(colour.arr), ambient_power };
+	buffer_update(global_light_ubo, sizeof(Vec4[2]), (Vec4[]){ global_light, global_ambient }, 0);
 }
 
 void renderer_draw(struct Camera* cam)
@@ -207,6 +221,8 @@ void renderer_free()
 	// font_free();
 	// DEBUG(3, "[VK] Freeing particles pipeline...");
 	// particles_free();
+
+	ubo_free(&global_light_ubo);
 
 	DEBUG(3, "[VK] Destroying render pass...");
 	vkDestroyRenderPass(logical_gpu, renderpass, NULL);

@@ -196,6 +196,12 @@ typedef union Colour {
 			fprintf(stderr, "\n\t%s:%d in %s\n" TERM_NORMAL, \
 			        __FILE__, __LINE__, __func__);            \
 		} while (0)
+#define WARNING(...) do {                                 \
+			fprintf(stderr, TERM_YELLOW);                  \
+			fprintf(stderr, __VA_ARGS__);                   \
+			fprintf(stderr, "\n\t%s:%d in %s\n" TERM_NORMAL, \
+			        __FILE__, __LINE__, __func__);            \
+		} while (0)
 #else
 #define DEBUG(...)
 #define DEBUG_VALUE(x)

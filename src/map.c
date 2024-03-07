@@ -1,6 +1,3 @@
-#include "common.h"
-#include "config.h"
-#include "gfx/renderer.h"
 #include "vulkan/vulkan.h"
 #define JSMN_PARENT_LINKS
 #include "jsmn/jsmn.h"
@@ -14,6 +11,7 @@
 #include "gfx/buffers.h"
 #include "gfx/pipeline.h"
 #include "gfx/texture.h"
+#include "gfx/renderer.h"
 #include "gfx/model.h" // TODO: move materials to separate file
 #include "camera.h"
 #include "map.h"
@@ -78,6 +76,7 @@ static int parse_data(uint32* data, int i, char* json, jsmntok_t* tokens);
 static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tokens);
 static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tokens);
 static int parse_property(struct Property* prop, int i, char* json, jsmntok_t* tokens);
+static void build_lights(struct Map* map);
 static void build_mesh(struct Map* map);
 static void mesh_tile(uint16* inds, Vec3i v);
 
@@ -197,6 +196,7 @@ void map_new(struct Map* map, const char* name)
 	}
 
 	parse_map(map, json, tokens, tokenc);
+	build_lights(map);
 	build_mesh(map);
 
 	map->ubo = ubo_new(sizeof(struct MapData));
@@ -212,12 +212,12 @@ void map_new(struct Map* map, const char* name)
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(Vec3i),
 		.dset_cap    = 1,
-		.uboc        = 3,
+		.uboc        = 4,
 		.sboc        = 0,
 		.imgc        = 2,
 	};
 	pipeln_alloc_dsets(&map->pipeln);
-	pipeln_create_dset(&map->pipeln, 3, (UBO[]){ cam_ubo, lights_ubo, map->ubo },
+	pipeln_create_dset(&map->pipeln, 4, (UBO[]){ cam_ubo, global_light_ubo, lights_ubo, map->ubo },
 	                                 0, NULL,
 	                                 2, (VkImageView[]){ map->tileset.diffuse.image_view,
 	                                                     map->tileset.normal.image_view });
@@ -228,7 +228,10 @@ cleanup:
 		free(json);
 	if (tokens) {
 		free(tokens);
-		DEBUG(2, "[MAP] Loaded \"%s\" (%hux%hu) (%ld tokens)", path, map->w, map->h, tokenc);
+		DEBUG(2, "[MAP] Loaded \"%s\" (%dx%d of %dx%dpx) (%ld tokens):",
+		      path, map->w, map->h, map->tw, map->th, tokenc);
+		DEBUG(2, "        %d layers", map->layerc);
+		DEBUG(2, "        Tileset \"%s\"", map->tileset.name);
 	}
 	arena_reset(arena);
 }
@@ -240,11 +243,9 @@ noreturn MapTile map_get_tile(struct Map* map, Vec3i pos)
 	assert(false);
 }
 
-static struct MapData map_data;
 void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map)
 {
 	buffer_update(cam_ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
-	buffer_update(lights_ubo, sizeof(struct Light), &global_light, 0);
 
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, map->pipeln.layout, 0, 1, map->pipeln.dsets, 0, NULL);
@@ -254,10 +255,12 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &lattice_vbo.buf, (VkDeviceSize[]){ 0 });
 	for (int i = 0; i < map->layerc; i++) {
 		layer = &map->layers[i];
+		if (layer->type != MAP_LAYER_TILE && layer->type != MAP_LAYER_IMAGE)
+			continue;
 		for (int j = 0; j < layer->tile.chunkc; j++) {
 			chunk = &layer->tile.chunks[j];
 			buffer_update(map->ubo, sizeof(struct MapData), chunk->data, 0);
-			buffer_update(lights_ubo, sizeof(struct Light[MAP_LIGHTS_PER_CHUNK]), chunk->lights, sizeof(struct Light));
+			buffer_update(lights_ubo, sizeof(struct Light[MAP_LIGHTS_PER_CHUNK]), chunk->lights, 0);
 
 			// DEBUG(1, "[%d] Drawing %d tiles (%d)", j, chunk->tilec, chunk->tilec*18);
 			vkCmdBindIndexBuffer(cmd_buf, layer->tile.chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
@@ -269,11 +272,17 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 
 void map_free(struct Map* map)
 {
-	// for (int i = 0; i < map->layerc; i++) {
-	// 	for (int j = 0; j < map->layers[i].chunkc; j++)
-	// 		ibo_free(&map->layers[i].chunks[j].ibo);
-	// 	free(map->layers[i].chunks);
-	// }
+	struct MapLayer* layer;
+	for (int i = 0; i < map->layerc; i++) {
+		layer = &map->layers[i];
+		if (layer->type == MAP_LAYER_TILE) {
+			for (int j = 0; j < layer->tile.chunkc; j++)
+				ibo_free(&layer->tile.chunks[j].ibo);
+			free(layer->tile.chunks);
+		} else if (layer->type == MAP_LAYER_OBJECT) {
+			free(layer->obj.objs);
+		}
+	}
 	free(map->layers);
 	ubo_free(&map->ubo);
 	texture_free(&map->tileset.diffuse);
@@ -315,14 +324,14 @@ static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize toke
 					ERROR("[MAP] Map has type \"%s\", should be \"isometric\"", buf);
 			} else if (!strcmp(buf, "tilewidth")) {
 				NEXT();
-				int tw = atoi(buf);
-				if (tw != 128)
-					ERROR("[MAP] Tile width should be 128px, got: %d", tw);
+				map->tw = atoi(buf);
+				if (map->tw != 128)
+					ERROR("[MAP] Tile width should be 128px, got: %d", map->tw);
 			} else if (!strcmp(buf, "tileheight")) {
 				NEXT();
-				int th = atoi(buf);
-				if (th != 64)
-					ERROR("[MAP] Tile height should be 64px, got: %d", th);
+				map->th = atoi(buf);
+				if (map->th != 64)
+					ERROR("[MAP] Tile height should be 64px, got: %d", map->th);
 			} else if (!strcmp(buf, "compressionlevel")) {
 				DEBUG(1, "[MAP] TODO: compressionlevel (%s)", buf);
 				NEXT();
@@ -340,13 +349,10 @@ static void parse_map(struct Map* map, char* json, jsmntok_t* tokens, isize toke
 				NEXT();
 				for (int l = 0; l < layerc; l++)
 					i = parse_layer(&map->layers[map->layerc++], i, json, tokens);
-					// i = parse_layer(i, json, tokens);
 				i--;
 			}
 			else if (!strcmp(buf, "width"))      { NEXT(); map->w  = atoi(buf); }
 			else if (!strcmp(buf, "height"))     { NEXT(); map->h  = atoi(buf); }
-			else if (!strcmp(buf, "tilewidth"))  { NEXT(); map->tw = atoi(buf); }
-			else if (!strcmp(buf, "tileheight")) { NEXT(); map->th = atoi(buf); }
 			else if (!strcmp(buf, "infinite"))     { NEXT(); }
 			else if (!strcmp(buf, "nextlayerid"))  { NEXT(); }
 			else if (!strcmp(buf, "nextobjectid")) { NEXT(); }
@@ -400,11 +406,16 @@ static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tok
 			struct MapObject obj;
 			NEXT();
 			int objc = token.size;
+			if (token.type == JSMN_ARRAY)
+				NEXT();
 			for (int o = 0; o < objc; o++) {
+				// DEBUG_VALUE(buf);
 				obj = (struct MapObject){ 0 };
 				i = parse_object(&obj, i, json, tokens);
 				varray_push(&objects, &obj);
 			}
+			// DEBUG_VALUE(buf);
+			// exit(0);
 			continue;
 		} else if (!strcmp(buf, "properties")) {
 
@@ -439,14 +450,29 @@ static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tok
 
 	switch (layer->type) {
 	case MAP_LAYER_TILE:
-		layer->tile.chunkc = chunks.len;
-		layer->tile.chunks = smalloc(chunks.len*sizeof(struct MapChunk));
-		memcpy(layer->tile.chunks, chunks.data, chunks.len*sizeof(struct MapChunk));
+		if (!chunks.data) {
+			ERROR("[MAP] Map layer is a tile layer but does not appear to have any chunks");
+		} else {
+			layer->tile.chunkc = chunks.len;
+			layer->tile.chunks = smalloc(chunks.len*sizeof(struct MapChunk));
+			memcpy(layer->tile.chunks, chunks.data, chunks.len*sizeof(struct MapChunk));
+			varray_free(&chunks);
+		}
+		break;
+	case MAP_LAYER_OBJECT:
+		if (!objects.data) {
+			ERROR("[MAP] Map layer is an object layer but does not appear to have any objects");
+		} else {
+			layer->obj.objc = objects.len;
+			layer->obj.objs = smalloc(objects.len*sizeof(struct MapObject));
+			memcpy(layer->obj.objs, objects.data, objects.len*sizeof(struct MapObject));
+			varray_free(&objects);
+		}
 		break;
 	default:
 		ERROR("[MAP] Unhandled layer of type %d", layer->type);
 	}
-	varray_free(&chunks);
+
 	return i;
 }
 
@@ -493,10 +519,15 @@ static int parse_data(uint32* data, int i, char* json, jsmntok_t* tokens)
 static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tokens)
 {
 	jsmntok_t token;
+	struct VArray props = varray_new(8, sizeof(struct Property));
 
+	// IDK, size fix
+	i--;
 	NEXT();
+
 	int len = token.size;
 	NEXT();
+	obj->type = MAP_OBJECT_NONE;
 	for (int j = 0; j < len; j++) {
 		if (!strcmp(buf, "properties")) {
 			struct Property prop;
@@ -506,6 +537,7 @@ static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tok
 			for (int p = 0; p < propc; p++) {
 				prop = (struct Property){ 0 };
 				i = parse_property(&prop, i, json, tokens);
+				varray_push(&props, &prop);
 			}
 			continue;
 		} else if (!strcmp(buf, "point")) {
@@ -515,8 +547,8 @@ static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tok
 		}
 		else if (!strcmp(buf, "x"))        { NEXT(); obj->x = atof(buf); }
 		else if (!strcmp(buf, "y"))        { NEXT(); obj->y = atof(buf); }
-		else if (!strcmp(buf, "width"))    { NEXT(); obj->w = atoi(buf); }
-		else if (!strcmp(buf, "height"))   { NEXT(); obj->h = atoi(buf); }
+		else if (!strcmp(buf, "width"))    { NEXT(); obj->w = atof(buf); }
+		else if (!strcmp(buf, "height"))   { NEXT(); obj->h = atof(buf); }
 		else if (!strcmp(buf, "rotation")) { NEXT(); obj->rotation = atof(buf); }
 		else if (!strcmp(buf, "id"))      NEXT();
 		else if (!strcmp(buf, "name"))    NEXT();
@@ -529,6 +561,25 @@ static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tok
 		NEXT();
 	}
 
+	if (obj->type == MAP_OBJECT_NONE)
+		ERROR("[MAP] Map object of type %d not mapped to enum", obj->type);
+
+	struct Property* prop;
+	for (int j = 0; j < props.len; j++) {
+		prop = varray_get(&props, j);
+		if (!strcmp(prop->key.data, "power")) {
+			obj->power = prop->value.vfloat;
+		} else if (!strcmp(prop->key.data, "colour")) {
+			obj->colour[3] = prop->value.vcolour[0];
+			obj->colour[0] = prop->value.vcolour[1];
+			obj->colour[1] = prop->value.vcolour[2];
+			obj->colour[2] = prop->value.vcolour[3];
+		} else {
+			WARNING("[MAP] Ignoring object property \"%s\"", prop->key.data);
+		}
+	}
+
+	varray_free(&props);
 	return i;
 }
 
@@ -655,6 +706,52 @@ static int parse_property(struct Property* prop, int i, char* json, jsmntok_t* t
 	}
 
 	return i;
+}
+
+/* -------------------------------------------------------------------- */
+
+static void build_lights(struct Map* map)
+{
+	struct MapLayer* layer = NULL;
+	for (int i = 0; i < map->layerc; i++)
+		if (map->layers[i].type == MAP_LAYER_OBJECT && !strcmp(map->layers[i].name, "lights"))
+			layer = &map->layers[i];
+
+	struct MapObject* obj;
+	struct MapChunk*  chunk;
+	if (!layer) {
+		WARNING("[MAP] Map does not have a \"lights\" object layer");
+	} else {
+		for (int o = 0; o < layer->obj.objc; o++) {
+			obj = &layer->obj.objs[o];
+			for (int t = 0; t < map->layerc; t++) {
+				if (map->layers[t].type != MAP_LAYER_TILE)
+					continue;
+				for (int c = 0; c < map->layers[t].tile.chunkc; c++) {
+					chunk = &map->layers[t].tile.chunks[c];
+					// TODO: cubic check
+					Rect rect  = RECT(chunk->pos.x, chunk->pos.y, MAP_CHUNK_WIDTH, MAP_CHUNK_HEIGHT);
+					Vec3 point = VEC3(2.0f * obj->x / map->tw + 1.0f, obj->y / map->th + 1.0f, -1.0f);
+					switch (obj->type) {
+					case MAP_OBJECT_POINT:
+						if (point_in_rect(VEC2(point.x, point.y), rect))
+							chunk->lights[chunk->lightc++] = (struct Light){
+								.pos    = VEC4(point.x, point.y, point.z, obj->power), // TODO: layer z
+								.colour = (Vec4){
+									obj->colour[0] / 255.0f,
+									obj->colour[1] / 255.0f,
+									obj->colour[2] / 255.0f,
+									obj->colour[3] / 255.0f,
+								 },
+							};
+						break;
+					default:
+						ERROR("[MAP] Lighting for object of type %d not implemented", obj->type);
+					}
+				}
+			}
+		}
+	}
 }
 
 static void build_mesh(struct Map* map)

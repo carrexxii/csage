@@ -285,7 +285,7 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 		if (mdl->skin)
 			continue;
 		buffer_update(ubo_mtls, mdl->mtlc*sizeof(struct Material), mdl->mtls, 0);
-		buffer_update(ubo_lights, sizeof(struct Light), &global_light, 0);
+		// buffer_update(ubo_lights, sizeof(struct Light), &global_light, 0);
 
 		for (int m = 0; m < mdls[i].meshc; m++) {
 			mesh = &mdl->meshes[m];

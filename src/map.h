@@ -33,6 +33,7 @@ struct Tileset {
 struct MapChunk {
 	IBO ibo;
 	int tilec;
+	int lightc;
 	Vec3i pos;
 	uint32 data[MAP_CHUNK_SIZE];
 	struct Light lights[MAP_LIGHTS_PER_CHUNK];
@@ -54,14 +55,19 @@ enum MapObjectType {
 };
 struct MapObject {
 	enum MapObjectType type;
-	int x, y, w, h;
+	float x, y, w, h;
 	float rotation;
-	Vec2*  points;
-	String text;
+	union {
+		Vec2*  points;
+		String text;
+		struct { /* Lights */
+			uint8 colour[4];
+			float power;
+		};
+	};
 };
 struct MapObjectLayer {
 	int w, h;
-	uint8 rgb[3];
 	int objc;
 	struct MapObject* objs;
 };
@@ -70,7 +76,7 @@ struct MapImageLayer {
 	char img[MAP_NAME_LEN];
 };
 
-#define LAYER_TYPE_OF_STRING(x) (                    \
+#define LAYER_TYPE_OF_STRING(x) (                  \
 	!strcmp((x), "tilelayer")  ? MAP_LAYER_TILE  : \
 	!strcmp((x), "objectgroup")? MAP_LAYER_OBJECT: \
 	!strcmp((x), "imagelayer") ? MAP_LAYER_IMAGE : \

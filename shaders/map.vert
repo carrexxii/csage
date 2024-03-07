@@ -17,7 +17,7 @@ layout(binding = 0) uniform CameraBufferUBO {
 	mat4 proj;
 	mat4 view;
 } cam;
-layout(binding = 2) uniform MapDataUBO {
+layout(binding = 3) uniform MapDataUBO {
 	uvec4 block_data[block_size / 4];
 } map;
 
@@ -43,4 +43,5 @@ void main()
 	Fnormal = normals[Vnormal];
 
 	gl_Position = cam.proj * cam.view * vec4(Vpos + global_pos, 1.0f);
+	gl_Position.z -= Vpos.y*0.025f;
 }

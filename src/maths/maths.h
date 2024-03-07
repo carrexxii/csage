@@ -125,9 +125,17 @@ static inline Vec3 ray_plane_intersection(struct Ray r, Vec4 L) {
 	return add(r.p, multiply(r.v, t));
 }
 
-static inline bool point_in_rect(Vec2 p, Rect rect) {
-	return ((p.x >= rect.x && p.x <= rect.w) &&
-	        (p.y >= rect.y && p.y <= rect.h));
+#define point_in_rect(p, r) _Generic(r, \
+		Rect : point_in_rectf,           \
+		Recti: point_in_recti             \
+	)(p, r)
+static inline bool point_in_rectf(Vec2 p, Rect rect) {
+	return ((p.x >= rect.x && p.x <= rect.x + rect.w) &&
+	        (p.y >= rect.y && p.y <= rect.y + rect.h));
+}
+static inline bool point_in_recti(Vec2i p, Recti rect) {
+	return ((p.x >= rect.x && p.x <= rect.x + rect.w) &&
+	        (p.y >= rect.y && p.y <= rect.y + rect.h));
 }
 
 static inline float polygon_moment(int vertc, Vec2 verts, Vec2 cm, float m)

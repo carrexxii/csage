@@ -1,6 +1,42 @@
 #ifndef MATHS_TYPES_H
 #define MATHS_TYPES_H
 
+#define VEC2(x, y)       (Vec2){ x, y       }
+#define VEC3(x, y, z)    (Vec3){ x, y, z    }
+#define VEC4(x, y, z, w) (Vec4){ x, y, z, w }
+#define VEC2I(x, y)       (Vec2i){ x, y       }
+#define VEC3I(x, y, z)    (Vec3i){ x, y, z    }
+#define VEC4I(x, y, z, w) (Vec4i){ x, y, z, w }
+#define VEC3_V3(v)  (Vec3){ v.x    , v.y    , v.z     }
+#define VEC3_V4(v)  (Vec3){ v.x/v.w, v.y/v.w, v.z/v.w }
+#define VEC3_A(arr) (Vec3){ arr[0] , arr[1] , arr[2]  }
+#define VEC3I_V(v)   (Vec3i){ v.x    , v.y    , v.z     }
+#define VEC3I_A(arr) (Vec3i){ arr[0] , arr[1] , arr[2]  }
+#define VEC4_V3(v)  (Vec4){ v.x   , v.y   , v.z   , 0.0f    }
+#define VEC4_V4(v)  (Vec4){ v.x   , v.y   , v.z   , v.w     }
+#define VEC4_A(arr) (Vec4){ arr[0], arr[1], arr[2], arr[3]  }
+
+#define VEC3_ZERO (Vec3){ .x = 0.0f, .y = 0.0f, .z = 0.0f }
+#define VEC3_ONE  (Vec3){ .x = 1.0f, .y = 1.0f, .z = 1.0f }
+#define VEC3_X    (Vec3){ .x = 1.0f, .y = 0.0f, .z = 0.0f }
+#define VEC3_Y    (Vec3){ .x = 0.0f, .y = 1.0f, .z = 0.0f }
+#define VEC3_Z    (Vec3){ .x = 0.0f, .y = 0.0f, .z = 1.0f }
+#define MAT4X4_IDENTITY (Mat4x4){ 1.0f, 0.0f, 0.0f, 0.0f, \
+                                  0.0f, 1.0f, 0.0f, 0.0f, \
+								  0.0f, 0.0f, 1.0f, 0.0f, \
+								  0.0f, 0.0f, 0.0f, 1.0f, }
+
+#define SCALAR(a)                     (float)(a)
+#define VEC(x, y, z, w)               (Vec){ x, y, z, w }
+#define DVEC(v)                       _Generic(v, Vec3: (Vec){ v.x, v.y, v.z, 0.0f })
+#define PVEC(v)                       _Generic(v, Vec3: (Vec){ v.x, v.y, v.z, 1.0f })
+#define BIVEC(E1, E2, E3, e1, e2, e3) (Bivec){ E1, E2, E3, e1, e2, e3 }
+#define BIVECV(v1, v2)                (Bivec){ v1.x, v1.y, v1.z, v2.x, v2.y, v2.z }
+#define TRIVEC(x, y, z, w)            (Trivec){ x, y, z, w }
+#define PSS(a)                        (PsS){ .e0123 = (a) }
+
+/* -------------------------------------------------------------------- */
+
 typedef union Vec2 { struct { float x, y;       }; float arr[2]; } Vec2;
 typedef union Vec3 { struct { float x, y, z;    }; float arr[3]; } Vec3;
 typedef union Vec4 { struct { float x, y, z, w; }; float arr[4]; } Vec4;
