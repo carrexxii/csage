@@ -16,13 +16,13 @@
 #include "camera.h"
 #include "map.h"
 
-#define VERTEX_ELEMENTS    7
-#define SIZEOF_VERTEX      sizeof(uint8[VERTEX_ELEMENTS])
+#define VERTEX_ELEMENTS    6
+#define SIZEOF_VERTEX      sizeof(byte[VERTEX_ELEMENTS])
 #define BUFFER_SIZE        4096
 #define MAX_CHUNKS         256
 #define VERTEX_WIDTH       (MAP_CHUNK_WIDTH  + 1)
 #define VERTEX_HEIGHT      (MAP_CHUNK_HEIGHT + 1)
-#define VERTEX_DEPTH       (MAP_CHUNK_DEPTH  + 1)
+#define VERTEX_DEPTH       2
 #define VERTICES_PER_CHUNK (VERTEX_WIDTH*VERTEX_HEIGHT*VERTEX_DEPTH)
 #define VERTEX_STRIDE      (12*VERTEX_ELEMENTS)
 
@@ -78,7 +78,7 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 static int parse_property(struct Property* prop, int i, char* json, jsmntok_t* tokens);
 static void build_lights(struct Map* map);
 static void build_mesh(struct Map* map);
-static void mesh_tile(uint16* inds, Vec3i v);
+static void mesh_tile(uint16* inds, Vec2i v);
 
 static VkRenderPass renderpass;
 static VkVertexInputBindingDescription vert_binds[] = {
@@ -93,16 +93,12 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 	  .offset   = 0, },
 	{ .binding  = 0,
 	  .location = 1,
-	  .format   = VK_FORMAT_R8_UINT, /* normal: 0, 1, 2 = x, y, z */
-	  .offset   = sizeof(uint8[3]), },
+	  .format   = VK_FORMAT_R8_UINT, /* tile number */
+	  .offset   = sizeof(byte[3]), },
 	{ .binding  = 0,
 	  .location = 2,
-	  .format   = VK_FORMAT_R8_UINT, /* tile number */
-	  .offset   = sizeof(uint8[4]), },
-	{ .binding  = 0,
-	  .location = 3,
 	  .format   = VK_FORMAT_R8G8_UINT, /* uv */
-	  .offset   = sizeof(uint8[5]), },
+	  .offset   = sizeof(byte[4]), },
 };
 
 static UBO cam_ubo;
@@ -124,45 +120,42 @@ void maps_init(VkRenderPass rpass)
 	renderpass = rpass;
 
 	cam_ubo    = ubo_new(sizeof(Mat4x4[2]));
-	lights_ubo = ubo_new(sizeof(int[2]) +
-	                     sizeof(struct PointLight[MAP_POINT_LIGHTS_PER_CHUNK]) +
-	                     sizeof(struct SpotLight[MAP_SPOT_LIGHTS_PER_CHUNK]));
+	lights_ubo = ubo_new(sizeof(lights_data));
 
 	arena = arena_new(16*1024, 0);
 
 	/* Generate the vertex lattice -> 3 versions, 1 for each normal */
-	isize vertc = 12*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH;
-	uint8* verts = scalloc(vertc, sizeof(uint8[VERTEX_ELEMENTS]));
+	isize vertc = 12*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT;
+	uint8* verts = smalloc(vertc*sizeof(uint8[VERTEX_ELEMENTS]));
 	isize vc;
-	int i = 0;
-	for (int z = 0; z < MAP_CHUNK_DEPTH; z++) {
-		for (int y = 0; y < MAP_CHUNK_HEIGHT; y++) {
-			for (int x = 0; x < MAP_CHUNK_WIDTH; x++) {
-				/* For uvs: 0 = 0.0f; 1 = 0.25f; 2 = 0.5f; 3 = 0.75f; 4 = 1.0f */
-				#define V(vi) verts[VERTEX_STRIDE*i + vi]
-				vc = 0;
+	uint i = 0;
+	for (int y = 0; y < MAP_CHUNK_HEIGHT; y++) {
+		for (int x = 0; x < MAP_CHUNK_WIDTH; x++) {
+			/* x | y | z | normal | tile_id | uv.x | uv.y */
+			/* For uvs: 0 = 0.0f; 1 = 0.25f; 2 = 0.5f; 3 = 0.75f; 4 = 1.0f */
+			#define V(vi) verts[VERTEX_STRIDE*i + vi]
+			vc = 0;
 
-				/* Left */
-				V(vc++) = x    ; V(vc++) = y    ; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 2; V(vc++) = 0;
-				V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 4; V(vc++) = 1;
-				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
-				V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = z; V(vc++) = 2; V(vc++) = i; V(vc++) = 0; V(vc++) = 1;
+			/* Left */
+			V(vc++) = x    ; V(vc++) = y    ; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 0;
+			V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = 0; V(vc++) = i; V(vc++) = 4; V(vc++) = 1;
+			V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
+			V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 0; V(vc++) = 1;
 
-				/* Top */
-				V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = z    ; V(vc++) = 0; V(vc++) = i; V(vc++) = 0; V(vc++) = 1;
-				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z    ; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
-				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 4;
-				V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = z + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 0; V(vc++) = 3;
+			/* Top */
+			V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 0; V(vc++) = 1;
+			V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
+			V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = 1; V(vc++) = i; V(vc++) = 2; V(vc++) = 4;
+			V(vc++) = x    ; V(vc++) = y + 1; V(vc++) = 1; V(vc++) = i; V(vc++) = 0; V(vc++) = 3;
 
-				/* Right */
-				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z    ; V(vc++) = 1; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
-				V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = z    ; V(vc++) = 1; V(vc++) = i; V(vc++) = 4; V(vc++) = 1;
-				V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = z + 1; V(vc++) = 1; V(vc++) = i; V(vc++) = 4; V(vc++) = 3;
-				V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = z + 1; V(vc++) = 1; V(vc++) = i; V(vc++) = 2; V(vc++) = 4;
+			/* Right */
+			V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = 0; V(vc++) = i; V(vc++) = 2; V(vc++) = 2;
+			V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = 0; V(vc++) = i; V(vc++) = 4; V(vc++) = 1;
+			V(vc++) = x + 1; V(vc++) = y    ; V(vc++) = 1; V(vc++) = i; V(vc++) = 4; V(vc++) = 3;
+			V(vc++) = x + 1; V(vc++) = y + 1; V(vc++) = 1; V(vc++) = i; V(vc++) = 2; V(vc++) = 4;
 
-				i++;
-				#undef V
-			}
+			i++;
+			#undef V
 		}
 	}
 	lattice_vbo = vbo_new(vertc*sizeof(uint8[VERTEX_ELEMENTS]), verts, false);
@@ -209,7 +202,34 @@ void map_new(struct Map* map, const char* name)
 	build_lights(map);
 	build_mesh(map);
 
-	map->ubo = ubo_new(sizeof(struct MapData));
+	struct MapLayer* layer;
+	struct MapChunk* chunk;
+	for (int l = 0; l < map->layerc; l++) {
+		layer = &map->layers[l];
+		if (map->layers[l].type == MAP_LAYER_TILE) {
+			for (int c = 0; c < layer->tile.chunkc; c++) {
+				chunk = &layer->tile.chunks[c];
+				map->cw = MAX(map->cw, chunk->x / MAP_CHUNK_WIDTH  + 1);
+				map->ch = MAX(map->ch, chunk->y / MAP_CHUNK_HEIGHT + 1);
+			}
+		}
+	}
+	map->sbo = sbo_new(sizeof(int[2]) + map->cw*map->ch*sizeof(MapTile[MAP_CHUNK_SIZE]));
+	buffer_update(map->sbo, sizeof(int[2]), (int[]){ map->cw, map->ch }, 0);
+
+	for (int l = 0; l < map->layerc; l++) {
+		if (map->layers[l].type != MAP_LAYER_TILE)
+			continue;
+
+		layer = &map->layers[l];
+		for (int c = 0; c < layer->tile.chunkc; c++) {
+			chunk = &layer->tile.chunks[c];
+			isize offset = sizeof(int[2]) +
+			               sizeof(MapTile)*(chunk->x / MAP_CHUNK_WIDTH  * MAP_CHUNK_SIZE +
+			                                chunk->y / MAP_CHUNK_HEIGHT * MAP_CHUNK_SIZE * map->cw);
+			buffer_update(map->sbo, sizeof(MapTile[MAP_CHUNK_SIZE]), chunk->data, offset);
+		}
+	}
 
 	map->pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_DIR "map.vert"),
@@ -217,18 +237,18 @@ void map_new(struct Map* map, const char* name)
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
-		.vert_attrc  = 4,
+		.vert_attrc  = 3,
 		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
-		.push_sz     = sizeof(Vec3i),
+		.push_sz     = sizeof(Vec2i),
 		.dset_cap    = 1,
-		.uboc        = 4,
-		.sboc        = 0,
+		.uboc        = 3,
+		.sboc        = 1,
 		.imgc        = 2,
 	};
 	pipeln_alloc_dsets(&map->pipeln);
-	pipeln_create_dset(&map->pipeln, 4, (UBO[]){ cam_ubo, global_light_ubo, lights_ubo, map->ubo },
-	                                 0, NULL,
+	pipeln_create_dset(&map->pipeln, 3, (UBO[]){ cam_ubo, global_light_ubo, lights_ubo },
+	                                 1, &map->sbo,
 	                                 2, (VkImageView[]){ map->tileset.diffuse.image_view,
 	                                                     map->tileset.normal.image_view });
 	pipeln_init(&map->pipeln, renderpass);
@@ -236,14 +256,15 @@ void map_new(struct Map* map, const char* name)
 cleanup:
 	if (json)
 		free(json);
-	if (tokens) {
+	if (tokens)
 		free(tokens);
-		DEBUG(2, "[MAP] Loaded \"%s\" (%dx%d of %dx%dpx) (%ld tokens):",
-		      path, map->w, map->h, map->tw, map->th, tokenc);
-		DEBUG(2, "        %d layers", map->layerc);
-		DEBUG(2, "        Tileset \"%s\"", map->tileset.name);
-	}
 	arena_reset(arena);
+	DEBUG(2, "[MAP] Loaded \"%s\" (%dx%d of %dx%dpx) (%ld tokens):",
+			path, map->w, map->h, map->tw, map->th, tokenc);
+	DEBUG(2, "        Tileset \"%s\"", map->tileset.name);
+	DEBUG(2, "        %d layers:", map->layerc);
+	for (int i = 0; i < map->layerc; i++)
+		DEBUG(2, "        - %d (%d chunks/%d objects)", i, map->layers[i].tile.chunkc, map->layers[i].obj.objc);
 }
 
 noreturn MapTile map_get_tile(struct Map* map, Vec3i pos)
@@ -269,7 +290,6 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 			continue;
 		for (int j = 0; j < layer->tile.chunkc; j++) {
 			chunk = &layer->tile.chunks[j];
-			buffer_update(map->ubo, sizeof(struct MapData), chunk->data, 0);
 
 			// TODO: move this to a storage buffer
 			lights_data.point_lightc = chunk->point_lightc;
@@ -278,9 +298,9 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 			memcpy(lights_data.spot_lights , chunk->spot_lights , chunk->spot_lightc*sizeof(struct SpotLight));
 			buffer_update(lights_ubo, sizeof(lights_data), &lights_data, 0);
 
-			// DEBUG(1, "[%d] Drawing %d tiles (%d)", j, chunk->tilec, chunk->tilec*18);
-			vkCmdBindIndexBuffer(cmd_buf, layer->tile.chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdPushConstants(cmd_buf, map->pipeln.layout, map->pipeln.push_stages, 0, map->pipeln.push_sz, &chunk->pos);
+			vkCmdBindIndexBuffer(cmd_buf, chunk->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdPushConstants(cmd_buf, map->pipeln.layout, map->pipeln.push_stages, 0, map->pipeln.push_sz,
+			                   &VEC2I(chunk->x / MAP_CHUNK_WIDTH, chunk->y / MAP_CHUNK_HEIGHT));
 			vkCmdDrawIndexed(cmd_buf, chunk->tilec*18, 1, 0, 0, 0);
 		}
 	}
@@ -300,7 +320,7 @@ void map_free(struct Map* map)
 		}
 	}
 	free(map->layers);
-	ubo_free(&map->ubo);
+	sbo_free(&map->sbo);
 	texture_free(&map->tileset.diffuse);
 	texture_free(&map->tileset.normal);
 	pipeln_free(&map->pipeln);
@@ -414,7 +434,6 @@ static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tok
 				chunk = (struct MapChunk){ 0 };
 				i = parse_chunk(&chunk, i, json, tokens);
 				varray_push(&chunks, &chunk);
-				// varray_push(&layer_buf.chunks, &chunk);
 			}
 			continue;
 		} else if (!strcmp(buf, "objects")) {
@@ -425,13 +444,10 @@ static int parse_layer(struct MapLayer* layer, int i, char* json, jsmntok_t* tok
 			if (token.type == JSMN_ARRAY)
 				NEXT();
 			for (int o = 0; o < objc; o++) {
-				// DEBUG_VALUE(buf);
 				obj = (struct MapObject){ 0 };
 				i = parse_object(&obj, i, json, tokens);
 				varray_push(&objects, &obj);
 			}
-			// DEBUG_VALUE(buf);
-			// exit(0);
 			continue;
 		} else if (!strcmp(buf, "properties")) {
 
@@ -504,14 +520,12 @@ static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tok
 				ERROR("[MAP] Map chunks should be <= 256 tiles");
 			i = parse_data(chunk->data, i, json, tokens);
 		}
-		else if (!strcmp(buf, "width"))  { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "height")) { NEXT(); NEXT(); }
-		else if (!strcmp(buf, "x"))      { NEXT(); chunk->pos.x = atoi(buf); NEXT(); }
-		else if (!strcmp(buf, "y"))      { NEXT(); chunk->pos.y = atoi(buf); NEXT(); }
-		else {
-			ERROR("[MAP] Unmatched chunk token: \"%s\"", buf);
-			NEXT();
-		}
+		else if (!strcmp(buf, "width"))  { NEXT(); }
+		else if (!strcmp(buf, "height")) { NEXT(); }
+		else if (!strcmp(buf, "x"))      { NEXT(); chunk->x = atoi(buf); }
+		else if (!strcmp(buf, "y"))      { NEXT(); chunk->y = atoi(buf); }
+		else ERROR("[MAP] Unmatched chunk token: \"%s\"", buf);
+		NEXT();
 	}
 
 	return i;
@@ -528,7 +542,6 @@ static int parse_data(uint32* data, int i, char* json, jsmntok_t* tokens)
 		data[j] = atoi(buf);
 	}
 
-	NEXT();
 	return i;
 }
 
@@ -769,7 +782,7 @@ static void build_lights(struct Map* map)
 				for (int c = 0; c < map->layers[t].tile.chunkc; c++) {
 					chunk = &map->layers[t].tile.chunks[c];
 					// TODO: cubic check
-					Rect rect  = RECT(chunk->pos.x, chunk->pos.y, MAP_CHUNK_WIDTH, MAP_CHUNK_HEIGHT);
+					Rect rect  = RECT(chunk->x, chunk->y, MAP_CHUNK_WIDTH, MAP_CHUNK_HEIGHT);
 					Vec3 point = VEC3(2.0f * obj->x / map->tw + 1.0f, obj->y / map->th + 1.0f, -1.0f);
 					switch (obj->type) {
 					case MAP_OBJECT_POINT:
@@ -809,7 +822,7 @@ static void build_lights(struct Map* map)
 
 static void build_mesh(struct Map* map)
 {
-	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH*sizeof(uint16[18]));
+	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*sizeof(uint16[18]));
 	struct MapLayer* layer;
 	struct MapChunk* chunk;
 	for (int i = 0; i < map->layerc; i++) {
@@ -821,9 +834,8 @@ static void build_mesh(struct Map* map)
 			chunk = &layer->tile.chunks[j];
 			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
 				if (chunk->data[k]) {
-					mesh_tile(&inds[18*chunk->tilec++], VEC3I(k % MAP_CHUNK_WIDTH,
-					                                          k / MAP_CHUNK_WIDTH,
-					                                          chunk->pos.z));
+					mesh_tile(&inds[18*chunk->tilec++], VEC2I(k % MAP_CHUNK_WIDTH,
+					                                          k / MAP_CHUNK_WIDTH));
 				}
 			}
 			chunk->ibo = ibo_new(18*chunk->tilec*sizeof(inds[0]), inds);
@@ -833,10 +845,10 @@ static void build_mesh(struct Map* map)
 	free(inds);
 }
 
-static void mesh_tile(uint16* inds, Vec3i v)
+static void mesh_tile(uint16* inds, Vec2i v)
 {
 	#define V(vi) (12*tile_index + vi)
-	int tile_index = ((v.z)*MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT + (v.y)*MAP_CHUNK_WIDTH + v.x);
+	int tile_index = v.y*MAP_CHUNK_WIDTH + v.x;
 	/* Top: 0-3 */
 	*inds++ = V(0); *inds++ = V(3); *inds++ = V(1);
 	*inds++ = V(2); *inds++ = V(1); *inds++ = V(3);

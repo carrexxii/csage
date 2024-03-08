@@ -12,13 +12,12 @@
 
 #define MAP_CHUNK_WIDTH            16
 #define MAP_CHUNK_HEIGHT           16
-#define MAP_CHUNK_DEPTH            1
-#define MAP_CHUNK_SIZE             (MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH)
+#define MAP_CHUNK_SIZE             (MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT)
 #define MAP_POINT_LIGHTS_PER_CHUNK 8
 #define MAP_SPOT_LIGHTS_PER_CHUNK  4
 #define MAP_NAME_LEN               32
 
-typedef int MapTile;
+typedef uint32 MapTile;
 
 struct Tileset {
 	struct Texture diffuse;
@@ -33,10 +32,10 @@ struct Tileset {
 
 struct MapChunk {
 	IBO ibo;
+	int x, y;
 	int tilec;
 	int point_lightc;
 	int spot_lightc;
-	Vec3i pos;
 	uint32 data[MAP_CHUNK_SIZE];
 	struct PointLight point_lights[MAP_POINT_LIGHTS_PER_CHUNK];
 	struct SpotLight  spot_lights[MAP_SPOT_LIGHTS_PER_CHUNK];
@@ -109,8 +108,8 @@ struct MapLayer {
 };
 
 struct Map {
-	UBO ubo;
-	int w, h, tw, th;
+	SBO sbo;
+	int w, h, tw, th, cw, ch;
 	int tilesetc;
 	int layerc;
 	struct Tileset   tileset;
@@ -119,7 +118,7 @@ struct Map {
 };
 
 struct MapData {
-	uint32 block_data[MAP_CHUNK_SIZE];
+	MapTile block_data[MAP_CHUNK_SIZE];
 };
 
 void    maps_init(VkRenderPass renderpass);
