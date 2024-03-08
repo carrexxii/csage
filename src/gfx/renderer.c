@@ -18,9 +18,8 @@
 #define FRAMES_IN_FLIGHT 2
 
 VkSampler default_sampler;
-Vec4 global_light;
-Vec4 global_ambient;
-UBO  global_light_ubo;
+struct DirectionalLight global_light;
+UBO global_light_ubo;
 
 static void record_commands(int imgi, struct Camera* cam);
 static void create_frame_buffers(void);
@@ -41,7 +40,6 @@ static struct {
 static VkRenderPass     renderpass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
-// static struct Light     lights[RENDERER_MAX_LIGHTS];
 
 VkRenderPass renderer_init()
 {
@@ -125,7 +123,7 @@ VkRenderPass renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	global_light_ubo = ubo_new(sizeof(Vec4[2]));
+	global_light_ubo = ubo_new(sizeof(struct DirectionalLight));
 
 	return renderpass;
 }
@@ -142,14 +140,15 @@ void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*))
 	draw_fns[draw_fnc++] = fn;
 }
 
-void renderer_set_global_lighting(Vec3 light, float power, Vec3 ambient_colour, float ambient_power)
+void renderer_set_global_lighting(Vec3 dir, Vec3 ambient, Vec3 diffuse, Vec3 specular)
 {
-	Vec3 dir    = normalized(light);
-	Vec3 colour = normalized(ambient_colour);
-
-	global_light   = (Vec4){ UNPACK3(dir.arr)   , power         };
-	global_ambient = (Vec4){ UNPACK3(colour.arr), ambient_power };
-	buffer_update(global_light_ubo, sizeof(Vec4[2]), (Vec4[]){ global_light, global_ambient }, 0);
+	global_light = (struct DirectionalLight){
+		.dir      = normalized(dir),
+		.ambient  = ambient,
+		.diffuse  = diffuse,
+		.specular = specular,
+	};
+	buffer_update(global_light_ubo, sizeof(struct DirectionalLight), &global_light, 0);
 }
 
 void renderer_draw(struct Camera* cam)

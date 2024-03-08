@@ -10,12 +10,13 @@
 #include "maths/types.h"
 #include "camera.h"
 
-#define MAP_CHUNK_WIDTH      16
-#define MAP_CHUNK_HEIGHT     16
-#define MAP_CHUNK_DEPTH      1
-#define MAP_CHUNK_SIZE       (MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH)
-#define MAP_LIGHTS_PER_CHUNK 8
-#define MAP_NAME_LEN         32
+#define MAP_CHUNK_WIDTH            16
+#define MAP_CHUNK_HEIGHT           16
+#define MAP_CHUNK_DEPTH            1
+#define MAP_CHUNK_SIZE             (MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*MAP_CHUNK_DEPTH)
+#define MAP_POINT_LIGHTS_PER_CHUNK 8
+#define MAP_SPOT_LIGHTS_PER_CHUNK  4
+#define MAP_NAME_LEN               32
 
 typedef int MapTile;
 
@@ -33,10 +34,12 @@ struct Tileset {
 struct MapChunk {
 	IBO ibo;
 	int tilec;
-	int lightc;
+	int point_lightc;
+	int spot_lightc;
 	Vec3i pos;
 	uint32 data[MAP_CHUNK_SIZE];
-	struct Light lights[MAP_LIGHTS_PER_CHUNK];
+	struct PointLight point_lights[MAP_POINT_LIGHTS_PER_CHUNK];
+	struct SpotLight  spot_lights[MAP_SPOT_LIGHTS_PER_CHUNK];
 };
 struct MapTileLayer {
 	int chunkc;
@@ -60,9 +63,13 @@ struct MapObject {
 	union {
 		Vec2*  points;
 		String text;
-		struct { /* Lights */
-			uint8 colour[4];
-			float power;
+		struct {
+			uint8 ambient[4];
+			uint8 diffuse[4];
+			uint8 specular[4];
+			float constant;
+			float linear;
+			float quadratic;
 		};
 	};
 };

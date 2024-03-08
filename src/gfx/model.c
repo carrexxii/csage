@@ -100,7 +100,7 @@ void models_init(VkRenderPass renderpass)
 	sbo_buf    = sbo_new(MAX_MODELS*sizeof(Mat4x4));
 	ubo_cam    = ubo_new(sizeof(Mat4x4[2]));
 	ubo_mtls   = ubo_new(MAX_MATERIALS*sizeof(struct Material));
-	ubo_lights = ubo_new(sizeof(struct Light));
+	// ubo_lights = ubo_new(sizeof(struct Light));
 	ubo_joints = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform));
 
 	pipeln = (struct Pipeline){

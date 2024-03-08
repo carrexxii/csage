@@ -56,8 +56,10 @@ void scenemgr_init()
 
 	taskmgr_init();
 
-	renderer_set_global_lighting(VEC3(-1.0f, -1.0f, 1.0f), 1.5f,
-	                             VEC3(1.0f, 1.0f, 1.0f), 0.0f);
+	renderer_set_global_lighting(VEC3(-1.0f, 1.0f, 1.0f),
+	                             VEC3(0.01f, 0.01f, 0.01f),
+	                             VEC3(0.03f, 0.03f, 0.03f),
+	                             VEC3(0.5f, 0.5f, 0.5f));
 
 	switch_scene(SCENE_GAME);
 }
@@ -74,9 +76,6 @@ noreturn void scenemgr_loop()
 		ot = nt;
 		acc += dt;
 		while (acc >= DT_MS) {
-			Vec3 dir = VEC3(2*mouse_x/global_config.winw - 1.0f, 2*mouse_y/global_config.winh - 1.0f, 1.0f);
-			renderer_set_global_lighting(dir, 0.2f, VEC3(1.0f, 1.0f, 1.0f), 0.0f);
-
 			while (!taskmgr_reset());
 			acc -= DT_MS;
 		}

@@ -106,17 +106,27 @@ static VkVertexInputAttributeDescription vert_attrs[] = {
 };
 
 static UBO cam_ubo;
-static UBO lights_ubo;
 static VBO lattice_vbo;
 static char buf[BUFFER_SIZE];
 static struct Arena* arena;
+
+static UBO lights_ubo;
+static struct {
+	int point_lightc;
+	int spot_lightc;
+	float pad1[2];
+	struct PointLight point_lights[MAP_POINT_LIGHTS_PER_CHUNK];
+	struct SpotLight  spot_lights[MAP_SPOT_LIGHTS_PER_CHUNK];
+} lights_data;
 
 void maps_init(VkRenderPass rpass)
 {
 	renderpass = rpass;
 
 	cam_ubo    = ubo_new(sizeof(Mat4x4[2]));
-	lights_ubo = ubo_new(sizeof(struct Light[MAP_LIGHTS_PER_CHUNK + 1]));
+	lights_ubo = ubo_new(sizeof(int[2]) +
+	                     sizeof(struct PointLight[MAP_POINT_LIGHTS_PER_CHUNK]) +
+	                     sizeof(struct SpotLight[MAP_SPOT_LIGHTS_PER_CHUNK]));
 
 	arena = arena_new(16*1024, 0);
 
@@ -260,7 +270,13 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 		for (int j = 0; j < layer->tile.chunkc; j++) {
 			chunk = &layer->tile.chunks[j];
 			buffer_update(map->ubo, sizeof(struct MapData), chunk->data, 0);
-			buffer_update(lights_ubo, sizeof(struct Light[MAP_LIGHTS_PER_CHUNK]), chunk->lights, 0);
+
+			// TODO: move this to a storage buffer
+			lights_data.point_lightc = chunk->point_lightc;
+			lights_data.spot_lightc  = chunk->spot_lightc;
+			memcpy(lights_data.point_lights, chunk->point_lights, chunk->point_lightc*sizeof(struct PointLight));
+			memcpy(lights_data.spot_lights , chunk->spot_lights , chunk->spot_lightc*sizeof(struct SpotLight));
+			buffer_update(lights_ubo, sizeof(lights_data), &lights_data, 0);
 
 			// DEBUG(1, "[%d] Drawing %d tiles (%d)", j, chunk->tilec, chunk->tilec*18);
 			vkCmdBindIndexBuffer(cmd_buf, layer->tile.chunks[j].ibo.buf, 0, VK_INDEX_TYPE_UINT16);
@@ -564,19 +580,42 @@ static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tok
 	if (obj->type == MAP_OBJECT_NONE)
 		ERROR("[MAP] Map object of type %d not mapped to enum", obj->type);
 
+	switch (obj->type) {
+	case MAP_OBJECT_POINT:
+		// TODO: #define these
+		memcpy(obj->ambient , (uint8[]){ 255, 255, 255, 255 }, sizeof(obj->ambient));
+		memcpy(obj->diffuse , (uint8[]){ 255, 255, 255, 255 }, sizeof(obj->diffuse));
+		memcpy(obj->specular, (uint8[]){ 255, 255, 255, 255 }, sizeof(obj->specular));
+		obj->constant  = 1.0f;
+		obj->linear    = 0.7f;
+		obj->quadratic = 1.8f;
+		break;
+	default:
+		WARNING("[MAP] No defaults set for objects of type %d", obj->type);
+	}
 	struct Property* prop;
 	for (int j = 0; j < props.len; j++) {
 		prop = varray_get(&props, j);
-		if (!strcmp(prop->key.data, "power")) {
-			obj->power = prop->value.vfloat;
-		} else if (!strcmp(prop->key.data, "colour")) {
-			obj->colour[3] = prop->value.vcolour[0];
-			obj->colour[0] = prop->value.vcolour[1];
-			obj->colour[1] = prop->value.vcolour[2];
-			obj->colour[2] = prop->value.vcolour[3];
-		} else {
-			WARNING("[MAP] Ignoring object property \"%s\"", prop->key.data);
+		if (!strcmp(prop->key.data, "ambient")) {
+			obj->ambient[3] = prop->value.vcolour[0];
+			obj->ambient[0] = prop->value.vcolour[1];
+			obj->ambient[1] = prop->value.vcolour[2];
+			obj->ambient[2] = prop->value.vcolour[3];
+		} else if (!strcmp(prop->key.data, "diffuse")) {
+			obj->diffuse[3] = prop->value.vcolour[0];
+			obj->diffuse[0] = prop->value.vcolour[1];
+			obj->diffuse[1] = prop->value.vcolour[2];
+			obj->diffuse[2] = prop->value.vcolour[3];
+		} else if (!strcmp(prop->key.data, "specular")) {
+			obj->specular[3] = prop->value.vcolour[0];
+			obj->specular[0] = prop->value.vcolour[1];
+			obj->specular[1] = prop->value.vcolour[2];
+			obj->specular[2] = prop->value.vcolour[3];
 		}
+		else if (!strcmp(prop->key.data, "constant"))  { obj->constant  = prop->value.vfloat; }
+		else if (!strcmp(prop->key.data, "linear"))    { obj->linear    = prop->value.vfloat; }
+		else if (!strcmp(prop->key.data, "quadratic")) { obj->quadratic = prop->value.vfloat; }
+		else WARNING("[MAP] Ignoring object property \"%s\"", prop->key.data);
 	}
 
 	varray_free(&props);
@@ -734,16 +773,30 @@ static void build_lights(struct Map* map)
 					Vec3 point = VEC3(2.0f * obj->x / map->tw + 1.0f, obj->y / map->th + 1.0f, -1.0f);
 					switch (obj->type) {
 					case MAP_OBJECT_POINT:
-						if (point_in_rect(VEC2(point.x, point.y), rect))
-							chunk->lights[chunk->lightc++] = (struct Light){
-								.pos    = VEC4(point.x, point.y, point.z, obj->power), // TODO: layer z
-								.colour = (Vec4){
-									obj->colour[0] / 255.0f,
-									obj->colour[1] / 255.0f,
-									obj->colour[2] / 255.0f,
-									obj->colour[3] / 255.0f,
+						if (point_in_rect(VEC2(point.x, point.y), rect)) {
+							float cf = 1.0f / 255.0f;
+							chunk->point_lights[chunk->point_lightc++] = (struct PointLight){
+								.pos     = point,
+								.ambient = (Vec3){
+									obj->ambient[0] * cf,
+									obj->ambient[1] * cf,
+									obj->ambient[2] * cf,
 								 },
+								.diffuse = (Vec3){
+									obj->diffuse[0] * cf,
+									obj->diffuse[1] * cf,
+									obj->diffuse[2] * cf,
+								 },
+								.specular = (Vec3){
+									obj->specular[0] * cf,
+									obj->specular[1] * cf,
+									obj->specular[2] * cf,
+								 },
+								.constant  = obj->constant,
+								.linear    = obj->linear,
+								.quadratic = obj->quadratic,
 							};
+						}
 						break;
 					default:
 						ERROR("[MAP] Lighting for object of type %d not implemented", obj->type);
