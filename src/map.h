@@ -15,6 +15,8 @@
 #define MAP_CHUNK_SIZE             (MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT)
 #define MAP_POINT_LIGHTS_PER_CHUNK 8
 #define MAP_SPOT_LIGHTS_PER_CHUNK  4
+#define MAP_MAX_SPOT_LIGHTS        32
+#define MAP_MAX_POINT_LIGHTS       128
 #define MAP_NAME_LEN               32
 
 typedef uint32 MapTile;
@@ -30,15 +32,18 @@ struct Tileset {
 	int tw, th;
 };
 
+struct MapChunkData {
+	int spotc, pointc;
+	int spots[MAP_SPOT_LIGHTS_PER_CHUNK];
+	int points[MAP_POINT_LIGHTS_PER_CHUNK];
+	MapTile tiles[MAP_CHUNK_SIZE];
+};
+
 struct MapChunk {
 	IBO ibo;
 	int x, y;
 	int tilec;
-	int point_lightc;
-	int spot_lightc;
-	uint32 data[MAP_CHUNK_SIZE];
-	struct PointLight point_lights[MAP_POINT_LIGHTS_PER_CHUNK];
-	struct SpotLight  spot_lights[MAP_SPOT_LIGHTS_PER_CHUNK];
+	struct MapChunkData data;
 };
 struct MapTileLayer {
 	int chunkc;
@@ -108,17 +113,16 @@ struct MapLayer {
 };
 
 struct Map {
-	SBO sbo;
+	SBO chunks_sbo;
+	SBO spot_lights_sbo;
+	SBO point_lights_sbo;
+	UBO ubo;
 	int w, h, tw, th, cw, ch;
 	int tilesetc;
 	int layerc;
 	struct Tileset   tileset;
 	struct Pipeline  pipeln;
 	struct MapLayer* layers;
-};
-
-struct MapData {
-	MapTile block_data[MAP_CHUNK_SIZE];
 };
 
 void    maps_init(VkRenderPass renderpass);

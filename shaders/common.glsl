@@ -1,5 +1,6 @@
-#define MAX_POINT_LIGHTS 8
-#define MAX_SPOT_LIGHTS  4
+#define MAX_CHUNK_POINT_LIGHTS 8
+#define MAX_CHUNK_SPOT_LIGHTS  4
+#define CHUNK_SIZE             (16 * 16)
 
 const vec3 VIEW_DIR = normalize(vec3(1.0f, 1.0f, -1.0f));
 
@@ -31,6 +32,13 @@ struct SpotLight {
 	float quadratic;
 	float cutoff;
 	float outer_cutoff;
+};
+
+struct MapChunkData {
+	int spotc, pointc;
+	int points[MAX_CHUNK_POINT_LIGHTS];
+	int spots[MAX_CHUNK_SPOT_LIGHTS];
+	uint tiles[CHUNK_SIZE];
 };
 
 const float material_shininess = 16.0f;

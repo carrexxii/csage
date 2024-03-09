@@ -199,35 +199,47 @@ void map_new(struct Map* map, const char* name)
 	}
 
 	parse_map(map, json, tokens, tokenc);
-	build_lights(map);
-	build_mesh(map);
 
 	struct MapLayer* layer;
 	struct MapChunk* chunk;
+	int minx = 0, miny = 0;
+	int maxx = 0, maxy = 0;
 	for (int l = 0; l < map->layerc; l++) {
 		layer = &map->layers[l];
 		if (map->layers[l].type == MAP_LAYER_TILE) {
 			for (int c = 0; c < layer->tile.chunkc; c++) {
 				chunk = &layer->tile.chunks[c];
-				map->cw = MAX(map->cw, chunk->x / MAP_CHUNK_WIDTH  + 1);
-				map->ch = MAX(map->ch, chunk->y / MAP_CHUNK_HEIGHT + 1);
+				minx = MIN(minx, chunk->x);
+				miny = MIN(miny, chunk->y);
+				maxx = MAX(maxx, chunk->x);
+				maxy = MAX(maxy, chunk->y);
 			}
 		}
 	}
-	map->sbo = sbo_new(sizeof(int[2]) + map->cw*map->ch*sizeof(MapTile[MAP_CHUNK_SIZE]));
-	buffer_update(map->sbo, sizeof(int[2]), (int[]){ map->cw, map->ch }, 0);
+	map->cw = (maxx - minx) / MAP_CHUNK_WIDTH  + 1;
+	map->ch = (maxy - miny) / MAP_CHUNK_HEIGHT + 1;
+
+	map->ubo = ubo_new(sizeof(Vec2i[2]));
+	buffer_update(map->ubo, sizeof(Vec2i[2]), (Vec2i[]){
+		VEC2I(map->cw, map->ch),
+		VEC2I(4096 / 128, 4096 / 128),
+	}, 0);
+
+	build_lights(map);
+	build_mesh(map);
+
+	map->chunks_sbo = sbo_new(map->cw*map->ch*sizeof(struct MapChunkData));
 
 	for (int l = 0; l < map->layerc; l++) {
 		if (map->layers[l].type != MAP_LAYER_TILE)
 			continue;
 
 		layer = &map->layers[l];
+		isize offset;
 		for (int c = 0; c < layer->tile.chunkc; c++) {
 			chunk = &layer->tile.chunks[c];
-			isize offset = sizeof(int[2]) +
-			               sizeof(MapTile)*(chunk->x / MAP_CHUNK_WIDTH  * MAP_CHUNK_SIZE +
-			                                chunk->y / MAP_CHUNK_HEIGHT * MAP_CHUNK_SIZE * map->cw);
-			buffer_update(map->sbo, sizeof(MapTile[MAP_CHUNK_SIZE]), chunk->data, offset);
+			offset = chunk->x / MAP_CHUNK_WIDTH + chunk->y / MAP_CHUNK_HEIGHT * map->cw;
+			buffer_update(map->chunks_sbo, sizeof(struct MapChunkData) , &chunk->data, offset*sizeof(struct MapChunkData));
 		}
 	}
 
@@ -243,12 +255,12 @@ void map_new(struct Map* map, const char* name)
 		.push_sz     = sizeof(Vec2i),
 		.dset_cap    = 1,
 		.uboc        = 3,
-		.sboc        = 1,
+		.sboc        = 3,
 		.imgc        = 2,
 	};
 	pipeln_alloc_dsets(&map->pipeln);
-	pipeln_create_dset(&map->pipeln, 3, (UBO[]){ cam_ubo, global_light_ubo, lights_ubo },
-	                                 1, &map->sbo,
+	pipeln_create_dset(&map->pipeln, 3, (UBO[]){ cam_ubo, global_light_ubo, map->ubo },
+	                                 3, (SBO[]){ map->chunks_sbo, map->spot_lights_sbo, map->point_lights_sbo },
 	                                 2, (VkImageView[]){ map->tileset.diffuse.image_view,
 	                                                     map->tileset.normal.image_view });
 	pipeln_init(&map->pipeln, renderpass);
@@ -291,13 +303,6 @@ void map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map
 		for (int j = 0; j < layer->tile.chunkc; j++) {
 			chunk = &layer->tile.chunks[j];
 
-			// TODO: move this to a storage buffer
-			lights_data.point_lightc = chunk->point_lightc;
-			lights_data.spot_lightc  = chunk->spot_lightc;
-			memcpy(lights_data.point_lights, chunk->point_lights, chunk->point_lightc*sizeof(struct PointLight));
-			memcpy(lights_data.spot_lights , chunk->spot_lights , chunk->spot_lightc*sizeof(struct SpotLight));
-			buffer_update(lights_ubo, sizeof(lights_data), &lights_data, 0);
-
 			vkCmdBindIndexBuffer(cmd_buf, chunk->ibo.buf, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdPushConstants(cmd_buf, map->pipeln.layout, map->pipeln.push_stages, 0, map->pipeln.push_sz,
 			                   &VEC2I(chunk->x / MAP_CHUNK_WIDTH, chunk->y / MAP_CHUNK_HEIGHT));
@@ -320,7 +325,10 @@ void map_free(struct Map* map)
 		}
 	}
 	free(map->layers);
-	sbo_free(&map->sbo);
+	ubo_free(&map->ubo);
+	sbo_free(&map->chunks_sbo);
+	sbo_free(&map->spot_lights_sbo);
+	sbo_free(&map->point_lights_sbo);
 	texture_free(&map->tileset.diffuse);
 	texture_free(&map->tileset.normal);
 	pipeln_free(&map->pipeln);
@@ -518,7 +526,7 @@ static int parse_chunk(struct MapChunk* chunk, int i, char* json, jsmntok_t* tok
 		if (!strcmp(buf, "data")) {
 			if (token.size > UINT8_MAX + 1)
 				ERROR("[MAP] Map chunks should be <= 256 tiles");
-			i = parse_data(chunk->data, i, json, tokens);
+			i = parse_data(chunk->data.tiles, i, json, tokens);
 		}
 		else if (!strcmp(buf, "width"))  { NEXT(); }
 		else if (!strcmp(buf, "height")) { NEXT(); }
@@ -764,6 +772,9 @@ static int parse_property(struct Property* prop, int i, char* json, jsmntok_t* t
 
 static void build_lights(struct Map* map)
 {
+	struct VArray point_lights = varray_new(32, sizeof(struct PointLight));
+	struct VArray spot_lights  = varray_new(16, sizeof(struct SpotLight));
+
 	struct MapLayer* layer = NULL;
 	for (int i = 0; i < map->layerc; i++)
 		if (map->layers[i].type == MAP_LAYER_OBJECT && !strcmp(map->layers[i].name, "lights"))
@@ -771,58 +782,74 @@ static void build_lights(struct Map* map)
 
 	struct MapObject* obj;
 	struct MapChunk*  chunk;
+	struct SpotLight  slight;
+	struct PointLight plight;
+	int index;
+	float cf = 1.0f / 255.0f;
 	if (!layer) {
 		WARNING("[MAP] Map does not have a \"lights\" object layer");
 	} else {
 		for (int o = 0; o < layer->obj.objc; o++) {
 			obj = &layer->obj.objs[o];
-			for (int t = 0; t < map->layerc; t++) {
-				if (map->layers[t].type != MAP_LAYER_TILE)
-					continue;
-				for (int c = 0; c < map->layers[t].tile.chunkc; c++) {
-					chunk = &map->layers[t].tile.chunks[c];
-					// TODO: cubic check
-					Rect rect  = RECT(chunk->x, chunk->y, MAP_CHUNK_WIDTH, MAP_CHUNK_HEIGHT);
-					Vec3 point = VEC3(2.0f * obj->x / map->tw + 1.0f, obj->y / map->th + 1.0f, -1.0f);
-					switch (obj->type) {
-					case MAP_OBJECT_POINT:
-						if (point_in_rect(VEC2(point.x, point.y), rect)) {
-							float cf = 1.0f / 255.0f;
-							chunk->point_lights[chunk->point_lightc++] = (struct PointLight){
-								.pos     = point,
-								.ambient = (Vec3){
-									obj->ambient[0] * cf,
-									obj->ambient[1] * cf,
-									obj->ambient[2] * cf,
-								 },
-								.diffuse = (Vec3){
-									obj->diffuse[0] * cf,
-									obj->diffuse[1] * cf,
-									obj->diffuse[2] * cf,
-								 },
-								.specular = (Vec3){
-									obj->specular[0] * cf,
-									obj->specular[1] * cf,
-									obj->specular[2] * cf,
-								 },
-								.constant  = obj->constant,
-								.linear    = obj->linear,
-								.quadratic = obj->quadratic,
-							};
+			Vec3 point = VEC3(2.0f * obj->x / map->tw + 1.0f, obj->y / map->th + 1.0f, -1.0f);
+			switch (obj->type) {
+			case MAP_OBJECT_POINT:
+				plight = (struct PointLight){
+					.pos     = point,
+					.ambient = (Vec3){
+						obj->ambient[0] * cf,
+						obj->ambient[1] * cf,
+						obj->ambient[2] * cf,
+					},
+					.diffuse = (Vec3){
+						obj->diffuse[0] * cf,
+						obj->diffuse[1] * cf,
+						obj->diffuse[2] * cf,
+					},
+					.specular = (Vec3){
+						obj->specular[0] * cf,
+						obj->specular[1] * cf,
+						obj->specular[2] * cf,
+					},
+					.constant  = obj->constant,
+					.linear    = obj->linear,
+					.quadratic = obj->quadratic,
+				};
+				index = varray_push(&point_lights, &plight);
+
+				float dist = 1000;
+				for (int t = 0; t < map->layerc; t++) {
+					if (map->layers[t].type != MAP_LAYER_TILE)
+						continue;
+					for (int c = 0; c < map->layers[t].tile.chunkc; c++) {
+						chunk = &map->layers[t].tile.chunks[c];
+						if (distance(plight.pos, VEC3(chunk->x, chunk->y, 0.0f)) <= dist) {
+							if (chunk->data.pointc < MAP_POINT_LIGHTS_PER_CHUNK)
+								chunk->data.points[chunk->data.pointc++] = index;
+							else
+							 	WARNING("[MAP] Chunk exceeded maximum point lights");
 						}
-						break;
-					default:
-						ERROR("[MAP] Lighting for object of type %d not implemented", obj->type);
 					}
 				}
+				break;
+			default:
+				ERROR("[MAP] Lighting for object of type %d not implemented", obj->type);
 			}
 		}
 	}
+
+	map->spot_lights_sbo  = sbo_new(MAX(1, sizeof(struct SpotLight[spot_lights.len])));
+	map->point_lights_sbo = sbo_new(MAX(1, sizeof(struct SpotLight[point_lights.len])));
+	if (spot_lights.len)
+		buffer_update(map->spot_lights_sbo, spot_lights.len*sizeof(struct SpotLight), spot_lights.data, 0);
+	if (point_lights.len)
+		buffer_update(map->point_lights_sbo, point_lights.len*sizeof(struct PointLight),
+		              point_lights.data, spot_lights.len*sizeof(struct SpotLight));
 }
 
 static void build_mesh(struct Map* map)
 {
-	uint16* inds = smalloc(MAP_CHUNK_WIDTH*MAP_CHUNK_HEIGHT*sizeof(uint16[18]));
+	uint16* inds = smalloc(MAP_CHUNK_SIZE*sizeof(uint16[18]));
 	struct MapLayer* layer;
 	struct MapChunk* chunk;
 	for (int i = 0; i < map->layerc; i++) {
@@ -833,7 +860,7 @@ static void build_mesh(struct Map* map)
 		for (int j = 0; j < layer->tile.chunkc; j++) {
 			chunk = &layer->tile.chunks[j];
 			for (int k = 0; k < MAP_CHUNK_SIZE; k++) {
-				if (chunk->data[k]) {
+				if (chunk->data.tiles[k]) {
 					mesh_tile(&inds[18*chunk->tilec++], VEC2I(k % MAP_CHUNK_WIDTH,
 					                                          k / MAP_CHUNK_WIDTH));
 				}
