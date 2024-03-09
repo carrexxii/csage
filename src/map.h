@@ -74,6 +74,8 @@ struct MapObject {
 			float constant;
 			float linear;
 			float quadratic;
+			float cutoff;
+			float outer_cutoff;
 		};
 	};
 };

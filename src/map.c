@@ -581,6 +581,10 @@ static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tok
 			NEXT();
 			if (!strcmp(buf, "true"))
 				obj->type = MAP_OBJECT_POINT;
+		} else if (!strcmp(buf, "ellipse")) {
+			NEXT();
+			if (!strcmp(buf, "true"))
+				obj->type = MAP_OBJECT_ELLIPSE;
 		}
 		else if (!strcmp(buf, "x"))        { NEXT(); obj->x = atof(buf); }
 		else if (!strcmp(buf, "y"))        { NEXT(); obj->y = atof(buf); }
@@ -602,14 +606,17 @@ static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tok
 		ERROR("[MAP] Map object of type %d not mapped to enum", obj->type);
 
 	switch (obj->type) {
+	case MAP_OBJECT_ELLIPSE:
 	case MAP_OBJECT_POINT:
-		// TODO: #define these
-		memcpy(obj->ambient , (uint8[]){ 255, 255, 255, 255 }, sizeof(obj->ambient));
-		memcpy(obj->diffuse , (uint8[]){ 255, 255, 255, 255 }, sizeof(obj->diffuse));
-		memcpy(obj->specular, (uint8[]){ 255, 255, 255, 255 }, sizeof(obj->specular));
-		obj->constant  = 1.0f;
-		obj->linear    = 0.7f;
-		obj->quadratic = 1.8f;
+		memcpy(obj->ambient , DEFAULT_LIGHT_AMBIENT , sizeof(obj->ambient));
+		memcpy(obj->diffuse , DEFAULT_LIGHT_DIFFUSE , sizeof(obj->diffuse));
+		memcpy(obj->specular, DEFAULT_LIGHT_SPECULAR, sizeof(obj->specular));
+		obj->constant     = DEFAULT_LIGHT_CONSTANT;
+		obj->linear       = DEFAULT_LIGHT_LINEAR;
+		obj->quadratic    = DEFAULT_LIGHT_QUADRATIC;
+		obj->cutoff       = DEFAULT_LIGHT_CUTOFF;
+		obj->outer_cutoff = DEFAULT_LIGHT_OUTER_CUTOFF;
+		break;
 		break;
 	default:
 		WARNING("[MAP] No defaults set for objects of type %d", obj->type);
@@ -633,9 +640,11 @@ static int parse_object(struct MapObject* obj, int i, char* json, jsmntok_t* tok
 			obj->specular[1] = prop->value.vcolour[2];
 			obj->specular[2] = prop->value.vcolour[3];
 		}
-		else if (!strcmp(prop->key.data, "constant"))  { obj->constant  = prop->value.vfloat; }
-		else if (!strcmp(prop->key.data, "linear"))    { obj->linear    = prop->value.vfloat; }
-		else if (!strcmp(prop->key.data, "quadratic")) { obj->quadratic = prop->value.vfloat; }
+		else if (!strcmp(prop->key.data, "constant"))     { obj->constant     = prop->value.vfloat; }
+		else if (!strcmp(prop->key.data, "linear"))       { obj->linear       = prop->value.vfloat; }
+		else if (!strcmp(prop->key.data, "quadratic"))    { obj->quadratic    = prop->value.vfloat; }
+		else if (!strcmp(prop->key.data, "cutoff"))       { obj->cutoff       = prop->value.vfloat; }
+		else if (!strcmp(prop->key.data, "outer-cutoff")) { obj->outer_cutoff = prop->value.vfloat; }
 		else WARNING("[MAP] Ignoring object property \"%s\"", prop->key.data);
 	}
 
@@ -785,6 +794,8 @@ static void build_lights(struct Map* map)
 	struct SpotLight  slight;
 	struct PointLight plight;
 	int index;
+	Vec3 dir;
+	float dist;
 	float cf = 1.0f / 255.0f;
 	if (!layer) {
 		WARNING("[MAP] Map does not have a \"lights\" object layer");
@@ -817,7 +828,7 @@ static void build_lights(struct Map* map)
 				};
 				index = varray_push(&point_lights, &plight);
 
-				float dist = 1000;
+				dist = 1000;
 				for (int t = 0; t < map->layerc; t++) {
 					if (map->layers[t].type != MAP_LAYER_TILE)
 						continue;
@@ -828,6 +839,49 @@ static void build_lights(struct Map* map)
 								chunk->data.points[chunk->data.pointc++] = index;
 							else
 							 	WARNING("[MAP] Chunk exceeded maximum point lights");
+						}
+					}
+				}
+				break;
+			case MAP_OBJECT_ELLIPSE:
+				dir = VEC3(0, 0, 1);
+				slight = (struct SpotLight){
+					.pos     = point,
+					.dir     = dir,
+					.ambient = (Vec3){
+						obj->ambient[0] * cf,
+						obj->ambient[1] * cf,
+						obj->ambient[2] * cf,
+					},
+					.diffuse = (Vec3){
+						obj->diffuse[0] * cf,
+						obj->diffuse[1] * cf,
+						obj->diffuse[2] * cf,
+					},
+					.specular = (Vec3){
+						obj->specular[0] * cf,
+						obj->specular[1] * cf,
+						obj->specular[2] * cf,
+					},
+					.constant     = obj->constant,
+					.linear       = obj->linear,
+					.quadratic    = obj->quadratic,
+					.cutoff       = obj->cutoff,
+					.outer_cutoff = obj->outer_cutoff,
+				};
+				index = varray_push(&spot_lights, &slight);
+
+				dist = MAX(obj->w, obj->h) + 1;
+				for (int t = 0; t < map->layerc; t++) {
+					if (map->layers[t].type != MAP_LAYER_TILE)
+						continue;
+					for (int c = 0; c < map->layers[t].tile.chunkc; c++) {
+						chunk = &map->layers[t].tile.chunks[c];
+						if (distance(slight.pos, VEC3(chunk->x, chunk->y, 0.0f)) <= dist) {
+							if (chunk->data.spotc < MAP_SPOT_LIGHTS_PER_CHUNK)
+								chunk->data.spots[chunk->data.spotc++] = index;
+							else
+							 	WARNING("[MAP] Chunk exceeded maximum spot lights");
 						}
 					}
 				}
@@ -843,8 +897,7 @@ static void build_lights(struct Map* map)
 	if (spot_lights.len)
 		buffer_update(map->spot_lights_sbo, spot_lights.len*sizeof(struct SpotLight), spot_lights.data, 0);
 	if (point_lights.len)
-		buffer_update(map->point_lights_sbo, point_lights.len*sizeof(struct PointLight),
-		              point_lights.data, spot_lights.len*sizeof(struct SpotLight));
+		buffer_update(map->point_lights_sbo, point_lights.len*sizeof(struct PointLight), point_lights.data, 0);
 }
 
 static void build_mesh(struct Map* map)

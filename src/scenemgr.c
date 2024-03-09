@@ -56,10 +56,10 @@ void scenemgr_init()
 
 	taskmgr_init();
 
-	renderer_set_global_lighting(VEC3(-1.0f, 1.0f, 1.0f),
+	renderer_set_global_lighting(VEC3(0.2f , 0.2f , 1.0f),
 	                             VEC3(0.01f, 0.01f, 0.01f),
-	                             VEC3(0.03f, 0.03f, 0.03f),
-	                             VEC3(0.5f, 0.5f, 0.5f));
+	                             VEC3(0.02f, 0.02f, 0.02f),
+	                             VEC3(0.3f , 0.3f , 0.3f));
 
 	switch_scene(SCENE_GAME);
 }
