@@ -16,3 +16,6 @@
 [submodule "lib/jsmn"]
 	path = lib/jsmn
 	url = https://github.com/zserge/jsmn
+[submodule "tools/spright"]
+	path = tools/spright
+	url = https://github.com/houmain/spright

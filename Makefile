@@ -8,6 +8,7 @@ LINKER = gcc
 SRC_DIR    = ./src
 BUILD_DIR  = ./build
 SHADER_DIR = ./shaders
+GFX_DIR    = ./gfx
 LIB_DIR    = ./lib
 TOOL_DIR   = ./tools
 
@@ -77,6 +78,10 @@ spir-v: $(SPV)
 $(SPV): $(SHADER_DIR)/spirv/%: $(SHADER_DIR)/%
 	@glslc -std=460 --target-env=vulkan1.3 -O -o $@ $<
 
+.PHONY: spright
+spright:
+	@$(TOOL_DIR)/spright/spright -i $(GFX_DIR)/spright.conf
+
 .PHONY: valgrind
 valgrind: BUILD_WITH += valgrind
 valgrind: game
@@ -129,7 +134,7 @@ libs:
 restore:
 	@mkdir -p $(SHADER_DIR)/spirv/
 
-	@git submodule update --remote --merge
+	@git submodule update --init --remote --merge --recursive -j 8
 	@make libs
 
 	@cmake -S $(TOOL_DIR)/bear -B $(TOOL_DIR)/bear -DENABLE_UNIT_TESTS=OFF -DENABLE_FUNC_TESTS=OFF
@@ -140,6 +145,9 @@ restore:
 		--wrapper     $(TOOL_DIR)/bear/stage/lib/bear/wrapper    \
 		--wrapper-dir $(TOOL_DIR)/bear/stage/lib/bear/wrapper.d  \
 		-- make -j8
+
+	@cmake -S $(TOOL_DIR)/spright -B $(TOOL_DIR)/spright
+	@make -C $(TOOL_DIR)/spright -j8
 
 	@echo "Restore complete"
 
