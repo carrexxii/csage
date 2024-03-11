@@ -44,7 +44,7 @@ static VkCommandBuffer* cmd_bufs;
 VkRenderPass renderer_init()
 {
 	default_sampler = image_new_sampler(VK_FILTER_NEAREST);
-	swapchain_init(surface, global_config.winw, global_config.winh);
+	swapchain_init(surface, config.winw, config.winh);
 
 	VkAttachmentDescription colour_attach = {
 		.format         = swapchain.fmt.format,

@@ -127,8 +127,8 @@ struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y)
 {
 	Mat4x4 cam_vp = multiply(cam->mats->proj, cam->mats->view);
 
-	Vec3 p1 = unproject(VEC3(x, y, 0.0), cam_vp, RECT(0.0, 0.0, global_config.winw, global_config.winh));
-	Vec3 p2 = unproject(VEC3(x, y, 1.0), cam_vp, RECT(0.0, 0.0, global_config.winw, global_config.winh));
+	Vec3 p1 = unproject(VEC3(x, y, 0.0), cam_vp, RECT(0.0, 0.0, config.winw, config.winh));
+	Vec3 p2 = unproject(VEC3(x, y, 1.0), cam_vp, RECT(0.0, 0.0, config.winw, config.winh));
 
 	return ray_from_points(p1, p2);
 }

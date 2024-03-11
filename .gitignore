@@ -1,5 +1,7 @@
 .cache
 lib/include
+lib/*.so
+lib/*.a
 build/
 shaders/spirv
 gfx/sprites/renders/*.png
@@ -7,7 +9,6 @@ gfx/sprites/*.png
 gfx/sprites/*.lua
 compile_commands.json
 csage
-*.so*
 *.tiled-session
 *~
 *.blend1

@@ -76,8 +76,8 @@ Rect ui_build_rect(struct UIObject* obj, bool absolute_sz)
 		start_x = parent->rect.x + parent->rect.w/2.0f;
 		start_y = parent->rect.y + parent->rect.h/2.0f;
 		if (absolute_sz) {
-			rel_w = obj->rect.w/global_config.winw*ASPECT_RATIO;
-			rel_h = obj->rect.h/global_config.winh*ASPECT_RATIO;
+			rel_w = obj->rect.w/config.winw*ASPECT_RATIO;
+			rel_h = obj->rect.h/config.winh*ASPECT_RATIO;
 			return RECT(start_x + obj->rect.x*(parent->rect.w/2.0f - rel_w/2.0f) - rel_w/2.0f,
 			            start_y + obj->rect.y*(parent->rect.h/2.0f - rel_h/2.0f) - rel_h/2.0f,
 			            rel_w, rel_h);
@@ -96,8 +96,8 @@ void ui_update()
 {
 	bool update_ui = false;
 	bool prev_state;
-	float mx = ((float)mouse_x / global_config.winw - 0.5f)*2.0f;
-	float my = ((float)mouse_y / global_config.winh - 0.5f)*2.0f;
+	float mx = ((float)mouse_x / config.winw - 0.5f)*2.0f;
+	float my = ((float)mouse_y / config.winh - 0.5f)*2.0f;
 	struct UIObject* obj;
 	for (int i = 0; i < ui_objs.len; i++) {
 		obj = varray_get(&ui_objs, i);

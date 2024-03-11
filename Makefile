@@ -5,12 +5,13 @@ SHLIB = libcsage.so
 CC     = gcc
 LINKER = gcc
 
-SRC_DIR    = ./src
-BUILD_DIR  = ./build
-SHADER_DIR = ./shaders
-GFX_DIR    = ./gfx
-LIB_DIR    = ./lib
-TOOL_DIR   = ./tools
+SRC_DIR     = ./src
+BUILD_DIR   = ./build
+SHADER_DIR  = ./shaders
+SCRIPTS_DIR = ./scripts
+GFX_DIR     = ./gfx
+LIB_DIR     = ./lib
+TOOL_DIR    = ./tools
 
 COMPILE_WITH = -DDEBUG_LEVEL=5
 
@@ -24,7 +25,8 @@ CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS
          -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope
 
 LFLAGS   = -L$(LIB_DIR) -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope \
-           -lm -lvulkan -Wl,-rpath,$(LIB_DIR) -lSDL3 -lfreetype
+           -lm -lvulkan -Wl,-rpath,$(LIB_DIR) -lfreetype
+LAPPEND  = $(LIB_DIR)/libluajit.a $(LIB_DIR)/libSDL3.a
 DEPFLAGS = -MT $@ -MMD -MF $(BUILD_DIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC
 SHFLAGS  = -fPIC -D COMPILE_SHARED
@@ -50,7 +52,7 @@ PRECOMPILE  = mkdir -p $(@D)
 POSTCOMPILE =
 
 $(BIN): $(OBJ)
-	@$(LINKER) -o $@ $(LFLAGS) $(OBJ)
+	@$(LINKER) -o $@ $(LFLAGS) $(OBJ) $(LAPPEND)
 	@echo "Linking complete"
 
 $(OBJ): $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
@@ -92,12 +94,6 @@ game:
 	@make spir-v -j12
 	./$(BIN)
 
-.PHONY: lang
-lang:
-	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -DTESTING -DTESTING_LANG' -j12
-	./$(BIN)
-	@echo "Tests complete"
-
 .PHONY: test
 test:
 	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -DTESTING -DTESTING_UTIL' -j12
@@ -117,21 +113,30 @@ libs:
 
 	@mkdir -p $(LIB_DIR)/include/freetype
 	@cmake -S $(LIB_DIR)/freetype -B $(LIB_DIR)/freetype/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true
-	@cmake --build $(LIB_DIR)/freetype/build
+	@cmake --build $(LIB_DIR)/freetype/build -j8
 	@cp $(LIB_DIR)/freetype/build/*.so $(LIB_DIR)/
 	@cp -r $(LIB_DIR)/freetype/include/* $(LIB_DIR)/include
 
 	@mkdir -p $(LIB_DIR)/include/SDL3
 	@cmake -S $(LIB_DIR)/sdl -B $(LIB_DIR)/sdl/build -DCMAKE_BUILD_TYPE=Release \
-	       -DSDL_SHARED=ON -DSDL_STATIC=OFF -DSDL_TEST_LIBRARY=OFF -DSDL_DISABLE_INSTALL=ON
-	@cmake --build $(LIB_DIR)/sdl/build
+	       -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF -DSDL_DISABLE_INSTALL=ON
+	@cmake --build $(LIB_DIR)/sdl/build -j8
 	@cp $(LIB_DIR)/sdl/include/SDL3/* $(LIB_DIR)/include/SDL3
-	@cp $(LIB_DIR)/sdl/build/*.so* $(LIB_DIR)/
+	@cp $(LIB_DIR)/sdl/build/libSDL3.a $(LIB_DIR)/
+
+	@mkdir -p $(LIB_DIR)/include/luajit
+	@make -C $(LIB_DIR)/luajit/src -j8
+	@cp $(LIB_DIR)/luajit/src/luajit $(LIB_DIR)/luajit
+	@cp $(LIB_DIR)/luajit/src/libluajit.a $(LIB_DIR)
+	@cp $(LIB_DIR)/luajit/src/luajit.h $(LIB_DIR)/include/luajit
+	@cp $(LIB_DIR)/luajit/src/lua.h $(LIB_DIR)/include/luajit
+	@cp $(LIB_DIR)/luajit/src/lualib.h $(LIB_DIR)/include/luajit
+	@cp $(LIB_DIR)/luajit/src/lauxlib.h $(LIB_DIR)/include/luajit
 
 	@echo "Finished building libs"
 
 .PHONY: restore
-restore:
+restore: clean
 	@mkdir -p $(SHADER_DIR)/spirv/
 
 	@git submodule update --init --remote --merge --recursive -j 8
@@ -154,11 +159,12 @@ restore:
 .PHONY: clean
 clean:
 	@rm -f $(OBJ)
-	@echo "Cleanup complete"
+	@echo "Executable removed"
 	@rm -f $(DEP)
 	@echo "Dependency files removed"
 	@rm -f $(SHADER_DIR)/spirv/*
 	@echo "Shader bytecode removed"
+	@echo "Cleanup complete"
 
 .PHONY: remove
 remove:	clean

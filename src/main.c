@@ -1,7 +1,8 @@
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 #include "SDL3/SDL.h"
+#include "lua.h"
 
-#include "SDL3/SDL_init.h"
+// #include "SDL3/SDL_init.h"
 #include "config.h"
 #include "taskmgr.h"
 #include "gfx/vulkan.h"
@@ -17,7 +18,6 @@
 
 void init_sdl(void);
 
-struct GlobalConfig global_config;
 SDL_Renderer* renderer;
 SDL_Window*   window;
 int vk_err;
@@ -28,11 +28,8 @@ int main(int argc, char** argv)
 	for (int i = 0; i < argc; i++)
 		printf("%s\n", argv[i]);
 
-	// TODO
-	global_config.winw = 1280;
-	global_config.winh = 720;
-
 	init_sdl();
+	lua_init();
 
 	DEBUG(1, "[INFO] Platform: %s", SDL_GetPlatform());
 	DEBUG(1, "[INFO] CPU info:");
@@ -67,7 +64,7 @@ void init_sdl()
 	else
 		DEBUG(1, "[INIT] Initialized SDL");
 
-	window = SDL_CreateWindow("CSage", global_config.winw, global_config.winh, SDL_WINDOW_VULKAN);
+	window = SDL_CreateWindow("CSage", config.winw, config.winh, SDL_WINDOW_VULKAN);
 	if (!window)
 		ERROR("[INIT] Failed to create window (%s)", SDL_GetError());
 	else
@@ -84,6 +81,7 @@ noreturn void quit()
 	entities_free();
 	scenemgr_free();
 	vulkan_free();
+	lua_free();
 	SDL_Quit();
 	exit(0);
 }

@@ -20,7 +20,7 @@ void textbox_new(String text, Rect rect, struct UIStyle* style, struct UIObject*
 	obj->z_lvl  = parent->z_lvl + 1;
 	obj->state  = default_state;
 
-	float text_w = (obj->rect.w/parent->rect.w/2.0f)*global_config.winw/2.0f;
+	float text_w = (obj->rect.w/parent->rect.w/2.0f)*config.winw/2.0f;
 	obj->textbox.text_obj = font_render(text.data, text.len, obj->z_lvl + 10, text_w); // TODO: fix z_lvl
 
 	container_add(parent, obj);

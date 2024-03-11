@@ -150,48 +150,48 @@ struct TextObject* font_render(char* text, isize text_len, float z, float w)
 		sz[0]  = characters[(int)c].sz[0];
 		sz[1]  = characters[(int)c].sz[1];
 
-		if (x*global_config.winw/2.0f + sz[0] > w) {
+		if (x*config.winw/2.0f + sz[0] > w) {
 			x  = 0.0f;
-			y -= atlas_h / global_config.winh;
+			y -= atlas_h / config.winh;
 		}
 
-		char_x = x + (float)characters[(int)c].bearing[0]/global_config.winw;
-		char_y = y + ((float)characters[(int)c].bearing[1] - sz[1])/global_config.winh;
+		char_x = x + (float)characters[(int)c].bearing[0]/config.winw;
+		char_y = y + ((float)characters[(int)c].bearing[1] - sz[1])/config.winh;
 
 		*v++ = char_x;
 		*v++ = char_y;
 		*v++ = offset/atlas_w;
 		*v++ = sz[1]/atlas_h;
 
-		*v++ = char_x + sz[0]/global_config.winw;
+		*v++ = char_x + sz[0]/config.winw;
 		*v++ = char_y;
 		*v++ = (offset + sz[0])/atlas_w;
 		*v++ = sz[1]/atlas_h;
 
 		*v++ = char_x;
-		*v++ = char_y + sz[1]/global_config.winh;
+		*v++ = char_y + sz[1]/config.winh;
 		*v++ = offset/atlas_w;
 		*v++ = 0.0;
 
 		*v++ = char_x;
-		*v++ = char_y + sz[1]/global_config.winh;
+		*v++ = char_y + sz[1]/config.winh;
 		*v++ = offset/atlas_w;
 		*v++ = 0.0;
 
-		*v++ = char_x + sz[0]/global_config.winw;
+		*v++ = char_x + sz[0]/config.winw;
 		*v++ = char_y;
 		*v++ = (offset + sz[0])/atlas_w;
 		*v++ = sz[1]/atlas_h;
 
-		*v++ = char_x + sz[0]/global_config.winw;
-		*v++ = char_y + sz[1]/global_config.winh;
+		*v++ = char_x + sz[0]/config.winw;
+		*v++ = char_y + sz[1]/config.winh;
 		*v++ = (offset + sz[0])/atlas_w;
 		*v++ = 0.0;
 
-		x += (float)(characters[(int)c].advance >> 6)/global_config.winw;
+		x += (float)(characters[(int)c].advance >> 6)/config.winw;
 	}
 	obj->rect.w = x;
-	obj->rect.h = atlas_h / global_config.winh;
+	obj->rect.h = atlas_h / config.winh;
 
 	obj->z_lvl  = z;
 	obj->active = true;

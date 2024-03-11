@@ -254,4 +254,3 @@ inline static int random_int(int min, int max)
 extern int vk_err;
 
 #endif
-

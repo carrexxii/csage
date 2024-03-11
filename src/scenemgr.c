@@ -37,8 +37,8 @@ static struct SceneDefer defers[MAX_DEFER_FUNCTIONS];
 
 void scenemgr_init()
 {
-	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), global_config.winw, global_config.winh, deg_to_rad(69.0f));
-	game_cam    = camera_new(VEC3_ZERO, VEC3_ZERO, global_config.winw, global_config.winh, 0.0f);
+	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), config.winw, config.winh, deg_to_rad(69.0f));
+	game_cam    = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f);
 	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
 
 	VkRenderPass renderpass = renderer_init();

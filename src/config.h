@@ -8,7 +8,7 @@
 #define SCRIPT_PATH  "scripts/"
 #define MAP_PATH     "maps/"
 
-#define ASPECT_RATIO ((float)global_config.winw / global_config.winh)
+#define ASPECT_RATIO ((float)config.winw / config.winh)
 
 #define DEFAULT_LIGHT_AMBIENT   (uint8[]){ 255, 255, 255, 255 }
 #define DEFAULT_LIGHT_DIFFUSE   (uint8[]){ 255, 255, 255, 255 }
@@ -26,6 +26,6 @@ struct GlobalConfig {
 
 noreturn void quit();
 
-extern struct GlobalConfig global_config;
+extern struct GlobalConfig config;
 
 #endif

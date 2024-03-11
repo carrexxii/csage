@@ -19,3 +19,6 @@
 [submodule "tools/spright"]
 	path = tools/spright
 	url = https://github.com/houmain/spright
+[submodule "lib/luajit"]
+	path = lib/luajit
+	url = https://github.com/LuaJIT/LuaJIT/
