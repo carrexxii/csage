@@ -1,0 +1,14 @@
+{%- set prev = "" -%}
+return {
+{%- for sprite in sprites -%}
+{%- if prev != sprite.id %}
+	{% if not loop.is_first -%} }, {%- endif %}
+	{{ sprite.id }} = {
+{%- endif %}
+		{
+			"rect" = { {{ sprite.trimmedRect.x }}, {{ sprite.trimmedRect.y }}, {{ sprite.trimmedRect.w }}, {{ sprite.trimmedRect.h }}, },
+			"pivot" = { {{ sprite.pivot.x }}, {{ sprite.pivot.y }}, },
+		}, {%- set prev = sprite.id -%}
+	{%- endfor %}
+	},
+}

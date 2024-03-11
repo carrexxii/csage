@@ -80,7 +80,7 @@ $(SPV): $(SHADER_DIR)/spirv/%: $(SHADER_DIR)/%
 
 .PHONY: spright
 spright:
-	@$(TOOL_DIR)/spright/spright -i $(GFX_DIR)/spright.conf
+	@$(TOOL_DIR)/spright/spright -i $(GFX_DIR)/sprites/spright.conf
 
 .PHONY: valgrind
 valgrind: BUILD_WITH += valgrind
