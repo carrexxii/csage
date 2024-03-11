@@ -95,6 +95,15 @@ void string_free(String str) {
 	sfree(str.data);
 }
 
+/* -------------------------------------------------------------------- */
+
+char* string_file_name(String path)
+{
+	char* start = path.data + path.len;
+	while (*--start != '/');
+	return start + 1;
+}
+
 bool starts_with(char* restrict str, char* restrict start)
 {
 	for (int i = 0; start[i] && str[i]; i++)

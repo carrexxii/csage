@@ -94,7 +94,7 @@ void models_init(VkRenderPass renderpass)
 		.albedo    = { 0.3f, 0.3f, 0.3f, 1.0f },
 		.metallic  = 1.0f,
 		.roughness = 1.0f,
-		.tex       = texture_new_from_image(TEXTURE_PATH "default.png"),
+		.tex       = texture_new_from_image(TEXTURE_PATH "/default.png"),
 	};
 
 	sbo_buf    = sbo_new(MAX_MODELS*sizeof(Mat4x4));
@@ -104,8 +104,8 @@ void models_init(VkRenderPass renderpass)
 	ubo_joints = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform));
 
 	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "model.vert"),
-		.fshader     = create_shader(SHADER_DIR "model.frag"),
+		.vshader     = create_shader(SHADER_PATH "/model.vert"),
+		.fshader     = create_shader(SHADER_PATH "/model.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 5,
 		.vert_binds  = vert_binds,
@@ -119,8 +119,8 @@ void models_init(VkRenderPass renderpass)
 		.imgc        = 1,
 	};
 	pipeln_static = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "model_static.vert"),
-		.fshader     = create_shader(SHADER_DIR "model.frag"),
+		.vshader     = create_shader(SHADER_PATH "/model_static.vert"),
+		.fshader     = create_shader(SHADER_PATH "/model.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 3,
 		.vert_binds  = vert_binds,
@@ -237,7 +237,7 @@ void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
 {
 	struct Model*     mdl;
 	struct Mesh*      mesh;
-	struct Animation* anim;
+	struct ModelAnimation* anim;
 	struct KeyFrame*  curr_frm;
 	struct KeyFrame*  next_frm;
 
@@ -687,7 +687,7 @@ static void load_animations(struct Model* mdl, cgltf_data* data)
 {
 	DEBUG(5, "\tModel has %lu animations", data->animations_count);
 	mdl->animc = data->animations_count;
-	mdl->anims = scalloc(data->animations_count, sizeof(struct Animation));
+	mdl->anims = scalloc(data->animations_count, sizeof(struct ModelAnimation));
 
 	cgltf_animation*         anim;
 	cgltf_animation_channel* channel;

@@ -1,4 +1,9 @@
 {
     "dotnet.defaultSolution": "disable",
-	"clangd.arguments": [ "--header-insertion=never" ],
+    "clangd.arguments": [
+        "--header-insertion=never"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
+    ],
 }

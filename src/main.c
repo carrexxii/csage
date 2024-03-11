@@ -28,8 +28,8 @@ int main(int argc, char** argv)
 	for (int i = 0; i < argc; i++)
 		printf("%s\n", argv[i]);
 
-	init_sdl();
 	lua_init();
+	init_sdl();
 
 	DEBUG(1, "[INFO] Platform: %s", SDL_GetPlatform());
 	DEBUG(1, "[INFO] CPU info:");

@@ -13,6 +13,7 @@
 #include "scenemgr.h"
 
 #include "test.h"
+#include "gfx/sprite.h"
 
 #define MAX_DEFER_FUNCTIONS 32
 
@@ -34,6 +35,8 @@ static struct Camera scratch_cam;
 
 static isize deferc;
 static struct SceneDefer defers[MAX_DEFER_FUNCTIONS];
+
+struct Sprite* sprite;
 
 void scenemgr_init()
 {
@@ -62,6 +65,13 @@ void scenemgr_init()
 	                             VEC3(0.3f , 0.3f , 0.3f));
 
 	switch_scene(SCENE_GAME);
+
+	sprite = sprite_new("hero");
+	scenemgr_defer((void (*)(void*))sprite_free, sprite);
+	DEBUG_VALUE(sprite);
+	DEBUG_VALUE(sprite->animc);
+	DEBUG_VALUE(sprite->anims[0].framec);
+	DEBUG(1, "%hd, %hd, %hd, %hd", sprite->anims[0].frames[0].x, sprite->anims[0].frames[0].y, sprite->anims[0].frames[0].w, sprite->anims[0].frames[0].h);
 }
 
 noreturn void scenemgr_loop()

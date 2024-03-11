@@ -5,6 +5,7 @@ lib/*.a
 build/
 shaders/spirv
 gfx/sprites/renders/*.png
+gfx/sprites/sheets/*.png
 gfx/sprites/*.png
 gfx/sprites/*.lua
 compile_commands.json

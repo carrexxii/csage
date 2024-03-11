@@ -167,7 +167,7 @@ void maps_init(VkRenderPass rpass)
 void map_new(struct Map* map, const char* name)
 {
 	char path[PATH_BUFFER_SIZE];
-	snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "%s.tmj", name);
+	snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "/%s.tmj", name);
 	FILE* file = file_open(path, "r");
 
 	isize len  = file_size(file);
@@ -244,8 +244,8 @@ void map_new(struct Map* map, const char* name)
 	}
 
 	map->pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "map.vert"),
-		.fshader     = create_shader(SHADER_DIR "map.frag"),
+		.vshader     = create_shader(SHADER_PATH "/map.vert"),
+		.fshader     = create_shader(SHADER_PATH "/map.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
@@ -667,7 +667,7 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 	for (int j = 0; j < len; j++) {
 		if (!strcmp(buf, "source")) {
 			NEXT();
-			if (snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "%s", buf) >= PATH_BUFFER_SIZE)
+			if (snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "/%s", buf) >= PATH_BUFFER_SIZE)
 				ERROR("[MAP] Path \"%s\" is greater than PATH_BUFFER_SIZE (%d)", buf, PATH_BUFFER_SIZE);
 			FILE* file = file_open(path, "r");
 
@@ -697,7 +697,7 @@ static int parse_tileset(struct Tileset* tset, int i, char* json, jsmntok_t* tok
 					if (!strcmp(buf, "image")) {
 						TSET_NEXT();
 						string_remove((String){ .data = buf, .len = strlen(buf) }, '\\');
-						if (snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "%s", buf) >= PATH_BUFFER_SIZE)
+						if (snprintf(path, PATH_BUFFER_SIZE, MAP_PATH "/%s", buf) >= PATH_BUFFER_SIZE)
 							ERROR("[MAP] Path \"%s\" is greater than PATH_BUFFER_SIZE (%d)", buf, PATH_BUFFER_SIZE);
 
 						strcpy(tset->image, path);
@@ -898,6 +898,9 @@ static void build_lights(struct Map* map)
 		buffer_update(map->spot_lights_sbo, spot_lights.len*sizeof(struct SpotLight), spot_lights.data, 0);
 	if (point_lights.len)
 		buffer_update(map->point_lights_sbo, point_lights.len*sizeof(struct PointLight), point_lights.data, 0);
+
+	varray_free(&spot_lights);
+	varray_free(&point_lights);
 }
 
 static void build_mesh(struct Map* map)

@@ -45,8 +45,8 @@ void particles_init(VkRenderPass renderpass)
 	ubos[0] = ubo_new(sizeof(Mat4x4[2]));
 	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
 	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "particle.vert"),
-		.fshader     = create_shader(SHADER_DIR "particle.frag"),
+		.vshader     = create_shader(SHADER_PATH "/particle.vert"),
+		.fshader     = create_shader(SHADER_PATH "/particle.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = &streamvert_binds,

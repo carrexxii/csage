@@ -41,8 +41,8 @@ void ui_init(VkRenderPass renderpass)
 {
 	pipeln = (struct Pipeline){
 		// TODO: Tesselation shader?
-		.vshader    = create_shader(SHADER_DIR "ui.vert"),
-		.fshader    = create_shader(SHADER_DIR "ui.frag"),
+		.vshader    = create_shader(SHADER_PATH "/ui.vert"),
+		.fshader    = create_shader(SHADER_PATH "/ui.frag"),
 		.topology   = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc = 1,
 		.vert_binds = vert_binds,

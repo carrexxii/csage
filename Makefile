@@ -25,7 +25,7 @@ CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS
          -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope
 
 LFLAGS   = -L$(LIB_DIR) -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope \
-           -lm -lvulkan -Wl,-rpath,$(LIB_DIR) -lfreetype
+           -lm -lvulkan -Wl,-rpath,$(LIB_DIR) -lfreetype -export-dynamic
 LAPPEND  = $(LIB_DIR)/libluajit.a $(LIB_DIR)/libSDL3.a
 DEPFLAGS = -MT $@ -MMD -MF $(BUILD_DIR)/$*.dep
 STFLAGS  = -static-libgcc -static -D COMPILE_STATIC

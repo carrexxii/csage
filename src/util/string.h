@@ -20,6 +20,8 @@ int     string_contains(String str, char c);
 int     string_remove(String str, char c);
 void    string_free(String str);
 
+char* string_file_name(String path);
+
 bool starts_with(char* restrict str, char* restrict start);
 void file_extension(char* restrict file, char* restrict name, char* restrict ext);
 

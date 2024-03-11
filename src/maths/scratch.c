@@ -68,8 +68,8 @@ void scratch_init(VkRenderPass renderpass)
 	axes_vbo = vbo_new(sizeof(axes_verts), axes_verts, false);
 
 	point_pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "scratch.vert"),
-		.fshader     = create_shader(SHADER_DIR "scratch.frag"),
+		.vshader     = create_shader(SHADER_PATH "/scratch.vert"),
+		.fshader     = create_shader(SHADER_PATH "/scratch.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
@@ -83,8 +83,8 @@ void scratch_init(VkRenderPass renderpass)
 	pipeln_init(&point_pipeln, renderpass);
 
 	line_pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "scratch.vert"),
-		.fshader     = create_shader(SHADER_DIR "scratch.frag"),
+		.vshader     = create_shader(SHADER_PATH "/scratch.vert"),
+		.fshader     = create_shader(SHADER_PATH "/scratch.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,
@@ -98,8 +98,8 @@ void scratch_init(VkRenderPass renderpass)
 	pipeln_init(&line_pipeln, renderpass);
 
 	plane_pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "scratch.vert"),
-		.fshader     = create_shader(SHADER_DIR "scratch.frag"),
+		.vshader     = create_shader(SHADER_PATH "/scratch.vert"),
+		.fshader     = create_shader(SHADER_PATH "/scratch.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,

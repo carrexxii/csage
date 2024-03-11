@@ -11,9 +11,10 @@ void lua_init()
 	lua_state = luaL_newstate();
 	luaL_openlibs(lua_state);
 
-	if (lua_get_file("config.lua"))
-		exit(1);
+	if (lua_get_file(SCRIPT_PATH "/core/csage.lua")) exit(1);
+	if (lua_get_file(SCRIPT_PATH "/core/sprite.lua")) exit(1);
 
+	luaL_dofile(lua_state, "config.lua");
 	config.winw = lua_get_int("window_width");
 	config.winh = lua_get_int("window_height");
 
@@ -21,8 +22,6 @@ void lua_init()
 	DEBUG(1, "[INFO] Config:");
 	fprintf(stderr, "\twindow_width  -> %d\n", config.winw);
 	fprintf(stderr, "\twindow_heigth -> %d\n", config.winh);
-
-	exit(0);
 }
 
 int lua_get_file(char* path)

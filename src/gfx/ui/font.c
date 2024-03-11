@@ -113,8 +113,8 @@ void font_init(VkRenderPass renderpass)
 
 	font_sampler = image_new_sampler(VK_FILTER_LINEAR);
 	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_DIR "font.vert"),
-		.fshader     = create_shader(SHADER_DIR "font.frag"),
+		.vshader     = create_shader(SHADER_PATH "/font.vert"),
+		.fshader     = create_shader(SHADER_PATH "/font.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,

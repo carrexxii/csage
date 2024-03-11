@@ -70,7 +70,7 @@ struct KeyFrame {
 	float time;
 };
 
-struct Animation {
+struct ModelAnimation {
 	// enum AnimationType     type;
 	// enum InterpolationType interp;
 	struct KeyFrame* frms;
@@ -82,7 +82,7 @@ struct Animation {
 struct Model {
 	struct Mesh*      meshes;
 	struct Material*  mtls;
-	struct Animation* anims;
+	struct ModelAnimation* anims;
 	struct Skin*      skin;
 	int meshc;
 	int mtlc;
