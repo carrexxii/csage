@@ -80,7 +80,6 @@ static void build_lights(struct Map* map);
 static void build_mesh(struct Map* map);
 static void mesh_tile(uint16* inds, Vec2i v);
 
-static VkRenderPass renderpass;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SIZEOF_VERTEX, /* xyztuv */
@@ -115,10 +114,8 @@ static struct {
 	struct SpotLight  spot_lights[MAP_SPOT_LIGHTS_PER_CHUNK];
 } lights_data;
 
-void maps_init(VkRenderPass rpass)
+void maps_init()
 {
-	renderpass = rpass;
-
 	cam_ubo    = ubo_new(sizeof(Mat4x4[2]));
 	lights_ubo = ubo_new(sizeof(lights_data));
 

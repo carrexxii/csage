@@ -127,7 +127,7 @@ struct Map {
 	struct MapLayer* layers;
 };
 
-void    maps_init(VkRenderPass renderpass);
+void    maps_init(void);
 void    map_new(struct Map* map, const char* name);
 MapTile map_get_tile(struct Map* map, Vec3i pos);
 void    map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map);

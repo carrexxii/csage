@@ -29,5 +29,52 @@ csage.cdef [[
 
 	/* ---------------------------------------------------------------- */
 
-	struct Sprite* sprite_load(char* name, isize animc, isize* framecs, Recti* frames);
+	enum SpriteAnimation {
+		SPRITE_NONE,
+		SPRITE_WALK,
+		SPRITE_RUN,
+		SPRITE_ATTACK1,
+		SPRITE_ATTACK2,
+	};
+
+	struct SpriteFrame {
+		uint16 x, y, w, h;
+		uint16 duration;
+	};
+
+	struct SpriteState {
+		enum SpriteAnimation type;
+		int framec;
+		struct SpriteFrame* frames;
+	};
+
+	struct Sprite {
+		char* name;
+		int statec;
+		struct SpriteState* states;
+	};
+
+	struct SpriteSheet {
+		char* name;
+		int w, h;
+		int spritec;
+		struct Texture* tex;
+		struct Sprite*  sprites;
+	};
 ]]
+
+sprite_animation = {
+	[""]        = csage.C.SPRITE_NONE,
+	["walk"]    = csage.C.SPRITE_WALK,
+	["run"]     = csage.C.SPRITE_RUN,
+	["attack1"] = csage.C.SPRITE_ATTACK1,
+	["attack2"] = csage.C.SPRITE_ATTACK2,
+}
+
+function table_len(t)
+    local count = 0
+    for _, __ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end

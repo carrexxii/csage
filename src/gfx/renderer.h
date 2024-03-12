@@ -39,14 +39,15 @@ struct SpotLight {
 	float outer_cutoff;
 };
 
-VkRenderPass renderer_init(void);
+void renderer_init(void);
 void renderer_clear_draw_list(void);
 void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*));
 void renderer_set_global_lighting(Vec3 dir, Vec3 ambient, Vec3 diffuse, Vec3 specular);
 void renderer_draw(struct Camera* cam);
 void renderer_free(void);
 
-extern VkSampler default_sampler;
-extern UBO       global_light_ubo;
+extern VkRenderPass renderpass;
+extern VkSampler    default_sampler;
+extern UBO          global_light_ubo;
 
 #endif

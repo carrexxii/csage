@@ -10,6 +10,7 @@
 struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 {
 	struct Camera cam = {
+		.ubo        = ubo_new(sizeof(Mat4x4[2])),
 		.pos        = pos,
 		.up         = up,
 		.pan_speed  = CAMERA_DEFAULT_PAN_SPEED,
@@ -121,6 +122,9 @@ void camera_update(struct Camera* cam)
 
 	if (cam->type == CAMERA_ORTHOGONAL)
 		camera_set_projection(cam, CAMERA_ORTHOGONAL);
+
+	// TODO: conditional update
+	buffer_update(cam->ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
 }
 
 struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y)

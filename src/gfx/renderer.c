@@ -17,9 +17,10 @@
 
 #define FRAMES_IN_FLIGHT 2
 
-VkSampler default_sampler;
+VkRenderPass            renderpass;
+VkSampler               default_sampler;
 struct DirectionalLight global_light;
-UBO global_light_ubo;
+UBO                     global_light_ubo;
 
 static void record_commands(int imgi, struct Camera* cam);
 static void create_frame_buffers(void);
@@ -37,11 +38,10 @@ static struct {
 	VkFence frames[FRAMES_IN_FLIGHT];
 } fences;
 
-static VkRenderPass     renderpass;
 static VkFramebuffer*   frame_bufs;
 static VkCommandBuffer* cmd_bufs;
 
-VkRenderPass renderer_init()
+void renderer_init()
 {
 	default_sampler = image_new_sampler(VK_FILTER_NEAREST);
 	swapchain_init(surface, config.winw, config.winh);
@@ -124,8 +124,6 @@ VkRenderPass renderer_init()
 	create_sync_objects();
 
 	global_light_ubo = ubo_new(sizeof(struct DirectionalLight));
-
-	return renderpass;
 }
 
 void renderer_clear_draw_list(void)

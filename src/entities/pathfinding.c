@@ -1,4 +1,4 @@
-#include "maths/types.h"
+#include "maths/maths.h"
 #include "util/minheap.h"
 #include "map.h"
 #include "pathfinding.h"

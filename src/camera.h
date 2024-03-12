@@ -1,8 +1,8 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "maths/maths.h"
-#include "config.h"
+#include "maths/types.h"
+#include "gfx/buffers.h"
 
 #define CAMERA_DEFAULT_PAN_SPEED  (15.0f*DT)
 #define CAMERA_DEFAULT_ZOOM       1.0f
@@ -17,6 +17,7 @@ enum CameraType {
 };
 
 struct Camera {
+	UBO ubo;
 	Vec3 pos;
 	Vec3 up;
 	Vec3 target;

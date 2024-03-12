@@ -44,8 +44,8 @@ void scenemgr_init()
 	game_cam    = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f);
 	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
 
-	VkRenderPass renderpass = renderer_init();
-	maps_init(renderpass);
+	renderer_init();
+	maps_init();
 	// scratch_init(renderpass);
 	// font_init(renderpass);
 	// ui_init(renderpass);
@@ -66,12 +66,9 @@ void scenemgr_init()
 
 	switch_scene(SCENE_GAME);
 
-	sprite = sprite_new("hero");
-	scenemgr_defer((void (*)(void*))sprite_free, sprite);
-	DEBUG_VALUE(sprite);
-	DEBUG_VALUE(sprite->animc);
-	DEBUG_VALUE(sprite->anims[0].framec);
-	DEBUG(1, "%hd, %hd, %hd, %hd", sprite->anims[0].frames[0].x, sprite->anims[0].frames[0].y, sprite->anims[0].frames[0].w, sprite->anims[0].frames[0].h);
+	// sprite =
+	sprites_init(&game_cam);
+	sprite_sheet_new("hero");
 }
 
 noreturn void scenemgr_loop()
@@ -104,6 +101,7 @@ void scenemgr_defer(void (*fn)(void*), void* data)
 void scenemgr_free()
 {
 	scene_exec_defer();
+	sprites_free();
 }
 
 /* -------------------------------------------------------------------- */

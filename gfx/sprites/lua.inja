@@ -1,12 +1,17 @@
 return {
+	["w"] = {{ first(textures).width }},
+	["h"] = {{ first(textures).height }},
+
 	{%- set prev = "" -%}
 	{%- for sprite in sprites -%}
-	{%- if prev != sprite.id -%}
-	{%- if not loop.is_first -%} }, {%- endif %}
-	["{{ sprite.id }}"] = {
-	{%- endif %}
+		{%- if prev != sprite.id -%}
+			{%- if not loop.is_first -%}
+				},
+			{%- endif -%}
+			["{{ sprite.id }}"] = {
+		{%- endif %}
 		{ {{ sprite.trimmedRect.x }}, {{ sprite.trimmedRect.y }}, {{ sprite.trimmedRect.w }}, {{ sprite.trimmedRect.h }}, },
-	{%- set prev = sprite.id -%}
+		{%- set prev = sprite.id -%}
 	{%- endfor %}
 	},
 }

@@ -2,27 +2,18 @@
 #define GFX_SPRITE_H
 
 #include "maths/types.h"
+#include "util/string.h"
 #include "texture.h"
+#include "camera.h"
 
-struct Frame {
-	int16 x, y, w, h;
-	int16 duration;
-};
+#define DEFAULT_SPRITE_SHEETS 8
+#define DEFAULT_SPRITES       1024
 
-struct Animation {
-	isize framec;
-	struct Frame* frames;
-};
-
-struct Sprite {
-	isize time;
-	isize animc;
-	struct Texture sheet;
-	struct Animation anims[];
-};
-
-struct Sprite* sprite_new(char* name);
-struct Sprite* sprite_load(char* name, isize animc, isize* framecs, Recti* frames);
-void sprite_free(struct Sprite* sprite);
+void sprites_init(struct Camera* camera);
+ID sprite_sheet_new(char* name);
+ID sprite_new(ID sheet);
+void sprite_record_commands(VkCommandBuffer cmd_buf);
+void sprite_destroy(ID sprite);
+void sprites_free(void);
 
 #endif
