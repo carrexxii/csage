@@ -19,6 +19,15 @@ csage.cdef [[
 
 	/* ---------------------------------------------------------------- */
 
+	struct VArray {
+		byte* data;
+		int len;
+		int cap;
+		int elem_sz;
+	};
+
+	/* ---------------------------------------------------------------- */
+
 	typedef struct Rect {
 		float x, y, w, h;
 	} Rect;
@@ -48,18 +57,19 @@ csage.cdef [[
 		struct SpriteFrame* frames;
 	};
 
-	struct Sprite {
-		char* name;
+	struct SpriteGroup {
+		char name[32];
 		int statec;
 		struct SpriteState* states;
 	};
 
 	struct SpriteSheet {
-		char* name;
+		char name[32];
 		int w, h;
-		int spritec;
-		struct Texture* tex;
-		struct Sprite*  sprites;
+		int groupc;
+		struct VArray       sprites;
+		struct SpriteGroup* groups;
+		struct Texture*     tex;
 	};
 ]]
 

@@ -66,9 +66,14 @@ void device_init_logical(VkSurfaceKHR surf)
 			.queueCount       = 1,
 		};
 
-	VkPhysicalDeviceVulkan12Features vk12Features = {
+	VkPhysicalDeviceVulkan12Features vk12_features = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 		.runtimeDescriptorArray = true,
+	};
+	VkPhysicalDevice16BitStorageFeatures int16_feature = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
+		.storageBuffer16BitAccess = true,
+		.pNext                    = &vk12_features,
 	};
 
 	VkDeviceCreateInfo devi = {
@@ -81,11 +86,12 @@ void device_init_logical(VkSurfaceKHR surf)
 			// .tessellationShader = true,
 			.wideLines          = true,
 			.largePoints        = true,
+			.shaderInt16        = true,
 		},
 		.pNext = &(VkPhysicalDeviceShaderDrawParametersFeatures){
 			.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
 			.shaderDrawParameters = 1,
-			.pNext                = &vk12Features,
+			.pNext                = &int16_feature,
 		},
 		.enabledLayerCount       = VULKAN_LAYER_COUNT,
 		.ppEnabledLayerNames     = VULKAN_LAYERS,

@@ -8,121 +8,51 @@
 #include "camera.h"
 #include "sprite.h"
 
-#define STRING_OF_SPRITE_ANIMATION(x) (    \
-	x == SPRITE_NONE   ? "SPRITE_NONE"   : \
-	x == SPRITE_WALK   ? "SPRITE_WALK"   : \
-	x == SPRITE_RUN    ? "SPRITE_RUN"    : \
-	x == SPRITE_ATTACK1? "SPRITE_ATTACK1": \
-	x == SPRITE_ATTACK2? "SPRITE_ATTACK2": \
-	"<Unknown animation>")
-enum SpriteAnimation {
-	SPRITE_NONE,
-	SPRITE_WALK,
-	SPRITE_RUN,
-	SPRITE_ATTACK1,
-	SPRITE_ATTACK2,
-};
+static void sprite_sheet_print(struct SpriteSheet* sheet);
 
-struct SpriteFrame {
-	uint16 x, y, w, h;
-	uint16 duration;
-};
-
-struct SpriteState {
-	enum SpriteAnimation type;
-	int framec;
-	struct SpriteFrame* frames;
-};
-
-struct Sprite {
-	char* name;
-	int statec;
-	struct SpriteState* states;
-};
-
-struct SpriteSheet {
-	char* name;
-	int w, h;
-	int spritec;
-	struct Texture* tex;
-	struct Sprite*  sprites;
-};
-
-static struct Pipeline pipeln;
-static uint64 spritec;
-static struct VArray sheets;
-static struct VArray sprites;
-
-void sprites_init()
-{
-	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_PATH "/sprite.vert"),
-		.fshader     = create_shader(SHADER_PATH "/sprite.frag"),
-		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.push_sz     = sizeof(int),
-		.uboc        = 2,
-		.sboc        = 0,
-		.imgc        = 1,
-	};
-
-	sheets  = varray_new(DEFAULT_SPRITE_SHEETS, sizeof(struct SpriteSheet));
-	sprites = varray_new(DEFAULT_SPRITES, sizeof(ID));
-}
-
-static void sprites_reinit()
-{
-	VkImageView img_views[sheets.len];
-	struct SpriteSheet* sheet;
-	for (int i = 0; i < sheets.len; i++) {
-		sheet = varray_get(&sheets, i);
-		img_views[i] = sheet->tex->image_view;
-	}
-
-	pipeln.dset_cap = sheets.len;
-	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_dset(&pipeln, 2, (UBO[]){ global_camera_ubo, global_light_ubo },
-								0, NULL,
-								sheets.len, img_views);
-	pipeln_init(&pipeln, renderpass);
-}
+static int sheetc;
+static struct SpriteSheet sheets[MAX_SPRITE_SHEETS];
 
 void sprites_record_commands(VkCommandBuffer cmd_buf)
 {
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+	struct SpriteSheet* sheet;
+	for (int i = 0; i < sheetc; i++) {
+		sheet = &sheets[i];
+		if (!sheet->sprites.len)
+			continue;
 
-	struct MapLayer* layer;
-	struct MapChunk* chunk;
-	for (int i = 0; i < sheets.len; i++) {
-		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &i);
-		vkCmdDraw(cmd_buf, 6, 1, 0, 0);
+		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.pipeln);
+		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.layout, 0, 1, sheet->pipeln.dsets, 0, NULL);
+		// DEBUG(1, "Drawing %d sprites", sheet->sprites.len);
+		vkCmdPushConstants(cmd_buf, sheet->pipeln.layout, sheet->pipeln.push_stages, 0, sheet->pipeln.push_sz, &i);
+		vkCmdDraw(cmd_buf, sheet->sprites.len*6, 1, 0, 0);
 	}
 }
 
 void sprites_free()
 {
 	struct SpriteSheet* sheet;
-	struct Sprite*      sprite;
-	for (int i = 0; i < sheets.len; i++) {
-		sheet = varray_get(&sheets, i);
+	struct SpriteGroup* sprite;
+	for (int i = 0; i < sheetc; i++) {
+		sheet = &sheets[i];
+		varray_free(&sheet->sprites);
 		texture_free(sheet->tex);
-		for (int j = 0; j < sheet->spritec; j++) {
-			sprite = &sheet->sprites[j];
+		pipeln_free(&sheet->pipeln);
+		for (int j = 0; j < sheet->groupc; j++) {
+			sprite = &sheet->groups[j];
 			for (int k = 0; k < sprite->statec; k++)
 				free(sprite->states[k].frames);
 			free(sprite);
 		}
 	}
-	varray_free(&sheets);
-	varray_free(&sprites);
-	pipeln_free(&pipeln);
 }
 
-ID sprite_sheet_new(char* name)
+/* -------------------------------------------------------------------- */
+
+int sprite_sheet_new(char* name)
 {
-	char buf[256];
-	sprintf(buf, SPRITE_PATH "/%s.lua", name);
+	char buf[PATH_BUFFER_SIZE];
+	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", name);
 	lua_getglobal(lua_state, "load_sprite_sheet");
 	lua_pushstring(lua_state, buf);
 	if (lua_pcall(lua_state, 1, 1, 0))
@@ -130,50 +60,137 @@ ID sprite_sheet_new(char* name)
 
 	if (lua_isnoneornil(lua_state, -1))
 		ERROR("[RES] Failed to load \"%s\" (%s)", name, buf);
-	struct SpriteSheet sheet = *(struct SpriteSheet*)lua_topointer(lua_state, -1);
+	struct SpriteSheet* sheet_data = lua_topointer(lua_state, -1);
 	lua_pop(lua_state, 1);
 
-	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", name);
-	sheet.tex = smalloc(sizeof(struct Texture));
-	*sheet.tex = texture_new_from_image(buf);
-
-	struct SpriteSheet s;
-	s = sheet;
-	s.sprites = smalloc(sheet.spritec*sizeof(struct Sprite));
-	memcpy(s.sprites, sheet.sprites, sheet.spritec*sizeof(struct Sprite));
-	for (int i = 0; i < sheet.spritec; i++) {
-		s.sprites[i].statec = sheet.sprites[i].statec;
-		s.sprites[i].states = smalloc(sheet.sprites[i].statec*sizeof(struct SpriteState));
-		for (int j = 0; j < sheet.sprites[i].statec; j++) {
-			s.sprites[i].states[j].type   = sheet.sprites[i].states[j].type;
-			s.sprites[i].states[j].framec = sheet.sprites[i].states[j].framec;
-			s.sprites[i].states[j].frames = smalloc(sheet.sprites[i].states[j].framec*sizeof(struct SpriteFrame));
-			for (int k = 0; k < sheet.sprites[i].states[j].framec; k++) {
-				s.sprites[i].states[j].frames[k] = sheet.sprites[i].states[j].frames[k];
-				struct SpriteFrame* f = &s.sprites[i].states[j].frames[k];
+	struct SpriteSheet* sheet = &sheets[sheetc];
+	*sheet = *sheet_data;
+	sheet->sprites = varray_new(DEFAULT_SPRITES, sizeof(struct Sprite));
+	sheet->groups = smalloc(sheet_data->groupc*sizeof(struct SpriteGroup));
+	memcpy(sheet->groups, sheet_data->groups, sheet_data->groupc*sizeof(struct SpriteGroup));
+	int total_framec = 0;
+	for (int i = 0; i < sheet_data->groupc; i++) {
+		sheet->groups[i].statec = sheet_data->groups[i].statec;
+		sheet->groups[i].states = smalloc(sheet_data->groups[i].statec*sizeof(struct SpriteState));
+		for (int j = 0; j < sheet_data->groups[i].statec; j++) {
+			sheet->groups[i].states[j].type   = sheet_data->groups[i].states[j].type;
+			sheet->groups[i].states[j].framec = sheet_data->groups[i].states[j].framec;
+			sheet->groups[i].states[j].frames = smalloc(sheet_data->groups[i].states[j].framec*sizeof(struct SpriteFrame));
+			total_framec += sheet_data->groups[i].states[j].framec;
+			for (int k = 0; k < sheet_data->groups[i].states[j].framec; k++) {
+				sheet->groups[i].states[j].frames[k] = sheet_data->groups[i].states[j].frames[k];
+				struct SpriteFrame* f = &sheet->groups[i].states[j].frames[k];
 			}
 		}
 	}
 
-	varray_push(&sheets, &s);
-	sprites_reinit();
+	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(struct Sprite));
+	sheet->sprite_sheet_data = sbo_new(total_framec * sizeof(struct SpriteFrame));
+	isize framec = 0;
+	isize total_copied = 0;
+	for (int i = 0; i < sheet->groupc; i++) {
+		for (int j = 0; j < sheet->groups[i].statec; j++) {
+			framec = sheet->groups[i].states[j].framec;
+			buffer_update(sheet->sprite_sheet_data, framec*sizeof(struct SpriteFrame),
+			              sheet->groups[i].states[j].frames, total_copied*sizeof(struct SpriteFrame));
+			total_copied += framec;
+		}
+	}
 
-	DEBUG(3, "[RES] Loaded new sprite sheet \"%s\" with %d sprites", sheet.name, sheet.spritec);
-	return sheets.len - 1;
+	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", name);
+	sheet->tex = smalloc(sizeof(struct Texture));
+	*sheet->tex = texture_new_from_image(buf);
+
+	sheet->pipeln = (struct Pipeline){
+		.vshader     = create_shader(SHADER_PATH "/sprite.vert"),
+		.fshader     = create_shader(SHADER_PATH "/sprite.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.push_sz     = sizeof(int),
+		.dset_cap    = 1,
+		.uboc        = 2,
+		.sboc        = 2,
+		.imgc        = 1,
+	};
+	pipeln_alloc_dsets(&sheet->pipeln);
+	pipeln_create_dset(&sheet->pipeln, 2, (UBO[]){ global_camera_ubo, global_light_ubo },
+	                                   2, (SBO[]){ sheet->sprite_sheet_data, sheet->sprite_data },
+	                                   1, &sheet->tex->image_view);
+	pipeln_init(&sheet->pipeln, renderpass);
+
+	DEBUG(3, "[RES] Loaded new sprite sheet \"%s\" with %d sprites", sheet->name, sheet->groupc);
+	sprite_sheet_print(sheet);
+	return sheetc++;
 }
 
-ID sprite_new(ID sheet)
+static void sprite_sheet_print(struct SpriteSheet* sheet)
 {
-	ID sprite = varray_push(&sprites, &spritec);
-
-	return spritec++;
+	DEBUG(1, "Sprite sheet \"%s\" is %dx%d with %d groups", sheet->name, sheet->w, sheet->h, sheet->groupc);
+	struct SpriteGroup* group;
+	struct SpriteState* state;
+	struct SpriteFrame* frame;
+	for (int i = 0; i < sheet->groupc; i++) {
+		group = &sheet->groups[i];
+		DEBUG(1, "\tGroup \"%s\" w/%d states", group->name, group->statec);
+		for (int j = 0; j < group->statec; j++) {
+			state = &group->states[j];
+			DEBUG(1, "\tState \"%s\" w/%d frames", STRING_OF_SPRITE_ANIMATION(state->type), state->framec);
+			for (int k = 0; k < state->framec; k++) {
+				frame = &state->frames[k];
+				fprintf(stderr, "(%d, %d, %d, %d) ", frame->x, frame->y, frame->w, frame->h);
+			}
+			fprintf(stderr, "\n");
+		}
+	}
+	DEBUG(1, "\n");
 }
 
-void sprite_destroy(ID sprite)
+/* -------------------------------------------------------------------- */
+
+uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec2 pos)
 {
-	ID id = -1;
-	for (int i = 0; i < sprites.len; i++)
-		if (*(ID*)varray_get(&sprites, i) == sprite)
-			varray_set(&sprites, i, &id);
+	int64 i;
+	struct SpriteSheet* sheet;
+	for (i = 0; i < sheetc; i++) {
+		sheet = &sheets[i];
+		if (!strcmp(sheet->name, sheet_name))
+			break;
+		if (i == sheetc - 1) {
+			ERROR("[GFX] Sheet \"%s\" not found", sheet_name);
+			return -1;
+		}
+	}
+
+	struct SpriteGroup* group;
+	for (i = 0; i < sheet->groupc; i++) {
+		group = &sheet->groups[i];
+		if (!strcmp(group->name, group_name))
+			break;
+		if (i == sheet->groupc - 1) {
+			ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheet_name);
+			return -1;
+		}
+	}
+
+	struct Sprite sprite = {
+		.pos = pos,
+		.id  = i,
+	};
+	int64 spri = varray_push(&sheet->sprites, &sprite);
+
+	// TODO: handle resizing properly
+	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
+		buffer_free(&sheet->sprite_data);
+		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+	}
+	buffer_update(sheet->sprite_data, sizeof(struct Sprite), &sprite, (sheet->sprites.len - 1)*sizeof(struct Sprite));
+
+	DEBUG(5, "[GFX] Created new sprite (%s@%s) at (%.2f, %2.f)", sheet_name, group_name, pos.x, pos.y);
+	return i | (spri << 32);
+}
+
+void sprite_destroy(int sprite)
+{
+
 }
 

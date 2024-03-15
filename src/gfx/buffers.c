@@ -72,10 +72,11 @@ VBO _vbo_new(VkDeviceSize sz, void* verts, bool can_update, char const* file, in
 {
 	DEBUG(3, "[VK] Creating vertex buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	struct Buffer tmpbuf;
-	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
-	buffer_update(tmpbuf, sz, verts, 0);
+	if (verts)
+		buffer_update(tmpbuf, sz, verts, 0);
 
 	VBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -84,7 +85,6 @@ VBO _vbo_new(VkDeviceSize sz, void* verts, bool can_update, char const* file, in
 	copy_buffer(buf.buf, tmpbuf.buf, sz);
 	buffer_free(&tmpbuf);
 
-	// DEBUG(1, TERM_RED "\t--> VBO: %p (%s:%d)" TERM_NORMAL, buf.buf, file, line);
 	return buf;
 }
 
@@ -103,7 +103,6 @@ IBO _ibo_new(VkDeviceSize sz, void* inds, char const* file, int line, char const
 	copy_buffer(buf.buf, tmpbuf.buf, sz);
 	buffer_free(&tmpbuf);
 
-	// DEBUG(1, TERM_RED "\t--> IBO: %p (%s:%d)" TERM_NORMAL, buf.buf, file, line);
 	return buf;
 }
 
@@ -115,7 +114,6 @@ UBO _ubo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 	                                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &buf.buf, &buf.mem);
 
-	// DEBUG(1, TERM_RED "\t--> UBO: %p (%s:%d)" TERM_NORMAL, buf.buf, file, line);
 	return buf;
 }
 
@@ -126,7 +124,6 @@ SBO _sbo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
 
-	// DEBUG(1, TERM_RED "\t--> SBO: %p (%s:%d)" TERM_NORMAL, buf.buf, file, line);
 	return buf;
 }
 

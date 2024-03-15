@@ -36,7 +36,7 @@ static struct Camera scratch_cam;
 static isize deferc;
 static struct SceneDefer defers[MAX_DEFER_FUNCTIONS];
 
-struct Sprite* sprite;
+struct SpriteGroup* sprite;
 
 void scenemgr_init()
 {
@@ -66,8 +66,9 @@ void scenemgr_init()
 
 	switch_scene(SCENE_GAME);
 
-	sprites_init();
 	sprite_sheet_new("hero");
+	sprite_new("hero", "hero", VEC2(0, 0));
+	sprite_new("hero", "hero", VEC2(1, 1));
 }
 
 noreturn void scenemgr_loop()
