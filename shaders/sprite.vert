@@ -1,5 +1,7 @@
 #version 460
 
+#include "common.glsl"
+
 layout(location = 0) out vec3 Fpos;
 layout(location = 1) out vec2 Fuv;
 
@@ -8,16 +10,12 @@ layout(binding = 0) uniform CameraUBO {
 	mat4 view;
 } cam;
 
-layout(push_constant) uniform PushConstants {
-	int id;
-} push;
-
 void main()
 {
-	vec3 pos = vec3(0, 0, 0);
+	vec3 pos = rect_verts[gl_VertexIndex % 6];
 
 	Fpos = pos;
-	vec2 Fuv = vec2(0, 0);
+	Fuv  = pos.xz;
 
-	gl_Position = cam.proj * cam.view * vec4(pos, 1.0f);
+	gl_Position = cam.proj * cam.view * vec4(pos - vec3(0, 0, 1), 1.0f);
 }

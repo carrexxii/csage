@@ -41,6 +41,15 @@ struct MapChunkData {
 	uint tiles[CHUNK_SIZE];
 };
 
+const vec3 rect_verts[6] = {
+	vec3(0.0f, 0.0f, 0.0f),
+	vec3(0.0f, 0.0f, 1.0f),
+	vec3(1.0f, 0.0f, 0.0f),
+	vec3(1.0f, 0.0f, 1.0f),
+	vec3(1.0f, 0.0f, 0.0f),
+	vec3(0.0f, 0.0f, 1.0f),
+};
+
 const float material_shininess = 16.0f;
 vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir, vec3 albedo)
 {

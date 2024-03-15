@@ -9,11 +9,11 @@
 #define DEFAULT_SPRITE_SHEETS 8
 #define DEFAULT_SPRITES       1024
 
-void sprites_init(struct Camera* camera);
+void sprites_init();
+void sprites_record_commands(VkCommandBuffer cmd_buf);
+void sprites_free(void);
 ID sprite_sheet_new(char* name);
 ID sprite_new(ID sheet);
-void sprite_record_commands(VkCommandBuffer cmd_buf);
 void sprite_destroy(ID sprite);
-void sprites_free(void);
 
 #endif

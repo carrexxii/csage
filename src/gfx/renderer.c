@@ -20,6 +20,7 @@
 VkRenderPass            renderpass;
 VkSampler               default_sampler;
 struct DirectionalLight global_light;
+UBO                     global_camera_ubo;
 UBO                     global_light_ubo;
 
 static void record_commands(int imgi, struct Camera* cam);
@@ -123,7 +124,8 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	global_light_ubo = ubo_new(sizeof(struct DirectionalLight));
+	global_camera_ubo = ubo_new(sizeof(Mat4x4[2]));
+	global_light_ubo  = ubo_new(sizeof(struct DirectionalLight));
 }
 
 void renderer_clear_draw_list(void)

@@ -102,7 +102,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 		.rasterizerDiscardEnable = false,
 		.polygonMode             = VK_POLYGON_MODE_FILL,
 		.lineWidth               = 3.0f,
-		.cullMode                = VK_CULL_MODE_NONE,
+		.cullMode                = VK_CULL_MODE_BACK_BIT,
 		.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
 		.depthClampEnable        = false,
 		.depthBiasEnable         = false,

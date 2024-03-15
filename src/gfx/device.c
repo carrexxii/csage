@@ -1,5 +1,4 @@
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
+#include "vulkan/vulkan.h"
 
 #include "vulkan.h"
 #include "swapchain.h"
@@ -67,6 +66,11 @@ void device_init_logical(VkSurfaceKHR surf)
 			.queueCount       = 1,
 		};
 
+	VkPhysicalDeviceVulkan12Features vk12Features = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+		.runtimeDescriptorArray = true,
+	};
+
 	VkDeviceCreateInfo devi = {
 		.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.flags                = 0,
@@ -78,11 +82,11 @@ void device_init_logical(VkSurfaceKHR surf)
 			.wideLines          = true,
 			.largePoints        = true,
 		},
-		// .pNext = &(VkPhysicalDeviceShaderDrawParametersFeatures){
-		// 	.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
-		// 	.shaderDrawParameters = 1,
-		// 	.pNext                = NULL,
-		// },
+		.pNext = &(VkPhysicalDeviceShaderDrawParametersFeatures){
+			.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
+			.shaderDrawParameters = 1,
+			.pNext                = &vk12Features,
+		},
 		.enabledLayerCount       = VULKAN_LAYER_COUNT,
 		.ppEnabledLayerNames     = VULKAN_LAYERS,
 		.enabledExtensionCount   = 1,

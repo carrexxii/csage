@@ -48,6 +48,7 @@ void renderer_free(void);
 
 extern VkRenderPass renderpass;
 extern VkSampler    default_sampler;
+extern UBO          global_camera_ubo;
 extern UBO          global_light_ubo;
 
 #endif
