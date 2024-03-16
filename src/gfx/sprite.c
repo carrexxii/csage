@@ -71,11 +71,15 @@ int sprite_sheet_new(char* name)
 	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", name);
 	lua_getglobal(lua_state, "load_sprite_sheet");
 	lua_pushstring(lua_state, buf);
-	if (lua_pcall(lua_state, 1, 1, 0))
+	if (lua_pcall(lua_state, 1, 1, 0)) {
 		ERROR("[LUA] Failed in call to \"load_sprite_sheet\": \n\t%s", lua_tostring(lua_state, -1));
+		return -1;
+	}
 
-	if (lua_isnoneornil(lua_state, -1))
+	if (lua_isnoneornil(lua_state, -1)) {
 		ERROR("[RES] Failed to load \"%s\" (%s)", name, buf);
+		return -1;
+	}
 	struct SpriteSheet* sheet_data = lua_topointer(lua_state, -1);
 	lua_pop(lua_state, 1);
 
@@ -163,32 +167,32 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 
 /* -------------------------------------------------------------------- */
 
-uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos)
+struct Sprite* sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos)
 {
 	int64 i;
-	struct SpriteSheet* sheet;
+	struct SpriteSheet* sheet = NULL;
 	for (i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		if (!strcmp(sheet->name, sheet_name))
 			break;
-		if (i == sheetc - 1) {
-			ERROR("[GFX] Sheet \"%s\" not found", sheet_name);
-			return -1;
-		}
+	}
+	if (i == sheetc || !sheet) {
+		ERROR("[GFX] Sheet \"%s\" not found", sheet_name);
+		return NULL;
 	}
 
 	int gi = 0;
-	struct SpriteGroup* group;
+	struct SpriteGroup* group = NULL;
 	for (i = 0; i < sheet->groupc; i++) {
 		group  = &sheet->groups[i];
 		if (!strcmp(group->name, group_name))
 			break;
-		if (i == sheet->groupc - 1) {
-			ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheet_name);
-			return -1;
-		}
 		for (int j = 0; j < group->statec; j++)
 			gi += group->states[j].framec;
+	}
+	if (i == sheet->groupc || !group) {
+		ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheet_name);
+		return NULL;
 	}
 
 	struct Sprite sprite = {
@@ -197,7 +201,7 @@ uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos
 		.group = i,
 		.frame = 1,
 	};
-	int64 spri = varray_push(&sheet->sprites, &sprite);
+	isize spri = varray_push(&sheet->sprites, &sprite);
 
 	// TODO: handle resizing properly
 	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
@@ -205,8 +209,8 @@ uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos
 		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
 	}
 
-	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %2.f)", sprite.start, sheet_name, group_name, pos.x, pos.y);
-	return i | (spri << 32);
+	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %.2f)", sprite.start, sheet_name, group_name, pos.x, pos.y);
+	return varray_get(&sheet->sprites, spri);
 }
 
 void sprite_destroy(int sprite)

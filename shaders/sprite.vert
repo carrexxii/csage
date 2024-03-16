@@ -30,13 +30,16 @@ layout(binding = 11) readonly buffer SpriteBufferSBO {
 
 void main()
 {
-	Sprite sprite = sprites.data[gl_VertexIndex / 6];
-	SpriteFrame frame = sheet.frames[sprite.start + sprite.frame];
+	Sprite      sprite = sprites.data[gl_VertexIndex / 6];
+	SpriteFrame frame  = sheet.frames[sprite.start + sprite.frame];
 	vec3 pos = rect_verts[gl_VertexIndex % 6];
 
 	Fpos = pos;
 	Fuv  = vec2(frame.x + frame.w*pos.x,
-	            frame.y + frame.h*pos.z) / 256.0f;
+	            frame.y + frame.h*pos.y) / 256.0f;
 
-	gl_Position = cam.proj * cam.view * vec4(pos + sprite.pos, 1.0f);
+	pos += sprite.pos;
+	pos.y = -pos.y;
+
+	gl_Position = cam.proj * vec4(pos, 1.0f);
 }

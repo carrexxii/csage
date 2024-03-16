@@ -64,10 +64,10 @@ struct SpriteSheet {
 	SBO sprite_data;
 };
 
-void   sprites_record_commands(VkCommandBuffer cmd_buf);
-void   sprites_free(void);
-int    sprite_sheet_new(char* name);
-uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos);
-void   sprite_destroy(int sprite);
+void sprites_record_commands(VkCommandBuffer cmd_buf);
+void sprites_free(void);
+int  sprite_sheet_new(char* name);
+struct Sprite* sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos);
+void sprite_destroy(int sprite);
 
 #endif

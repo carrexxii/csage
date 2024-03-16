@@ -9,6 +9,7 @@
 #include "input.h"
 #include "camera.h"
 #include "entities/entity.h"
+#include "entities/player.h"
 #include "map.h"
 #include "scenemgr.h"
 
@@ -44,13 +45,13 @@ void scenemgr_init()
 	game_cam    = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f);
 	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
 
+
 	renderer_init();
 	maps_init();
 	// scratch_init(renderpass);
 	// font_init(renderpass);
 	// ui_init(renderpass);
 	// particles_init(renderpass);
-	entities_init();
 
 	test_init();
 	// models_init(renderpass);
@@ -63,12 +64,12 @@ void scenemgr_init()
 	                             VEC3(0.01f, 0.01f, 0.01f),
 	                             VEC3(0.02f, 0.02f, 0.02f),
 	                             VEC3(0.3f , 0.3f , 0.3f));
+	curr_cam = &game_cam;
+	global_camera_ubo = game_cam.ubo;
 
+	player_init();
+	entities_init();
 	switch_scene(SCENE_GAME);
-
-	sprite_sheet_new("hero");
-	sprite_new("hero", "hero", VEC3(1, 0, -1));
-	sprite_new("hero", "gener", VEC3(2, 0, -1));
 }
 
 noreturn void scenemgr_loop()
@@ -153,10 +154,10 @@ static void register_global_keys()
 }
 
 static struct Map map;
-static void cb_game_move_up(bool kdown)        { camera_move(&game_cam, DIR_UP       , kdown); }
-static void cb_game_move_left(bool kdown)      { camera_move(&game_cam, DIR_LEFT     , kdown); }
-static void cb_game_move_down(bool kdown)      { camera_move(&game_cam, DIR_DOWN     , kdown); }
-static void cb_game_move_right(bool kdown)     { camera_move(&game_cam, DIR_RIGHT    , kdown); }
+static void cb_game_move_up(bool kdown)        { player_set_moving(DIR_UP, kdown);    }
+static void cb_game_move_left(bool kdown)      { player_set_moving(DIR_LEFT, kdown);  }
+static void cb_game_move_down(bool kdown)      { player_set_moving(DIR_DOWN, kdown);  }
+static void cb_game_move_right(bool kdown)     { player_set_moving(DIR_RIGHT, kdown); }
 static void cb_game_move_forwards(bool kdown)  { camera_move(&game_cam, DIR_FORWARDS , kdown); }
 static void cb_game_move_backwards(bool kdown) { camera_move(&game_cam, DIR_BACKWARDS, kdown); }
 static void cb_game_cam_update() { camera_update(&game_cam); }
@@ -182,7 +183,6 @@ static void load_game()
 	input_register(SDLK_q, cb_game_move_forwards);
 	input_register(SDLK_e, cb_game_move_backwards);
 
-
 	renderer_clear_draw_list();
 	// renderer_add_to_draw_list(models_record_commands);
 	renderer_add_to_draw_list(cb_game_map_record);
@@ -196,6 +196,7 @@ static void load_game()
 	// taskmgr_add_task(particles_update);
 	// taskmgr_add_task(entities_update);
 	taskmgr_add_task(cb_game_cam_update);
+	taskmgr_add_task(player_update);
 }
 
 static void cb_scratch_move_up(bool kdown)        { camera_move(&scratch_cam, DIR_UP       , kdown); }
