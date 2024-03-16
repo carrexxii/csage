@@ -118,7 +118,7 @@ void camera_update(struct Camera* cam)
 	cam->mats->view = translate_make(cam->pos);
 	cam->mats->view = rotate(cam->mats->view, VEC3_Y,  deg_to_rad(180.0f));
 	cam->mats->view = rotate(cam->mats->view, VEC3_Z, -deg_to_rad(135.0f));
-	cam->mats->view = rotate(cam->mats->view, VEC3_X,  deg_to_rad(63.435f));
+	cam->mats->view = rotate(cam->mats->view, VEC3_X,  deg_to_rad(60.0f)); // 63.435f
 
 	if (cam->type == CAMERA_ORTHOGONAL)
 		camera_set_projection(cam, CAMERA_ORTHOGONAL);

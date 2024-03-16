@@ -1,6 +1,7 @@
 #include "vulkan/vulkan.h"
 
 #include "lua.h"
+#include "maths/maths.h"
 #include "util/varray.h"
 #include "vulkan.h"
 #include "buffers.h"
@@ -12,6 +13,18 @@ static void sprite_sheet_print(struct SpriteSheet* sheet);
 
 static int sheetc;
 static struct SpriteSheet sheets[MAX_SPRITE_SHEETS];
+static struct {
+	int sheet;
+	byte pad[12];
+	Mat4x4 rotate;
+} push_const;
+
+void sprites_init()
+{
+	push_const.rotate = MAT4X4_IDENTITY;
+	push_const.rotate = rotate(push_const.rotate, VEC3_Z, deg_to_rad(180.0f));
+	push_const.rotate = rotate(push_const.rotate, VEC3_Y, deg_to_rad(180.0f));
+}
 
 void sprites_record_commands(VkCommandBuffer cmd_buf)
 {
@@ -34,11 +47,12 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 		if (!sheet->sprites.len)
 			continue;
 		buffer_update(sheet->sprite_data, sheet->sprites.len*sizeof(struct Sprite), sheet->sprites.data, 0);
+		push_const.sheet = i;
 
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.layout, 0, 1, sheet->pipeln.dsets, 0, NULL);
 		// DEBUG(1, "Drawing %d sprites", sheet->sprites.len);
-		vkCmdPushConstants(cmd_buf, sheet->pipeln.layout, sheet->pipeln.push_stages, 0, sheet->pipeln.push_sz, &i);
+		vkCmdPushConstants(cmd_buf, sheet->pipeln.layout, sheet->pipeln.push_stages, 0, sheet->pipeln.push_sz, &push_const);
 		vkCmdDraw(cmd_buf, sheet->sprites.len*6, 1, 0, 0);
 	}
 }
@@ -125,8 +139,8 @@ int sprite_sheet_new(char* name)
 		.vshader     = create_shader(SHADER_PATH "/sprite.vert"),
 		.fshader     = create_shader(SHADER_PATH "/sprite.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.push_sz     = sizeof(int),
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		.push_sz     = sizeof(push_const),
 		.dset_cap    = 1,
 		.uboc        = 2,
 		.sboc        = 2,

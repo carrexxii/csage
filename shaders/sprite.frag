@@ -17,6 +17,7 @@ layout(binding = 21) uniform texture2D Falbedo[];
 
 layout(push_constant) uniform PushConstants {
 	int sheet;
+	mat4 view;
 } push;
 
 void main()

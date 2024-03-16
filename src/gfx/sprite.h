@@ -64,6 +64,7 @@ struct SpriteSheet {
 	SBO sprite_data;
 };
 
+void sprites_init(void);
 void sprites_record_commands(VkCommandBuffer cmd_buf);
 void sprites_free(void);
 int  sprite_sheet_new(char* name);

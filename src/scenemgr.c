@@ -48,6 +48,7 @@ void scenemgr_init()
 
 	renderer_init();
 	maps_init();
+	sprites_init();
 	// scratch_init(renderpass);
 	// font_init(renderpass);
 	// ui_init(renderpass);
