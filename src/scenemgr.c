@@ -67,8 +67,8 @@ void scenemgr_init()
 	switch_scene(SCENE_GAME);
 
 	sprite_sheet_new("hero");
-	sprite_new("hero", "hero", VEC2(0, 0));
-	sprite_new("hero", "hero", VEC2(1, 1));
+	sprite_new("hero", "hero", VEC3(1, 0, -1));
+	sprite_new("hero", "gener", VEC3(2, 0, -1));
 }
 
 noreturn void scenemgr_loop()

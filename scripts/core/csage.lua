@@ -48,7 +48,6 @@ csage.cdef [[
 
 	struct SpriteFrame {
 		uint16 x, y, w, h;
-		uint16 duration;
 	};
 
 	struct SpriteState {

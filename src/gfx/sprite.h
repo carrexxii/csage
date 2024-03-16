@@ -46,9 +46,10 @@ struct SpriteGroup {
 };
 
 struct Sprite {
-	Vec2 pos;
-	int  id;
-	float pad1;
+	Vec3  pos;
+	int16 start, frame;
+	int16 group, state;
+	byte pad[12];
 };
 
 struct SpriteSheet {
@@ -66,7 +67,7 @@ struct SpriteSheet {
 void   sprites_record_commands(VkCommandBuffer cmd_buf);
 void   sprites_free(void);
 int    sprite_sheet_new(char* name);
-uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec2 pos);
+uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos);
 void   sprite_destroy(int sprite);
 
 #endif

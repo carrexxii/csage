@@ -16,10 +16,24 @@ static struct SpriteSheet sheets[MAX_SPRITE_SHEETS];
 void sprites_record_commands(VkCommandBuffer cmd_buf)
 {
 	struct SpriteSheet* sheet;
+	struct Sprite*      sprite;
+
+	static int q = 0;
+	q += 1;
+	if (q % 100 == 0)
+		for (int i = 0; i < sheetc; i++) {
+			sheet = &sheets[i];
+			for (int j = 0; j < sheet->sprites.len; j++) {
+				sprite = varray_get(&sheet->sprites, j);
+				sprite->frame = (sprite->frame + 1) % sheet->groups[sprite->group].states[sprite->state].framec;
+			}
+		}
+
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		if (!sheet->sprites.len)
 			continue;
+		buffer_update(sheet->sprite_data, sheet->sprites.len*sizeof(struct Sprite), sheet->sprites.data, 0);
 
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.layout, 0, 1, sheet->pipeln.dsets, 0, NULL);
@@ -32,18 +46,20 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 void sprites_free()
 {
 	struct SpriteSheet* sheet;
-	struct SpriteGroup* sprite;
+	struct SpriteGroup* group;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
+		// for (int j = 0; j < sheet->groupc; j++) {
+		// 	group = &sheet->groups[j];
+		// 	// for (int k = 0; k < group->statec; k++)
+		// 	// 	free(group->states[k].frames);
+		// 	free(group);
+		// }
 		varray_free(&sheet->sprites);
+		sbo_free(&sheet->sprite_sheet_data);
+		sbo_free(&sheet->sprite_data);
 		texture_free(sheet->tex);
 		pipeln_free(&sheet->pipeln);
-		for (int j = 0; j < sheet->groupc; j++) {
-			sprite = &sheet->groups[j];
-			for (int k = 0; k < sprite->statec; k++)
-				free(sprite->states[k].frames);
-			free(sprite);
-		}
 	}
 }
 
@@ -66,7 +82,7 @@ int sprite_sheet_new(char* name)
 	struct SpriteSheet* sheet = &sheets[sheetc];
 	*sheet = *sheet_data;
 	sheet->sprites = varray_new(DEFAULT_SPRITES, sizeof(struct Sprite));
-	sheet->groups = smalloc(sheet_data->groupc*sizeof(struct SpriteGroup));
+	sheet->groups  = smalloc(sheet_data->groupc*sizeof(struct SpriteGroup));
 	memcpy(sheet->groups, sheet_data->groups, sheet_data->groupc*sizeof(struct SpriteGroup));
 	int total_framec = 0;
 	for (int i = 0; i < sheet_data->groupc; i++) {
@@ -147,7 +163,7 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 
 /* -------------------------------------------------------------------- */
 
-uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec2 pos)
+uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos)
 {
 	int64 i;
 	struct SpriteSheet* sheet;
@@ -161,20 +177,25 @@ uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec2 pos
 		}
 	}
 
+	int gi = 0;
 	struct SpriteGroup* group;
 	for (i = 0; i < sheet->groupc; i++) {
-		group = &sheet->groups[i];
+		group  = &sheet->groups[i];
 		if (!strcmp(group->name, group_name))
 			break;
 		if (i == sheet->groupc - 1) {
 			ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheet_name);
 			return -1;
 		}
+		for (int j = 0; j < group->statec; j++)
+			gi += group->states[j].framec;
 	}
 
 	struct Sprite sprite = {
-		.pos = pos,
-		.id  = i,
+		.pos   = pos,
+		.start = gi,
+		.group = i,
+		.frame = 1,
 	};
 	int64 spri = varray_push(&sheet->sprites, &sprite);
 
@@ -183,9 +204,8 @@ uint64 sprite_new(char* restrict sheet_name, char* restrict group_name, Vec2 pos
 		buffer_free(&sheet->sprite_data);
 		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
 	}
-	buffer_update(sheet->sprite_data, sizeof(struct Sprite), &sprite, (sheet->sprites.len - 1)*sizeof(struct Sprite));
 
-	DEBUG(5, "[GFX] Created new sprite (%s@%s) at (%.2f, %2.f)", sheet_name, group_name, pos.x, pos.y);
+	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %2.f)", sprite.start, sheet_name, group_name, pos.x, pos.y);
 	return i | (spri << 32);
 }
 
@@ -193,4 +213,3 @@ void sprite_destroy(int sprite)
 {
 
 }
-

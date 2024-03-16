@@ -8,12 +8,12 @@ layout(location = 1) in vec2 Fuv;
 
 layout(location = 0) out vec4 Foutput;
 
-layout(binding = 20) uniform sampler   Fsampler;
-layout(binding = 21) uniform texture2D Falbedo[];
-
 layout(binding = 1) uniform GlobalLightBufferUBO {
 	DirectionalLight light;
 } global;
+
+layout(binding = 20) uniform sampler   Fsampler;
+layout(binding = 21) uniform texture2D Falbedo[];
 
 layout(push_constant) uniform PushConstants {
 	int sheet;
