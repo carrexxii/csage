@@ -8,6 +8,7 @@ gfx/sprites/renders/*.png
 gfx/sprites/sheets/*.png
 gfx/sprites/*.png
 gfx/sprites/*.lua
+gfx/sprites/*.conf
 compile_commands.json
 csage
 *.tiled-session

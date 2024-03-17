@@ -9,8 +9,7 @@ return {
 				},
 			{%- endif -%}
 			["{{ sprite.id }}"] = {
-		{%- endif %}
-		{ {{ sprite.trimmedRect.x }}, {{ sprite.trimmedRect.y }}, {{ sprite.trimmedRect.w }}, {{ sprite.trimmedRect.h }}, },
+		{%- endif %}	{ {{ sprite.trimmedRect.x }}, {{ sprite.trimmedRect.y }}, {{ sprite.trimmedRect.w }}, {{ sprite.trimmedRect.h }}, },
 		{%- set prev = sprite.id -%}
 	{%- endfor %}
 	},
