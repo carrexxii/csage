@@ -22,7 +22,7 @@ sheet "{0}"
 sprite_tmpl = \
 r"""
 glob "renders/{0}-{1}-{2}-*.png"
-	id "{0}@{1}@{2}" """
+	id "{0}@{1}-{2}" """
 
 sprites = {
 	"player": [ "run", "torch" ],

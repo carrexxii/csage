@@ -74,22 +74,30 @@ typedef mtx_t  Mutex;
 typedef cnd_t  Condition;
 typedef tss_t  ThreadLocal;
 
-enum Axis {
+enum Axis: uint {
 	AXIS_NONE,
-	AXIS_X,
-	AXIS_Y,
-	AXIS_Z,
+	AXIS_X = 1 << 0,
+	AXIS_Y = 1 << 1,
+	AXIS_Z = 1 << 2,
 };
-enum Direction {
-	DIR_NONE         = 0x00,
-	DIR_UP           = 0x01,
-	DIR_DOWN         = 0x02,
-	DIR_RIGHT        = 0x04,
-	DIR_LEFT         = 0x08,
-	DIR_FORWARDS     = 0x10,
-	DIR_BACKWARDS    = 0x20,
-	DIR_ROTATE_LEFT  = 0x21,
-	DIR_ROTATE_RIGHT = 0x22,
+enum Direction: uint {
+	DIR_NONE         = 1 << 0,
+	DIR_UP           = 1 << 1,
+	DIR_DOWN         = 1 << 2,
+	DIR_RIGHT        = 1 << 4,
+	DIR_LEFT         = 1 << 5,
+	DIR_FORWARDS     = 1 << 6,
+	DIR_BACKWARDS    = 1 << 7,
+	DIR_ROTATE_LEFT  = 1 << 8,
+	DIR_ROTATE_RIGHT = 1 << 9,
+	DIR_N            = 1 << 10,
+	DIR_S            = 1 << 11,
+	DIR_E            = 1 << 12,
+	DIR_W            = 1 << 13,
+	DIR_NW           = DIR_N | DIR_W,
+	DIR_NE           = DIR_N | DIR_E,
+	DIR_SW           = DIR_S | DIR_W,
+	DIR_SE           = DIR_S | DIR_E,
 };
 
 typedef union Colour {

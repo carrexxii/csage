@@ -8,20 +8,23 @@
 #include "texture.h"
 #include "camera.h"
 
+/* Using a hash map for many different animations + directions might be good */
+
 #define MAX_SPRITE_SHEETS     (INT8_MAX + 1)
 #define MAX_SPRITE_GROUPS     (INT8_MAX + 1)
 #define MAX_SPRITE_FRAMES     (INT8_MAX + 1)
 #define DEFAULT_SPRITE_SHEETS 8
 #define DEFAULT_SPRITES       16
 
-#define STRING_OF_SPRITE_ANIMATION(x) (    \
+// TODO: this needs to be a hashmap
+#define STRING_OF_SPRITE_STATE_TYPE(x) (   \
 	x == SPRITE_NONE   ? "SPRITE_NONE"   : \
 	x == SPRITE_WALK   ? "SPRITE_WALK"   : \
 	x == SPRITE_RUN    ? "SPRITE_RUN"    : \
 	x == SPRITE_ATTACK1? "SPRITE_ATTACK1": \
 	x == SPRITE_ATTACK2? "SPRITE_ATTACK2": \
 	"<Unknown animation>")
-enum SpriteAnimation {
+enum SpriteStateType {
 	SPRITE_NONE,
 	SPRITE_WALK,
 	SPRITE_RUN,
@@ -34,7 +37,8 @@ struct SpriteFrame {
 };
 
 struct SpriteState {
-	enum SpriteAnimation type;
+	enum SpriteStateType type;
+	enum Direction       dir;
 	int framec;
 	struct SpriteFrame* frames;
 };
@@ -49,7 +53,8 @@ struct Sprite {
 	Vec3  pos;
 	int16 start, frame;
 	int16 group, state;
-	byte pad[12];
+	int8 sheet;
+	byte pad[11];
 };
 
 struct SpriteSheet {
@@ -68,7 +73,8 @@ void sprites_init(void);
 void sprites_record_commands(VkCommandBuffer cmd_buf);
 void sprites_free(void);
 int  sprite_sheet_new(char* name);
-struct Sprite* sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos);
+struct Sprite* sprite_new(char* sheet_name, char* group_name, Vec3 pos);
+void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir);
 void sprite_destroy(int sprite);
 
 #endif

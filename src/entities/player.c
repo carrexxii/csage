@@ -19,23 +19,32 @@ void player_init()
 
 void player_set_moving(enum Direction d, bool set)
 {
+	enum Direction old_dir = dir;
 	if (set)
 		dir |= d;
 	else
 		dir &= ~d;
+
+	if      (d & DIR_N && dir & DIR_S) dir &= ~DIR_S;
+	else if (d & DIR_S && dir & DIR_N) dir &= ~DIR_N;
+	else if (d & DIR_W && dir & DIR_E) dir &= ~DIR_E;
+	else if (d & DIR_E && dir & DIR_W) dir &= ~DIR_W;
+
+	if (dir != old_dir && dir)
+		sprite_set_state(sprite, SPRITE_RUN, dir);
 }
 
 void player_update()
 {
 	Vec3 vel;
-	if      (dir & DIR_DOWN && dir & DIR_RIGHT) vel = VEC3( 0.894427f,  0.447214f, 0.0f);
-	else if (dir & DIR_DOWN && dir & DIR_LEFT)  vel = VEC3(-0.894427f,  0.447214f, 0.0f);
-	else if (dir & DIR_UP   && dir & DIR_RIGHT) vel = VEC3( 0.894427f, -0.447214f, 0.0f);
-	else if (dir & DIR_UP   && dir & DIR_LEFT)  vel = VEC3(-0.894427f, -0.447214f, 0.0f);
-	else if (dir & DIR_UP)    vel = VEC3( 0.0f, -1.0f, 0.0f);
-	else if (dir & DIR_DOWN)  vel = VEC3( 0.0f,  1.0f, 0.0f);
-	else if (dir & DIR_RIGHT) vel = VEC3( 1.0f,  0.0f, 0.0f);
-	else if (dir & DIR_LEFT)  vel = VEC3(-1.0f,  0.0f, 0.0f);
+	if      (dir & DIR_S && dir & DIR_E) vel = VEC3( 0.894427f,  0.447214f, 0.0f);
+	else if (dir & DIR_S && dir & DIR_W) vel = VEC3(-0.894427f,  0.447214f, 0.0f);
+	else if (dir & DIR_N && dir & DIR_E) vel = VEC3( 0.894427f, -0.447214f, 0.0f);
+	else if (dir & DIR_N && dir & DIR_W) vel = VEC3(-0.894427f, -0.447214f, 0.0f);
+	else if (dir & DIR_N) vel = VEC3( 0.0f, -1.0f, 0.0f);
+	else if (dir & DIR_S) vel = VEC3( 0.0f,  1.0f, 0.0f);
+	else if (dir & DIR_E) vel = VEC3( 1.0f,  0.0f, 0.0f);
+	else if (dir & DIR_W) vel = VEC3(-1.0f,  0.0f, 0.0f);
 	else vel = VEC3_ZERO;
 
 	sprite->pos = add(sprite->pos, multiply(vel, speed));

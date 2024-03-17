@@ -21,7 +21,7 @@ struct Sprite {
 	int16_t group, state;
 };
 layout(binding = 10) readonly buffer SpriteSheetBufferUBO {
-	// int w, h;
+	int w, h;
 	SpriteFrame frames[];
 } sheet;
 layout(binding = 11) readonly buffer SpriteBufferSBO {
@@ -40,8 +40,7 @@ void main()
 	vec3 pos = rect_verts[gl_VertexIndex % 6];
 
 	Fpos = pos;
-	Fuv  = vec2(frame.x + frame.w*pos.x,
-	            frame.y + frame.h*pos.y) / 256.0f;
+	Fuv  = vec2(frame.x + frame.w*pos.x, frame.y + frame.h*pos.y) / vec2(sheet.w, sheet.h);
 
 	pos += sprite.pos;
 	gl_Position = cam.proj * push.view * vec4(pos, 1.0f);

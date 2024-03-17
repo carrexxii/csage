@@ -108,6 +108,7 @@ int sprite_sheet_new(char* name)
 		sheet->groups[i].states = smalloc(sheet_data->groups[i].statec*sizeof(struct SpriteState));
 		for (int j = 0; j < sheet_data->groups[i].statec; j++) {
 			sheet->groups[i].states[j].type   = sheet_data->groups[i].states[j].type;
+			sheet->groups[i].states[j].dir    = sheet_data->groups[i].states[j].dir;
 			sheet->groups[i].states[j].framec = sheet_data->groups[i].states[j].framec;
 			sheet->groups[i].states[j].frames = smalloc(sheet_data->groups[i].states[j].framec*sizeof(struct SpriteFrame));
 			total_framec += sheet_data->groups[i].states[j].framec;
@@ -119,14 +120,15 @@ int sprite_sheet_new(char* name)
 	}
 
 	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(struct Sprite));
-	sheet->sprite_sheet_data = sbo_new(total_framec * sizeof(struct SpriteFrame));
+	sheet->sprite_sheet_data = sbo_new(sizeof(int[2]) + total_framec * sizeof(struct SpriteFrame));
+	buffer_update(sheet->sprite_sheet_data, sizeof(int[2]), (int[]){ sheet_data->w, sheet_data->h }, 0);
 	isize framec = 0;
 	isize total_copied = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
 		for (int j = 0; j < sheet->groups[i].statec; j++) {
 			framec = sheet->groups[i].states[j].framec;
 			buffer_update(sheet->sprite_sheet_data, framec*sizeof(struct SpriteFrame),
-			              sheet->groups[i].states[j].frames, total_copied*sizeof(struct SpriteFrame));
+			              sheet->groups[i].states[j].frames, sizeof(int[2]) + total_copied*sizeof(struct SpriteFrame));
 			total_copied += framec;
 		}
 	}
@@ -168,7 +170,8 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 		DEBUG(1, "\tGroup \"%s\" w/%d states", group->name, group->statec);
 		for (int j = 0; j < group->statec; j++) {
 			state = &group->states[j];
-			DEBUG(1, "\tState \"%s\" w/%d frames", STRING_OF_SPRITE_ANIMATION(state->type), state->framec);
+			DEBUG(1, "\tState \"%s\" w/%d frames in direction %u", STRING_OF_SPRITE_STATE_TYPE(state->type),
+			      state->framec, state->dir); // TODO: STRING_OF_DIRECTION
 			for (int k = 0; k < state->framec; k++) {
 				frame = &state->frames[k];
 				fprintf(stderr, "(%d, %d, %d, %d) ", frame->x, frame->y, frame->w, frame->h);
@@ -181,30 +184,31 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 
 /* -------------------------------------------------------------------- */
 
-struct Sprite* sprite_new(char* restrict sheet_name, char* restrict group_name, Vec3 pos)
+struct Sprite* sprite_new(char* sheet_name, char* group_name, Vec3 pos)
 {
-	int64 i;
+	int64 sheeti;
 	struct SpriteSheet* sheet = NULL;
-	for (i = 0; i < sheetc; i++) {
-		sheet = &sheets[i];
+	for (sheeti = 0; sheeti < sheetc; sheeti++) {
+		sheet = &sheets[sheeti];
 		if (!strcmp(sheet->name, sheet_name))
 			break;
 	}
-	if (i == sheetc || !sheet) {
+	if (sheeti == sheetc || !sheet) {
 		ERROR("[GFX] Sheet \"%s\" not found", sheet_name);
 		return NULL;
 	}
 
+	int groupi = 0;
 	int gi = 0;
 	struct SpriteGroup* group = NULL;
-	for (i = 0; i < sheet->groupc; i++) {
-		group  = &sheet->groups[i];
+	for (groupi = 0; groupi < sheet->groupc; groupi++) {
+		group  = &sheet->groups[groupi];
 		if (!strcmp(group->name, group_name))
 			break;
 		for (int j = 0; j < group->statec; j++)
 			gi += group->states[j].framec;
 	}
-	if (i == sheet->groupc || !group) {
+	if (groupi == sheet->groupc || !group) {
 		ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheet_name);
 		return NULL;
 	}
@@ -212,8 +216,9 @@ struct Sprite* sprite_new(char* restrict sheet_name, char* restrict group_name, 
 	struct Sprite sprite = {
 		.pos   = pos,
 		.start = gi,
-		.group = i,
+		.group = groupi,
 		.frame = 1,
+		.sheet = sheeti,
 	};
 	isize spri = varray_push(&sheet->sprites, &sprite);
 
@@ -225,6 +230,25 @@ struct Sprite* sprite_new(char* restrict sheet_name, char* restrict group_name, 
 
 	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %.2f)", sprite.start, sheet_name, group_name, pos.x, pos.y);
 	return varray_get(&sheet->sprites, spri);
+}
+
+void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir)
+{
+	struct SpriteSheet* sheet = &sheets[sprite->sheet];
+	sprite->frame = 0;
+	int gi = 0;
+	for (int i = 0; i < sheet->groupc; i++) {
+		for (int j = 0; j < sheet->groups[i].statec; j++) {
+			DEBUG(1, "%s: %d", STRING_OF_SPRITE_STATE_TYPE(sheet->groups[i].states[j].type), sheet->groups[i].states[j].dir);
+			if (sheet->groups[i].states[j].type == type && sheet->groups[i].states[j].dir == dir) {
+				sprite->state = j;
+				sprite->start = gi;
+				return;
+			}
+			gi += sheet->groups[i].states[j].framec;
+		}
+	}
+	ERROR("[GFX] State \"%s\" not found (or not found with direction %d)", STRING_OF_SPRITE_STATE_TYPE(type), dir); // TODO: STRING_OF_DIRECTION
 }
 
 void sprite_destroy(int sprite)

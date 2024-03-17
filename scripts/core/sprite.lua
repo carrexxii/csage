@@ -12,7 +12,7 @@ function load_sprite_sheet(fname)
 
 	local groups = {}
 	for anim_name, anim in pairs(sheet_data) do
-		name, anim_name = string.match(anim_name, "(.+)@(.+)")
+		local name, anim_name = string.match(anim_name, "(.+)@(.+)")
 		if name and anim_name then
 			if groups[name] == nil then
 				sheet.groupc      = sheet.groupc + 1
@@ -21,14 +21,21 @@ function load_sprite_sheet(fname)
 
 				local statec = 0
 				for anim_name, _ in pairs(sheet_data) do
-					if name == string.match(anim_name, "(.+)@.*") then
+					if name == string.match(anim_name, "(.+)@.+") then
 						statec = statec + 1
 					end
 				end
 				groups[name].states = csage.new("struct SpriteState[?]", statec)
 			end
 
-			groups[name].states[groups[name].statec].type   = sprite_animation[anim_name] or csage.C.SPRITE_NONE
+			groups[name].states[groups[name].statec].type = csage.C.SPRITE_NONE
+			for anim_enum, _ in pairs(sprite_animation) do
+				if string.find(anim_name, anim_enum) then
+					groups[name].states[groups[name].statec].type = sprite_animation[anim_enum]
+					groups[name].states[groups[name].statec].dir  = direction_enum[string.match(anim_name, ".*-(.*)")]
+				end
+			end
+
 			groups[name].states[groups[name].statec].framec = #anim
 			groups[name].states[groups[name].statec].frames = csage.new("struct SpriteFrame[?]", #anim)
 			for i, frame in ipairs(anim) do
