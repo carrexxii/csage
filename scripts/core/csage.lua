@@ -62,10 +62,26 @@ csage.cdef [[
 		int16 x, y, w, h;
 	} Recti;
 
+	typedef union Vec2 { struct { float x, y;       }; float arr[2]; } Vec2;
+	typedef union Vec3 { struct { float x, y, z;    }; float arr[3]; } Vec3;
+	typedef union Vec4 { struct { float x, y, z, w; }; float arr[4]; } Vec4;
+	typedef union Vec2i { struct { int x, y;       }; int arr[2]; } Vec2i;
+	typedef union Vec3i { struct { int x, y, z;    }; int arr[3]; } Vec3i;
+	typedef union Vec4i { struct { int x, y, z, w; }; int arr[4]; } Vec4i;
+	typedef union Mat4x4 {
+		struct { Vec4 r1, r2, r3, r4; };
+		struct { float m11, m12, m13, m14,
+					   m21, m22, m23, m24,
+					   m31, m32, m33, m34,
+					   m41, m42, m43, m44; };
+		float arr[16];
+	} Mat4x4;
+
 	/* ---------------------------------------------------------------- */
 
-	enum SpriteAnimation {
+	enum SpriteStateType {
 		SPRITE_NONE,
+		SPRITE_IDLE,
 		SPRITE_WALK,
 		SPRITE_RUN,
 		SPRITE_ATTACK1,
@@ -77,7 +93,7 @@ csage.cdef [[
 	};
 
 	struct SpriteState {
-		enum SpriteAnimation type;
+		enum SpriteStateType type;
 		enum Direction       dir;
 		int framec;
 		struct SpriteFrame* frames;
@@ -89,6 +105,14 @@ csage.cdef [[
 		struct SpriteState* states;
 	};
 
+	struct Sprite {
+		Vec3  pos;
+		int16 start, frame;
+		int16 group, state;
+		int8 sheet;
+		byte pad[11];
+	};
+
 	struct SpriteSheet {
 		char name[32];
 		int w, h;
@@ -96,6 +120,9 @@ csage.cdef [[
 		struct VArray       sprites;
 		struct SpriteGroup* groups;
 		struct Texture*     tex;
+		byte pipeln[176];           // struct Pipeline pipeln;
+		byte sprite_sheet_data[24]; // SBO sprite_sheet_data;
+		byte sprite_data[24];       // SBO sprite_data;
 	};
 ]]
 
@@ -121,6 +148,7 @@ direction_enum = {
 
 sprite_animation = {
 	[""]        = csage.C.SPRITE_NONE,
+	["idle"]    = csage.C.SPRITE_IDLE,
 	["walk"]    = csage.C.SPRITE_WALK,
 	["run"]     = csage.C.SPRITE_RUN,
 	["attack1"] = csage.C.SPRITE_ATTACK1,

@@ -1,7 +1,6 @@
 import os
 
 output = os.path.join(os.path.dirname(__file__), "spright.conf")
-print(output)
 
 directions = ["sw", "s", "se", "e", "ne", "n", "nw", "w"]
 
@@ -25,7 +24,7 @@ glob "renders/{0}-{1}-{2}-*.png"
 	id "{0}@{1}-{2}" """
 
 sprites = {
-	"player": [ "run", "torch" ],
+	"player": [ "idle", "run", "torch" ],
 }
 
 with open(output, "w+") as file:

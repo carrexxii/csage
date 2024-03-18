@@ -15,8 +15,7 @@ function load_sprite_sheet(fname)
 		local name, anim_name = string.match(anim_name, "(.+)@(.+)")
 		if name and anim_name then
 			if groups[name] == nil then
-				sheet.groupc      = sheet.groupc + 1
-				groups[name]      = csage.new("struct SpriteGroup")
+				groups[name]      = {}
 				groups[name].name = name
 
 				local statec = 0
@@ -25,30 +24,36 @@ function load_sprite_sheet(fname)
 						statec = statec + 1
 					end
 				end
-				groups[name].states = csage.new("struct SpriteState[?]", statec)
+				groups[name].states = {}
+				groups[name].statec = 0
 			end
 
-			groups[name].states[groups[name].statec].type = csage.C.SPRITE_NONE
+			local state = {}
+			state.type = csage.C.SPRITE_NONE
 			for anim_enum, _ in pairs(sprite_animation) do
 				if string.find(anim_name, anim_enum) then
-					groups[name].states[groups[name].statec].type = sprite_animation[anim_enum]
-					groups[name].states[groups[name].statec].dir  = direction_enum[string.match(anim_name, ".*-(.*)")]
+					state.type = sprite_animation[anim_enum]
+					state.dir  = direction_enum[string.match(anim_name, ".*-(.*)")]
 				end
 			end
 
-			groups[name].states[groups[name].statec].framec = #anim
-			groups[name].states[groups[name].statec].frames = csage.new("struct SpriteFrame[?]", #anim)
-			for i, frame in ipairs(anim) do
-				groups[name].states[groups[name].statec].frames[i - 1] = csage.new("struct SpriteFrame", frame)
-			end
+			state.framec = #anim
+			state.frames = csage.new("struct SpriteFrame[?]", state.framec, anim)
+
+			groups[name].states[groups[name].statec] = state
 			groups[name].statec = groups[name].statec + 1
 		end
 	end
-	groups_arr = {}
-	for _, spr in pairs(groups) do
-		groups_arr[#groups_arr + 1] = spr
+
+	sheet.groupc = table_len(groups)
+	sheet.groups = csage.new("struct SpriteGroup[?]", sheet.groupc, groups)
+	local i = 0
+	for _, group in pairs(groups) do
+		sheet.groups[i].name   = group.name
+		sheet.groups[i].statec = group.statec
+		sheet.groups[i].states = csage.new("struct SpriteState[?]", sheet.groups[i].statec, group.states)
+		i = i + 1
 	end
 
-	sheet.groups = csage.new("struct SpriteGroup[?]", #groups_arr, groups_arr)
 	return sheet
 end

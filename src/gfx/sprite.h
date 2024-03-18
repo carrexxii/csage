@@ -19,6 +19,7 @@
 // TODO: this needs to be a hashmap
 #define STRING_OF_SPRITE_STATE_TYPE(x) (   \
 	x == SPRITE_NONE   ? "SPRITE_NONE"   : \
+	x == SPRITE_IDLE   ? "SPRITE_IDLE"   : \
 	x == SPRITE_WALK   ? "SPRITE_WALK"   : \
 	x == SPRITE_RUN    ? "SPRITE_RUN"    : \
 	x == SPRITE_ATTACK1? "SPRITE_ATTACK1": \
@@ -26,6 +27,7 @@
 	"<Unknown animation>")
 enum SpriteStateType {
 	SPRITE_NONE,
+	SPRITE_IDLE,
 	SPRITE_WALK,
 	SPRITE_RUN,
 	SPRITE_ATTACK1,

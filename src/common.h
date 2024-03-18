@@ -74,13 +74,13 @@ typedef mtx_t  Mutex;
 typedef cnd_t  Condition;
 typedef tss_t  ThreadLocal;
 
-enum Axis: uint {
+enum Axis {
 	AXIS_NONE,
 	AXIS_X = 1 << 0,
 	AXIS_Y = 1 << 1,
 	AXIS_Z = 1 << 2,
 };
-enum Direction: uint {
+enum Direction {
 	DIR_NONE         = 1 << 0,
 	DIR_UP           = 1 << 1,
 	DIR_DOWN         = 1 << 2,

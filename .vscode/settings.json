@@ -4,6 +4,7 @@
         "--header-insertion=never"
     ],
     "Lua.diagnostics.disable": [
-        "lowercase-global"
+        "lowercase-global",
+        "inject-field"
     ],
 }

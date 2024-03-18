@@ -126,7 +126,7 @@ libs:
 	@cp $(LIB_DIR)/sdl/build/libSDL3.a $(LIB_DIR)/
 
 	@mkdir -p $(LIB_DIR)/include/luajit
-	@make -C $(LIB_DIR)/luajit/src -j8
+	@make -C $(LIB_DIR)/luajit/src -j8 XCFLAGS+=-DLUAJIT_USE_SYSMALLOC
 	@cp $(LIB_DIR)/luajit/src/luajit $(LIB_DIR)/luajit
 	@cp $(LIB_DIR)/luajit/src/libluajit.a $(LIB_DIR)
 	@cp $(LIB_DIR)/luajit/src/luajit.h $(LIB_DIR)/include/luajit
