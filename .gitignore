@@ -14,3 +14,5 @@ csage
 *.tiled-session
 *~
 *.blend1
+
+!gfx/sprites/sprightgen.lua

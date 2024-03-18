@@ -41,6 +41,7 @@ struct SpriteFrame {
 struct SpriteState {
 	enum SpriteStateType type;
 	enum Direction       dir;
+	int duration;
 	int framec;
 	struct SpriteFrame* frames;
 };
@@ -56,7 +57,8 @@ struct Sprite {
 	int16 start, frame;
 	int16 group, state;
 	int8 sheet;
-	byte pad[11];
+	uint time;
+	byte pad[4];
 };
 
 struct SpriteSheet {
@@ -74,6 +76,7 @@ struct SpriteSheet {
 
 void sprites_init(void);
 void sprites_record_commands(VkCommandBuffer cmd_buf);
+void sprites_update(void);
 void sprites_free(void);
 int  sprite_sheet_new(char* name);
 struct Sprite* sprite_new(char* sheet_name, char* group_name, Vec3 pos);

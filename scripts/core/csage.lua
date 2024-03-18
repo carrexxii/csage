@@ -24,19 +24,19 @@ csage.cdef [[
 		AXIS_Z = 1 << 2,
 	};
 	enum Direction {
-		DIR_NONE         = 1 << 0,
-		DIR_UP           = 1 << 1,
-		DIR_DOWN         = 1 << 2,
-		DIR_RIGHT        = 1 << 4,
-		DIR_LEFT         = 1 << 5,
-		DIR_FORWARDS     = 1 << 6,
-		DIR_BACKWARDS    = 1 << 7,
-		DIR_ROTATE_LEFT  = 1 << 8,
-		DIR_ROTATE_RIGHT = 1 << 9,
-		DIR_N            = 1 << 10,
-		DIR_S            = 1 << 11,
-		DIR_E            = 1 << 12,
-		DIR_W            = 1 << 13,
+		DIR_NONE         = 0,
+		DIR_UP           = 1 << 0,
+		DIR_DOWN         = 1 << 1,
+		DIR_RIGHT        = 1 << 2,
+		DIR_LEFT         = 1 << 3,
+		DIR_FORWARDS     = 1 << 4,
+		DIR_BACKWARDS    = 1 << 5,
+		DIR_ROTATE_LEFT  = 1 << 6,
+		DIR_ROTATE_RIGHT = 1 << 7,
+		DIR_N            = 1 << 8,
+		DIR_S            = 1 << 9,
+		DIR_E            = 1 << 10,
+		DIR_W            = 1 << 11,
 		DIR_NW           = DIR_N | DIR_W,
 		DIR_NE           = DIR_N | DIR_E,
 		DIR_SW           = DIR_S | DIR_W,
@@ -95,6 +95,7 @@ csage.cdef [[
 	struct SpriteState {
 		enum SpriteStateType type;
 		enum Direction       dir;
+		int duration;
 		int framec;
 		struct SpriteFrame* frames;
 	};
@@ -147,7 +148,7 @@ direction_enum = {
 	["se"]           = csage.C.DIR_SE,
 }
 
-sprite_animation = {
+animation_enum = {
 	[""]        = csage.C.SPRITE_NONE,
 	["idle"]    = csage.C.SPRITE_IDLE,
 	["walk"]    = csage.C.SPRITE_WALK,

@@ -82,7 +82,7 @@ $(SPV): $(SHADER_DIR)/spirv/%: $(SHADER_DIR)/%
 
 .PHONY: spright
 spright:
-	@python $(GFX_DIR)/sprites/sprightgen.py
+	@lua $(GFX_DIR)/sprites/sprightgen.lua
 	@cd $(GFX_DIR)/sprites && ../../$(TOOL_DIR)/spright/spright
 
 .PHONY: valgrind

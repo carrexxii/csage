@@ -1,6 +1,11 @@
 return {
-	["w"] = {{ first(textures).width }},
-	["h"] = {{ first(textures).height }},
+	w = {{ first(textures).width }},
+	h = {{ first(textures).height }},
+
+	{%- for state, value in tags -%}
+		{%- for time, _ in value %}    ["{{ state }}"] = {{ time }},
+		{%- endfor -%}
+	{%- endfor %}
 
 	{%- set prev = "" -%}
 	{%- for sprite in sprites -%}

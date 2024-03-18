@@ -77,7 +77,7 @@ noreturn void scenemgr_loop()
 {
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks());
-	uint64 dt, nt, ot = 0.0, acc = 0.0;
+	uint64 dt, nt, ot = 0, acc = 0;
 	while (1) {
 		input_poll();
 		nt = SDL_GetTicks();
@@ -197,6 +197,7 @@ static void load_game()
 	// taskmgr_add_task(particles_update);
 	// taskmgr_add_task(entities_update);
 	taskmgr_add_task(cb_game_cam_update);
+	taskmgr_add_task(sprites_update);
 	taskmgr_add_task(player_update);
 }
 

@@ -30,18 +30,6 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 {
 	struct SpriteSheet* sheet;
 	struct Sprite*      sprite;
-
-	static int q = 0;
-	q += 1;
-	if (q % 100 == 0)
-		for (int i = 0; i < sheetc; i++) {
-			sheet = &sheets[i];
-			for (int j = 0; j < sheet->sprites.len; j++) {
-				sprite = varray_get(&sheet->sprites, j);
-				sprite->frame = (sprite->frame + 1) % sheet->groups[sprite->group].states[sprite->state].framec;
-			}
-		}
-
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		if (!sheet->sprites.len)
@@ -54,6 +42,22 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 		// DEBUG(1, "Drawing %d sprites", sheet->sprites.len);
 		vkCmdPushConstants(cmd_buf, sheet->pipeln.layout, sheet->pipeln.push_stages, 0, sheet->pipeln.push_sz, &push_const);
 		vkCmdDraw(cmd_buf, sheet->sprites.len*6, 1, 0, 0);
+	}
+}
+
+void sprites_update()
+{
+	struct SpriteSheet* sheet;
+	struct Sprite*      sprite;
+	for (int i = 0; i < sheetc; i++) {
+		sheet = &sheets[i];
+		for (int j = 0; j < sheet->sprites.len; j++) {
+			sprite = varray_get(&sheet->sprites, j);
+			sprite->time += DT_MS;
+			if (sprite->frame >= sheet->groups[sprite->group].states[sprite->state].framec - 1)
+				sprite->time = 0;
+			sprite->frame = sprite->time / sheet->groups[sprite->group].states[sprite->state].duration;
+		}
 	}
 }
 
@@ -108,10 +112,11 @@ int sprite_sheet_new(char* name)
 		sheet->groups[i].statec = sheet_data->groups[i].statec;
 		sheet->groups[i].states = smalloc(sheet_data->groups[i].statec*sizeof(struct SpriteState));
 		for (int j = 0; j < sheet_data->groups[i].statec; j++) {
-			sheet->groups[i].states[j].type   = sheet_data->groups[i].states[j].type;
-			sheet->groups[i].states[j].dir    = sheet_data->groups[i].states[j].dir;
-			sheet->groups[i].states[j].framec = sheet_data->groups[i].states[j].framec;
-			sheet->groups[i].states[j].frames = smalloc(sheet_data->groups[i].states[j].framec*sizeof(struct SpriteFrame));
+			sheet->groups[i].states[j].type     = sheet_data->groups[i].states[j].type;
+			sheet->groups[i].states[j].dir      = sheet_data->groups[i].states[j].dir;
+			sheet->groups[i].states[j].duration = sheet_data->groups[i].states[j].duration;
+			sheet->groups[i].states[j].framec   = sheet_data->groups[i].states[j].framec;
+			sheet->groups[i].states[j].frames   = smalloc(sheet_data->groups[i].states[j].framec*sizeof(struct SpriteFrame));
 			total_framec += sheet_data->groups[i].states[j].framec;
 			for (int k = 0; k < sheet_data->groups[i].states[j].framec; k++) {
 				sheet->groups[i].states[j].frames[k] = sheet_data->groups[i].states[j].frames[k];
@@ -121,15 +126,15 @@ int sprite_sheet_new(char* name)
 	}
 
 	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(struct Sprite));
-	sheet->sprite_sheet_data = sbo_new(sizeof(int[2]) + total_framec * sizeof(struct SpriteFrame));
-	buffer_update(sheet->sprite_sheet_data, sizeof(int[2]), (int[]){ sheet_data->w, sheet_data->h }, 0);
+	sheet->sprite_sheet_data = sbo_new(sizeof(int[3]) + total_framec * sizeof(struct SpriteFrame));
+	buffer_update(sheet->sprite_sheet_data, sizeof(int[3]), (int[]){ sheet_data->w, sheet_data->h, 50 }, 0);
 	isize framec = 0;
 	isize total_copied = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
 		for (int j = 0; j < sheet->groups[i].statec; j++) {
 			framec = sheet->groups[i].states[j].framec;
 			buffer_update(sheet->sprite_sheet_data, framec*sizeof(struct SpriteFrame),
-			              sheet->groups[i].states[j].frames, sizeof(int[2]) + total_copied*sizeof(struct SpriteFrame));
+			              sheet->groups[i].states[j].frames, sizeof(int[3]) + total_copied*sizeof(struct SpriteFrame));
 			total_copied += framec;
 		}
 	}
@@ -172,8 +177,8 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 		DEBUG(1, "\tGroup \"%s\" w/%d states", group->name, group->statec);
 		for (int j = 0; j < group->statec; j++) {
 			state = &group->states[j];
-			DEBUG(1, "\tState \"%s\" w/%d frames in direction %u", STRING_OF_SPRITE_STATE_TYPE(state->type),
-			      state->framec, state->dir); // TODO: STRING_OF_DIRECTION
+			DEBUG(1, "\tState \"%s\" w/%d frames in direction %u and frame time of %d",
+			      STRING_OF_SPRITE_STATE_TYPE(state->type), state->framec, state->dir, state->duration); // TODO: STRING_OF_DIRECTION
 			for (int k = 0; k < state->framec; k++) {
 				frame = &state->frames[k];
 				fprintf(stderr, "(%d, %d, %d, %d) ", frame->x, frame->y, frame->w, frame->h);
@@ -237,11 +242,10 @@ struct Sprite* sprite_new(char* sheet_name, char* group_name, Vec3 pos)
 void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir)
 {
 	struct SpriteSheet* sheet = &sheets[sprite->sheet];
-	sprite->frame = 0;
+	sprite->time = 0;
 	int gi = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
 		for (int j = 0; j < sheet->groups[i].statec; j++) {
-			DEBUG(1, "%s: %d", STRING_OF_SPRITE_STATE_TYPE(sheet->groups[i].states[j].type), sheet->groups[i].states[j].dir);
 			if (sheet->groups[i].states[j].type == type && sheet->groups[i].states[j].dir == dir) {
 				sprite->state = j;
 				sprite->start = gi;

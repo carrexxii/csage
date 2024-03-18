@@ -13,6 +13,7 @@ void player_init()
 {
 	sprite_sheet = sprite_sheet_new("player");
 	sprite       = sprite_new("player", "player", VEC3(0.0f, 0.0f, -100.0f));
+	sprite_set_state(sprite, SPRITE_IDLE, DIR_S);
 
 	DEBUG(1, "[ENT] Initialized player");
 }
@@ -30,7 +31,9 @@ void player_set_moving(enum Direction d, bool set)
 	else if (d & DIR_W && dir & DIR_E) dir &= ~DIR_E;
 	else if (d & DIR_E && dir & DIR_W) dir &= ~DIR_W;
 
-	if (dir != old_dir && dir)
+	if (!dir)
+		sprite_set_state(sprite, SPRITE_IDLE, d);
+	else if (dir != old_dir && dir)
 		sprite_set_state(sprite, SPRITE_RUN, dir);
 }
 
