@@ -72,7 +72,8 @@ void sprites_free()
 		varray_free(&sheet->sprites);
 		sbo_free(&sheet->sprite_sheet_data);
 		sbo_free(&sheet->sprite_data);
-		texture_free(sheet->tex);
+		texture_free(&sheet->albedo);
+		texture_free(&sheet->normal);
 		pipeln_free(&sheet->pipeln);
 	}
 }
@@ -134,8 +135,9 @@ int sprite_sheet_new(char* name)
 	}
 
 	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", name);
-	sheet->tex = smalloc(sizeof(struct Texture));
-	*sheet->tex = texture_new_from_image(buf);
+	sheet->albedo = texture_new_from_image(buf);
+	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s-normal.png", name);
+	sheet->normal = texture_new_from_image(buf);
 
 	sheet->pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_PATH "/sprite.vert"),
@@ -146,12 +148,12 @@ int sprite_sheet_new(char* name)
 		.dset_cap    = 1,
 		.uboc        = 2,
 		.sboc        = 2,
-		.imgc        = 1,
+		.imgc        = 2,
 	};
 	pipeln_alloc_dsets(&sheet->pipeln);
 	pipeln_create_dset(&sheet->pipeln, 2, (UBO[]){ global_camera_ubo, global_light_ubo },
 	                                   2, (SBO[]){ sheet->sprite_sheet_data, sheet->sprite_data },
-	                                   1, &sheet->tex->image_view);
+	                                   2, (VkImageView[]){ sheet->albedo.image_view, sheet->normal.image_view });
 	pipeln_init(&sheet->pipeln, renderpass);
 
 	DEBUG(3, "[RES] Loaded new sprite sheet \"%s\" with %d sprites", sheet->name, sheet->groupc);

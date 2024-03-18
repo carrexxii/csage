@@ -65,7 +65,8 @@ struct SpriteSheet {
 	int groupc;
 	struct VArray       sprites;
 	struct SpriteGroup* groups;
-	struct Texture*     tex;
+	struct Texture      albedo;
+	struct Texture      normal;
 	struct Pipeline pipeln;
 	SBO sprite_sheet_data;
 	SBO sprite_data;

@@ -13,7 +13,8 @@ layout(binding = 1) uniform GlobalLightBufferUBO {
 } global;
 
 layout(binding = 20) uniform sampler   Fsampler;
-layout(binding = 21) uniform texture2D Falbedo[];
+layout(binding = 21) uniform texture2D Falbedo;
+layout(binding = 22) uniform texture2D Fnormal;
 
 layout(push_constant) uniform PushConstants {
 	int sheet;
@@ -22,7 +23,12 @@ layout(push_constant) uniform PushConstants {
 
 void main()
 {
-	vec4 albedo = texture(sampler2D(Falbedo[push.sheet], Fsampler), Fuv);
+	vec4 albedo = texture(sampler2D(Falbedo, Fsampler), Fuv);
+	vec3 normal = normalize(texture(sampler2D(Fnormal, Fsampler), Fuv).rgb * 2.0f - 1.0f);
 
-	Foutput = vec4(albedo);
+	vec3 view_dir = normalize(-Fpos);
+
+	vec3 total = calc_dir_light(global.light, normal, view_dir, albedo.rgb) * 10;
+
+	Foutput = vec4(total, albedo.a);
 }

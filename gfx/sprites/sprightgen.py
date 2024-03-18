@@ -3,6 +3,7 @@ import os
 output = os.path.join(os.path.dirname(__file__), "spright.conf")
 
 directions = ["sw", "s", "se", "e", "ne", "n", "nw", "w"]
+# shadings = ["albedo", "normal"]
 
 sheet_tmpl = \
 r"""
@@ -11,7 +12,7 @@ description "{0}.lua"
 
 sheet "{0}"
 	output "sheets/{0}.png"
-		# maps
+		maps "" "-normal"
 	pack compact
 	power-of-two true
 	square       true
@@ -21,7 +22,8 @@ sheet "{0}"
 sprite_tmpl = \
 r"""
 glob "renders/{0}-{1}-{2}-*.png"
-	id "{0}@{1}-{2}" """
+	id "{0}@{1}-{2}"
+	maps "" "-normal" """
 
 sprites = {
 	"player": [ "idle", "run", "torch" ],

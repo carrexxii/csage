@@ -119,7 +119,8 @@ csage.cdef [[
 		int groupc;
 		struct VArray       sprites;
 		struct SpriteGroup* groups;
-		struct Texture*     tex;
+		byte albedo[24];            // struct Texture albedo;
+		byte normal[24];            // struct Texture normal;
 		byte pipeln[176];           // struct Pipeline pipeln;
 		byte sprite_sheet_data[24]; // SBO sprite_sheet_data;
 		byte sprite_data[24];       // SBO sprite_data;
