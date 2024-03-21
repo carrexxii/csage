@@ -43,12 +43,12 @@ void map_new(struct Map* map, const char* name)
 	*map = *map_data;
 
 	isize offset = sizeof(Vec4);
-	map->spot_lights_sbo  = sbo_new(offset + map_data->spot_lightc  * sizeof(struct SpotLight));
-	map->point_lights_sbo = sbo_new(offset + map_data->point_lightc * sizeof(struct PointLight));
+	map->spot_lights_sbo  = sbo_new(offset + map->spot_lightc  * sizeof(struct SpotLight));
+	map->point_lights_sbo = sbo_new(offset + map->point_lightc * sizeof(struct PointLight));
 	buffer_update(map->spot_lights_sbo , sizeof(map->spot_lightc) , &map->spot_lightc , 0);
 	buffer_update(map->point_lights_sbo, sizeof(map->point_lightc), &map->point_lightc, 0);
-	buffer_update(map->spot_lights_sbo , map_data->spot_lightc*sizeof(struct SpotLight)  , map->spot_lights , offset);
-	buffer_update(map->point_lights_sbo, map_data->point_lightc*sizeof(struct PointLight), map->point_lights, offset);
+	buffer_update(map->spot_lights_sbo , map->spot_lightc*sizeof(struct SpotLight)  , map->spot_lights , offset);
+	buffer_update(map->point_lights_sbo, map->point_lightc*sizeof(struct PointLight), map->point_lights, offset);
 	spot_lights_sbo  = map->spot_lights_sbo;
 	point_lights_sbo = map->point_lights_sbo;
 
@@ -69,9 +69,7 @@ void map_new(struct Map* map, const char* name)
 		for (int y = 0; y < layer->h; y++)
 			for (int x = 0; x < layer->w; x++)
 				if (layer->data[y*layer->w + x])
-					tiles[tilec++] = VEC3((x - y) / 2.0f,
-					                      (x + y) / 4.0f,
-					                      -(x + y) / 2.0f);
+					tiles[tilec++] = VEC3(x, y, 0.0f);
 		sprite_new_batch(map->sprite_sheet, sprites_get_group(map->sprite_sheet, "tiles"), tilec, tiles);
 		free(tiles);
 	}
@@ -127,6 +125,13 @@ static void map_print(struct Map* map)
 	struct MapLayer* layer;
 	DEBUG(1, "[MAP] Map %dx%d (%d layers, %d spot lights, %d point lights)",
 	      map->w, map->h, map->layerc, map->spot_lightc, map->point_lightc);
+	for (int i = 0; i < map->spot_lightc; i++)
+		DEBUG(1, "\tSpotlight %d at %.2f, %.2f, %.2f (%.2f-%.2f-%.2f | %.2f-%.2f)",
+		      i, map->spot_lights[i].pos.x, map->spot_lights[i].pos.y, map->spot_lights[i].pos.z,
+		      map->spot_lights[i].constant, map->spot_lights[i].linear, map->spot_lights[i].quadratic,
+		      map->spot_lights[i].cutoff, map->spot_lights[i].outer_cutoff);
+	for (int i = 0; i < map->point_lightc; i++)
+		DEBUG(1, "\tPointlight %d at %.2f, %.2f, %.2f", i, map->point_lights[i].pos.x, map->point_lights[i].pos.y, map->point_lights[i].pos.z);
 	for (int i = 0; i < map->layerc; i++) {
 		layer = map->layers[i];
 		DEBUG(1, "\tLayer \"%s\" (%dx%d) at %d, %d", layer->name, layer->w, layer->h, layer->x, layer->y);

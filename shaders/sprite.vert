@@ -46,8 +46,10 @@ void main()
 	Fpos = pos + sprite.pos;
 	Fuv  = vec2(frame.x + frame.w*pos.x, frame.y + frame.h*pos.y) / vec2(sheet.w, sheet.h);
 
-	pos *= vec3(frame.w, frame.h, 0.0f) / sheet.scale;
-	pos += sprite.pos;
-	pos.z += pos.y * sheet.z;
+	pos *= vec3(frame.w, frame.h, 0.0f) / (2.0f * sheet.scale);
+	pos.z = pos.y * sheet.z;
+	pos += vec3((sprite.pos.x - sprite.pos.y) / 2.0f,
+	            (sprite.pos.x + sprite.pos.y) / 4.0f,
+			    -(sprite.pos.x + sprite.pos.y) / 2.0f);
 	gl_Position = cam.proj * push.view * vec4(pos, 1.0f);
 }

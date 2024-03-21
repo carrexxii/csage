@@ -45,22 +45,22 @@ function load_tiled_map(fname)
 				for _, obj in pairs(layer.objects) do
 					if obj.shape == "ellipse" then
 						spot_lights[map.spot_lightc] = {
-							pos = { obj.x, obj.y, -1.0 },
-							dir = { 0.0, 0.0, 1.0 },
+							pos = { 2.0 * obj.x / map_data.tilewidth, obj.y / map_data.tileheight, 1.0 },
+							dir = { 0.0, 0.0, -1.0 },
 							-- TODO: move this to a config file
-							ambient   = vec3_of_colour(obj.properties["ambient"]  or "#FFFFFF"),
-							diffuse   = vec3_of_colour(obj.properties["diffuse"]  or "#FFFFFF"),
-							specular  = vec3_of_colour(obj.properties["specular"] or "#FFFFFF"),
-							constant  = tonumber(obj.properties["constant"]) or 1.0,
-							linear    = tonumber(obj.properties["linear"])   or 0.5,
-							quadratic = tonumber(obj.properties["constant"]) or 3.5,
+							ambient      = vec3_of_colour(obj.properties["ambient"]  or "#FFFFFF"),
+							diffuse      = vec3_of_colour(obj.properties["diffuse"]  or "#FFFFFF"),
+							specular     = vec3_of_colour(obj.properties["specular"] or "#FFFFFF"),
+							constant     = tonumber(obj.properties["constant"])    or 1.0,
+							linear       = tonumber(obj.properties["linear"])      or 0.07,
+							quadratic    = tonumber(obj.properties["constant"])    or 0.017,
+							cutoff       = tonumber(obj.properties["cutoff"])      or 1.0,
+							outer_cutoff = tonumber(obj.properties["outercutofa"]) or 0.5,
 						}
 						map.spot_lightc = map.spot_lightc + 1
 					elseif obj.shape == "point" then
 						point_lights[map.point_lightc] = {
-							-- pos = { obj.x, obj.y, 0.0 },
-							-- pos = { -obj.x / map_data.tilewidth, -obj.y / map_data.tileheight, 0.0 },
-							pos = { 0, 0, 0 },
+							pos = { 2.0 * obj.x / map_data.tilewidth, obj.y / map_data.tileheight, 0.0 },
 							-- TODO: move this to a config file
 							ambient   = vec3_of_colour(obj.properties["ambient"]  or "#FFFFFF"),
 							diffuse   = vec3_of_colour(obj.properties["diffuse"]  or "#FFFFFF"),
@@ -72,8 +72,8 @@ function load_tiled_map(fname)
 						map.point_lightc = map.point_lightc + 1
 					end
 				end
-				map.spot_lights  = csage.new("struct SpotLight[?]" , #spot_lights , spot_lights)
-				map.point_lights = csage.new("struct PointLight[?]", #point_lights, point_lights)
+				map.spot_lights  = csage.new("struct SpotLight[?]" , map.spot_lightc , spot_lights)
+				map.point_lights = csage.new("struct PointLight[?]", map.point_lightc, point_lights)
 			else
 				print("[LUA] Ignoring object group: ", layer.name)
 			end

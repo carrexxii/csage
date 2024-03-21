@@ -46,6 +46,4 @@ void main()
 		total += calc_point_light(point_lights.data[i], normal, Fpos, view_dir, albedo.rgb);
 
 	Foutput = vec4(total, albedo.a);
-	// if (distance(Fpos, point_lights.data[0].pos) < 0.5)
-		// Foutput = vec4(1, 0, 0, 1);
 }

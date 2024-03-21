@@ -65,25 +65,6 @@ vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir, vec3 alb
 	       (light.specular * specular * albedo);
 }
 
-vec3 calc_point_light(PointLight light, vec3 normal, vec3 Fpos, vec3 view_dir, vec3 albedo)
-{
-	vec3 light_dir = normalize(light.pos - Fpos);
-
-	float diffuse = max(dot(normal, light_dir), 0.0f);
-
-	vec3 reflect_dir = reflect(light_dir, normal);
-	float spec_str = pow(max(dot(view_dir, reflect_dir), 0.0f), material_shininess);
-	// vec3 specular = light.specular * spec_str * specular_map;
-	vec3 specular = light.specular * spec_str;
-
-	float dist = length(light.pos - Fpos);
-	float attenuation = 1.0f / (light.constant + light.linear*dist + light.quadratic*dist*dist);
-
-	return (attenuation * light.ambient * albedo) +
-	       (attenuation * light.diffuse * diffuse * albedo) +
-	       (attenuation * specular);
-}
-
 vec3 calc_spot_light(SpotLight light, vec3 normal, vec3 Fpos, vec3 view_dir, vec3 albedo)
 {
 	vec3 light_dir = normalize(light.pos - Fpos);
@@ -104,6 +85,25 @@ vec3 calc_spot_light(SpotLight light, vec3 normal, vec3 Fpos, vec3 view_dir, vec
 	return (attenuation * intensity * light.ambient * albedo) +
 	       (attenuation * intensity * light.diffuse * diffuse * albedo) +
 	       (attenuation * intensity * specular);
+}
+
+vec3 calc_point_light(PointLight light, vec3 normal, vec3 Fpos, vec3 view_dir, vec3 albedo)
+{
+	vec3 light_dir = normalize(light.pos - Fpos);
+
+	float diffuse = max(dot(normal, light_dir), 0.0f);
+
+	vec3 reflect_dir = reflect(light_dir, normal);
+	float spec_str = pow(max(dot(view_dir, reflect_dir), 0.0f), material_shininess);
+	// vec3 specular = light.specular * spec_str * specular_map;
+	vec3 specular = light.specular * spec_str;
+
+	float dist = length(light.pos - Fpos);
+	float attenuation = 1.0f / (light.constant + light.linear*dist + light.quadratic*dist*dist);
+
+	return (attenuation * light.ambient * albedo) +
+	       (attenuation * light.diffuse * diffuse * albedo) +
+	       (attenuation * specular);
 }
 
 bool is_in_rect(vec2 p, vec2 tl, vec2 br)

@@ -11,7 +11,7 @@ static float speed = 0.1f;
 
 void player_init()
 {
-	sprite_sheet = sprite_sheet_new("player", -10);
+	sprite_sheet = sprite_sheet_new("player", -2);
 	sprite       = sprite_new(sprite_sheet, sprites_get_group(sprite_sheet, "player"), VEC3(0.0f, 0.0f, 0.0f));
 	sprite_set_state(sprite, SPRITE_IDLE, DIR_S);
 
