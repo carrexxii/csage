@@ -242,4 +242,10 @@ static inline noreturn void not_implemented(void) { assert(false); }
 		Mat4x4: mat4x4_inverse \
 	)(a)
 
+/* -------------------------------------------------------------------- */
+
+#define lerp(a, b, t) _Generic(a, \
+		Vec3: vec3_lerp           \
+	)(a, b, t)
+
 #endif

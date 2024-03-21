@@ -23,6 +23,7 @@
 struct GlobalConfig {
 	int winw;
 	int winh;
+	float cam_speed;
 };
 
 noreturn void quit();

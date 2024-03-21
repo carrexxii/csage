@@ -128,6 +128,13 @@ static inline Vec4 mat4x4_multiply_vec4(Mat4x4 a, Vec4 v)
 }
 static inline Vec4 vec4_multiply_mat4x4(Vec4 v, Mat4x4 a) { return mat4x4_multiply_vec4(a, v); }
 
+static inline Vec3 vec3_lerp(Vec3 v, Vec3 u, float f)
+{
+	Vec3 diff = vec3_sub_vec3(u, v);
+	diff = vec3_multiply_scalar(diff, f);
+	return vec3_add_vec3(v, diff);
+}
+
 /* -------------------------------------------------------------------- */
 
 static Mat4x4 lookat(Vec3 eye, Vec3 center, Vec3 up)
@@ -177,12 +184,19 @@ static Mat4x4 cam_perspective(float ar, float fov, float near, float far)
 
 static inline void translate(Mat4x4* a, Vec3 v)
 {
+	a->m41 += v.x;
+	a->m42 += v.y;
+	a->m43 += v.z;
+}
+
+static inline void translate_to(Mat4x4* a, Vec3 v)
+{
 	a->m41 = v.x;
 	a->m42 = v.y;
 	a->m43 = v.z;
 }
 
-static Mat4x4 translate_make(Vec3 v)
+static inline Mat4x4 translate_make(Vec3 v)
 {
 	return (Mat4x4){
 		.m41 = v.x,

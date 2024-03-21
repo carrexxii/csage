@@ -16,15 +16,11 @@ static int sheetc;
 static struct SpriteSheet sheets[MAX_SPRITE_SHEETS];
 static struct {
 	int sheet;
-	byte pad[12];
-	Mat4x4 rotate;
 } push_const;
 
 void sprites_init()
 {
-	push_const.rotate = MAT4X4_IDENTITY;
-	push_const.rotate = rotate(push_const.rotate, VEC3_Z, deg_to_rad(180.0f));
-	push_const.rotate = rotate(push_const.rotate, VEC3_Y, deg_to_rad(180.0f));
+
 }
 
 int sprites_get_sheet(char* sheet_name)

@@ -72,6 +72,9 @@ void scenemgr_init()
 	scenemgr_defer((void (*)(void*))map_free, &map);
 
 	player_init();
+	game_cam.follow    = &player_sprite->pos;
+	// game_cam.pan_speed = player_speed;
+
 	entities_init();
 	switch_scene(SCENE_GAME);
 }
@@ -158,10 +161,10 @@ static void register_global_keys()
 }
 
 static struct Map map;
-static void cb_game_move_up(bool kdown)        { player_set_moving(DIR_N, kdown); }
-static void cb_game_move_left(bool kdown)      { player_set_moving(DIR_W, kdown); }
-static void cb_game_move_down(bool kdown)      { player_set_moving(DIR_S, kdown); }
-static void cb_game_move_right(bool kdown)     { player_set_moving(DIR_E, kdown); }
+static void cb_game_move_up(bool kdown)        { player_set_moving(DIR_N, kdown); camera_move(&game_cam, DIR_UP   , kdown); }
+static void cb_game_move_left(bool kdown)      { player_set_moving(DIR_W, kdown); camera_move(&game_cam, DIR_LEFT , kdown); }
+static void cb_game_move_down(bool kdown)      { player_set_moving(DIR_S, kdown); camera_move(&game_cam, DIR_DOWN , kdown); }
+static void cb_game_move_right(bool kdown)     { player_set_moving(DIR_E, kdown); camera_move(&game_cam, DIR_RIGHT, kdown); }
 static void cb_game_move_forwards(bool kdown)  { camera_move(&game_cam, DIR_FORWARDS , kdown); }
 static void cb_game_move_backwards(bool kdown) { camera_move(&game_cam, DIR_BACKWARDS, kdown); }
 static void cb_game_cam_update() { camera_update(&game_cam); }

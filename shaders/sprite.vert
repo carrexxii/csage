@@ -51,5 +51,5 @@ void main()
 	pos += vec3((sprite.pos.x - sprite.pos.y) / 2.0f,
 	            (sprite.pos.x + sprite.pos.y) / 4.0f,
 			    -(sprite.pos.x + sprite.pos.y) / 2.0f);
-	gl_Position = cam.proj * push.view * vec4(pos, 1.0f);
+	gl_Position = cam.proj * cam.view * vec4(pos, 1.0f);
 }

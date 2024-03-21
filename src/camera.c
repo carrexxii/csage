@@ -24,6 +24,8 @@ struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 
 	camera_set_projection(&cam, CAMERA_ORTHOGONAL);
 	cam.mats->view = translate_make(pos);
+	cam.mats->view = rotate(cam.mats->view, VEC3_Z, deg_to_rad(180.0f));
+	cam.mats->view = rotate(cam.mats->view, VEC3_Y, deg_to_rad(180.0f));
 	camera_update(&cam);
 
 	return cam;
@@ -73,52 +75,29 @@ void camera_rotate(struct Camera* cam, enum Axis axis, float angle)
 
 void camera_update(struct Camera* cam)
 {
-	Vec3 dir = { 0 };
-	if (cam->dir & DIR_FORWARDS || cam->dir & DIR_BACKWARDS) {
-		// dir = normalized(sub(cam->pos, VEC3_ZERO));
-		// if (cam->dir & DIR_FORWARDS)
-		// 	dir = multiply(dir, -0.1f);
-		// else
-		// 	dir = multiply(dir, 0.1f);
-	}
-	cam->pos = add(cam->pos, dir);
-
 	if (cam->dir & DIR_FORWARDS)
 		cam->zoom += cam->zoom_speed;
 	if (cam->dir & DIR_BACKWARDS)
 		cam->zoom -= cam->zoom_speed;
 
-	if (cam->dir & DIR_LEFT) {
-		cam->pos.x += cam->pan_speed / 2.0f;
-		cam->pos.y -= cam->pan_speed / 2.0f;
-		// cam->pos = rotate(cam->pos, cam->up, -deg_to_rad(1.0f));
+	if (cam->follow) {
+		Vec3 pos = *cam->follow;
+		cam->target = VEC3(-(pos.x - pos.y) / 2.0f,
+		                   (pos.x + pos.y) / 4.0f,
+		                   pos.z);
+		cam->pos = lerp(cam->pos, cam->target, config.cam_speed*DT);
+	} else {
+		Vec2 vel = { 0 };
+		if (cam->dir & DIR_LEFT)  vel.x += 1.0f;
+		if (cam->dir & DIR_RIGHT) vel.x -= 1.0f;
+		if (cam->dir & DIR_UP)    vel.y += 1.0f;
+		if (cam->dir & DIR_DOWN)  vel.y -= 1.0f;
+		vel = multiply(normalized(vel), cam->pan_speed);
+		if (!isnan(vel.x) && !isnan(vel.y))
+			cam->pos = add(cam->pos, VEC3_V2(vel));
 	}
-	if (cam->dir & DIR_RIGHT) {
-		cam->pos.x -= cam->pan_speed / 2.0f;
-		cam->pos.y += cam->pan_speed / 2.0f;
-		// cam->pos = rotate(cam->pos, cam->up, deg_to_rad(1.0f));
-	}
-	if (cam->dir & DIR_UP) {
-		cam->pos.y += cam->pan_speed / 2.0f;
-		cam->pos.x += cam->pan_speed / 2.0f;
-	}
-	if (cam->dir & DIR_DOWN) {
-		cam->pos.y -= cam->pan_speed / 2.0f;
-		cam->pos.x -= cam->pan_speed / 2.0f;
-	}
-	// if (cam->dir & DIR_UP || cam->dir & DIR_DOWN) {
-	// 	Vec3 pv = sub(cam->pos, VEC3_ZERO);
-	// 	     pv = cross(cam->up, pv);
-	// 	if (cam->dir & DIR_DOWN)
-	// 		cam->pos = rotate(cam->pos, pv, -deg_to_rad(1.0f));
-	// 	else
-	// 		cam->pos = rotate(cam->pos, pv, deg_to_rad(1.0f));
-	// }
 
-	cam->mats->view = translate_make(cam->pos);
-	// cam->mats->view = rotate(cam->mats->view, VEC3_Y,  deg_to_rad(180.0f));
-	// cam->mats->view = rotate(cam->mats->view, VEC3_Z, -deg_to_rad(135.0f));
-	// cam->mats->view = rotate(cam->mats->view, VEC3_X,  deg_to_rad(60.0f)); // 63.435f
+	translate_to(&cam->mats->view, cam->pos);
 
 	if (cam->type == CAMERA_ORTHOGONAL)
 		camera_set_projection(cam, CAMERA_ORTHOGONAL);

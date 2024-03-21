@@ -16,8 +16,9 @@ void lua_init()
 	if (lua_get_file(SCRIPT_PATH "/core/sprite.lua")) exit(1);
 
 	luaL_dofile(lua_state, "config.lua");
-	config.winw = lua_get_int("window_width");
-	config.winh = lua_get_int("window_height");
+	config.winw      = lua_get_int("window_width");
+	config.winh      = lua_get_int("window_height");
+	config.cam_speed = lua_get_float("camera_speed");
 
 	DEBUG(1, "[INFO] Initialized Lua");
 	DEBUG(1, "[INFO] Config:");
@@ -42,6 +43,17 @@ int lua_get_int(char* name)
 		ERROR("[LUA] Expected a number for \"%s\", got: \"%s\"", name, lua_tostring(lua_state, -1));
 
 	int num = lua_tonumber(lua_state, -1);
+	lua_pop(lua_state, 1);
+	return num;
+}
+
+float lua_get_float(char* name)
+{
+	lua_getglobal(lua_state, name);
+	if (!lua_isnumber(lua_state, -1))
+		ERROR("[LUA] Expected a number for \"%s\", got: \"%s\"", name, lua_tostring(lua_state, -1));
+
+	float num = lua_tonumber(lua_state, -1);
 	lua_pop(lua_state, 1);
 	return num;
 }
