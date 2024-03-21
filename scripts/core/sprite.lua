@@ -1,43 +1,38 @@
 function load_sprite_sheet(fname)
 	local sheet_data = dofile(fname)
 	if not sheet_data then
+		print("[LUA] Failed to load file: ", fname)
 		return nil
 	end
 
-	local name  = string.match(fname, ".*/(.+).lua")
 	local sheet = csage.new("struct SpriteSheet")
-	sheet.name  = name
+	sheet.name  = string.match(fname, ".*/(.+).lua")
 	sheet.w     = sheet_data["w"]
 	sheet.h     = sheet_data["h"]
 
+	local gi = 0
 	local groups = {}
-	for anim_name, anim in pairs(sheet_data) do
-		local name, anim_name, dir = string.match(anim_name, "(.+)@(.+)-(.+)")
+	for state_name, anim in pairs(sheet_data) do
+		local name, anim_name, dir = string.match(state_name, "(.+)@(.+)-(.+)")
 		if dir and anim_name and name then
 			if groups[name] == nil then
-				groups[name]      = {}
-				groups[name].name = name
-
-				local statec = 0
-				for anim_name, _ in pairs(sheet_data) do
-					if name == string.match(anim_name, "(.+)@.+") then
-						statec = statec + 1
-					end
-				end
-				groups[name].states = {}
-				groups[name].statec = 0
+				groups[name] = {
+					name   = name,
+					statec = 0,
+					states = {},
+				}
 			end
 
-			local state = {
+			groups[name].states[groups[name].statec] = {
 				duration = tonumber(sheet_data[name .. "@" .. anim_name]),
 				framec   = #anim,
 				frames   = csage.new("struct SpriteFrame[?]", #anim, anim),
-				type     = animation_enum[anim_name] or csage.C.SPRITE_NONE,
+				type     = animation_enum[anim_name] or direction_enum[""],
 				dir      = direction_enum[dir],
+				gi       = gi,
 			}
-
-			groups[name].states[groups[name].statec] = state
 			groups[name].statec = groups[name].statec + 1
+			gi = gi + #anim
 		end
 	end
 

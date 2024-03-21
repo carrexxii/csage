@@ -174,7 +174,7 @@ VkSampler image_new_sampler(VkFilter filter)
 		.addressModeU     = VK_SAMPLER_ADDRESS_MODE_REPEAT,
 		.addressModeV     = VK_SAMPLER_ADDRESS_MODE_REPEAT,
 		.addressModeW     = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.mipmapMode       = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+		.mipmapMode       = VK_SAMPLER_MIPMAP_MODE_NEAREST,
 		.mipLodBias       = 0.0,
 		.minLod           = 0.0,
 		.maxLod           = 0.0,

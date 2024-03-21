@@ -1,5 +1,13 @@
 csage = require("ffi")
 csage.cdef [[
+	typedef char VBO[24];
+	typedef char UBO[24];
+	typedef char SBO[24];
+	typedef char Texture[24];
+	typedef char Pipeline[176];
+
+	/* ---------------------------------------------------------------- */
+
 	typedef  int8_t   int8;
 	typedef  int16_t  int16;
 	typedef  int32_t  int32;
@@ -71,11 +79,44 @@ csage.cdef [[
 	typedef union Mat4x4 {
 		struct { Vec4 r1, r2, r3, r4; };
 		struct { float m11, m12, m13, m14,
-					   m21, m22, m23, m24,
-					   m31, m32, m33, m34,
-					   m41, m42, m43, m44; };
+		               m21, m22, m23, m24,
+		               m31, m32, m33, m34,
+		               m41, m42, m43, m44; };
 		float arr[16];
 	} Mat4x4;
+
+	/* ---------------------------------------------------------------- */
+
+	struct DirectionalLight {
+		Vec3 dir;      float pad1;
+		Vec3 ambient;  float pad2;
+		Vec3 diffuse;  float pad3;
+		Vec3 specular; float pad4;
+	};
+
+	struct PointLight {
+		Vec3 pos;     float pad1;
+		Vec3 ambient; float pad2;
+		Vec3 diffuse; float pad3;
+		Vec3 specular;
+		float constant;
+		float linear;
+		float quadratic;
+		float pad4[2];
+	};
+
+	struct SpotLight {
+		Vec3 pos;     float pad1;
+		Vec3 dir;     float pad2;
+		Vec3 ambient; float pad3;
+		Vec3 diffuse; float pad4;
+		Vec3 specular;
+		float constant;
+		float linear;
+		float quadratic;
+		float cutoff;
+		float outer_cutoff;
+	};
 
 	/* ---------------------------------------------------------------- */
 
@@ -96,6 +137,7 @@ csage.cdef [[
 		enum SpriteStateType type;
 		enum Direction       dir;
 		int duration;
+		int gi;
 		int framec;
 		struct SpriteFrame* frames;
 	};
@@ -107,26 +149,60 @@ csage.cdef [[
 	};
 
 	struct Sprite {
-		Vec3  pos;
-		int16 start, frame;
-		int16 group, state;
-		int8 sheet;
-		byte pad[11];
+		Vec3   pos;
+		int16  gi;
+		int8   state, frame;
+		int8   sheet, group;
+		uint16 time;
+		byte pad[12];
 	};
 
 	struct SpriteSheet {
 		char name[32];
-		int w, h;
+		int w, h, z;
 		int groupc;
+		bool needs_update;
 		struct VArray       sprites;
 		struct SpriteGroup* groups;
-		byte albedo[24];            // struct Texture albedo;
-		byte normal[24];            // struct Texture normal;
-		byte pipeln[176];           // struct Pipeline pipeln;
-		byte sprite_sheet_data[24]; // SBO sprite_sheet_data;
-		byte sprite_data[24];       // SBO sprite_data;
+
+		Texture      albedo;
+		Texture      normal;
+		Pipeline pipeln;
+		SBO sprite_sheet_data;
+		SBO sprite_data;
+	};
+
+	int sprite_sheet_new(char* name);
+	int sprite_sheet_load(struct SpriteSheet* sheet_data);
+
+	/* ---------------------------------------------------------------- */
+
+	typedef uint16 MapTile;
+
+	struct MapLayer {
+		char name[32];
+		int x, y, w, h;
+		struct Sprite** sprites;
+		MapTile data[?];
+	};
+
+	struct Map {
+		int w, h;
+		int sprite_sheet;
+		int layerc, spot_lightc, point_lightc;
+		struct MapLayer*   layers[8];
+		struct SpotLight*  spot_lights;
+		struct PointLight* point_lights;
+
+		UBO ubo;
+		SBO tiles_sbo;
+		SBO spot_lights_sbo;
+		SBO point_lights_sbo;
+		Pipeline pipeln;
 	};
 ]]
+
+sprite_path = "./gfx/sprites/"
 
 direction_enum = {
 	[""]             = csage.C.DIR_NONE,
@@ -163,4 +239,12 @@ function table_len(t)
         count = count + 1
     end
     return count
+end
+
+function vec3_of_colour(string)
+	return {
+		tonumber(string:sub(2, 3), 16) / 255.0,
+		tonumber(string:sub(4, 5), 16) / 255.0,
+		tonumber(string:sub(6, 7), 16) / 255.0,
+	}
 end

@@ -7,6 +7,7 @@
 #include "buffers.h"
 #include "renderer.h"
 #include "camera.h"
+#include "map.h"
 #include "sprite.h"
 
 static void sprite_sheet_print(struct SpriteSheet* sheet);
@@ -26,20 +27,52 @@ void sprites_init()
 	push_const.rotate = rotate(push_const.rotate, VEC3_Y, deg_to_rad(180.0f));
 }
 
+int sprites_get_sheet(char* sheet_name)
+{
+	struct SpriteSheet* sheet = NULL;
+	for (int i = 0; i < sheetc; i++) {
+		sheet = &sheets[i];
+		if (!strcmp(sheet->name, sheet_name))
+			return i;
+	}
+
+	ERROR("[GFX] Sheet \"%s\" not found", sheet_name);
+	return -1;
+}
+
+int sprites_get_group(int sheet_id, char* group_name)
+{
+	assert(sheet_id < sheetc);
+
+	struct SpriteSheet* sheet = &sheets[sheet_id];
+	struct SpriteGroup* group;
+	for (int i = 0; i < sheet->groupc; i++) {
+		group = &sheet->groups[i];
+		if (!strcmp(group->name, group_name))
+			return i;
+	}
+
+	ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheets[sheet_id].name);
+	return -1;
+}
+
 void sprites_record_commands(VkCommandBuffer cmd_buf)
 {
+	isize data_sz;
 	struct SpriteSheet* sheet;
 	struct Sprite*      sprite;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		if (!sheet->sprites.len)
 			continue;
+		else if (sheet->needs_update)
+			sprite_sheet_init_pipeline(sheet);
+
 		buffer_update(sheet->sprite_data, sheet->sprites.len*sizeof(struct Sprite), sheet->sprites.data, 0);
 		push_const.sheet = i;
 
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.layout, 0, 1, sheet->pipeln.dsets, 0, NULL);
-		// DEBUG(1, "Drawing %d sprites", sheet->sprites.len);
 		vkCmdPushConstants(cmd_buf, sheet->pipeln.layout, sheet->pipeln.push_stages, 0, sheet->pipeln.push_sz, &push_const);
 		vkCmdDraw(cmd_buf, sheet->sprites.len*6, 1, 0, 0);
 	}
@@ -48,15 +81,21 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 void sprites_update()
 {
 	struct SpriteSheet* sheet;
+	struct SpriteGroup* group;
 	struct Sprite*      sprite;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
+
 		for (int j = 0; j < sheet->sprites.len; j++) {
 			sprite = varray_get(&sheet->sprites, j);
+			group  = &sheet->groups[sprite->group];
+			if (!group->states[sprite->state].duration)
+				continue;
+
 			sprite->time += DT_MS;
-			if (sprite->frame >= sheet->groups[sprite->group].states[sprite->state].framec - 1)
+			if (sprite->frame >= group->states[sprite->state].framec - 1)
 				sprite->time = 0;
-			sprite->frame = sprite->time / sheet->groups[sprite->group].states[sprite->state].duration;
+			sprite->frame = sprite->time / group->states[sprite->state].duration;
 		}
 	}
 }
@@ -84,25 +123,59 @@ void sprites_free()
 
 /* -------------------------------------------------------------------- */
 
-int sprite_sheet_new(char* name)
+void sprite_sheet_init_pipeline(struct SpriteSheet* sheet)
 {
-	char buf[PATH_BUFFER_SIZE];
-	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", name);
+	if (sheet->pipeln.pipeln)
+		pipeln_free(&sheet->pipeln);
+
+	sheet->pipeln = (struct Pipeline){
+		.vshader     = create_shader(SHADER_PATH "/sprite.vert"),
+		.fshader     = create_shader(SHADER_PATH "/sprite.frag"),
+		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		.push_sz     = sizeof(push_const),
+		.dset_cap    = 1,
+		.uboc        = 2,
+		.sboc        = 4,
+		.imgc        = 2,
+	};
+	pipeln_alloc_dsets(&sheet->pipeln);
+	pipeln_create_dset(&sheet->pipeln,
+		sheet->pipeln.uboc, (UBO[]){ global_camera_ubo, global_light_ubo },
+	    sheet->pipeln.sboc, (SBO[]){ sheet->sprite_sheet_data, sheet->sprite_data,
+	                                 spot_lights_sbo, point_lights_sbo, },
+		sheet->pipeln.imgc, (VkImageView[]){ sheet->albedo.image_view, sheet->normal.image_view }
+	);
+	pipeln_init(&sheet->pipeln, renderpass);
+	sheet->needs_update = false;
+}
+
+int sprite_sheet_new(char* name, int z_lvl)
+{
+	char path[PATH_BUFFER_SIZE];
+	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", name);
 	lua_getglobal(lua_state, "load_sprite_sheet");
-	lua_pushstring(lua_state, buf);
+	lua_pushstring(lua_state, path);
 	if (lua_pcall(lua_state, 1, 1, 0)) {
 		ERROR("[LUA] Failed in call to \"load_sprite_sheet\": \n\t%s", lua_tostring(lua_state, -1));
 		return -1;
 	}
 
 	if (lua_isnoneornil(lua_state, -1)) {
-		ERROR("[RES] Failed to load \"%s\" (%s)", name, buf);
+		ERROR("[RES] Failed to load \"%s\" (%s)", name, path);
 		return -1;
 	}
 	struct SpriteSheet* sheet_data = lua_topointer(lua_state, -1);
+	sheet_data->z = z_lvl;
 	lua_pop(lua_state, 1);
 
+	return sprite_sheet_load(sheet_data);
+}
+
+int sprite_sheet_load(struct SpriteSheet* sheet_data)
+{
 	struct SpriteSheet* sheet = &sheets[sheetc];
+
 	*sheet = *sheet_data;
 	sheet->sprites = varray_new(DEFAULT_SPRITES, sizeof(struct Sprite));
 	sheet->groups  = smalloc(sheet_data->groupc*sizeof(struct SpriteGroup));
@@ -112,6 +185,7 @@ int sprite_sheet_new(char* name)
 		sheet->groups[i].statec = sheet_data->groups[i].statec;
 		sheet->groups[i].states = smalloc(sheet_data->groups[i].statec*sizeof(struct SpriteState));
 		for (int j = 0; j < sheet_data->groups[i].statec; j++) {
+			sheet->groups[i].states[j].gi       = sheet_data->groups[i].states[j].gi;
 			sheet->groups[i].states[j].type     = sheet_data->groups[i].states[j].type;
 			sheet->groups[i].states[j].dir      = sheet_data->groups[i].states[j].dir;
 			sheet->groups[i].states[j].duration = sheet_data->groups[i].states[j].duration;
@@ -126,42 +200,31 @@ int sprite_sheet_new(char* name)
 	}
 
 	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(struct Sprite));
-	sheet->sprite_sheet_data = sbo_new(sizeof(int[3]) + total_framec * sizeof(struct SpriteFrame));
-	buffer_update(sheet->sprite_sheet_data, sizeof(int[3]), (int[]){ sheet_data->w, sheet_data->h, 50 }, 0);
+	sheet->sprite_sheet_data = sbo_new(sizeof(int[4]) + total_framec * sizeof(struct SpriteFrame));
+	buffer_update(sheet->sprite_sheet_data, sizeof(int[4]), (int[]){ sheet_data->w, sheet_data->h, sheet_data->z, 96 }, 0);
 	isize framec = 0;
 	isize total_copied = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
 		for (int j = 0; j < sheet->groups[i].statec; j++) {
 			framec = sheet->groups[i].states[j].framec;
 			buffer_update(sheet->sprite_sheet_data, framec*sizeof(struct SpriteFrame),
-			              sheet->groups[i].states[j].frames, sizeof(int[3]) + total_copied*sizeof(struct SpriteFrame));
+			              sheet->groups[i].states[j].frames, sizeof(int[4]) + total_copied*sizeof(struct SpriteFrame));
 			total_copied += framec;
 		}
 	}
 
-	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", name);
-	sheet->albedo = texture_new_from_image(buf);
-	snprintf(buf, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s-normal.png", name);
-	sheet->normal = texture_new_from_image(buf);
+	char path[PATH_BUFFER_SIZE];
+	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", sheet_data->name);
+	sheet->albedo = texture_new_from_image(path);
+	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s-normal.png", sheet_data->name);
+	sheet->normal = texture_new_from_image(path);
 
-	sheet->pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_PATH "/sprite.vert"),
-		.fshader     = create_shader(SHADER_PATH "/sprite.frag"),
-		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		.push_sz     = sizeof(push_const),
-		.dset_cap    = 1,
-		.uboc        = 2,
-		.sboc        = 2,
-		.imgc        = 2,
-	};
-	pipeln_alloc_dsets(&sheet->pipeln);
-	pipeln_create_dset(&sheet->pipeln, 2, (UBO[]){ global_camera_ubo, global_light_ubo },
-	                                   2, (SBO[]){ sheet->sprite_sheet_data, sheet->sprite_data },
-	                                   2, (VkImageView[]){ sheet->albedo.image_view, sheet->normal.image_view });
-	pipeln_init(&sheet->pipeln, renderpass);
+	if (spot_lights_sbo.buf && point_lights_sbo.buf)
+		sprite_sheet_init_pipeline(sheet);
+	else
+		sheet->needs_update = true;
 
-	DEBUG(3, "[RES] Loaded new sprite sheet \"%s\" with %d sprites", sheet->name, sheet->groupc);
+	DEBUG(1, "[RES] Loaded new sprite sheet \"%s\" with %d sprites", sheet->name, sheet->groupc);
 	sprite_sheet_print(sheet);
 	return sheetc++;
 }
@@ -191,41 +254,18 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 
 /* -------------------------------------------------------------------- */
 
-struct Sprite* sprite_new(char* sheet_name, char* group_name, Vec3 pos)
+struct Sprite* sprite_new(int sheet_id, int group_id, Vec3 pos)
 {
-	int64 sheeti;
-	struct SpriteSheet* sheet = NULL;
-	for (sheeti = 0; sheeti < sheetc; sheeti++) {
-		sheet = &sheets[sheeti];
-		if (!strcmp(sheet->name, sheet_name))
-			break;
-	}
-	if (sheeti == sheetc || !sheet) {
-		ERROR("[GFX] Sheet \"%s\" not found", sheet_name);
-		return NULL;
-	}
+	assert(sheet_id < sheetc);
+	assert(group_id < sheets[sheet_id].groupc);
 
-	int groupi = 0;
-	int gi = 0;
-	struct SpriteGroup* group = NULL;
-	for (groupi = 0; groupi < sheet->groupc; groupi++) {
-		group  = &sheet->groups[groupi];
-		if (!strcmp(group->name, group_name))
-			break;
-		for (int j = 0; j < group->statec; j++)
-			gi += group->states[j].framec;
-	}
-	if (groupi == sheet->groupc || !group) {
-		ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheet_name);
-		return NULL;
-	}
-
+	struct SpriteSheet* sheet = &sheets[sheet_id];
+	struct SpriteGroup* group = &sheet->groups[group_id];
 	struct Sprite sprite = {
 		.pos   = pos,
-		.start = gi,
-		.group = groupi,
-		.frame = 1,
-		.sheet = sheeti,
+		.gi    = group->states[0].gi,
+		.group = group_id,
+		.sheet = sheet_id,
 	};
 	isize spri = varray_push(&sheet->sprites, &sprite);
 
@@ -233,14 +273,50 @@ struct Sprite* sprite_new(char* sheet_name, char* group_name, Vec3 pos)
 	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
 		buffer_free(&sheet->sprite_data);
 		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+		sprite_sheet_init_pipeline(sheet);
 	}
 
-	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %.2f)", sprite.start, sheet_name, group_name, pos.x, pos.y);
+	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %.2f)",
+	      sprite.gi, sheet->name, sheet->groups[group_id].name, pos.x, pos.y);
 	return varray_get(&sheet->sprites, spri);
+}
+
+struct Sprite* sprite_new_batch(int sheet_id, int group_id, int spritec, Vec3* poss)
+{
+	assert(sheet_id < sheetc);
+	assert(group_id < sheets[sheet_id].groupc);
+
+	// for (int i = 0; i < spritec; i++)
+	// 	sprite_new(sheet_id, group_id, poss[i]);
+	// return NULL;
+	struct SpriteSheet* sheet = &sheets[sheet_id];
+	struct SpriteGroup* group = &sheet->groups[group_id];
+	struct Sprite* sprites = smalloc(spritec * sizeof(struct Sprite));
+	for (int i = 0; i < spritec; i++)
+		sprites[i] = (struct Sprite){
+			.pos   = poss[i],
+			.gi    = group->states[0].gi,
+			.sheet = sheet_id,
+			.group = group_id,
+		};
+
+	isize i = varray_push_many(&sheet->sprites, spritec, sprites);
+
+	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
+		buffer_free(&sheet->sprite_data);
+		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+		sprite_sheet_init_pipeline(sheet);
+	}
+
+	free(sprites);
+	DEBUG(3, "[GFX] Created sprite batch of %d sprites from %s@%s",
+	      spritec, sheets[sheet_id].name, sheets[sheet_id].groups[group_id].name);
+	return varray_get(&sheet->sprites, i);
 }
 
 void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir)
 {
+	// TODO: update
 	struct SpriteSheet* sheet = &sheets[sprite->sheet];
 	sprite->time = 0;
 	int gi = 0;
@@ -248,12 +324,13 @@ void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Dir
 		for (int j = 0; j < sheet->groups[i].statec; j++) {
 			if (sheet->groups[i].states[j].type == type && sheet->groups[i].states[j].dir == dir) {
 				sprite->state = j;
-				sprite->start = gi;
+				sprite->gi    = gi;
 				return;
 			}
 			gi += sheet->groups[i].states[j].framec;
 		}
 	}
+
 	ERROR("[GFX] State \"%s\" not found (or not found with direction %d)", STRING_OF_SPRITE_STATE_TYPE(type), dir); // TODO: STRING_OF_DIRECTION
 }
 

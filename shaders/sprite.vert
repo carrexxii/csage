@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_shader_16bit_storage: enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
 
 #include "common.glsl"
@@ -16,12 +17,14 @@ struct SpriteFrame {
 	int16_t x, y, w, h;
 };
 struct Sprite {
-	vec3    pos;
-	int16_t start, frame;
-	int16_t group, state;
+	vec3     pos;
+	int16_t  gi;
+	int8_t   state, frame;
+	int8_t   sheet, group;
+	uint16_t time;
 };
 layout(binding = 10) readonly buffer SpriteSheetBufferUBO {
-	int w, h;
+	int w, h, z;
 	int scale;
 	SpriteFrame frames[];
 } sheet;
@@ -37,13 +40,14 @@ layout(push_constant) uniform PushConstants {
 void main()
 {
 	Sprite      sprite = sprites.data[gl_VertexIndex / 6];
-	SpriteFrame frame  = sheet.frames[sprite.start + sprite.frame];
+	SpriteFrame frame  = sheet.frames[sprite.gi + sprite.frame];
 	vec3 pos = rect_verts[gl_VertexIndex % 6];
 
-	Fpos = pos;
+	Fpos = pos + sprite.pos;
 	Fuv  = vec2(frame.x + frame.w*pos.x, frame.y + frame.h*pos.y) / vec2(sheet.w, sheet.h);
 
-	pos *= vec3(frame.w, frame.h, 1.0f) / sheet.scale;
+	pos *= vec3(frame.w, frame.h, 0.0f) / sheet.scale;
 	pos += sprite.pos;
+	pos.z += pos.y * sheet.z;
 	gl_Position = cam.proj * push.view * vec4(pos, 1.0f);
 }

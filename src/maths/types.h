@@ -4,18 +4,25 @@
 #define VEC2(x, y)       (Vec2){ x, y       }
 #define VEC3(x, y, z)    (Vec3){ x, y, z    }
 #define VEC4(x, y, z, w) (Vec4){ x, y, z, w }
+
 #define VEC2I(x, y)       (Vec2i){ x, y       }
 #define VEC3I(x, y, z)    (Vec3i){ x, y, z    }
 #define VEC4I(x, y, z, w) (Vec4i){ x, y, z, w }
+
+#define VEC2_V3(v)  (Vec2){ v.x    , v.y              }
+#define VEC3_V2(v)  (Vec3){ v.x    , v.y    , 0.0f    }
 #define VEC3_V3(v)  (Vec3){ v.x    , v.y    , v.z     }
 #define VEC3_V4(v)  (Vec3){ v.x/v.w, v.y/v.w, v.z/v.w }
 #define VEC3_A(arr) (Vec3){ arr[0] , arr[1] , arr[2]  }
+
 #define VEC3I_V(v)   (Vec3i){ v.x    , v.y    , v.z     }
 #define VEC3I_A(arr) (Vec3i){ arr[0] , arr[1] , arr[2]  }
+
 #define VEC4_V3(v)  (Vec4){ v.x   , v.y   , v.z   , 0.0f    }
 #define VEC4_V4(v)  (Vec4){ v.x   , v.y   , v.z   , v.w     }
 #define VEC4_A(arr) (Vec4){ arr[0], arr[1], arr[2], arr[3]  }
 
+#define VEC2_ZERO (Vec2){ .x = 0.0f, .y = 0.0f }
 #define VEC3_ZERO (Vec3){ .x = 0.0f, .y = 0.0f, .z = 0.0f }
 #define VEC3_ONE  (Vec3){ .x = 1.0f, .y = 1.0f, .z = 1.0f }
 #define VEC3_X    (Vec3){ .x = 1.0f, .y = 0.0f, .z = 0.0f }

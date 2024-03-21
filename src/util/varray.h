@@ -70,9 +70,11 @@ inline static isize varray_push(struct VArray* restrict arr, const void* restric
 inline static isize varray_push_many(struct VArray* restrict arr, isize count, const void* restrict elem)
 {
 	assert(count > 0);
+	isize fst = arr->len;
 	for (int i = 0; i < count; i++)
 		varray_push(arr, (byte*)elem + i*arr->elem_sz);
-	return arr->len;
+
+	return fst;
 }
 
 inline static void varray_reset(struct VArray* arr)

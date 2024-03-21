@@ -68,6 +68,9 @@ void scenemgr_init()
 	curr_cam = &game_cam;
 	global_camera_ubo = game_cam.ubo;
 
+	map_new(&map, "test");
+	scenemgr_defer((void (*)(void*))map_free, &map);
+
 	player_init();
 	entities_init();
 	switch_scene(SCENE_GAME);
@@ -162,9 +165,6 @@ static void cb_game_move_right(bool kdown)     { player_set_moving(DIR_E, kdown)
 static void cb_game_move_forwards(bool kdown)  { camera_move(&game_cam, DIR_FORWARDS , kdown); }
 static void cb_game_move_backwards(bool kdown) { camera_move(&game_cam, DIR_BACKWARDS, kdown); }
 static void cb_game_cam_update() { camera_update(&game_cam); }
-static void cb_game_map_record(VkCommandBuffer cmd_buf, struct Camera* cam) {
-	map_record_commands(cmd_buf, cam, &map);
-}
 static void cb_game_sprites_record(VkCommandBuffer cmd_buf, struct Camera*) {
 	sprites_record_commands(cmd_buf);
 }
@@ -172,9 +172,6 @@ static void load_game()
 {
 	curr_cam = &game_cam;
 	global_camera_ubo = game_cam.ubo;
-
-	map_new(&map, "test");
-	scenemgr_defer((void (*)(void*))map_free, &map);
 
 	register_global_keys();
 	input_register(SDLK_w, cb_game_move_up);
@@ -186,7 +183,6 @@ static void load_game()
 
 	renderer_clear_draw_list();
 	// renderer_add_to_draw_list(models_record_commands);
-	renderer_add_to_draw_list(cb_game_map_record);
 	renderer_add_to_draw_list(cb_game_sprites_record);
 	// renderer_add_to_draw_list(ui_record_commands);
 	// renderer_add_to_draw_list(particles_record_commands);

@@ -83,7 +83,9 @@ $(SPV): $(SHADER_DIR)/spirv/%: $(SHADER_DIR)/%
 .PHONY: spright
 spright:
 	@lua $(GFX_DIR)/sprites/sprightgen.lua
-	@cd $(GFX_DIR)/sprites && ../../$(TOOL_DIR)/spright/spright
+	@cd $(GFX_DIR)/sprites && \
+		$(foreach conf, $(wildcard $(GFX_DIR)/sprites/*.conf), \
+			../../$(TOOL_DIR)/spright/spright -i $(basename $(notdir $(conf)).conf);)
 
 .PHONY: valgrind
 valgrind: BUILD_WITH += valgrind

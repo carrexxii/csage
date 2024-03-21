@@ -68,7 +68,9 @@ void device_init_logical(VkSurfaceKHR surf)
 
 	VkPhysicalDeviceVulkan12Features vk12_features = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-		.runtimeDescriptorArray = true,
+		.runtimeDescriptorArray  = true,
+		.shaderInt8              = true,
+		.storageBuffer8BitAccess = true,
 	};
 	VkPhysicalDevice16BitStorageFeatures int16_feature = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,

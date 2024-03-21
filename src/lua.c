@@ -12,6 +12,7 @@ void lua_init()
 	luaL_openlibs(lua_state);
 
 	if (lua_get_file(SCRIPT_PATH "/core/csage.lua"))  exit(1);
+	if (lua_get_file(SCRIPT_PATH "/core/map.lua"))    exit(1);
 	if (lua_get_file(SCRIPT_PATH "/core/sprite.lua")) exit(1);
 
 	luaL_dofile(lua_state, "config.lua");

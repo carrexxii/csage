@@ -1,16 +1,26 @@
 os = require("os")
 io = require("io")
 
-output = "spright.conf"
+local cwd = debug.getinfo(1).source:match("@?(.*/)")
 
-local cwd  = debug.getinfo(1).source:match("@?(.*/)")
-local file = io.open(cwd .. output, "w+")
-assert(file)
-
-local directions = { "sw", "s", "se", "e", "ne", "n", "nw", "w" }
+local directions = { "sw", "se", "ne", "nw", "s", "e", "n", "w" }
 
 local sprites = {
-	player = { idle = 250, run = 100, torch = 1000 },
+	player = {
+		type = "animated",
+		directions = 8,
+		states = {
+			idle = 250,
+			run  = 100,
+		},
+	},
+	tiles = {
+		type = "static",
+		directions = 4,
+		states = {
+			grass = 0,
+		},
+	}
 }
 
 local sheet_tmpl = [[
@@ -21,32 +31,52 @@ description "%s.lua"
 sheet "%s"
 	output "sheets/%s.png"
 		maps "" "-normal"
-	pack         compact
 	padding      1
 	power-of-two true
 	square       true
 	allow-rotate true
 ]]
 
-local sprite_tmpl = [[
+local tmpl_animated = [[
 glob "renders/%s-%s-%s-*.png"
 	id "%s@%s-%s"
 	maps "" "-normal"
 	crop-pivot true
+
 ]]
 
-for sprite, states in pairs(sprites) do
-	file:write(sheet_tmpl:format(sprite, sprite, sprite))
-	for state, time in pairs(states) do
-		file:write(("\ntag \"%s@%s\" %d"):format(sprite, state, time))
-	end
-	file:write("\n")
-	for state, _ in pairs(states) do
-		file:write("\n")
-		for _, dir in ipairs(directions) do
-			file:write(sprite_tmpl:format(sprite, state, dir, sprite, state, dir))
+local tmpl_static = [[
+glob "renders/%s-%s.png"
+	id "%s@%s-%s"
+	maps "" "-normal"
+	crop true
+	min-bounds 64 64
+]]
+
+for sprite_name, sprite in pairs(sprites) do
+	local file = io.open(cwd .. sprite_name .. ".conf", "w+")
+	assert(file)
+
+	file:write(sheet_tmpl:format(sprite_name, sprite_name, sprite_name))
+	if sprite.type == "animated" then
+		for state, time in pairs(sprite.states) do
+			file:write(("\ntag \"%s@%s\" %d"):format(sprite_name, state, time))
 		end
 	end
+	file:write("\n")
+	for state, _ in pairs(sprite.states) do
+		file:write("\n")
+		for i = 1, sprite.directions do
+			if sprite.type == "static" then
+				file:write(tmpl_static:format(state, directions[i], sprite_name, state, directions[i]))
+			elseif sprite.type == "animated" then
+				file:write(tmpl_animated:format(sprite_name, state, directions[i], sprite_name, state, directions[i]))
+			else
+				print("Unhandled sprite type: ", sprite.type)
+			end
+		end
+	end
+
+	io.close(file)
 end
 
-io.close(file)
