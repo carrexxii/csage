@@ -6,7 +6,8 @@
 static isize sprite_sheet;
 static struct Sprite* sprite;
 
-static uint dir;
+static uint dir_mask;
+static Vec2 dir;
 static float speed = 0.1f;
 
 void player_init()
@@ -20,35 +21,28 @@ void player_init()
 
 void player_set_moving(enum Direction d, bool set)
 {
-	enum Direction old_dir = dir;
+	uint old_mask = dir_mask;
 	if (set)
-		dir |= d;
+		dir_mask |= d;
 	else
-		dir &= ~d;
+		dir_mask &= ~d;
 
-	if      (d & DIR_N && dir & DIR_S) dir &= ~DIR_S;
-	else if (d & DIR_S && dir & DIR_N) dir &= ~DIR_N;
-	else if (d & DIR_W && dir & DIR_E) dir &= ~DIR_E;
-	else if (d & DIR_E && dir & DIR_W) dir &= ~DIR_W;
+	dir = VEC2_ZERO;
+	if (dir_mask & DIR_N) { dir.x -= 0.5f; dir.y -= 0.5f; }
+	if (dir_mask & DIR_S) { dir.x += 0.5f; dir.y += 0.5f; }
+	if (dir_mask & DIR_E) { dir.y -= 0.5f; dir.x += 0.5f; }
+	if (dir_mask & DIR_W) { dir.y += 0.5f; dir.x -= 0.5f; }
 
-	if (!dir)
-		sprite_set_state(sprite, SPRITE_IDLE, d);
-	else if (dir != old_dir && dir)
-		sprite_set_state(sprite, SPRITE_RUN, dir);
+	if (!dir_mask || dir_mask == (DIR_N | DIR_S)
+	              || dir_mask == (DIR_E | DIR_W))
+		sprite_set_state(sprite, SPRITE_IDLE, old_mask);
+	else if (old_mask != dir_mask)
+		sprite_set_state(sprite, SPRITE_RUN, dir_mask);
 }
 
 void player_update()
 {
-	Vec2 vel;
-	if      (dir & DIR_S && dir & DIR_E) vel = VEC2( 0.894427f,  0.447214f);
-	else if (dir & DIR_S && dir & DIR_W) vel = VEC2(-0.894427f,  0.447214f);
-	else if (dir & DIR_N && dir & DIR_E) vel = VEC2( 0.894427f, -0.447214f);
-	else if (dir & DIR_N && dir & DIR_W) vel = VEC2(-0.894427f, -0.447214f);
-	else if (dir & DIR_N) vel = VEC2( 0.0f, -1.0f);
-	else if (dir & DIR_S) vel = VEC2( 0.0f,  1.0f);
-	else if (dir & DIR_E) vel = VEC2( 1.0f,  0.0f);
-	else if (dir & DIR_W) vel = VEC2(-1.0f,  0.0f);
-	else vel = VEC2_ZERO;
-
-	sprite->pos = VEC3_V2(add(VEC2_V3(sprite->pos), multiply(vel, speed)));
+	Vec2 vel = multiply(normalized(dir), speed);
+	if (!isnan(vel.x) && !isnan(vel.y))
+		sprite->pos = add(sprite->pos, VEC3_V2(vel));
 }
