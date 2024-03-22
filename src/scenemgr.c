@@ -18,8 +18,10 @@
 
 #define MAX_DEFER_FUNCTIONS 32
 
+typedef void (*DeferFn)(void*);
+
 struct SceneDefer {
-	void (*fn)(void*);
+	DeferFn fn;
 	void* data;
 };
 
@@ -41,23 +43,19 @@ struct SpriteGroup* sprite;
 
 void scenemgr_init()
 {
-	scratch_cam = camera_new(VEC3(0.0f, 0.0f, -1.0f), VEC3(0.0f, -1.0f, 0.0f), config.winw, config.winh, deg_to_rad(69.0f));
-	game_cam    = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f);
-	camera_set_projection(&scratch_cam, CAMERA_PERSPECTIVE);
-
+	game_cam = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f);
+	scenemgr_defer((DeferFn)camera_free, &game_cam);
 
 	renderer_init();
 	maps_init();
 	sprites_init();
-	// scratch_init(renderpass);
-	// font_init(renderpass);
-	// ui_init(renderpass);
-	// particles_init(renderpass);
+	font_init();
+	ui_init();
+	particles_init();
 
 	test_init();
-	// models_init(renderpass);
 
-	// ui_build();
+	ui_build();
 
 	taskmgr_init();
 
@@ -69,13 +67,12 @@ void scenemgr_init()
 	global_camera_ubo = game_cam.ubo;
 
 	map_new(&map, "test");
-	scenemgr_defer((void (*)(void*))map_free, &map);
+	scenemgr_defer((DeferFn)map_free, &map);
 
 	player_init();
-	game_cam.follow    = &player_sprite->pos;
-	// game_cam.pan_speed = player_speed;
-
+	game_cam.follow = &player_sprite->pos;
 	entities_init();
+
 	switch_scene(SCENE_GAME);
 }
 
@@ -98,7 +95,7 @@ noreturn void scenemgr_loop()
 	}
 }
 
-void scenemgr_defer(void (*fn)(void*), void* data)
+void scenemgr_defer(DeferFn fn, void* data)
 {
 	defers[deferc++] = (struct SceneDefer){
 		.fn   = fn,
@@ -109,7 +106,7 @@ void scenemgr_defer(void (*fn)(void*), void* data)
 void scenemgr_free()
 {
 	scene_exec_defer();
-	sprites_free();
+	sprite_sheet_free();
 }
 
 /* -------------------------------------------------------------------- */
@@ -126,7 +123,8 @@ static void scene_exec_defer()
 static void switch_scene(enum SceneType scene)
 {
 	if (scene != curr_scene) {
-		scene_exec_defer();
+		if (curr_scene)
+			scene_exec_defer();
 
 		taskmgr_clear();
 		curr_scene = scene;
@@ -185,16 +183,14 @@ static void load_game()
 	input_register(SDLK_e, cb_game_move_backwards);
 
 	renderer_clear_draw_list();
-	// renderer_add_to_draw_list(models_record_commands);
 	renderer_add_to_draw_list(cb_game_sprites_record);
-	// renderer_add_to_draw_list(ui_record_commands);
-	// renderer_add_to_draw_list(particles_record_commands);
-	// renderer_add_to_draw_list(font_record_commands);
+	renderer_add_to_draw_list(ui_record_commands);
+	renderer_add_to_draw_list(particles_record_commands);
+	renderer_add_to_draw_list(font_record_commands);
 
-	// taskmgr_add_task(models_update); // TODO: Change the animation to a separate thing
-	// taskmgr_add_task(ui_update);
-	// taskmgr_add_task(particles_update);
-	// taskmgr_add_task(entities_update);
+	taskmgr_add_task(ui_update);
+	taskmgr_add_task(particles_update);
+	taskmgr_add_task(entities_update);
 	taskmgr_add_task(cb_game_cam_update);
 	taskmgr_add_task(sprites_update);
 	taskmgr_add_task(player_update);

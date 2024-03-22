@@ -122,3 +122,10 @@ Vec2 camera_get_map_point(struct Ray ray)
 
 	return (Vec2){ p.x, p.y };
 }
+
+void camera_free(struct Camera* cam)
+{
+	ubo_free(&cam->ubo);
+	sfree(cam->mats);
+	*cam = (struct Camera){ 0 };
+}

@@ -30,7 +30,6 @@ struct Map {
 	struct PointLight* point_lights;
 
 	UBO ubo;
-	SBO tiles_sbo;
 	SBO spot_lights_sbo;
 	SBO point_lights_sbo;
 	struct Pipeline pipeln;
@@ -41,7 +40,6 @@ void    map_new(struct Map* map, const char* name);
 MapTile map_get_tile(struct Map* map, Vec3i pos);
 void    map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map);
 void    map_free(struct Map* map);
-void    maps_free(void);
 
 extern SBO spot_lights_sbo;
 extern SBO point_lights_sbo;

@@ -52,12 +52,14 @@ static float atlas_h;
 static struct TextObject text_objs[FONT_MAX_TEXT_OBJECTS];
 static intptr text_objc;
 
-void font_init(VkRenderPass renderpass)
+void font_init()
 {
+	char path[PATH_BUFFER_SIZE];
+	snprintf(path, PATH_BUFFER_SIZE, FONT_PATH "/%s.ttf", config.font_name);
 	if (!library && FT_Init_FreeType(&library))
 		ERROR("[GFX] Failed to initialize FreeType");
-	if (!face && FT_New_Face(library, FONT_PATH "fantasque.ttf", 0, &face))
-		ERROR("[GFX] Failed to load font (\"%s\")", FONT_PATH "fantasque.ttf");
+	if (!face && FT_New_Face(library, path, 0, &face))
+		ERROR("[GFX] Failed to load font (\"%s\")", path);
 
 	FT_Set_Pixel_Sizes(face, font_size, font_size);
 
@@ -128,7 +130,7 @@ void font_init(VkRenderPass renderpass)
 	};
 	pipeln_alloc_dsets(&pipeln);
 	pipeln_create_dset(&pipeln, 0, NULL, 0, NULL, 1, &atlas.image_view);
-	pipeln_init(&pipeln, renderpass);
+	pipeln_init(&pipeln);
 }
 
 struct TextObject* font_render(char* text, isize text_len, float z, float w)

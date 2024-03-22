@@ -124,8 +124,7 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	global_camera_ubo = ubo_new(sizeof(Mat4x4[2]));
-	global_light_ubo  = ubo_new(sizeof(struct DirectionalLight));
+	global_light_ubo = ubo_new(sizeof(struct DirectionalLight));
 }
 
 void renderer_clear_draw_list(void)
@@ -212,14 +211,14 @@ void renderer_free()
 	for (uint i = 0; i < swapchain.imgc; i++)
 		vkDestroyFramebuffer(logical_gpu, frame_bufs[i], NULL);
 
-	// DEBUG(3, "[VK] Freeing UI pipeline...");
-	// ui_free();
-	DEBUG(3, "[VK] Freeing models pipeline...");
-	models_free();
-	// DEBUG(3, "[VK] Freeing font pipeline...");
-	// font_free();
-	// DEBUG(3, "[VK] Freeing particles pipeline...");
-	// particles_free();
+	DEBUG(3, "[VK] Freeing UI pipeline...");
+	ui_free();
+	// DEBUG(3, "[VK] Freeing models pipeline...");
+	// models_free();
+	DEBUG(3, "[VK] Freeing font pipeline...");
+	font_free();
+	DEBUG(3, "[VK] Freeing particles pipeline...");
+	particles_free();
 
 	ubo_free(&global_light_ubo);
 

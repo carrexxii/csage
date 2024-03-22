@@ -88,7 +88,7 @@ static UBO ubo_lights;
 static UBO ubo_joints;
 static SBO sbo_buf;
 
-void models_init(VkRenderPass renderpass)
+void models_init()
 {
 	default_mtl = (struct Material){
 		.albedo    = { 0.3f, 0.3f, 0.3f, 1.0f },
@@ -157,7 +157,7 @@ void models_init(VkRenderPass renderpass)
 		}
 	}
 	// pipeln_init(&pipeln, renderpass);
-	pipeln_init(&pipeln_static, renderpass);
+	pipeln_init(&pipeln_static);
 }
 
 // TODO: this doesnt work properly for removing elements

@@ -77,7 +77,6 @@ noreturn void quit()
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");
 	renderer_free();
-	maps_free();
 	entities_free();
 	scenemgr_free();
 	vulkan_free();

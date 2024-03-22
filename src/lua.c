@@ -1,3 +1,4 @@
+#include "util/string.h"
 #include "lua.h"
 
 lua_State* lua_state;
@@ -19,6 +20,7 @@ void lua_init()
 	config.winw      = lua_get_int("window_width");
 	config.winh      = lua_get_int("window_height");
 	config.cam_speed = lua_get_float("camera_speed");
+	config.font_name = strdup(lua_get_string("font_name"));
 
 	DEBUG(1, "[INFO] Initialized Lua");
 	DEBUG(1, "[INFO] Config:");
@@ -58,7 +60,19 @@ float lua_get_float(char* name)
 	return num;
 }
 
+char* lua_get_string(char* name)
+{
+	lua_getglobal(lua_state, name);
+	if (!lua_isstring(lua_state, -1))
+		ERROR("[LUA] Expected a string for \"%s\", got: \"%s\"", name, lua_tostring(lua_state, -1));
+
+	char* str = lua_tostring(lua_state, -1);
+	lua_pop(lua_state, 1);
+	return str;
+}
+
 void lua_free()
 {
+	sfree(config.font_name);
 	lua_close(lua_state);
 }

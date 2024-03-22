@@ -24,6 +24,7 @@ struct GlobalConfig {
 	int winw;
 	int winh;
 	float cam_speed;
+	char* font_name;
 };
 
 noreturn void quit();

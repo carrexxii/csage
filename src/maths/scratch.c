@@ -62,7 +62,7 @@ static bool points_on;
 static bool lines_on;
 static bool planes_on;
 
-void scratch_init(VkRenderPass renderpass)
+void scratch_init()
 {
 	cam_ubo  = ubo_new(sizeof(Mat4x4[2]));
 	axes_vbo = vbo_new(sizeof(axes_verts), axes_verts, false);
@@ -80,7 +80,7 @@ void scratch_init(VkRenderPass renderpass)
 	};
 	pipeln_alloc_dsets(&point_pipeln);
 	pipeln_create_dset(&point_pipeln, 1, &cam_ubo, 0, NULL, 0, NULL);
-	pipeln_init(&point_pipeln, renderpass);
+	pipeln_init(&point_pipeln);
 
 	line_pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_PATH "/scratch.vert"),
@@ -95,7 +95,7 @@ void scratch_init(VkRenderPass renderpass)
 	};
 	pipeln_alloc_dsets(&line_pipeln);
 	pipeln_create_dset(&line_pipeln, 1, &cam_ubo, 0, NULL, 0, NULL);
-	pipeln_init(&line_pipeln, renderpass);
+	pipeln_init(&line_pipeln);
 
 	plane_pipeln = (struct Pipeline){
 		.vshader     = create_shader(SHADER_PATH "/scratch.vert"),
@@ -110,7 +110,7 @@ void scratch_init(VkRenderPass renderpass)
 	};
 	pipeln_alloc_dsets(&plane_pipeln);
 	pipeln_create_dset(&plane_pipeln, 1, &cam_ubo, 0, NULL, 0, NULL);
-	pipeln_init(&plane_pipeln, renderpass);
+	pipeln_init(&plane_pipeln);
 
 	points = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[1][7]));
 	lines  = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[2][7]));

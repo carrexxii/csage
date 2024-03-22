@@ -37,7 +37,7 @@ static void cb_mouse_left(bool kdown) {
 	ui_context.mouse_pressed.lmb  =  kdown;
 	ui_context.mouse_released.lmb = !kdown;
 }
-void ui_init(VkRenderPass renderpass)
+void ui_init()
 {
 	pipeln = (struct Pipeline){
 		// TODO: Tesselation shader?
@@ -49,7 +49,9 @@ void ui_init(VkRenderPass renderpass)
 		.vert_attrc = 2,
 		.vert_attrs = vert_attrs,
 	};
-	pipeln_init(&pipeln, renderpass);
+	// pipeln_alloc_dsets(&pipeln);
+	// pipeln_create_dset(&pipeln, 0, NULL, 0, NULL, 0, NULL);
+	pipeln_init(&pipeln);
 
 	ui_objs = varray_new(UI_DEFAULT_OBJECT_COUNT, sizeof(struct UIObject));
 

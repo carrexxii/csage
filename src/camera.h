@@ -42,5 +42,6 @@ void camera_rotate(struct Camera* cam, enum Axis axis, float angle);
 void camera_update(struct Camera* cam);
 struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y);
 Vec2 camera_get_map_point(struct Ray ray);
+void camera_free(struct Camera* cam);
 
 #endif

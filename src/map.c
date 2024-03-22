@@ -1,21 +1,7 @@
-#include "vulkan/vulkan.h"
-#define JSMN_PARENT_LINKS
-#include "jsmn/jsmn.h"
-
-#include "util/file.h"
-#include "util/string.h"
-#include "util/varray.h"
-#include "util/arena.h"
-#include "maths/maths.h"
 #include "lua.h"
-#include "gfx/vulkan.h"
 #include "gfx/buffers.h"
-#include "gfx/pipeline.h"
-#include "gfx/texture.h"
 #include "gfx/renderer.h"
-#include "gfx/model.h" // TODO: move materials to separate file
 #include "gfx/sprite.h"
-#include "camera.h"
 #include "map.h"
 
 static void map_print(struct Map* map);
@@ -41,6 +27,11 @@ void map_new(struct Map* map, const char* name)
 	struct Map* map_data = lua_topointer(lua_state, -1);
 	lua_pop(lua_state, 1);
 	*map = *map_data;
+
+	map->spot_lights  = smalloc(map->spot_lightc  * sizeof(struct SpotLight));
+	map->point_lights = smalloc(map->point_lightc * sizeof(struct PointLight));
+	memcpy(map->spot_lights , map_data->spot_lights , map->spot_lightc  * sizeof(struct SpotLight));
+	memcpy(map->point_lights, map_data->point_lights, map->point_lightc * sizeof(struct PointLight));
 
 	isize offset = sizeof(Vec4);
 	map->spot_lights_sbo  = sbo_new(offset + map->spot_lightc  * sizeof(struct SpotLight));
@@ -71,10 +62,9 @@ void map_new(struct Map* map, const char* name)
 				if (layer->data[y*layer->w + x])
 					tiles[tilec++] = VEC3(x, y, 0.0f);
 		sprite_new_batch(map->sprite_sheet, sprites_get_group(map->sprite_sheet, "tiles"), tilec, tiles);
-		free(tiles);
+		sfree(tiles);
 	}
 
-	map_print(map);
 	DEBUG(1, "[MAP] Created new map \"%s\" (%dx%d) with %d layers, %d spot lights, %d point_lights",
 	      name, map->w, map->h, map->layerc, map->spot_lightc, map->point_lightc);
 }
@@ -88,34 +78,14 @@ noreturn MapTile map_get_tile(struct Map* map, Vec3i pos)
 
 void map_free(struct Map* map)
 {
-	// struct MapLayer* layer;
-	// for (int i = 0; i < map->layerc; i++) {
-	// 	layer = &map->layers[i];
-	// 	if (layer->type == MAP_LAYER_TILE) {
-	// 		for (int j = 0; j < layer->tile.chunkc; j++)
-	// 			ibo_free(&layer->tile.chunks[j].ibo);
-	// 		free(layer->tile.chunks);
-	// 	} else if (layer->type == MAP_LAYER_OBJECT) {
-	// 		free(layer->obj.objs);
-	// 	}
-	// }
-	// free(map->layers);
-	// ubo_free(&map->ubo);
-	// sbo_free(&map->chunks_sbo);
-	// sbo_free(&map->spot_lights_sbo);
-	// sbo_free(&map->point_lights_sbo);
-	// texture_free(&map->tileset.diffuse);
-	// texture_free(&map->tileset.normal);
-	// pipeln_free(&map->pipeln);
-	// *map = (struct Map){ 0 };
-}
-
-void maps_free()
-{
-	// ubo_free(&cam_ubo);
-	// ubo_free(&local_lights_ubo);
-	// vbo_free(&lattice_vbo);
-	// arena_free(arena);
+	for (int i = 0; i < map->layerc; i++) {
+		sfree(map->layers[i]->sprites);
+		sfree(map->layers[i]);
+	}
+	sfree(map->spot_lights);
+	sfree(map->point_lights);
+	sbo_free(&map->spot_lights_sbo);
+	sbo_free(&map->point_lights_sbo);
 }
 
 /* -------------------------------------------------------------------- */

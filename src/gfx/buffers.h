@@ -38,10 +38,11 @@ inline static void buffer_unmap_memory(struct Buffer buf) {
 	vkUnmapMemory(logical_gpu, buf.mem);
 }
 
-void buffer_free(struct Buffer* buf);
-static inline void vbo_free(VBO* buf) { buffer_free(buf); }
-static inline void ibo_free(IBO* buf) { buffer_free(buf); }
-static inline void ubo_free(UBO* buf) { buffer_free(buf); }
-static inline void sbo_free(SBO* buf) { buffer_free(buf); }
+void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn);
+#define buffer_free(buf) _buffer_free(buf, __FILE__, __LINE__, __func__)
+#define vbo_free(buf) _Generic(buf, VBO*: buffer_free(buf))
+#define ibo_free(buf) _Generic(buf, IBO*: buffer_free(buf))
+#define ubo_free(buf) _Generic(buf, UBO*: buffer_free(buf))
+#define sbo_free(buf) _Generic(buf, SBO*: buffer_free(buf))
 
 #endif

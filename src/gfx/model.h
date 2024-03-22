@@ -91,7 +91,7 @@ struct Model {
 	float timer;
 };
 
-void models_init(VkRenderPass renderpass);
+void models_init();
 struct Model* model_new(char* path);
 void models_update();
 void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);

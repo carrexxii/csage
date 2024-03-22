@@ -24,7 +24,7 @@ extern int ui_containerc;
 
 /* -------------------------------------------------------------------- */
 
-void ui_init(VkRenderPass renderpass);
+void ui_init(void);
 struct UIObject* ui_alloc_object(void);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);

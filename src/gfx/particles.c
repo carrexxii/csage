@@ -39,9 +39,9 @@ static VkVertexInputAttributeDescription streamvert_attrs[] = {
 };
 /* -------------------------------------------------------------------- */
 
-void particles_init(VkRenderPass renderpass)
+void particles_init()
 {
-	texture = texture_new_from_image(TEXTURE_PATH "star.png");
+	texture = texture_new_from_image(TEXTURE_PATH "/star.png");
 	ubos[0] = ubo_new(sizeof(Mat4x4[2]));
 	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
 	pipeln = (struct Pipeline){
@@ -59,8 +59,8 @@ void particles_init(VkRenderPass renderpass)
 		.imgc        = 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_dset(&pipeln, 2, ubos, 0, NULL, 1, &texture.image_view);
-	pipeln_init(&pipeln, renderpass);
+	pipeln_create_dset(&pipeln, pipeln.uboc, ubos, pipeln.sboc, NULL, pipeln.imgc, &texture.image_view);
+	pipeln_init(&pipeln);
 
 	float verts[] = {
 		-0.5,  0.5, 0.0, 0.0,   0.5, 0.5, 1.0, 0.0,   -0.5, -0.5, 0.0, 1.0,

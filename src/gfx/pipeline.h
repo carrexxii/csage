@@ -52,7 +52,7 @@ struct Pipeline {
 };
 
 void pipeln_alloc_dsets(struct Pipeline* pipeln);
-void pipeln_init(struct Pipeline* pipeln, VkRenderPass renpass);
+void pipeln_init(struct Pipeline* pipeln);
 VkDescriptorSet pipeln_create_dset(struct Pipeline* pipeln, int uboc, UBO* ubos, int sboc, SBO* sbos, int img_viewc, VkImageView* img_views);
 void pipeln_free(struct Pipeline* pipeln);
 

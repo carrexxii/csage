@@ -136,10 +136,11 @@ void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data, isize offset)
 	vkUnmapMemory(logical_gpu, buf.mem);
 }
 
-void buffer_free(struct Buffer* buf)
+void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn)
 {
 	if (!buf->buf || !buf->mem) {
-		ERROR("[VK] Buffer does not appear to be valid (probably uninitialized or double free)");
+		ERROR("[VK] Buffer does not appear to be valid (probably uninitialized or double free) in \"%s:%d:%s\"",
+		      file, line, fn);
 		return;
 	}
 	vkDestroyBuffer(logical_gpu, buf->buf, NULL);

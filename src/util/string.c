@@ -3,7 +3,7 @@
 /* Length is calculated if it is <= 0 */
 String string_new(char* src, isize len, struct Arena* arena)
 {
-	len = len > 0? len: strlen(src);
+	len = len > 0? len: (isize)strlen(src);
 	String str = {
 		.data = arena? arena_alloc(arena, len + 1): smalloc(len + 1),
 		.len  = len,
@@ -12,15 +12,6 @@ String string_new(char* src, isize len, struct Arena* arena)
 	str.data[str.len] = '\0';
 
 	return str;
-}
-
-String* string_new_ptr(char* src, isize len, struct Arena* arena)
-{
-	len = len > 0? len: strlen(src);
-	String* str = arena? arena_alloc(arena, sizeof(String) + len): smalloc(sizeof(String) + len);
-	str->len = len;
-	memcpy(str + sizeof(String), src, len);
-	str->data = (char*)&str[1];
 }
 
 /* Create a new string by splitting up `src` on `sep`s and using `index`.
@@ -91,8 +82,10 @@ int string_remove(String str, char c)
 	return count;
 }
 
-void string_free(String str) {
-	sfree(str.data);
+void string_free(String* str) {
+	sfree(str->data);
+	str->data = NULL;
+	str->len = 0;
 }
 
 /* -------------------------------------------------------------------- */

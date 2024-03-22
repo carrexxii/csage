@@ -60,7 +60,7 @@ void pipeln_alloc_dsets(struct Pipeline* pipeln)
 	pipeln->dsets = smalloc(pipeln->dset_cap*sizeof(VkDescriptorSet));
 }
 
-void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
+void pipeln_init(struct Pipeline* pipeln)
 {
 	VkPipelineShaderStageCreateInfo stagesci[5];
 	int stagec = init_shaders(pipeln, stagesci);
@@ -159,7 +159,7 @@ void pipeln_init(struct Pipeline* pipeln, VkRenderPass renderpass)
 	};
 	VkPipelineLayoutCreateInfo tlaysci = {
 		.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount         = 1,
+		.setLayoutCount         = !!pipeln->dset_cap,
 		.pSetLayouts            = &pipeln->dset_layout,
 		.pushConstantRangeCount = !!pipeln->push_sz,
 		.pPushConstantRanges    = &tpushr,

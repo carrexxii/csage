@@ -1,9 +1,9 @@
 #ifndef MATHS_SCRATCH_H
 #define MATHS_SCRATCH_H
 
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 
-#include "pga.h"
+#include "types.h"
 #include "camera.h"
 
 #define SCRATCH_DEFAULT_ELEMENT_COUNT 8
@@ -13,7 +13,7 @@
 #define SCRATCH_OPACITY               0.3f
 #define SCRATCH_AXIS_OPACITY          0.7f
 
-void scratch_init(VkRenderPass renderpass);
+void scratch_init(void);
 void scratch_load(void);
 void scratch_clear(void);
 void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);

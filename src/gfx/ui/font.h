@@ -18,10 +18,10 @@ struct TextObject {
 	bool  active;
 };
 
-void font_init(VkRenderPass renderpass);
+void font_init(void);
 struct TextObject* font_render(char* text, isize text_len, float z, float w);
 void font_record_commands(VkCommandBuffer cmdbuf, struct Camera* cam);
-void font_free();
+void font_free(void);
 
 extern int font_size;
 
