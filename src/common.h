@@ -107,6 +107,8 @@ typedef union Colour {
 #define COLOUR(hex)      (Colour){ .abgr = hex }
 #define COLOUR_TO_VEC(c) (float[4]){ c.r/255.0f, c.g/255.0f, c.b/255.0f, c.a/255.0f }
 
+#define PPSTR(x) #x
+
 #define UNPACK2(x) x[0], x[1]
 #define UNPACK3(x) x[0], x[1], x[2]
 #define UNPACK4(x) x[0], x[1], x[2], x[3]

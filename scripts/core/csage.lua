@@ -127,6 +127,11 @@ csage.cdef [[
 		SPRITE_RUN,
 		SPRITE_ATTACK1,
 		SPRITE_ATTACK2,
+
+		SPRITE_GRASS,
+		SPRITE_DIRT,
+
+		SPRITE_LAST,
 	};
 
 	struct SpriteFrame {
@@ -146,6 +151,7 @@ csage.cdef [[
 		char name[32];
 		int statec;
 		struct SpriteState* states;
+		int state_table[SPRITE_LAST];
 	};
 
 	struct Sprite {
@@ -224,12 +230,15 @@ direction_enum = {
 }
 
 animation_enum = {
-	[""]        = csage.C.SPRITE_NONE,
-	["idle"]    = csage.C.SPRITE_IDLE,
-	["walk"]    = csage.C.SPRITE_WALK,
-	["run"]     = csage.C.SPRITE_RUN,
-	["attack1"] = csage.C.SPRITE_ATTACK1,
-	["attack2"] = csage.C.SPRITE_ATTACK2,
+	[""]    = csage.C.SPRITE_NONE,
+	idle    = csage.C.SPRITE_IDLE,
+	walk    = csage.C.SPRITE_WALK,
+	run     = csage.C.SPRITE_RUN,
+	attack1 = csage.C.SPRITE_ATTACK1,
+	attack2 = csage.C.SPRITE_ATTACK2,
+
+	grass = csage.C.SPRITE_GRASS,
+	dirt  = csage.C.SPRITE_DIRT,
 }
 
 function table_len(t)

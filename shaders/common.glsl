@@ -50,13 +50,13 @@ const vec3 rect_verts[6] = {
 	vec3(0.0f, 1.0f, 0.0f),
 };
 
-const float material_shininess = 16.0f;
+const float material_shininess = 4.0f;
 vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir, vec3 albedo)
 {
 	float diffuse = max(dot(normal, light.dir), 0.0f);
 
-	vec3  reflect_dir = reflect(light.dir, normal);
-	float spec_str = pow(max(dot(view_dir, reflect_dir), 0.0f), material_shininess);
+	vec3 halfway_dir = normalize(light.dir + view_dir);
+	float spec_str = pow(max(dot(view_dir, halfway_dir), 0.0f), material_shininess);
 	// specular = light.specular * specular * specular_map;
 	vec3 specular = light.specular * spec_str;
 
@@ -72,13 +72,14 @@ vec3 calc_spot_light(SpotLight light, vec3 normal, vec3 Fpos, vec3 view_dir, vec
 	float diffuse = max(dot(normal, light_dir), 0.0f);
 
 	vec3 reflect_dir = reflect(light_dir, normal);
-	float spec_str = pow(max(dot(view_dir, reflect_dir), 0.0f), material_shininess);
+	vec3 halfway_dir = normalize(light_dir + view_dir);
+	float spec_str = pow(max(dot(view_dir, halfway_dir), 0.0f), material_shininess);
 	// vec3 specular = light.specular * spec * specular_map;
 	vec3 specular = light.specular * spec_str;
 
 	float dist        = length(light.pos - Fpos);
-	float attenuation = 1.0 / (light.constant + light.linear*dist + light.quadratic*dist*dist);
-	float theta       = dot(light_dir, normalize(-light.dir));
+	float attenuation = 1.0f / (light.constant + light.linear*dist + light.quadratic*dist*dist);
+	float theta       = dot(light_dir, -light.dir);
 	float epsilon     = light.cutoff - light.outer_cutoff;
 	float intensity   = clamp((theta - light.outer_cutoff) / epsilon, 0.0f, 1.0f);
 
@@ -93,8 +94,8 @@ vec3 calc_point_light(PointLight light, vec3 normal, vec3 Fpos, vec3 view_dir, v
 
 	float diffuse = max(dot(normal, light_dir), 0.0f);
 
-	vec3 reflect_dir = reflect(light_dir, normal);
-	float spec_str = pow(max(dot(view_dir, reflect_dir), 0.0f), material_shininess);
+	vec3 halfway_dir = normalize(light_dir + view_dir);
+	float spec_str = pow(max(dot(view_dir, halfway_dir), 0.0f), material_shininess);
 	// vec3 specular = light.specular * spec_str * specular_map;
 	vec3 specular = light.specular * spec_str;
 

@@ -12,9 +12,9 @@ function load_sprite_sheet(fname)
 
 	local gi = 0
 	local groups = {}
-	for state_name, anim in pairs(sheet_data) do
-		local name, anim_name, dir = string.match(state_name, "(.+)@(.+)-(.+)")
-		if dir and anim_name and name then
+	for i, state in pairs(sheet_data) do
+		if tonumber(i) then
+			local name, anim_name, dir = string.match(state.id, "(.+)@(.+)-(.+)")
 			if groups[name] == nil then
 				groups[name] = {
 					name   = name,
@@ -25,14 +25,14 @@ function load_sprite_sheet(fname)
 
 			groups[name].states[groups[name].statec] = {
 				duration = tonumber(sheet_data[name .. "@" .. anim_name]),
-				framec   = #anim,
-				frames   = csage.new("struct SpriteFrame[?]", #anim, anim),
+				framec   = #state.frames,
+				frames   = csage.new("struct SpriteFrame[?]", #state.frames, state.frames),
 				type     = animation_enum[anim_name] or direction_enum[""],
 				dir      = direction_enum[dir],
 				gi       = gi,
 			}
 			groups[name].statec = groups[name].statec + 1
-			gi = gi + #anim
+			gi = gi + #state.frames
 		end
 	end
 

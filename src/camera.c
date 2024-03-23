@@ -40,7 +40,7 @@ void camera_set_projection(struct Camera* cam, enum CameraType type)
 		CLAMP(cam->zoom, CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM);
 		cam->mats->proj = cam_orthogonal(-16.0f / cam->zoom, 16.0f / cam->zoom,
 		                                 -9.0f  / cam->zoom, 9.0f  / cam->zoom,
-										 -1024.0f, 1024.0f);
+		                                 -1024.0f, 1024.0f);
 		// dist = distance(VEC3_ZERO, cam->pos);
 		// sz_x = (atan(cam->fov / 2.0f) * 2.0f) * dist;
 		// sz_y = sz_x / (cam->w / cam->h);

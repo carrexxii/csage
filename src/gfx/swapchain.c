@@ -126,10 +126,9 @@ void swapchain_free()
 
 	DEBUG(3, "[VK] Destroying command pool...");
 	vkDestroyCommandPool(logical_gpu, cmd_pool, NULL);
-	
+
 	DEBUG(3, "[VK] Destroying swapchain...");
 	vkDestroySwapchainKHR(logical_gpu, swapchain.swapchain, NULL);
-
 
 	free(swapchain.imgs);
 }

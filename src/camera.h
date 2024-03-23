@@ -5,7 +5,7 @@
 #include "gfx/buffers.h"
 
 #define CAMERA_DEFAULT_PAN_SPEED  (15.0f*DT)
-#define CAMERA_DEFAULT_ZOOM       1.0f
+#define CAMERA_DEFAULT_ZOOM       2.0f
 #define CAMERA_MIN_ZOOM           0.2f
 #define CAMERA_MAX_ZOOM           10.0f
 #define CAMERA_DEFAULT_ZOOM_SPEED (3.0f*DT)

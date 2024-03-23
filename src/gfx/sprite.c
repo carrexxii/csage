@@ -155,22 +155,25 @@ int sprite_sheet_load(struct SpriteSheet* sheet_data)
 	sheet->sprites = varray_new(DEFAULT_SPRITES, sizeof(struct Sprite));
 	sheet->groups  = smalloc(sheet_data->groupc*sizeof(struct SpriteGroup));
 	memcpy(sheet->groups, sheet_data->groups, sheet_data->groupc*sizeof(struct SpriteGroup));
+
+	struct SpriteGroup* group;
+	struct SpriteState* state;
 	int total_framec = 0;
 	for (int i = 0; i < sheet_data->groupc; i++) {
-		sheet->groups[i].statec = sheet_data->groups[i].statec;
-		sheet->groups[i].states = smalloc(sheet_data->groups[i].statec*sizeof(struct SpriteState));
+		group = &sheet->groups[i];
+		group->statec = sheet_data->groups[i].statec;
+		group->states = smalloc(sheet_data->groups[i].statec*sizeof(struct SpriteState));
 		for (int j = 0; j < sheet_data->groups[i].statec; j++) {
-			sheet->groups[i].states[j].gi       = sheet_data->groups[i].states[j].gi;
-			sheet->groups[i].states[j].type     = sheet_data->groups[i].states[j].type;
-			sheet->groups[i].states[j].dir      = sheet_data->groups[i].states[j].dir;
-			sheet->groups[i].states[j].duration = sheet_data->groups[i].states[j].duration;
-			sheet->groups[i].states[j].framec   = sheet_data->groups[i].states[j].framec;
-			sheet->groups[i].states[j].frames   = smalloc(sheet_data->groups[i].states[j].framec*sizeof(struct SpriteFrame));
+			state = &group->states[j];
+			state->gi       = sheet_data->groups[i].states[j].gi;
+			state->type     = sheet_data->groups[i].states[j].type;
+			state->dir      = sheet_data->groups[i].states[j].dir;
+			state->duration = sheet_data->groups[i].states[j].duration;
+			state->framec   = sheet_data->groups[i].states[j].framec;
+			state->frames   = smalloc(sheet_data->groups[i].states[j].framec*sizeof(struct SpriteFrame));
 			total_framec += sheet_data->groups[i].states[j].framec;
-			for (int k = 0; k < sheet_data->groups[i].states[j].framec; k++) {
-				sheet->groups[i].states[j].frames[k] = sheet_data->groups[i].states[j].frames[k];
-				struct SpriteFrame* f = &sheet->groups[i].states[j].frames[k];
-			}
+			for (int k = 0; k < sheet_data->groups[i].states[j].framec; k++)
+				state->frames[k] = sheet_data->groups[i].states[j].frames[k];
 		}
 	}
 
@@ -238,7 +241,7 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 		for (int j = 0; j < group->statec; j++) {
 			state = &group->states[j];
 			DEBUG(1, "\tState \"%s\" w/%d frames in direction %u and frame time of %d",
-			      STRING_OF_SPRITE_STATE_TYPE(state->type), state->framec, state->dir, state->duration); // TODO: STRING_OF_DIRECTION
+			      string_of_animation_state[state->type], state->framec, state->dir, state->duration); // TODO: STRING_OF_DIRECTION
 			for (int k = 0; k < state->framec; k++) {
 				frame = &state->frames[k];
 				fprintf(stderr, "(%d, %d, %d, %d) ", frame->x, frame->y, frame->w, frame->h);
@@ -278,24 +281,24 @@ struct Sprite* sprite_new(int sheet_id, int group_id, Vec3 pos)
 	return varray_get(&sheet->sprites, spri);
 }
 
-struct Sprite* sprite_new_batch(int sheet_id, int group_id, int spritec, Vec3* poss)
+struct Sprite* sprite_new_batch(int sheet_id, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states)
 {
 	assert(sheet_id < sheetc);
 	assert(group_id < sheets[sheet_id].groupc);
 
-	// for (int i = 0; i < spritec; i++)
-	// 	sprite_new(sheet_id, group_id, poss[i]);
-	// return NULL;
 	struct SpriteSheet* sheet = &sheets[sheet_id];
 	struct SpriteGroup* group = &sheet->groups[group_id];
 	struct Sprite* sprites = smalloc(spritec * sizeof(struct Sprite));
-	for (int i = 0; i < spritec; i++)
+	int state;
+	for (int i = 0; i < spritec; i++) {
 		sprites[i] = (struct Sprite){
 			.pos   = poss[i],
-			.gi    = group->states[0].gi,
+			.gi    = group->states[states[i]].gi,
 			.sheet = sheet_id,
 			.group = group_id,
+			.state = states[i],
 		};
+	}
 
 	isize i = varray_push_many(&sheet->sprites, spritec, sprites);
 

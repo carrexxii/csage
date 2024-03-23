@@ -1,6 +1,7 @@
 function load_tiled_map(fname)
 	local map_data = dofile(fname)
 	if not map_data then
+		print("[LUA] Failed to load map file: ", fname)
 		return nil
 	end
 
@@ -45,7 +46,7 @@ function load_tiled_map(fname)
 				for _, obj in pairs(layer.objects) do
 					if obj.shape == "ellipse" then
 						spot_lights[map.spot_lightc] = {
-							pos = { 2.0 * obj.x / map_data.tilewidth, obj.y / map_data.tileheight, 1.0 },
+							pos = { 2.0 * obj.x / map_data.tilewidth + 1, obj.y / map_data.tileheight + 1, 5.0 },
 							dir = { 0.0, 0.0, -1.0 },
 							-- TODO: move this to a config file
 							ambient      = vec3_of_colour(obj.properties["ambient"]  or "#FFFFFF"),
@@ -55,19 +56,19 @@ function load_tiled_map(fname)
 							linear       = tonumber(obj.properties["linear"])      or 0.07,
 							quadratic    = tonumber(obj.properties["constant"])    or 0.017,
 							cutoff       = tonumber(obj.properties["cutoff"])      or 1.0,
-							outer_cutoff = tonumber(obj.properties["outercutofa"]) or 0.5,
+							outer_cutoff = tonumber(obj.properties["outercutofa"]) or 0.8,
 						}
 						map.spot_lightc = map.spot_lightc + 1
 					elseif obj.shape == "point" then
 						point_lights[map.point_lightc] = {
-							pos = { 2.0 * obj.x / map_data.tilewidth, obj.y / map_data.tileheight, 0.0 },
+							pos = { 2.0 * obj.x / map_data.tilewidth + 1, obj.y / map_data.tileheight + 1, 3.0 },
 							-- TODO: move this to a config file
 							ambient   = vec3_of_colour(obj.properties["ambient"]  or "#FFFFFF"),
 							diffuse   = vec3_of_colour(obj.properties["diffuse"]  or "#FFFFFF"),
 							specular  = vec3_of_colour(obj.properties["specular"] or "#FFFFFF"),
 							constant  = tonumber(obj.properties["constant"]) or 1.0,
-							linear    = tonumber(obj.properties["linear"])   or 0.5,
-							quadratic = tonumber(obj.properties["constant"]) or 3.5,
+							linear    = tonumber(obj.properties["linear"])   or 0.22,
+							quadratic = tonumber(obj.properties["constant"]) or 0.20,
 						}
 						map.point_lightc = map.point_lightc + 1
 					end

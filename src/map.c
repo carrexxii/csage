@@ -43,6 +43,8 @@ void map_new(struct Map* map, const char* name)
 	spot_lights_sbo  = map->spot_lights_sbo;
 	point_lights_sbo = map->point_lights_sbo;
 
+	Vec3* tiles = smalloc(map->w * map->h * sizeof(Vec3));
+	enum SpriteStateType* tile_states = smalloc(map->w * map->h * sizeof(enum SpriteStateType));
 	struct MapLayer* layer;
 	for (int i = 0; i < map_data->layerc; i++) {
 		layer = map_data->layers[i];
@@ -56,15 +58,20 @@ void map_new(struct Map* map, const char* name)
 		map->layers[i]->sprites = smalloc(spritec * sizeof(struct Sprite*));
 
 		isize tilec = 0;
-		Vec3* tiles = smalloc(layer->w * layer->h * sizeof(Vec3));
-		for (int y = 0; y < layer->h; y++)
-			for (int x = 0; x < layer->w; x++)
-				if (layer->data[y*layer->w + x])
-					tiles[tilec++] = VEC3(x, y, 0.0f);
-		sprite_new_batch(map->sprite_sheet, sprites_get_group(map->sprite_sheet, "tiles"), tilec, tiles);
-		sfree(tiles);
+		for (int y = 0; y < layer->h; y++) {
+			for (int x = 0; x < layer->w; x++) {
+				if (layer->data[y*layer->w + x]) {
+					tiles[tilec] = VEC3(x, y, 0.0f);
+					tile_states[tilec] = layer->data[y*layer->w + x] - 1;
+					tilec++;
+				}
+			}
+		}
+		sprite_new_batch(map->sprite_sheet, sprites_get_group(map->sprite_sheet, "tiles"), tilec, tiles, tile_states);
 	}
 
+	sfree(tiles);
+	sfree(tile_states);
 	DEBUG(1, "[MAP] Created new map \"%s\" (%dx%d) with %d layers, %d spot lights, %d point_lights",
 	      name, map->w, map->h, map->layerc, map->spot_lightc, map->point_lightc);
 }

@@ -19,12 +19,12 @@ local sprites = {
 		directions = 4,
 		states = {
 			grass = 0,
+			dirt  = 1,
 		},
 	}
 }
 
 local sheet_tmpl = [[
-debug
 description "%s.lua"
 	template "lua.inja"
 

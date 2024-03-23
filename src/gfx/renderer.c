@@ -251,7 +251,7 @@ static void record_commands(int imgi, struct Camera* cam)
 		.framebuffer     = frame_bufs[imgi],
 		.clearValueCount = 2,
 		.pClearValues    = (VkClearValue[]){
-			(VkClearValue){ .color = { 0.1, 0.1, 0.28, 0.0 } },
+			(VkClearValue){ .color = { 0.015, 0.015, 0.04, 0.0 } },
 			(VkClearValue){ .depthStencil = { 1.0, 0 } },
 		},
 		.renderArea = {

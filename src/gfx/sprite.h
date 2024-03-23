@@ -17,14 +17,6 @@
 #define DEFAULT_SPRITES       16
 
 // TODO: this needs to be a hashmap
-#define STRING_OF_SPRITE_STATE_TYPE(x) (   \
-	x == SPRITE_NONE   ? "SPRITE_NONE"   : \
-	x == SPRITE_IDLE   ? "SPRITE_IDLE"   : \
-	x == SPRITE_WALK   ? "SPRITE_WALK"   : \
-	x == SPRITE_RUN    ? "SPRITE_RUN"    : \
-	x == SPRITE_ATTACK1? "SPRITE_ATTACK1": \
-	x == SPRITE_ATTACK2? "SPRITE_ATTACK2": \
-	"<Unknown animation>")
 enum SpriteStateType {
 	SPRITE_NONE,
 	SPRITE_IDLE,
@@ -32,6 +24,22 @@ enum SpriteStateType {
 	SPRITE_RUN,
 	SPRITE_ATTACK1,
 	SPRITE_ATTACK2,
+
+	SPRITE_GRASS,
+	SPRITE_DIRT,
+
+	SPRITE_LAST,
+};
+static const char* string_of_animation_state[] = {
+	[SPRITE_NONE]    = PPSTR(SPRITE_NONE),
+	[SPRITE_IDLE]    = PPSTR(SPRITE_IDLE),
+	[SPRITE_WALK]    = PPSTR(SPRITE_WALK),
+	[SPRITE_RUN]     = PPSTR(SPRITE_RUN),
+	[SPRITE_ATTACK1] = PPSTR(SPRITE_ATTACK1),
+	[SPRITE_ATTACK2] = PPSTR(SPRITE_ATTACK2),
+
+	[SPRITE_GRASS] = PPSTR(SPRITE_GRASS),
+	[SPRITE_DIRT]  = PPSTR(SPRITE_DIRT),
 };
 
 struct SpriteFrame {
@@ -48,7 +56,7 @@ struct SpriteState {
 };
 
 struct SpriteGroup {
-	char name[32];
+	char name[32]; // Remove?
 	int statec;
 	struct SpriteState* states;
 };
@@ -86,7 +94,7 @@ void sprite_sheet_init_pipeline(struct SpriteSheet* sheet);
 int  sprite_sheet_new(char* name, int z_lvl);
 int  sprite_sheet_load(struct SpriteSheet* sheet_data);
 struct Sprite* sprite_new(int sheet_id, int group_id, Vec3 pos);
-struct Sprite* sprite_new_batch(int sheet_id, int group_id, int spritec, Vec3* poss);
+struct Sprite* sprite_new_batch(int sheet_id, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states);
 void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir);
 
 #endif
