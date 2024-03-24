@@ -11,6 +11,7 @@
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h);
 
+// TODO: rename (new/load)
 struct Texture texture_new(byte* pxs, int w, int h)
 {
 	DEBUG(2, "[VK] Creating new texture (%dx%d)", w, h);

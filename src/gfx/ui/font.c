@@ -206,9 +206,8 @@ struct TextObject* font_render(char* text, isize text_len, float z, float w)
 	return obj;
 }
 
-void font_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
+void font_record_commands(VkCommandBuffer cmd_buf)
 {
-	(void)cam;
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
 	for (int i = 0; i < text_objc; i++) {

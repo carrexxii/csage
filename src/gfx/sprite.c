@@ -179,7 +179,7 @@ int sprite_sheet_load(struct SpriteSheet* sheet_data)
 
 	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(struct Sprite));
 	sheet->sprite_sheet_data = sbo_new(sizeof(int[4]) + total_framec * sizeof(struct SpriteFrame));
-	buffer_update(sheet->sprite_sheet_data, sizeof(int[4]), (int[]){ sheet_data->w, sheet_data->h, sheet_data->z, 48 }, 0);
+	buffer_update(sheet->sprite_sheet_data, sizeof(int[4]), (int[]){ sheet_data->w, sheet_data->h, sheet_data->z, 45 }, 0);
 	isize framec = 0;
 	isize total_copied = 0;
 	for (int i = 0; i < sheet->groupc; i++) {

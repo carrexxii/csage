@@ -14,6 +14,6 @@ void main()
 {
 	Fuv = Vuv;
 
-	gl_Position = vec4(Vxy + constants.pos, 1.0/constants.z_lvl, 1.0);
-	gl_Position.y *= -1.0;
+	gl_Position = vec4(Vxy + constants.pos, 0.0f, 1.0f);
+	gl_Position.y *= -1.0f;
 }

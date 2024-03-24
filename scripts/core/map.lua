@@ -20,16 +20,42 @@ function load_tiled_map(fname)
 		point_lightc = 0,
 	}
 
+	local sheet
 	for _, tset in pairs(map_data.tilesets) do
 		if map.sprite_sheet then
 			print("[LUA] Multiple sprite sheets for: ", fname, "(Only the last will be used)")
 		end
-		local sheet = load_sprite_sheet(sprite_path .. tset.name .. ".lua")
-		map.sprite_sheet = csage.C.sprite_sheet_load(sheet)
+
+		sheet = load_sprite_sheet(sprite_path .. tset.name .. ".lua")
+		if not sheet then
+			print("[LUA] No spritesheet associated with map: ", fname)
+			return nil
+		end
 	end
 
 	for _, layer in pairs(map_data.layers) do
 		if layer.type == "tilelayer" then
+			-- local data = {}
+			-- for i, d in pairs(layer.data) do
+			-- 	if not d then
+			-- 		data[i - 1] = csage.C.SPRITE_NONE
+			-- 	else
+			-- 		local x = math.floor(d % (256 / 80))
+			-- 		local y = math.floor(d / (256 / 64))
+			-- 		for j = 0, sheet.groupc - 1 do
+			-- 			local group = sheet.groups[j]
+			-- 			for k = 0, group.statec - 1 do
+			-- 				local state = group.states[k]
+			-- 				local fx = math.floor(state.frames[0].x / 80)
+			-- 				local fy = math.floor(state.frames[0].y / 64)
+			-- 				if x == fx and y == fy then
+			-- 					data[i - 1] = state.type
+			-- 				end
+			-- 			end
+			-- 		end
+			-- 	end
+			-- end
+
 			map.layers[map.layerc] = csage.new("struct MapLayer", #layer.data, {
 				name = layer.name,
 				x    = tonumber(layer.x),
@@ -83,5 +109,6 @@ function load_tiled_map(fname)
 		end
 	end
 
+	map.sprite_sheet = csage.C.sprite_sheet_load(sheet)
 	return csage.new("struct Map", map);
 end

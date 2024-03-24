@@ -7,10 +7,10 @@
 
 // TODO: make camera the set-0 global uniform
 
-struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
+struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ubo)
 {
 	struct Camera cam = {
-		.ubo        = ubo_new(sizeof(Mat4x4[2])),
+		.ubo        = ubo,
 		.pos        = pos,
 		.up         = up,
 		.pan_speed  = CAMERA_DEFAULT_PAN_SPEED,
@@ -26,7 +26,6 @@ struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov)
 	cam.mats->view = translate_make(pos);
 	cam.mats->view = rotate(cam.mats->view, VEC3_Z, deg_to_rad(180.0f));
 	cam.mats->view = rotate(cam.mats->view, VEC3_Y, deg_to_rad(180.0f));
-	camera_update(&cam);
 
 	return cam;
 }
@@ -90,8 +89,8 @@ void camera_update(struct Camera* cam)
 		Vec2 vel = { 0 };
 		if (cam->dir & DIR_LEFT)  vel.x += 1.0f;
 		if (cam->dir & DIR_RIGHT) vel.x -= 1.0f;
-		if (cam->dir & DIR_UP)    vel.y += 1.0f;
-		if (cam->dir & DIR_DOWN)  vel.y -= 1.0f;
+		if (cam->dir & DIR_UP)    vel.y -= 1.0f;
+		if (cam->dir & DIR_DOWN)  vel.y += 1.0f;
 		vel = multiply(normalized(vel), cam->pan_speed);
 		if (!isnan(vel.x) && !isnan(vel.y))
 			cam->pos = add(cam->pos, VEC3_V2(vel));
@@ -103,7 +102,7 @@ void camera_update(struct Camera* cam)
 		camera_set_projection(cam, CAMERA_ORTHOGONAL);
 
 	// TODO: conditional update
-	buffer_update(cam->ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
+	buffer_update(*cam->ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
 }
 
 struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y)
@@ -125,7 +124,6 @@ Vec2 camera_get_map_point(struct Ray ray)
 
 void camera_free(struct Camera* cam)
 {
-	ubo_free(&cam->ubo);
 	sfree(cam->mats);
 	*cam = (struct Camera){ 0 };
 }

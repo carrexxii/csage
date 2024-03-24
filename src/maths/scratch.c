@@ -187,10 +187,8 @@ void scratch_clear()
 	vbo_free(&planes_vbo);
 }
 
-void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
+void scratch_record_commands(VkCommandBuffer cmd_buf)
 {
-	buffer_update(cam_ubo, cam_ubo.sz, cam->mats, 0);
-
 	if (points_on && points.len > 0) {
 		if (!points_vbo.sz)
 			points_vbo = vbo_new(points.len*points.elem_sz, points.data, false);

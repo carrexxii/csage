@@ -19,8 +19,7 @@ COMPILE_WITH = -DDEBUG_LEVEL=5
 WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict                      \
            -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration \
            -Wmissing-prototypes -Wstrict-prototypes -Wunsafe-loop-optimizations -Wbad-function-cast -Wmissing-noreturn  \
-           -Wdisabled-optimization -Wno-unused-variable -Wno-discarded-qualifiers                                        \
-		   -Wno-unused-includes -Wno-incompatible-pointer-types-discards-qualifiers
+           -Wdisabled-optimization -Wno-unused-variable -Wno-discarded-qualifiers
 CFLAGS = -std=c2x -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR)           \
          -isystem$(LIB_DIR)/include -ftabstop=4 -include $(SRC_DIR)/common.h -include $(SRC_DIR)/config.h \
          $(COMPILE_WITH) -fstack-protector-strong -fstack-clash-protection -fno-omit-frame-pointer         \

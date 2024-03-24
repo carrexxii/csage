@@ -20,7 +20,7 @@ struct TextObject {
 
 void font_init(void);
 struct TextObject* font_render(char* text, isize text_len, float z, float w);
-void font_record_commands(VkCommandBuffer cmdbuf, struct Camera* cam);
+void font_record_commands(VkCommandBuffer cmd_buf);
 void font_free(void);
 
 extern int font_size;

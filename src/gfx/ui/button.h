@@ -5,8 +5,8 @@
 #include "util/varray.h"
 #include "types.h"
 
-void button_new(String text, Rect rect, void (*fn_cb)(void), struct UIStyle* style, struct UIObject* parent);
-void button_build(struct UIObject* obj, struct VArray* verts);
+void button_new(struct Container* parent, String text, struct Texture* img, Rect rect, void (*cb)(void), struct UIStyle* style);
+void button_build(struct UIObject* obj, struct VArray* verts, struct UIStyle* style);
 void button_on_click(struct UIObject* obj);
 
 #endif

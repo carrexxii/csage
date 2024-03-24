@@ -11,7 +11,7 @@ struct Image {
 	VkDeviceMemory mem;
 };
 
-void image_init();
+void image_init(void);
 struct Image image_new(uint w, uint h, VkFormat fmt, VkImageUsageFlags usage, VkSampleCountFlags samples);
 VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp);
 VkSampler image_new_sampler(VkFilter filter);

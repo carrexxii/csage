@@ -16,7 +16,7 @@
 void scratch_init(void);
 void scratch_load(void);
 void scratch_clear(void);
-void scratch_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);
+void scratch_record_commands(VkCommandBuffer cmd_buf);
 void scratch_free(void);
 
 #define scratch_add(a) _Generic(a, \

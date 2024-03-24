@@ -17,7 +17,7 @@ enum CameraType {
 };
 
 struct Camera {
-	UBO ubo;
+	UBO* ubo;
 	Vec3 pos;
 	Vec3 up;
 	Vec3 target;
@@ -35,7 +35,7 @@ struct Camera {
 	Vec3* follow;
 };
 
-struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov);
+struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ubo);
 void camera_set_projection(struct Camera* cam, enum CameraType type);
 void camera_move(struct Camera* cam, enum Direction dir, bool kdown);
 void camera_rotate(struct Camera* cam, enum Axis axis, float angle);

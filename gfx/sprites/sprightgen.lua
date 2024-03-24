@@ -16,7 +16,7 @@ local sprites = {
 	},
 	tiles = {
 		type = "static",
-		directions = 4,
+		directions = 1,
 		states = {
 			grass = 0,
 			dirt  = 1,

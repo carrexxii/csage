@@ -23,12 +23,12 @@ struct DirectionalLight global_light;
 UBO                     global_camera_ubo;
 UBO                     global_light_ubo;
 
-static void record_commands(int imgi, struct Camera* cam);
+static void record_commands(int imgi);
 static void create_frame_buffers(void);
 static void create_command_buffers(void);
 static void create_sync_objects(void);
 
-static void (*draw_fns[RENDERER_MAX_DRAW_FUNCTIONS])(VkCommandBuffer, struct Camera*);
+static void (*draw_fns[RENDERER_MAX_DRAW_FUNCTIONS])(VkCommandBuffer);
 static int draw_fnc = 0;
 static int frame    = 0;
 static struct {
@@ -124,7 +124,8 @@ void renderer_init()
 	create_command_buffers();
 	create_sync_objects();
 
-	global_light_ubo = ubo_new(sizeof(struct DirectionalLight));
+	global_camera_ubo = ubo_new(sizeof(Mat4x4[2]));
+	global_light_ubo  = ubo_new(sizeof(struct DirectionalLight));
 }
 
 void renderer_clear_draw_list(void)
@@ -132,7 +133,7 @@ void renderer_clear_draw_list(void)
 	draw_fnc = 0;
 }
 
-void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer, struct Camera*))
+void renderer_add_to_draw_list(void (*fn)(VkCommandBuffer))
 {
 	if (draw_fnc >= RENDERER_MAX_DRAW_FUNCTIONS)
 		ERROR("[GFX] Max draw function count (%d/%d) exceeded", draw_fnc, RENDERER_MAX_DRAW_FUNCTIONS);
@@ -150,7 +151,7 @@ void renderer_set_global_lighting(Vec3 dir, Vec3 ambient, Vec3 diffuse, Vec3 spe
 	buffer_update(global_light_ubo, sizeof(struct DirectionalLight), &global_light, 0);
 }
 
-void renderer_draw(struct Camera* cam)
+void renderer_draw()
 {
 	vkWaitForFences(logical_gpu, 1, &fences.frames[frame], true, UINT64_MAX);
 	vkResetFences(logical_gpu, 1, &fences.frames[frame]);
@@ -161,7 +162,7 @@ void renderer_draw(struct Camera* cam)
 		ERROR("[VK] Failed to aquire next swapchain image: \n\t\"%d\"", vk_err);
 
 	vkResetCommandBuffer(cmd_bufs[frame], 0);
-	record_commands(imgi, cam);
+	record_commands(imgi);
 
 	VkSubmitInfo submiti = {
 		.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -234,7 +235,7 @@ void renderer_free()
 /* Records a command for the given image
  *   imgi - index of the framebuffer image to record the command for
  */
-static void record_commands(int imgi, struct Camera* cam)
+static void record_commands(int imgi)
 {
 	VkCommandBuffer cmd_buf = cmd_bufs[frame];
 	VkCommandBufferBeginInfo begini = {
@@ -263,7 +264,7 @@ static void record_commands(int imgi, struct Camera* cam)
 	vkCmdBeginRenderPass(cmd_buf, &renderpassi, VK_SUBPASS_CONTENTS_INLINE);
 
 	for (int i = 0; i < draw_fnc; i++)
-		draw_fns[i](cmd_buf, cam);
+		draw_fns[i](cmd_buf);
 
 	vkCmdEndRenderPass(cmd_buf);
 	if (vkEndCommandBuffer(cmd_buf))

@@ -83,6 +83,11 @@ typedef union PsS { float e0123; } PsS;
 
 /* -------------------------------------------------------------------- */
 
+typedef union Colour {
+	uint32 rgba;
+	struct { uint8 r, g, b, a; };
+} Colour;
+
 typedef union Point {
 	struct { float  x,  y,  z; };
 	struct { float E1, E2, E3; };

@@ -151,7 +151,6 @@ csage.cdef [[
 		char name[32];
 		int statec;
 		struct SpriteState* states;
-		int state_table[SPRITE_LAST];
 	};
 
 	struct Sprite {
@@ -171,8 +170,8 @@ csage.cdef [[
 		struct VArray       sprites;
 		struct SpriteGroup* groups;
 
-		Texture      albedo;
-		Texture      normal;
+		Texture albedo;
+		Texture normal;
 		Pipeline pipeln;
 		SBO sprite_sheet_data;
 		SBO sprite_data;

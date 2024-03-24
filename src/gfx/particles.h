@@ -42,7 +42,7 @@ ID   particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Ve
 void particles_enable(ID particle_id);
 void particles_disable(ID particle_id);
 void particles_update(void);
-void particles_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);
+void particles_record_commands(VkCommandBuffer cmd_buf);
 void particles_free(void);
 void particles_free_pool(ID pool_id);
 

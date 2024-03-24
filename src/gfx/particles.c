@@ -131,10 +131,8 @@ void particles_update()
 	}
 }
 
-void particles_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam)
+void particles_record_commands(VkCommandBuffer cmd_buf)
 {
-	buffer_update(ubos[0], sizeof(Mat4x4[2]), cam->mats, 0);
-
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]) { 0 });
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
