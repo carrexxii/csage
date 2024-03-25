@@ -215,7 +215,8 @@ void font_record_commands(VkCommandBuffer cmd_buf)
 			continue;
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, (float[]){
-			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y });
+			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y
+		});
 		vkCmdDraw(cmd_buf, text_objs[i].vertc, 1, 0, i);
 	}
 }

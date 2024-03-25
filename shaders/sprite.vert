@@ -23,7 +23,7 @@ struct Sprite {
 	int8_t   sheet, group;
 	uint16_t time;
 };
-layout(binding = 10) readonly buffer SpriteSheetBufferUBO {
+layout(binding = 10) readonly buffer SpriteSheetBufferSBO {
 	int w, h, z;
 	int scale;
 	SpriteFrame frames[];

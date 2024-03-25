@@ -32,6 +32,15 @@ static inline void print_rect_recti(Recti rect) {
 static inline float deg_to_rad(float d) { return d/360.0f * 2.0f*PI; }
 static inline float rad_to_deg(float r) { return r/2.0f*PI * 360.0f; }
 
+static inline Vec4 colour_normalized(Colour colour)
+{
+	float f = 1.0f / 255.0f;
+	return VEC4((float)colour.a * f,
+	            (float)colour.b * f,
+	            (float)colour.g * f,
+	            (float)colour.r * f);
+}
+
 // static inline ivec3s ivec3s_of_vec3s(vec3s v)  { return (ivec3s){ .x = (int)v.x, .y = (int)v.y, .z = (int)v.z }; }
 // static inline vec3s  vec3s_of_ivec3s(ivec3s v) { return (vec3s){ .x = (float)v.x, .y = (float)v.y, .z = (float)v.z }; }
 // static inline vec3s  vec3s_of_int8(int8 v[3])  { return (vec3s){ .x = (float)v[0], .y = (float)v[1], .z = (float)v[2] }; }

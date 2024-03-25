@@ -141,12 +141,13 @@ static void switch_scene(enum SceneType scene)
 
 static noreturn void cb_quit(bool) { quit(); }
 static void cb_switch_scene_game(bool kdown)    { if (kdown) switch_scene(SCENE_GAME);    }
+static void cb_switch_scene_editor(bool kdown)  { if (kdown) switch_scene(SCENE_EDITOR);  }
 static void cb_switch_scene_scratch(bool kdown) { if (kdown) switch_scene(SCENE_SCRATCH); }
 static void cb_toggle_view(bool kdown) {
 	if (!kdown)
 		return;
-	struct Camera* cam = curr_scene == SCENE_GAME   ? &game_cam   :
-	                     curr_scene == SCENE_SCRATCH? &scratch_cam: NULL;
+	struct Camera* cam = curr_scene == SCENE_GAME  ? &game_cam  :
+	                     curr_scene == SCENE_EDITOR? &editor_cam: NULL;
 	camera_set_projection(cam, cam->type == CAMERA_PERSPECTIVE? CAMERA_ORTHOGONAL: CAMERA_PERSPECTIVE);
 }
 static void register_global_keys()
@@ -154,7 +155,7 @@ static void register_global_keys()
 	input_reset();
 	input_register(SDLK_ESCAPE, cb_quit);
 	input_register(SDLK_F1, cb_switch_scene_game);
-	input_register(SDLK_F2, cb_switch_scene_scratch);
+	input_register(SDLK_F2, cb_switch_scene_editor);
 
 	input_register(SDLK_F12, cb_toggle_view);
 
