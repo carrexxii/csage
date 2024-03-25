@@ -16,11 +16,7 @@ static struct Pipeline pipeln;
 int containerc, img_viewc;
 static struct Container containers[UI_MAX_CONTAINERS];
 static VkImageView img_views[UI_MAX_IMAGES];
-static struct {
-	Vec2 mouse_pos;
-	struct { bool lmb, rmb; } mouse_pressed;
-	struct { bool lmb, rmb; } mouse_released;
-} context;
+static struct UIContext context;
 
 static int  ui_elemc;
 static SBO  ui_elems;
@@ -51,7 +47,7 @@ struct Container* ui_new_container(Rect rect, struct UIStyle* style)
 	}
 	style = style? style: &default_container_style;
 
-	ui_update_object(ui_elemc, rect, style->bg, -1, (struct UIState){ .visible = 1 });
+	ui_update_object(ui_elemc, rect, RECT0, style, -1, default_state);
 
 	struct Container* container = &containers[containerc++];
 	*container = (struct Container){
@@ -102,6 +98,7 @@ void ui_build()
 			switch (obj->type) {
 			case UI_BUTTON: button_build(obj, container->styles.button); break;
 			case UI_LABEL : label_build(obj,  container->styles.label) ; break;
+			case UI_LIST  : uilist_build(obj, container->styles.label) ; break;
 			default:
 				ERROR("[UI] Failed to build object with type %d", obj->type);
 			}
@@ -114,9 +111,8 @@ void ui_build()
 
 void ui_update()
 {
-	float mx = ((float)mouse_x / config.winw - 0.5f)*2.0f;
-	float my = ((float)mouse_y / config.winh - 0.5f)*2.0f;
-	Vec2 mouse = VEC2(2.0f*(mouse_x / config.winw - 0.5f), 2.0f*(mouse_y / config.winh - 0.5f));
+	context.mouse_pos = VEC2(2.0f*(mouse_x / config.winw - 0.5f), 2.0f*(mouse_y / config.winh - 0.5f));
+	Vec2 mouse = context.mouse_pos;
 
 	struct Container* container;
 	struct UIObject*  obj;
@@ -125,20 +121,30 @@ void ui_update()
 		if (point_in_rect(mouse, container->rect)) {
 			for (int j = 0; j < container->objects.len; j++) {
 				obj = varray_get(&container->objects, j);
-				if (obj->type != UI_BUTTON)
+				if (!obj->state.visible && !(obj->type == UI_BUTTON || obj->type == UI_LIST))
 					continue;
 
 				if (point_in_rect(mouse, obj->rect)) {
-					if (obj->type == UI_BUTTON && obj->state.clicked && !context.mouse_pressed.lmb)
-						button_on_click(obj);
+					bool update = obj->state.clicked && !context.mouse_pressed.lmb;
+					switch (obj->type) {
+					case UI_BUTTON:
+						if (update) button_on_click(obj);
+						else update = button_on_hover(obj, &context);
+						break;
+					case UI_LIST:
+						if (update) uilist_on_click(obj, &context);
+						else update = uilist_on_hover(obj, &context);
+						break;
+					default:
+						ERROR("[UI] Failed to match UI object of type %d", obj->type);
+					}
 
-					obj->state.hover   = true;
-					obj->state.clicked = context.mouse_pressed.lmb;
-					ui_update_object(obj->i, obj->rect, container->styles.button->bg, obj->imgi, obj->state);
+					if (update)
+						ui_update_object(obj->i, obj->rect, obj->hl, container->styles.button, obj->imgi, obj->state);
 				} else if (obj->state.hover) {
 					obj->state.hover   = false;
 					obj->state.clicked = false;
-					ui_update_object(obj->i, obj->rect, container->styles.button->bg, obj->imgi, obj->state);
+					ui_update_object(obj->i, obj->rect, obj->hl, container->styles.button, obj->imgi, obj->state);
 				}
 			}
 		}
@@ -146,15 +152,18 @@ void ui_update()
 	}
 }
 
-void ui_update_object(int i, Rect rect, Colour colour, int tex_id, struct UIState state)
+void ui_update_object(int i, Rect rect, Rect hl, struct UIStyle* style, int tex_id, struct UIState state)
 {
 	assert(i >= 0 && i <= ui_elemc);
 
+	Colour colour = state.clicked? style->clicked:
+	                state.hover  ? style->hover  :
+	                               style->normal;
 	buffer_update(ui_elems, sizeof(struct UIShaderObject), &(struct UIShaderObject){
 		.rect   = rect,
-		.colour = colour_normalized(colour),
+		.colour = colour_normalized(state.visible? colour: (Colour){ 0 }),
+		.hl     = hl,
 		.tex_id = tex_id,
-		.state  = state,
 	}, i * sizeof(struct UIShaderObject));
 }
 

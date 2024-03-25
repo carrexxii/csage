@@ -20,6 +20,7 @@ enum UIObjectType {
 	UI_CONTAINER,
 	UI_BUTTON,
 	UI_LABEL,
+	UI_LIST,
 };
 
 struct UIState {
@@ -42,16 +43,24 @@ struct Label {
 	struct TextObject* text_obj;
 };
 
+struct UIList {
+	float spacing;
+	int text_objc;
+	struct TextObject** text_objs;
+};
+
 struct UIObject {
-	struct Rect rect;
+	Rect rect;
+	Rect hl;
 	Vec2 padding;
+	enum UIObjectType type;
 	struct UIState state;
 	int imgi;
-	enum UIObjectType type;
 	int i;
 	union {
 		struct Button button;
 		struct Label  label;
+		struct UIList uilist;
 	};
 };
 
@@ -70,22 +79,22 @@ struct Container {
 
 struct UIShaderObject {
 	Rect rect;
+	Rect hl;
 	Vec4 colour;
 	int  tex_id;
-	struct UIState state;
-	byte pad[8];
+	byte pad[12];
 };
 
 struct UIContext {
-	struct UIMouse mouse_pressed;
-	struct UIMouse mouse_released;
-	struct UIObject* clicked_obj;
 	Vec2 mouse_pos;
+	struct { bool lmb, rmb; } mouse_pressed;
+	struct { bool lmb, rmb; } mouse_released;
 };
 
 struct UIStyle {
-	union Colour bg;
-	union Colour fg;
+	Colour normal;
+	Colour hover;
+	Colour clicked;
 };
 
 /* -------------------------------------------------------------------- */
@@ -95,16 +104,24 @@ static struct UIState default_state = {
 };
 
 static struct UIStyle default_container_style = {
-	.bg = 0x55221155,
-	.fg = 0xCCCCCCFF,
+	.normal  = 0x55221155,
+	.hover   = 0xCCCCCCFF,
+	.clicked = 0xCCCC44FF,
 };
 static struct UIStyle default_button_style = {
-	.bg = 0x664444FF,
-	.fg = 0xCCCCCCFF,
+	.normal  = 0x664444FF,
+	.hover   = 0xCCCCCCFF,
+	.clicked = 0xCC44CCFF,
 };
 static struct UIStyle default_label_style = {
-	.bg = 0xAAAAAAFF,
-	.fg = 0xCCCCCCFF,
+	.normal  = 0x888888FF,
+	.hover   = 0xAAAAAAFF,
+	.clicked = 0xCCCCCCFF,
+};
+static struct UIStyle default_list_style = {
+	.normal  = 0x888888FF,
+	.hover   = 0xAAAAAAFF,
+	.clicked = 0xCCCCCCFF,
 };
 
 #endif

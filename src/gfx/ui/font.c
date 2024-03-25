@@ -140,6 +140,7 @@ struct TextObject* font_render(String str, float z, float w)
 	struct TextObject* obj = &text_objs[text_objc++];
 	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*str.len);
 	float* v = verts;
+	int linec = 1;
 	float x = 0.0f;
 	float y = 0.0f;
 	float offset, sz[2];
@@ -152,6 +153,7 @@ struct TextObject* font_render(String str, float z, float w)
 		sz[1]  = characters[(int)c].sz[1];
 
 		if (c == '\n' || x*config.winw/2.0f + sz[0] > w) {
+			linec++;
 			x  = 0.0f;
 			y -= atlas_h / config.winh;
 			if (c == '\n')
@@ -194,7 +196,7 @@ struct TextObject* font_render(String str, float z, float w)
 		x += (float)(characters[(int)c].advance >> 6)/config.winw;
 	}
 	obj->rect.w = x;
-	obj->rect.h = atlas_h / config.winh;
+	obj->rect.h = atlas_h / config.winh * linec;
 
 	obj->z_lvl  = z;
 	obj->active = true;

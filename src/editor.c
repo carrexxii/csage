@@ -18,9 +18,9 @@ void editor_init()
 	struct VArray sheets = varray_new(32, sizeof(String));
 	dir_enumerate(SPRITE_PATH "/sheets", &sheets, arena);
 
-	String str = string_new_join(sheets.len, (String*)sheets.data, STRING("\n"), arena);
-	label_new(sidebar, str, RECT(-0.9f, -0.8f, 1.8f, 0.5f));
-	DEBUG_VALUE(str.data);
+	uilist_new(sidebar, sheets.len, (String*)sheets.data, RECT(-0.9f, -0.9f, 1.8f, 1.0f), true);
+	// String str = string_new_join(sheets.len, (String*)sheets.data, STRING("\n"), arena);
+	// label_new(sidebar, str, RECT(-0.9f, -0.8f, 1.8f, 0.5f));
 
 	arena_reset(arena);
 }

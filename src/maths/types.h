@@ -1,6 +1,8 @@
 #ifndef MATHS_TYPES_H
 #define MATHS_TYPES_H
 
+#define RECT0 (Rect){ 0 }
+
 #define VEC2(x, y)       (Vec2){ x, y       }
 #define VEC3(x, y, z)    (Vec3){ x, y, z    }
 #define VEC4(x, y, z, w) (Vec4){ x, y, z, w }

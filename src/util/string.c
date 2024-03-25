@@ -1,14 +1,16 @@
 #include "string.h"
 
 /* Length is calculated if it is <= 0 */
-String string_new(char* src, isize len, struct Arena* arena)
+String string_new(char* src, isize sz, struct Arena* arena)
 {
-	len = len > 0? len: (isize)strlen(src);
+	sz = sz > 0? sz: strlen(src);
 	String str = {
-		.data = arena? arena_alloc(arena, len + 1): smalloc(len + 1),
-		.len  = len,
+		.data = arena? arena_alloc(arena, sz + 1): smalloc(sz + 1),
+		.len  = src? sz: 0,
+		.sz   = sz,
 	};
-	memcpy(str.data, src, str.len);
+	if (src)
+		memcpy(str.data, src, str.len);
 	str.data[str.len] = '\0';
 
 	return str;
@@ -41,9 +43,9 @@ String string_new_join(isize strc, String* strs, String sep, struct Arena* arena
 /* Create a new string by splitting up `src` on `sep`s and using `index`.
  *   - If `index` is -1, the last part of the string is given.
  */
-String string_new_split(char* src, char sep, int index, struct Arena* arena)
+String string_new_split(char* src, char sep, isize index, struct Arena* arena)
 {
-	index = index == -1? INT_MAX: index;
+	index = index == -1? INT64_MAX: index;
 
 	char* start = src;
 	int sepc = 0;
@@ -89,6 +91,22 @@ int string_contains(String str, char c)
 		if (str.data[i] == c)
 			return i;
 	return -1;
+}
+
+void string_clear(String* str)
+{
+	str->len     = 0;
+	str->data[0] = '\0';
+}
+
+void string_cat_cstr(String* str1, char* str2, isize len)
+{
+	len = len > 0? len: strlen(str2);
+	assert(str1->len + len < str1->sz);
+
+	memcpy(str1->data + str1->len, str2, len*sizeof(char));
+	str1->len += len;
+	str1->data[str1->len] = '\0';
 }
 
 /* Remove character `c` from `str` and return the number of characters removed */

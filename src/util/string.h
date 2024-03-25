@@ -3,22 +3,24 @@
 
 #include "arena.h"
 
-// TODO: Add an allocator parameter for creating strings
 typedef struct {
-	isize len;
+	isize len, sz;
 	char* data;
 } String;
 
 #define STRING(x) (String){ .data = x, .len = sizeof(x) - 1 }
 
-String string_new(char* src, isize len, struct Arena* arena);
+String string_new(char* src, isize sz, struct Arena* arena);
 String string_new_join(isize strc, String* strs, String sep, struct Arena* arena);
-String string_new_split(char* src, char sep, int index, struct Arena* arena);
+String string_new_split(char* src, char sep, isize index, struct Arena* arena);
 String string_copy(String src, struct Arena* arena);
 int    string_blit_cstr(char* restrict dst, char* restrict src, isize max_len);
 int    string_contains(String str, char c);
 int    string_remove(String str, char c);
 void   string_free(String* str);
+
+void string_clear(String* str);
+void string_cat_cstr(String* str1, char* str2, isize len);
 
 char* string_file_name(String path);
 

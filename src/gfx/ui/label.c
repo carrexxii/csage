@@ -27,9 +27,10 @@ void label_new(struct Container* parent, String str, Rect rect)
 void label_build(struct UIObject* obj, struct UIStyle* style)
 {
 	assert(obj->type == UI_LABEL);
+	style = style? style: &default_label_style;
 
 	Rect rect = obj->rect;
-	ui_update_object(obj->i, rect, style? style->bg: default_label_style.bg, obj->imgi, obj->state);
+	ui_update_object(obj->i, rect, obj->hl, style, obj->imgi, obj->state);
 
 	struct TextObject* txt_obj = obj->label.text_obj;
 	txt_obj->rect.x =  rect.x                   + obj->padding.x;

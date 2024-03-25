@@ -13,9 +13,7 @@ void button_new(struct Container* parent, String str, struct Texture* tex, Rect 
 		.type = UI_BUTTON,
 		.rect = ui_calc_rect(rect, parent),
 		.imgi = -1,
-		.state = {
-			.visible = true,
-		},
+		.state = default_state,
 		.button = {
 			.cb = cb,
 		},
@@ -33,16 +31,27 @@ void button_new(struct Container* parent, String str, struct Texture* tex, Rect 
 void button_build(struct UIObject* obj, struct UIStyle* style)
 {
 	assert(obj->type == UI_BUTTON);
+	style = style? style: &default_button_style;
 
 	Rect rect = obj->rect;
-	ui_update_object(obj->i, rect, style? style->bg: default_button_style.bg, obj->imgi, obj->state);
+	ui_update_object(obj->i, rect, obj->hl, style, obj->imgi, obj->state);
 
 	struct TextObject* txt_obj = obj->button.text_obj;
 	txt_obj->rect.x =  rect.x + rect.w/2.0f - txt_obj->rect.w/2.0f;
 	txt_obj->rect.y = -rect.y - rect.h/2.0f - txt_obj->rect.h/2.0f;
 }
 
+bool button_on_hover(struct UIObject* obj, struct UIContext* context)
+{
+	bool update = obj->state.hover || (obj->state.clicked == context->mouse_pressed.lmb);
+	obj->state.hover   = true;
+	obj->state.clicked = context->mouse_pressed.lmb;
+
+	return update;
+}
+
 void button_on_click(struct UIObject* obj)
 {
 	obj->button.cb();
+	obj->state.clicked = false;
 }
