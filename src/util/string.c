@@ -14,6 +14,30 @@ String string_new(char* src, isize len, struct Arena* arena)
 	return str;
 }
 
+String string_new_join(isize strc, String* strs, String sep, struct Arena* arena)
+{
+	isize len = (strc - 1) * sep.len;
+	for (int i = 0; i < strc; i++)
+		len += strs[i].len;
+
+	String str = {
+		.data = arena? arena_alloc(arena, len + 1): smalloc(len + 1),
+		.len  = len,
+	};
+	char* head = str.data;
+	for (int i = 0; i < strc; i++) {
+		memcpy(head, strs[i].data, strs[i].len*sizeof(char));
+		head += strs[i].len;
+		if (i != strc - 1) {
+			memcpy(head, sep.data, sep.len*sizeof(char));
+			head += sep.len;
+		}
+	}
+	*head = '\0';
+
+	return str;
+}
+
 /* Create a new string by splitting up `src` on `sep`s and using `index`.
  *   - If `index` is -1, the last part of the string is given.
  */

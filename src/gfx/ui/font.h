@@ -19,7 +19,7 @@ struct TextObject {
 };
 
 void font_init(void);
-struct TextObject* font_render(char* text, isize text_len, float z, float w);
+struct TextObject* font_render(String str, float z, float w);
 void font_record_commands(VkCommandBuffer cmd_buf);
 void font_free(void);
 

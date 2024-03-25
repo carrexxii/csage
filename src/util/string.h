@@ -12,6 +12,7 @@ typedef struct {
 #define STRING(x) (String){ .data = x, .len = sizeof(x) - 1 }
 
 String string_new(char* src, isize len, struct Arena* arena);
+String string_new_join(isize strc, String* strs, String sep, struct Arena* arena);
 String string_new_split(char* src, char sep, int index, struct Arena* arena);
 String string_copy(String src, struct Arena* arena);
 int    string_blit_cstr(char* restrict dst, char* restrict src, isize max_len);

@@ -133,28 +133,29 @@ void font_init()
 	pipeln_init(&pipeln);
 }
 
-struct TextObject* font_render(char* text, isize text_len, float z, float w)
+struct TextObject* font_render(String str, float z, float w)
 {
-	if (text_len <= 0)
-		text_len = strlen(text);
+	assert(str.len && str.data);
 
 	struct TextObject* obj = &text_objs[text_objc++];
-	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*text_len);
+	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*str.len);
 	float* v = verts;
 	float x = 0.0f;
 	float y = 0.0f;
 	float offset, sz[2];
 	float char_x, char_y;
 	char c;
-	for (int i = 0; i < text_len; i++) {
-		c = text[i];
+	for (int i = 0; i < str.len; i++) {
+		c = str.data[i];
 		offset = characters[(int)c].offset;
 		sz[0]  = characters[(int)c].sz[0];
 		sz[1]  = characters[(int)c].sz[1];
 
-		if (x*config.winw/2.0f + sz[0] > w) {
+		if (c == '\n' || x*config.winw/2.0f + sz[0] > w) {
 			x  = 0.0f;
 			y -= atlas_h / config.winh;
+			if (c == '\n')
+				continue;
 		}
 
 		char_x = x + (float)characters[(int)c].bearing[0]/config.winw;
@@ -197,11 +198,11 @@ struct TextObject* font_render(char* text, isize text_len, float z, float w)
 
 	obj->z_lvl  = z;
 	obj->active = true;
-	obj->vertc  = 6*text_len;
-	obj->vbo    = vbo_new(6*text_len*SIZEOF_FONT_VERTEX, verts, true);
+	obj->vertc  = 6*str.len;
+	obj->vbo    = vbo_new(6*str.len*SIZEOF_FONT_VERTEX, verts, true);
 
-	DEBUG(4, "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2f, %.2f]",
-	      text_len, text, x, y, z, obj->rect.w, obj->rect.h);
+	DEBUG(4, "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2fx%.2f]",
+	      str.len, str.data, x, y, z, obj->rect.w, obj->rect.h);
 	free(verts);
 	return obj;
 }

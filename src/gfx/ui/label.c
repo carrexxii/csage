@@ -4,23 +4,24 @@
 #include "ui.h"
 #include "label.h"
 
-void label_new(struct Container* parent, String text, Rect rect)
+void label_new(struct Container* parent, String str, Rect rect)
 {
 	assert(parent);
 
 	struct UIObject obj = {
-		.type  = UI_LABEL,
-		.rect  = ui_calc_rect(rect, parent),
-		.state = default_state,
-		.imgi  = -1,
+		.type    = UI_LABEL,
+		.rect    = ui_calc_rect(rect, parent),
+		.state   = default_state,
+		.imgi    = -1,
+		.padding = VEC2(10.0f / config.winw, 5.0f / config.winh),
 	};
 
-	float text_w = (obj.rect.w / parent->rect.w / 2.0f) * config.winw / 2.0f;
-	obj.label.text_obj = font_render(text.data, text.len, UI_TEXT_Z_LVL, text_w);
+	float text_w = (obj.rect.w * config.winw / 2.0f) - 2.0f*obj.padding.x;
+	obj.label.text_obj = font_render(str, UI_TEXT_Z_LVL, text_w);
 
 	ui_add(parent, &obj);
-	DEBUG(3, "[UI] Created new label with parent %p (%.2f, %.2f, %.2f, %.2f):\n\t%s",
-	      parent, rect.x, rect.y, rect.w, rect.h, text.data);
+	DEBUG(3, "[UI] Created new label with parent %p (%.2f, %.2f, %.2f, %.2f):\n\t\"%s\"",
+	      parent, rect.x, rect.y, rect.w, rect.h, str.data);
 }
 
 void label_build(struct UIObject* obj, struct UIStyle* style)
@@ -31,6 +32,6 @@ void label_build(struct UIObject* obj, struct UIStyle* style)
 	ui_update_object(obj->i, rect, style? style->bg: default_label_style.bg, obj->imgi, obj->state);
 
 	struct TextObject* txt_obj = obj->label.text_obj;
-	txt_obj->rect.x =  rect.x;
-	txt_obj->rect.y = -rect.y - txt_obj->rect.h;
+	txt_obj->rect.x =  rect.x                   + obj->padding.x;
+	txt_obj->rect.y = -rect.y - txt_obj->rect.h - obj->padding.y;
 }

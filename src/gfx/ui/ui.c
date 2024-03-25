@@ -27,13 +27,13 @@ static SBO  ui_elems;
 static bool ui_elems_update;
 
 static bool pipeln_needs_update;
-static struct VArray vert_buf;
+static struct Texture default_tex;
 
 void ui_init()
 {
 	pipeln_needs_update = true;
-	vert_buf = varray_new(UI_DEFAULT_VERTICES, sizeof(struct UIVertex));
 	ui_elems = sbo_new(UI_MAX_ELEMENTS * sizeof(struct UIShaderObject));
+	default_tex = texture_new_from_image(TEXTURE_PATH "/default.png");
 
 	DEBUG(1, "[UI] Initialized UI");
 }
@@ -96,7 +96,6 @@ void ui_build()
 		container = &containers[i];
 		if (!container->has_update)
 			continue;
-		varray_push_many(&vert_buf, 6, UI_VERTS(container->rect, container->styles.container->bg));
 
 		for (int j = 0; j < container->objects.len; j++) {
 			obj = varray_get(&container->objects, j);
@@ -109,7 +108,6 @@ void ui_build()
 		}
 	}
 
-	varray_reset(&vert_buf);
 	if (pipeln_needs_update)
 		init_pipeln();
 }
@@ -176,7 +174,7 @@ void ui_free()
 	for (int i = 0; i < containerc; i++)
 		varray_free(&containers[i].objects);
 
-	varray_free(&vert_buf);
+	texture_free(&default_tex);
 	pipeln_free(&pipeln);
 }
 
@@ -193,10 +191,13 @@ static void init_pipeln()
 		.topology   = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.dset_cap   = 1,
 		.sboc       = 1,
-		.imgc       = img_viewc,
+		.imgc       = img_viewc? img_viewc: 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_dset(&pipeln, pipeln.uboc, NULL, pipeln.sboc, &ui_elems, pipeln.imgc, img_views);
+	pipeln_create_dset(&pipeln,
+		pipeln.uboc, NULL,
+		pipeln.sboc, &ui_elems,
+		pipeln.imgc, img_viewc? img_views: &default_tex.image_view);
 	pipeln_init(&pipeln);
 
 	pipeln_needs_update = false;

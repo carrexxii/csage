@@ -104,6 +104,7 @@ void scenemgr_free()
 {
 	scene_exec_defer();
 	sprite_sheet_free();
+	editor_free();
 
 	camera_free(&game_cam);
 	camera_free(&editor_cam);

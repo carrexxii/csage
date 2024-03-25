@@ -44,6 +44,7 @@ struct Label {
 
 struct UIObject {
 	struct Rect rect;
+	Vec2 padding;
 	struct UIState state;
 	int imgi;
 	enum UIObjectType type;
