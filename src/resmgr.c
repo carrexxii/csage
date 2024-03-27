@@ -1,9 +1,14 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 #include "vulkan/vulkan.h"
 
 #include "util/string.h"
 #include "util/file.h"
 #include "util/htable.h"
 #include "gfx/device.h"
+#include "gfx/buffers.h"
+#include "gfx/image.h"
+#include "gfx/texture.h"
 #include "resmgr.h"
 
 #define STRING_OF_HANDLE_TYPE(x) ((x) < HANDLE_MAX? string_of_handle_type[x]: "<Not a handle type>")
@@ -11,12 +16,14 @@ enum HandleType {
 	HANDLE_NONE,
 	HANDLE_FILE,
 	HANDLE_SHADER,
+	HANDLE_TEXTURE,
 	HANDLE_MAX,
 };
 const char* string_of_handle_type[] = {
-	[HANDLE_NONE]   = "HANDLE_NONE",
-	[HANDLE_FILE]   = "HANDLE_FILE",
-	[HANDLE_SHADER] = "HANDLE_SHADER",
+	[HANDLE_NONE]    = "HANDLE_NONE",
+	[HANDLE_FILE]    = "HANDLE_FILE",
+	[HANDLE_SHADER]  = "HANDLE_SHADER",
+	[HANDLE_TEXTURE] = "HANDLE_TEXTURE",
 };
 
 struct Handle {
@@ -25,7 +32,8 @@ struct Handle {
 	void* data;
 };
 
-static VkShaderModule shader_new(String path);
+static VkShaderModule new_shader(String path);
+static struct Texture new_texture(String path);
 
 struct HTable* resources;
 struct VArray  handles;
@@ -50,8 +58,9 @@ void resmgr_free()
 			continue;
 
 		switch (handle->type) {
-		case HANDLE_FILE  : free(handle->data); break;
-		case HANDLE_SHADER: vkDestroyShaderModule(logical_gpu, handle->data, NULL); break;
+		case HANDLE_FILE   : free(handle->data); break;
+		case HANDLE_SHADER : vkDestroyShaderModule(logical_gpu, handle->data, NULL); break;
+		case HANDLE_TEXTURE: texture_free(handle->data); break;
 		default:
 			ERROR("[RES] Unmatched handle type \"%s\" (%p with %d references)",
 			      STRING_OF_HANDLE_TYPE(handle->type), handle->data, handle->refc);
@@ -61,15 +70,14 @@ void resmgr_free()
 
 /* -------------------------------------------------------------------- */
 
-/* Shader modules are never free'd from */
 VkShaderModule load_shader(String path)
 {
 	int64 res_id = htable_get(resources, path);
 	if (res_id == -1) {
-		VkShaderModule module = shader_new(path);
+		VkShaderModule module = new_shader(path);
 		struct Handle handle = {
 			.type = HANDLE_SHADER,
-			.refc = 1,
+			.refc = 0,
 			.data = module,
 		};
 		res_id = varray_push(&handles, &handle);
@@ -86,9 +94,35 @@ VkShaderModule load_shader(String path)
 	return res->data;
 }
 
+struct Texture* load_texture(String path)
+{
+	int64 res_id = htable_get(resources, path);
+	if (res_id == -1) {
+		struct Texture* tex = smalloc(sizeof(struct Texture));
+		*tex = new_texture(path);
+		struct Handle handle = {
+			.type = HANDLE_TEXTURE,
+			.refc = 0,
+			.data = tex,
+		};
+		res_id = varray_push(&handles, &handle);
+		htable_insert(resources, path, res_id);
+	} else {
+		DEBUG(3, "[RES] Texture \"%s\" is in cache", path.data);
+	}
+
+	struct Handle* res = varray_get(&handles, res_id);
+	if (res->type != HANDLE_TEXTURE)
+		ERROR("[RES] Resource requested as texture is listed as \"%s\":\n\t%p (%d references)",
+		      STRING_OF_HANDLE_TYPE(res->type), res->data, res->refc);
+
+	res->refc++;
+	return res->data;
+}
+
 /* -------------------------------------------------------------------- */
 
-static VkShaderModule shader_new(String path)
+static VkShaderModule new_shader(String path)
 {
 	VkShaderModule module;
 	FILE* file = file_open(path.data, "rb");
@@ -107,4 +141,22 @@ static VkShaderModule shader_new(String path)
 
 	free(code);
 	return module;
+}
+
+static struct Texture new_texture(String path)
+{
+	struct Texture tex = { 0 };
+
+	int w, h, ch;
+	uint8* pxs = stbi_load(path.data, &w, &h, &ch, 4);
+	if (!pxs) {
+		ERROR("[RES] Failed to load image \"%s\"", path.data);
+		return tex;
+	}
+
+	tex = texture_of_memory(w, h, pxs);
+
+	stbi_image_free(pxs);
+	DEBUG(2, "[RES] Created new texture \"%s\" (%dx%d)", path.data, w, h);
+	return tex;
 }

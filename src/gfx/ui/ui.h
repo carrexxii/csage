@@ -17,6 +17,9 @@
 #define UI_DEFAULT_OBJECTS  8
 #define UI_DEFAULT_VERTICES 128
 
+#define ONE_PXX (1.0f / config.winw)
+#define ONE_PXY (1.0f / config.winh)
+
 void ui_init(void);
 void ui_register_keys(void);
 struct UIObject*  ui_alloc_object(void);
@@ -26,7 +29,7 @@ int  ui_add_image(VkImageView img_view);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
 void ui_update(void);
-void ui_update_object(int i, Rect rect, Rect hl, struct UIStyle* style, int tex_id, struct UIState state);
+void ui_update_object(struct UIObject* obj);
 void ui_record_commands(VkCommandBuffer cmd_buf);
 void ui_free(void);
 

@@ -1,7 +1,7 @@
 #ifndef GFX_TEXTURE_H
 #define GFX_TEXTURE_H
 
-#include <vulkan/vulkan.h>
+#include "vulkan.h"
 
 struct Texture {
 	VkImage        image;
@@ -9,8 +9,7 @@ struct Texture {
 	VkDeviceMemory memory;
 };
 
-struct Texture texture_new(uint8* pxs, int w, int h);
-struct Texture texture_new_from_image(const char* path);
+struct Texture texture_of_memory(int w, int h, uint8* pxs);
 void texture_free(struct Texture* tex);
 
 #endif

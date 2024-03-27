@@ -2,12 +2,13 @@
 #include "ui.h"
 #include "uilist.h"
 
-void uilist_new(struct UIContainer* parent, int strc, String* strs, Rect rect, bool numbered, void (*cb)(int))
+void uilist_new(struct UIContainer* parent, int strc, String* strs, struct UIStyle* style, Rect rect, bool numbered, void (*cb)(int))
 {
 	assert(parent);
 
 	struct UIObject obj = {
 		.type    = UI_LIST,
+		.style   = style? style: &default_list_style,
 		.rect    = ui_calc_rect(rect, parent),
 		.state   = default_state,
 		.imgi    = -1,
@@ -39,20 +40,18 @@ void uilist_new(struct UIContainer* parent, int strc, String* strs, Rect rect, b
 	      strc, parent, rect.x, rect.y, rect.w, rect.h);
 }
 
-void uilist_build(struct UIObject* obj, struct UIStyle* style)
+void uilist_build(struct UIObject* obj)
 {
 	assert(obj->type == UI_LIST);
-	style = style? style: &default_list_style;
 
-	Rect rect = obj->rect;
-	ui_update_object(obj->i, rect, obj->hl, style, obj->imgi, obj->state);
+	ui_update_object(obj);
 
 	struct TextObject* txt_obj;
 	float y = (float)font_size / config.winh;
 	for (int i = 0; i < obj->uilist.text_objc; i++) {
 		txt_obj = obj->uilist.text_objs[i];
-		txt_obj->rect.x =  rect.x + obj->padding.x;
-		txt_obj->rect.y = -rect.y - obj->padding.y - y;
+		txt_obj->rect.x =  obj->rect.x + obj->padding.x;
+		txt_obj->rect.y = -obj->rect.y - obj->padding.y - y;
 		y += txt_obj->rect.h + obj->uilist.spacing;
 	}
 }
@@ -74,13 +73,13 @@ void uilist_on_click(struct UIObject* obj, struct UIContext* context)
 
 	obj->state.clicked = false;
 	struct TextObject* txt_obj;
-	Rect rect = RECT(obj->rect.x, obj->rect.y + 2.0f*obj->padding.y, obj->rect.w, 0.0f);
+	Rect rect = RECT(obj->rect.x, obj->rect.y + 2.0f*obj->padding.y - 2.0f*ONE_PXY, obj->rect.w, 0.0f);
 	for (int i = 0; i < obj->uilist.text_objc; i++) {
 		txt_obj = obj->uilist.text_objs[i];
-		rect.h  = txt_obj->rect.h + obj->padding.y;
+		rect.h  = txt_obj->rect.h + obj->padding.y + 4.0f*ONE_PXY;
 		if (point_in_rect(context->mouse_pos, rect)) {
 			obj->hl = rect;
-			uilist_build(obj, &default_label_style);
+			uilist_build(obj);
 			obj->uilist.cb(i);
 			return;
 		}

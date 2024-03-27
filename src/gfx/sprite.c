@@ -120,7 +120,7 @@ void sprite_sheet_init_pipeline(struct SpriteSheet* sheet)
 		sheet->pipeln.uboc, (UBO[]){ global_camera_ubo, global_light_ubo },
 	    sheet->pipeln.sboc, (SBO[]){ sheet->sprite_sheet_data, sheet->sprite_data,
 	                                 spot_lights_sbo, point_lights_sbo, },
-		sheet->pipeln.imgc, (VkImageView[]){ sheet->albedo.image_view, sheet->normal.image_view }
+		sheet->pipeln.imgc, (VkImageView[]){ sheet->albedo->image_view, sheet->normal->image_view }
 	);
 	pipeln_init(&sheet->pipeln);
 	sheet->needs_update = false;
@@ -194,9 +194,9 @@ int sprite_sheet_load(struct SpriteSheet* sheet_data)
 
 	char path[PATH_BUFFER_SIZE];
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", sheet_data->name);
-	sheet->albedo = texture_new_from_image(path);
+	sheet->albedo = load_texture(STRING(path));
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s-normal.png", sheet_data->name);
-	sheet->normal = texture_new_from_image(path);
+	sheet->normal = load_texture(STRING(path));
 
 	if (spot_lights_sbo.buf && point_lights_sbo.buf)
 		sprite_sheet_init_pipeline(sheet);
@@ -224,8 +224,6 @@ void sprite_sheet_free()
 		varray_free(&sheet->sprites);
 		sbo_free(&sheet->sprite_sheet_data);
 		sbo_free(&sheet->sprite_data);
-		texture_free(&sheet->albedo);
-		texture_free(&sheet->normal);
 		pipeln_free(&sheet->pipeln);
 	}
 }

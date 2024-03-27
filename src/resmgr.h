@@ -11,6 +11,7 @@ void resmgr_init(void);
 void resmgr_printout(void);
 void resmgr_free(void);
 
-VkShaderModule load_shader(String path);
+VkShaderModule  load_shader(String path);
+struct Texture* load_texture(String path);
 
 #endif

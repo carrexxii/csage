@@ -48,11 +48,6 @@ struct UIContainer {
 	bool has_update;
 	int i;
 	struct VArray objects;
-	struct {
-		struct UIStyle* container;
-		struct UIStyle* button;
-		struct UIStyle* label;
-	} styles;
 };
 
 struct UIShaderObject {
@@ -81,6 +76,7 @@ struct UIList {
 
 struct UIObject;
 struct UICustom {
+	void (*build)(struct UIObject*);
 	bool (*on_hover)(struct UIObject*, struct UIContext*);
 	void (*on_click)(struct UIObject*, struct UIContext*);
 };
@@ -93,6 +89,7 @@ struct UIObject {
 	struct UIState state;
 	int imgi;
 	int i;
+	struct UIStyle* style;
 	union {
 		struct UIButton button;
 		struct UILabel  label;
@@ -107,15 +104,18 @@ static struct UIState default_state = {
 	.visible = true,
 };
 
+static struct UIStyle default_style = {
+	.normal  = 0x888888FF,
+	.hover   = 0xAAAAAAFF,
+	.clicked = 0xCCCCCCFF,
+};
 static struct UIStyle default_container_style = {
-	.normal  = 0x55221155,
-	.hover   = 0xCCCCCCFF,
-	.clicked = 0xCCCC44FF,
+	.normal  = 0x08083588,
 };
 static struct UIStyle default_button_style = {
-	.normal  = 0x664444FF,
-	.hover   = 0xCCCCCCFF,
-	.clicked = 0xCC44CCFF,
+	.normal  = 0x554585FF,
+	.hover   = 0x9988AAFF,
+	.clicked = 0xBFAFCFFF,
 };
 static struct UIStyle default_label_style = {
 	.normal  = 0x888888FF,
@@ -123,9 +123,9 @@ static struct UIStyle default_label_style = {
 	.clicked = 0xCCCCCCFF,
 };
 static struct UIStyle default_list_style = {
-	.normal  = 0x888888FF,
-	.hover   = 0xAAAAAAFF,
-	.clicked = 0xCCCCCCFF,
+	.normal  = 0x353535FF,
+	.hover   = 0x353535FF,
+	.clicked = 0x353535FF,
 };
 
 #endif

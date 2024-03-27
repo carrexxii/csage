@@ -24,13 +24,13 @@ static SBO  ui_elems;
 static bool ui_elems_update;
 
 static bool pipeln_needs_update;
-static struct Texture default_tex;
+static struct Texture* default_tex;
 
 void ui_init()
 {
 	pipeln_needs_update = true;
 	ui_elems = sbo_new(UI_MAX_ELEMENTS * sizeof(struct UIShaderObject));
-	default_tex = texture_new_from_image(TEXTURE_PATH "/default.png");
+	default_tex = load_texture(STRING(TEXTURE_PATH "/default.png"));
 
 	DEBUG(1, "[UI] Initialized UI");
 }
@@ -46,22 +46,22 @@ struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style)
 		ERROR("[UI] Total container count (%d) exceeded", UI_MAX_CONTAINERS);
 		return NULL;
 	}
-	style = style? style: &default_container_style;
-
-	ui_update_object(ui_elemc, rect, RECT0, style, -1, default_state);
 
 	struct UIContainer* container = &containers[containerc++];
 	*container = (struct UIContainer){
 		.rect    = rect,
-		.i       = ui_elemc++,
+		.i       = ui_elemc,
 		.objects = varray_new(UI_DEFAULT_OBJECTS, sizeof(struct UIObject)),
-		.styles  = {
-			.container = style,
-			.button    = &default_button_style,
-			.label     = &default_label_style,
-		},
 	};
 
+	buffer_update(ui_elems, sizeof(struct UIShaderObject), &(struct UIShaderObject){
+		.rect   = rect,
+		.colour = colour_normalized(style? style->normal: default_container_style.normal),
+		.hl     = RECT0,
+		.tex_id = -1,
+	}, ui_elemc * sizeof(struct UIShaderObject));
+
+	ui_elemc++;
 	return container;
 }
 
@@ -97,9 +97,10 @@ void ui_build()
 		for (int j = 0; j < container->objects.len; j++) {
 			obj = varray_get(&container->objects, j);
 			switch (obj->type) {
-			case UI_BUTTON: button_build(obj, container->styles.button); break;
-			case UI_LABEL : label_build(obj,  container->styles.label) ; break;
-			case UI_LIST  : uilist_build(obj, container->styles.label) ; break;
+			case UI_BUTTON: button_build(obj)     ; break;
+			case UI_LABEL : label_build(obj)      ; break;
+			case UI_LIST  : uilist_build(obj)     ; break;
+			case UI_CUSTOM: obj->custom.build(obj); break;
 			default:
 				ERROR("[UI] Failed to build object with type %d", obj->type);
 			}
@@ -145,11 +146,11 @@ void ui_update()
 					}
 
 					if (update)
-						ui_update_object(obj->i, obj->rect, obj->hl, container->styles.button, obj->imgi, obj->state);
+						ui_update_object(obj);
 				} else if (obj->state.hover) {
 					obj->state.hover   = false;
 					obj->state.clicked = false;
-					ui_update_object(obj->i, obj->rect, obj->hl, container->styles.button, obj->imgi, obj->state);
+					ui_update_object(obj);
 				}
 			}
 		}
@@ -157,19 +158,23 @@ void ui_update()
 	}
 }
 
-void ui_update_object(int i, Rect rect, Rect hl, struct UIStyle* style, int tex_id, struct UIState state)
+void ui_update_object(struct UIObject* obj)
 {
-	assert(i >= 0 && i <= ui_elemc);
+	assert(obj->i >= 0 && obj->i <= ui_elemc);
+	if (!obj->style) {
+		ERROR("[UI] Object of type %d does not have a style", obj->type);
+		obj->style = &default_style;
+	}
 
-	Colour colour = state.clicked? style->clicked:
-	                state.hover  ? style->hover  :
-	                               style->normal;
+	Vec4 colour = colour_normalized(obj->state.clicked? obj->style->clicked:
+	                                obj->state.hover  ? obj->style->hover  :
+	                                                    obj->style->normal);
 	buffer_update(ui_elems, sizeof(struct UIShaderObject), &(struct UIShaderObject){
-		.rect   = rect,
-		.colour = colour_normalized(state.visible? colour: (Colour){ 0 }),
-		.hl     = hl,
-		.tex_id = tex_id,
-	}, i * sizeof(struct UIShaderObject));
+		.rect   = obj->rect,
+		.colour = colour,
+		.hl     = obj->hl,
+		.tex_id = obj->imgi,
+	}, obj->i * sizeof(struct UIShaderObject));
 }
 
 void ui_record_commands(VkCommandBuffer cmd_buf)
@@ -197,7 +202,6 @@ void ui_free()
 		varray_free(&container->objects);
 	}
 
-	texture_free(&default_tex);
 	pipeln_free(&pipeln);
 }
 
@@ -220,7 +224,7 @@ static void init_pipeln()
 	pipeln_create_dset(&pipeln,
 		pipeln.uboc, NULL,
 		pipeln.sboc, &ui_elems,
-		pipeln.imgc, img_viewc? img_views: &default_tex.image_view);
+		pipeln.imgc, img_viewc? img_views: &default_tex->image_view);
 	pipeln_init(&pipeln);
 
 	pipeln_needs_update = false;

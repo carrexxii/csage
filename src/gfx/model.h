@@ -45,7 +45,7 @@ struct Material {
 	float albedo[4];
 	float metallic;
 	float roughness;
-	struct Texture tex;
+	struct Texture* tex;
 	VkDescriptorSet dset;
 	float pad0[2];
 };

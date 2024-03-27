@@ -95,7 +95,7 @@ void models_init()
 		.albedo    = { 0.3f, 0.3f, 0.3f, 1.0f },
 		.metallic  = 1.0f,
 		.roughness = 1.0f,
-		.tex       = texture_new_from_image(TEXTURE_PATH "/default.png"),
+		.tex       = load_texture(STRING(TEXTURE_PATH "/default.png")),
 	};
 
 	sbo_buf    = sbo_new(MAX_MODELS*sizeof(Mat4x4));
@@ -139,9 +139,9 @@ void models_init()
 	VkImageView img_view;
 	for (int i = 0; i < mdlc; i++) {
 		for (int j = 0; j < mdls[i].mtlc; j++) {
-			img_view = mdls[i].mtls[j].tex.image_view;
+			img_view = mdls[i].mtls[j].tex->image_view;
 			if (!img_view)
-				img_view = default_mtl.tex.image_view;
+				img_view = default_mtl.tex->image_view;
 
 			UBO ubos[] = { ubo_cam, ubo_mtls, ubo_lights, ubo_joints };
 			struct Material* mtl = &mdls[i].mtls[j];
@@ -314,10 +314,6 @@ void model_free(ID mdl_id)
 		ibo_free(&mdl->meshes[i].ibo);
 	}
 
-	texture_free(&default_mtl.tex);
-	for (int i = 0; i < mdl->mtlc; i++)
-		if (mdl->mtls[i].tex.image)
-			texture_free(&mdl->mtls[i].tex);
 	for (int i = 0; i < mdlc; i++)
 		if (mdls[i].skin)
 			sbo_free(&mdls[i].skin->sbo);
@@ -360,8 +356,8 @@ static void load_materials(struct Model* model, cgltf_data* data)
 			continue;
 		}
 
-		if (material->pbr_metallic_roughness.base_color_texture.texture)
-			model->mtls[m].tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
+		// if (material->pbr_metallic_roughness.base_color_texture.texture)
+		// 	model->mtls[m].tex = load_material_image(material->pbr_metallic_roughness.base_color_texture.texture->image);
 		if (material->pbr_metallic_roughness.metallic_roughness_texture.texture)
 			ERROR("[GFX] Ignoring metallic roughness texture");
 		if (material->normal_texture.texture)
@@ -399,7 +395,7 @@ static struct Texture load_material_image(cgltf_image* img)
 			int w, h, ch;
 			byte* pxs = stbi_load_from_memory((byte*)img->buffer_view->buffer->data + img->buffer_view->offset,
 			                                  img->buffer_view->size, &w, &h, &ch, 4);
-			struct Texture tex = texture_new(pxs, w, h);
+			struct Texture tex = texture_of_memory(w, h, pxs);
 			free(pxs);
 			return tex;
 		} else {

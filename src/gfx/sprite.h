@@ -77,8 +77,8 @@ struct SpriteSheet {
 	bool needs_update;
 	struct VArray       sprites;
 	struct SpriteGroup* groups;
-	struct Texture      albedo;
-	struct Texture      normal;
+	struct Texture*     albedo;
+	struct Texture*     normal;
 	struct Pipeline pipeln;
 	SBO sprite_sheet_data;
 	SBO sprite_data;

@@ -3,8 +3,8 @@
 
 #include "types.h"
 
-void uilist_new(struct UIContainer* parent, int strc, String* strs, Rect rect, bool numbered, void (*cb)(int));
-void uilist_build(struct UIObject* obj, struct UIStyle* style);
+void uilist_new(struct UIContainer* parent, int strc, String* strs, struct UIStyle* style, Rect rect, bool numbered, void (*cb)(int));
+void uilist_build(struct UIObject* obj);
 bool uilist_on_hover(struct UIObject* obj, struct UIContext* context);
 void uilist_on_click(struct UIObject* obj, struct UIContext* context);
 

@@ -4,7 +4,7 @@
 #include "util/string.h"
 #include "types.h"
 
-void label_new(struct UIContainer* parent, String str, Rect rect);
-void label_build(struct UIObject* obj, struct UIStyle* style);
+void label_new(struct UIContainer* parent, String str, struct UIStyle* style, Rect rect);
+void label_build(struct UIObject* obj);
 
 #endif

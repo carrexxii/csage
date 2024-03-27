@@ -15,7 +15,7 @@
 static struct Pipeline pipeln;
 static UBO ubos[2];
 static VBO vbo_buf;
-static struct Texture texture;
+static struct Texture* texture;
 
 static struct ParticlePool pools[MAX_PARTICLE_POOLS];
 static int poolc;
@@ -42,7 +42,7 @@ static VkVertexInputAttributeDescription streamvert_attrs[] = {
 
 void particles_init()
 {
-	texture = texture_new_from_image(TEXTURE_PATH "/star.png");
+	texture = load_texture(STRING(TEXTURE_PATH "/star.png"));
 	ubos[0] = ubo_new(sizeof(Mat4x4[2]));
 	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
 	pipeln = (struct Pipeline){
@@ -60,7 +60,7 @@ void particles_init()
 		.imgc        = 1,
 	};
 	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_dset(&pipeln, pipeln.uboc, ubos, pipeln.sboc, NULL, pipeln.imgc, &texture.image_view);
+	pipeln_create_dset(&pipeln, pipeln.uboc, ubos, pipeln.sboc, NULL, pipeln.imgc, &texture->image_view);
 	pipeln_init(&pipeln);
 
 	float verts[] = {
@@ -151,7 +151,6 @@ void particles_record_commands(VkCommandBuffer cmd_buf)
 
 void particles_free()
 {
-	texture_free(&texture);
 	vbo_free(&vbo_buf);
 	ubo_free(&ubos[0]);
 	ubo_free(&ubos[1]);

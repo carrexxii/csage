@@ -107,7 +107,7 @@ void font_init()
 		}
 		tex_x += face->glyph->advance.x >> 6;
 	}
-	atlas = texture_new(atlas_bitmap, atlas_w, atlas_h);
+	atlas = texture_of_memory(atlas_w, atlas_h, atlas_bitmap);
 
 	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
 	free(atlas_bitmap);
