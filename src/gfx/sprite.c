@@ -1,5 +1,6 @@
 #include "vulkan/vulkan.h"
 
+#include "resmgr.h"
 #include "lua.h"
 #include "maths/maths.h"
 #include "util/varray.h"
@@ -104,8 +105,8 @@ void sprite_sheet_init_pipeline(struct SpriteSheet* sheet)
 		pipeln_free(&sheet->pipeln);
 
 	sheet->pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_PATH "/sprite.vert"),
-		.fshader     = create_shader(SHADER_PATH "/sprite.frag"),
+		.vshader     = load_shader(STRING(SHADER_PATH "/sprite.vert")),
+		.fshader     = load_shader(STRING(SHADER_PATH "/sprite.frag")),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 		.push_sz     = sizeof(push_const),

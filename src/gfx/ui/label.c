@@ -4,7 +4,7 @@
 #include "ui.h"
 #include "label.h"
 
-void label_new(struct Container* parent, String str, Rect rect)
+void label_new(struct UIContainer* parent, String str, Rect rect)
 {
 	assert(parent);
 

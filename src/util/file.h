@@ -8,7 +8,7 @@ FILE*  file_open(char* restrict path, char* restrict mode);
 intptr file_size(FILE* file);
 char*  file_loadf(FILE* file);
 
-void dir_enumerate(char* path, struct VArray* arr, struct Arena* arena);
+void dir_enumerate(char* path, bool with_path, struct VArray* arr, struct Arena* arena);
 
 static inline char* file_load(char* path)
 {

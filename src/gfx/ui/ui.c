@@ -1,5 +1,6 @@
 #include "vulkan/vulkan.h"
 
+#include "resmgr.h"
 #include "input.h"
 #include "util/varray.h"
 #include "gfx/vulkan.h"
@@ -8,13 +9,13 @@
 #include "ui.h"
 
 static void init_pipeln(void);
-static inline void update_container(struct Container* container);
+static inline void update_container(struct UIContainer* container);
 static void cb_mouse_left(bool kdown);
 
 static struct Pipeline pipeln;
 
 int containerc, img_viewc;
-static struct Container containers[UI_MAX_CONTAINERS];
+static struct UIContainer containers[UI_MAX_CONTAINERS];
 static VkImageView img_views[UI_MAX_IMAGES];
 static struct UIContext context;
 
@@ -39,7 +40,7 @@ void ui_register_keys()
 	input_register(SDL_BUTTON_LEFT, cb_mouse_left);
 }
 
-struct Container* ui_new_container(Rect rect, struct UIStyle* style)
+struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style)
 {
 	if (containerc >= UI_MAX_CONTAINERS) {
 		ERROR("[UI] Total container count (%d) exceeded", UI_MAX_CONTAINERS);
@@ -49,8 +50,8 @@ struct Container* ui_new_container(Rect rect, struct UIStyle* style)
 
 	ui_update_object(ui_elemc, rect, RECT0, style, -1, default_state);
 
-	struct Container* container = &containers[containerc++];
-	*container = (struct Container){
+	struct UIContainer* container = &containers[containerc++];
+	*container = (struct UIContainer){
 		.rect    = rect,
 		.i       = ui_elemc++,
 		.objects = varray_new(UI_DEFAULT_OBJECTS, sizeof(struct UIObject)),
@@ -64,7 +65,7 @@ struct Container* ui_new_container(Rect rect, struct UIStyle* style)
 	return container;
 }
 
-int ui_add(struct Container* container, struct UIObject* obj)
+int ui_add(struct UIContainer* container, struct UIObject* obj)
 {
 	assert(container && obj);
 
@@ -86,7 +87,7 @@ int ui_add_image(VkImageView img_view)
 
 void ui_build()
 {
-	struct Container* container;
+	struct UIContainer* container;
 	struct UIObject*  obj;
 	for (int i = 0; i < containerc; i++) {
 		container = &containers[i];
@@ -114,14 +115,14 @@ void ui_update()
 	context.mouse_pos = VEC2(2.0f*(mouse_x / config.winw - 0.5f), 2.0f*(mouse_y / config.winh - 0.5f));
 	Vec2 mouse = context.mouse_pos;
 
-	struct Container* container;
+	struct UIContainer* container;
 	struct UIObject*  obj;
 	for (int i = 0; i < containerc; i++) {
 		container = &containers[i];
 		if (point_in_rect(mouse, container->rect)) {
 			for (int j = 0; j < container->objects.len; j++) {
 				obj = varray_get(&container->objects, j);
-				if (!obj->state.visible && !(obj->type == UI_BUTTON || obj->type == UI_LIST))
+				if (!obj->state.visible || obj->type == UI_LABEL)
 					continue;
 
 				if (point_in_rect(mouse, obj->rect)) {
@@ -134,6 +135,10 @@ void ui_update()
 					case UI_LIST:
 						if (update) uilist_on_click(obj, &context);
 						else update = uilist_on_hover(obj, &context);
+						break;
+					case UI_CUSTOM:
+						if (update) obj->custom.on_click(obj, &context);
+						else update = obj->custom.on_hover(obj, &context);
 						break;
 					default:
 						ERROR("[UI] Failed to match UI object of type %d", obj->type);
@@ -180,8 +185,17 @@ void ui_record_commands(VkCommandBuffer cmd_buf)
 
 void ui_free()
 {
-	for (int i = 0; i < containerc; i++)
-		varray_free(&containers[i].objects);
+	struct UIContainer* container;
+	struct UIObject*  obj;
+	for (int i = 0; i < containerc; i++) {
+		container = &containers[i];
+		for (int j = 0; j < container->objects.len; j++) {
+			obj = varray_get(&container->objects, j);
+			if (obj->type == UI_LIST)
+				free(obj->uilist.text_objs);
+		}
+		varray_free(&container->objects);
+	}
 
 	texture_free(&default_tex);
 	pipeln_free(&pipeln);
@@ -195,8 +209,8 @@ static void init_pipeln()
 		pipeln_free(&pipeln);
 
 	pipeln = (struct Pipeline){
-		.vshader    = create_shader(SHADER_PATH "/ui.vert"),
-		.fshader    = create_shader(SHADER_PATH "/ui.frag"),
+		.vshader    = load_shader(STRING(SHADER_PATH "/ui.vert")),
+		.fshader    = load_shader(STRING(SHADER_PATH "/ui.frag")),
 		.topology   = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.dset_cap   = 1,
 		.sboc       = 1,

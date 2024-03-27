@@ -2,7 +2,7 @@
 #include "ui.h"
 #include "uilist.h"
 
-void uilist_new(struct Container* parent, int strc, String* strs, Rect rect, bool numbered)
+void uilist_new(struct UIContainer* parent, int strc, String* strs, Rect rect, bool numbered, void (*cb)(int))
 {
 	assert(parent);
 
@@ -16,6 +16,7 @@ void uilist_new(struct Container* parent, int strc, String* strs, Rect rect, boo
 			.spacing   = 15.0f / config.winh,
 			.text_objc = strc,
 			.text_objs = smalloc(strc * sizeof(struct TextObject)),
+			.cb        = cb,
 		},
 	};
 
@@ -76,11 +77,12 @@ void uilist_on_click(struct UIObject* obj, struct UIContext* context)
 	Rect rect = RECT(obj->rect.x, obj->rect.y + 2.0f*obj->padding.y, obj->rect.w, 0.0f);
 	for (int i = 0; i < obj->uilist.text_objc; i++) {
 		txt_obj = obj->uilist.text_objs[i];
-		rect.h = txt_obj->rect.h + obj->padding.y;
+		rect.h  = txt_obj->rect.h + obj->padding.y;
 		if (point_in_rect(context->mouse_pos, rect)) {
 			obj->hl = rect;
 			uilist_build(obj, &default_label_style);
-			break;
+			obj->uilist.cb(i);
+			return;
 		}
 		rect.y += txt_obj->rect.h + obj->uilist.spacing;
 	}

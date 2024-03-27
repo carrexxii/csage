@@ -20,8 +20,8 @@
 void ui_init(void);
 void ui_register_keys(void);
 struct UIObject*  ui_alloc_object(void);
-struct Container* ui_new_container(Rect rect, struct UIStyle* style);
-int  ui_add(struct Container* container, struct UIObject* obj);
+struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style);
+int  ui_add(struct UIContainer* container, struct UIObject* obj);
 int  ui_add_image(VkImageView img_view);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
@@ -30,7 +30,7 @@ void ui_update_object(int i, Rect rect, Rect hl, struct UIStyle* style, int tex_
 void ui_record_commands(VkCommandBuffer cmd_buf);
 void ui_free(void);
 
-static inline Rect ui_calc_rect(Rect rect, struct Container* parent)
+static inline Rect ui_calc_rect(Rect rect, struct UIContainer* parent)
 {
 	Rect prect = parent->rect;
 	float sx = prect.w / 2.0f;

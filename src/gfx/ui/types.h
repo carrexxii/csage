@@ -21,6 +21,7 @@ enum UIObjectType {
 	UI_BUTTON,
 	UI_LABEL,
 	UI_LIST,
+	UI_CUSTOM,
 };
 
 struct UIState {
@@ -29,42 +30,19 @@ struct UIState {
 	bool clicked;
 };
 
-struct UIMouse {
-	bool lmb;
-	bool rmb;
+struct UIContext {
+	Vec2 mouse_pos;
+	struct { bool lmb, rmb; } mouse_pressed;
+	struct { bool lmb, rmb; } mouse_released;
 };
 
-struct Button {
-	struct TextObject* text_obj;
-	void (*cb)(void);
+struct UIStyle {
+	Colour normal;
+	Colour hover;
+	Colour clicked;
 };
 
-struct Label {
-	struct TextObject* text_obj;
-};
-
-struct UIList {
-	float spacing;
-	int text_objc;
-	struct TextObject** text_objs;
-};
-
-struct UIObject {
-	Rect rect;
-	Rect hl;
-	Vec2 padding;
-	enum UIObjectType type;
-	struct UIState state;
-	int imgi;
-	int i;
-	union {
-		struct Button button;
-		struct Label  label;
-		struct UIList uilist;
-	};
-};
-
-struct Container {
+struct UIContainer {
 	Rect rect;
 	struct UIState state;
 	bool has_update;
@@ -85,16 +63,42 @@ struct UIShaderObject {
 	byte pad[12];
 };
 
-struct UIContext {
-	Vec2 mouse_pos;
-	struct { bool lmb, rmb; } mouse_pressed;
-	struct { bool lmb, rmb; } mouse_released;
+struct UIButton {
+	struct TextObject* text_obj;
+	void (*cb)(void);
 };
 
-struct UIStyle {
-	Colour normal;
-	Colour hover;
-	Colour clicked;
+struct UILabel {
+	struct TextObject* text_obj;
+};
+
+struct UIList {
+	float spacing;
+	int text_objc;
+	struct TextObject** text_objs;
+	void (*cb)(int);
+};
+
+struct UIObject;
+struct UICustom {
+	bool (*on_hover)(struct UIObject*, struct UIContext*);
+	void (*on_click)(struct UIObject*, struct UIContext*);
+};
+
+struct UIObject {
+	Rect rect;
+	Rect hl;
+	Vec2 padding;
+	enum UIObjectType type;
+	struct UIState state;
+	int imgi;
+	int i;
+	union {
+		struct UIButton button;
+		struct UILabel  label;
+		struct UIList   uilist;
+		struct UICustom custom;
+	};
 };
 
 /* -------------------------------------------------------------------- */

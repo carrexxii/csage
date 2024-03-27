@@ -1,13 +1,13 @@
 #include "string.h"
 
 /* Length is calculated if it is <= 0 */
-String string_new(char* src, isize sz, struct Arena* arena)
+String string_new(char* src, isize cap, struct Arena* arena)
 {
-	sz = sz > 0? sz: strlen(src);
+	cap = cap > 0? cap: (isize)strlen(src);
 	String str = {
-		.data = arena? arena_alloc(arena, sz + 1): smalloc(sz + 1),
-		.len  = src? sz: 0,
-		.sz   = sz,
+		.data = arena? arena_alloc(arena, cap + 1): smalloc(cap + 1),
+		.len  = src? cap: 0,
+		.cap  = cap,
 	};
 	if (src)
 		memcpy(str.data, src, str.len);
@@ -101,8 +101,8 @@ void string_clear(String* str)
 
 void string_cat_cstr(String* str1, char* str2, isize len)
 {
-	len = len > 0? len: strlen(str2);
-	assert(str1->len + len < str1->sz);
+	len = len > 0? len: (isize)strlen(str2);
+	assert(str1->len + len < str1->cap);
 
 	memcpy(str1->data + str1->len, str2, len*sizeof(char));
 	str1->len += len;

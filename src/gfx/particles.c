@@ -1,5 +1,6 @@
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 
+#include "resmgr.h"
 #include "maths/maths.h"
 #include "vulkan.h"
 #include "pipeline.h"
@@ -45,8 +46,8 @@ void particles_init()
 	ubos[0] = ubo_new(sizeof(Mat4x4[2]));
 	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
 	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_PATH "/particle.vert"),
-		.fshader     = create_shader(SHADER_PATH "/particle.frag"),
+		.vshader     = load_shader(STRING(SHADER_PATH "/particle.vert")),
+		.fshader     = load_shader(STRING(SHADER_PATH "/particle.frag")),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = &streamvert_binds,

@@ -19,16 +19,18 @@ struct HTable {
 	struct HPair pairs[];
 };
 
-inline static struct HTable* htable_new(isize count);
-inline static uint htable_hash(struct HTable* htable, String str);
-inline static struct HPair* htable_insert(struct HTable* htable, String key, int64 val);
-inline static struct HPair* htable_get_pair(struct HTable* htable, String key);
-inline static int64 htable_get(struct HTable* htable, String key);
-inline static int64 htable_get_or_insert(struct HTable* htable, String key, int64 val);
-inline static void  htable_print(struct HTable* htable);
-inline static void  htable_free(struct HTable* htable);
+static inline struct HTable* htable_new(isize count);
+static inline uint htable_hash(struct HTable* htable, String str);
+static inline struct HPair* htable_insert(struct HTable* htable, String key, int64 val);
+static inline struct HPair* htable_get_pair(struct HTable* htable, String key);
+static inline int64 htable_get(struct HTable* htable, String key);
+static inline int64 htable_get_or_insert(struct HTable* htable, String key, int64 val);
+static inline void  htable_print(struct HTable* htable);
+static inline void  htable_free(struct HTable* htable);
 
-inline static struct HTable* htable_new(isize count)
+/* -------------------------------------------------------------------- */
+
+static inline struct HTable* htable_new(isize count)
 {
 	struct HTable* htable = scalloc(sizeof(struct HTable) + count*sizeof(struct HPair), 1);
 	htable->cap = count;
@@ -37,7 +39,7 @@ inline static struct HTable* htable_new(isize count)
 }
 
 /* PJW Hash Function: https://www.partow.net/programming/hashfunctions/ */
-inline static uint htable_hash(struct HTable* htable, String str)
+static inline uint htable_hash(struct HTable* htable, String str)
 {
 	uint hash = 1315423911;
 	char* c = str.data;
@@ -47,7 +49,7 @@ inline static uint htable_hash(struct HTable* htable, String str)
 	return hash % htable->cap;
 }
 
-inline static struct HPair* htable_insert(struct HTable* htable, String key, int64 val)
+static inline struct HPair* htable_insert(struct HTable* htable, String key, int64 val)
 {
 	struct HPair* pair = &htable->pairs[htable_hash(htable, key)];
 	/* Only search through the list if first slot is not available */
@@ -73,7 +75,7 @@ inline static struct HPair* htable_insert(struct HTable* htable, String key, int
 }
 
 /* Returns NULL if the key was not found */
-inline static struct HPair* htable_get_pair(struct HTable* htable, String key)
+static inline struct HPair* htable_get_pair(struct HTable* htable, String key)
 {
 	struct HPair* pair = &htable->pairs[htable_hash(htable, key)];
 	if (!pair->key.len)
@@ -89,21 +91,21 @@ inline static struct HPair* htable_get_pair(struct HTable* htable, String key)
 }
 
 /* Returns -1 if the key was not found */
-inline static int64 htable_get(struct HTable* htable, String key) {
+static inline int64 htable_get(struct HTable* htable, String key) {
 	struct HPair* pair = htable_get_pair(htable, key);
 	return pair? pair->val
 	           : -1;
 }
 
 /* Same as htable_get, but will insert the value if the key is not present */
-inline static int64 htable_get_or_insert(struct HTable* htable, String key, int64 val) {
+static inline int64 htable_get_or_insert(struct HTable* htable, String key, int64 val) {
 	struct HPair* pair = htable_get_pair(htable, key);
 	return pair? pair->val
 	           : htable_insert(htable, key, val)->val;
 }
 
 /* Returns 0 if the value was set or -1 if the key was not found */
-inline static int htable_set(struct HTable* htable, String key, int64 val)
+static inline int htable_set(struct HTable* htable, String key, int64 val)
 {
 	// TODO: This should insert if its not there (ie, combine with htable_insert())
 	struct HPair* pair = htable_get_pair(htable, key);
@@ -115,7 +117,7 @@ inline static int htable_set(struct HTable* htable, String key, int64 val)
 	return 0;
 }
 
-inline static void htable_print(struct HTable* htable)
+static inline void htable_print(struct HTable* htable)
 {
 	fprintf(stderr, "Hashtable (capacity: %ld):\n", htable->cap);
 	struct HPair* pair;
@@ -130,7 +132,7 @@ inline static void htable_print(struct HTable* htable)
 	}
 }
 
-inline static void htable_free(struct HTable* htable)
+static inline void htable_free(struct HTable* htable)
 {
 	sfree(htable);
 }

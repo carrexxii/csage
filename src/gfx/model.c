@@ -3,6 +3,7 @@
 #include "vulkan/vulkan.h"
 #include "stb/stb_image.h"
 
+#include "resmgr.h"
 #include "maths/maths.h"
 #include "util/arena.h"
 #include "util/file.h"
@@ -104,8 +105,8 @@ void models_init()
 	ubo_joints = ubo_new(2*MODEL_MAX_JOINTS*sizeof(struct Transform));
 
 	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_PATH "/model.vert"),
-		.fshader     = create_shader(SHADER_PATH "/model.frag"),
+		.vshader     = load_shader(STRING(SHADER_PATH "/model.vert")),
+		.fshader     = load_shader(STRING(SHADER_PATH "/model.frag")),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 5,
 		.vert_binds  = vert_binds,
@@ -119,8 +120,8 @@ void models_init()
 		.imgc        = 1,
 	};
 	pipeln_static = (struct Pipeline){
-		.vshader     = create_shader(SHADER_PATH "/model_static.vert"),
-		.fshader     = create_shader(SHADER_PATH "/model.frag"),
+		.vshader     = load_shader(STRING(SHADER_PATH "/model_static.vert")),
+		.fshader     = load_shader(STRING(SHADER_PATH "/model.frag")),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 3,
 		.vert_binds  = vert_binds,

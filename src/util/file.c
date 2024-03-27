@@ -44,22 +44,28 @@ char* file_loadf(FILE* file)
 
 /* -------------------------------------------------------------------- */
 
-static struct Arena* curr_arena;
+static struct Arena* enumerate_arena;
+static bool enumerate_with_path;
 static int cb_dir_enumerate(void* user_data, const char* restrict dir, const char* restrict file) {
 	struct VArray* arr = user_data;
-	String path = string_new_join(2, (String[]){
-		string_new(dir , -1, curr_arena),
-		string_new(file, -1, curr_arena)
-	}, STRING("/"), curr_arena);
-	varray_push(arr, &path);
+	String path;
+	if (enumerate_with_path)
+		path = string_new_join(2, (String[]){
+			string_new(dir , -1, enumerate_arena),
+			string_new(file, -1, enumerate_arena)
+		}, STRING("/"), enumerate_arena);
+	else
+		path = string_new(file, -1, enumerate_arena);
 
+	varray_push(arr, &path);
 	return 1;
 }
 
-void dir_enumerate(char* path, struct VArray* arr, struct Arena* arena)
+void dir_enumerate(char* path, bool with_path, struct VArray* arr, struct Arena* arena)
 {
 	assert(path && arr && arena);
 
-	curr_arena = arena;
+	enumerate_with_path = with_path;
+	enumerate_arena     = arena;
 	SDL_EnumerateDirectory(path, cb_dir_enumerate, arr);
 }

@@ -4,13 +4,13 @@
 #include "arena.h"
 
 typedef struct {
-	isize len, sz;
+	isize len, cap;
 	char* data;
 } String;
 
-#define STRING(x) (String){ .data = x, .len = sizeof(x) - 1 }
+#define STRING(x) (String){ .data = (x), .cap = sizeof(x), .len = sizeof(x) - 1 }
 
-String string_new(char* src, isize sz, struct Arena* arena);
+String string_new(char* src, isize cap, struct Arena* arena);
 String string_new_join(isize strc, String* strs, String sep, struct Arena* arena);
 String string_new_split(char* src, char sep, isize index, struct Arena* arena);
 String string_copy(String src, struct Arena* arena);

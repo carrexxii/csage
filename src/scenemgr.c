@@ -15,6 +15,7 @@
 #include "scenemgr.h"
 
 #include "test.h"
+#include "resmgr.h"
 #include "gfx/sprite.h"
 
 #define MAX_DEFER_FUNCTIONS 32

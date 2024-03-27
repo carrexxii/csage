@@ -106,27 +106,6 @@ void init_vulkan(SDL_Window* win)
 	device_init_logical(surface);
 }
 
-VkShaderModule create_shader(char* restrict path)
-{
-	VkShaderModule module;
-	// TODO: fix
-	char* code = file_load(path);
-	FILE* file = file_open(path, "rb");
-	VkShaderModuleCreateInfo moduleci = {
-		.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-		.codeSize = file_size(file),
-		.pCode    = (const uint32*)code,
-	};
-	fclose(file);
-	if (vkCreateShaderModule(logical_gpu, &moduleci, NULL, &module))
-		ERROR("[VK] Failed to create shader module \"%s\"", path);
-	else
-		DEBUG(3, "[VK] Created new shader module \"%s\"", path);
-
-	free(code);
-	return module;
-}
-
 void vulkan_free()
 {
 #if DEBUG_LEVEL > 0

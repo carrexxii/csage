@@ -5,7 +5,7 @@
 #include "ui.h"
 #include "button.h"
 
-void button_new(struct Container* parent, String str, struct Texture* tex, Rect rect, void (*cb)(void))
+void button_new(struct UIContainer* parent, String str, struct Texture* tex, Rect rect, void (*cb)(void))
 {
 	assert(parent);
 

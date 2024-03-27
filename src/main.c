@@ -1,8 +1,8 @@
 #include "vulkan/vulkan.h"
 #include "SDL3/SDL.h"
-#include "lua.h"
 
-// #include "SDL3/SDL_init.h"
+#include "resmgr.h"
+#include "lua.h"
 #include "config.h"
 #include "taskmgr.h"
 #include "gfx/vulkan.h"
@@ -28,6 +28,7 @@ int main(int argc, char** argv)
 	for (int i = 0; i < argc; i++)
 		printf("%s\n", argv[i]);
 
+	resmgr_init();
 	lua_init();
 	init_sdl();
 
@@ -35,7 +36,7 @@ int main(int argc, char** argv)
 	DEBUG(1, "[INFO] CPU info:");
 	DEBUG(1, "\tLogical cores: %d", SDL_GetCPUCount());
 	DEBUG(1, "\tL1 Cache Line: %dB", SDL_GetCPUCacheLineSize());
-	DEBUG(1, "\tRAM          : %.1fGB", SDL_GetSystemRAM()/1024.0);
+	DEBUG(1, "\tRAM          : %.1fGB", SDL_GetSystemRAM() / 1024.0f);
 
 	uint32 vkversion;
 	vkEnumerateInstanceVersion(&vkversion);
@@ -79,8 +80,9 @@ noreturn void quit()
 	renderer_free();
 	entities_free();
 	scenemgr_free();
-	vulkan_free();
 	lua_free();
+	resmgr_free();
+	vulkan_free();
 	SDL_Quit();
 	exit(0);
 }

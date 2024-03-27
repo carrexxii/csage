@@ -1,8 +1,9 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 
+#include "resmgr.h"
 #include "config.h"
 #include "util/string.h"
 #include "util/varray.h"
@@ -115,8 +116,8 @@ void font_init()
 
 	font_sampler = image_new_sampler(VK_FILTER_LINEAR);
 	pipeln = (struct Pipeline){
-		.vshader     = create_shader(SHADER_PATH "/font.vert"),
-		.fshader     = create_shader(SHADER_PATH "/font.frag"),
+		.vshader     = load_shader(STRING(SHADER_PATH "/font.vert")),
+		.fshader     = load_shader(STRING(SHADER_PATH "/font.frag")),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.vert_bindc  = 1,
 		.vert_binds  = vert_binds,

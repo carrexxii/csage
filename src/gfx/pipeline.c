@@ -323,12 +323,6 @@ void pipeln_free(struct Pipeline* pipeln)
 	vkDestroyDescriptorSetLayout(logical_gpu, pipeln->dset_layout, NULL);
 	vkDestroyDescriptorPool(logical_gpu, pipeln->dpool, NULL);
 
-	if (pipeln->vshader)  vkDestroyShaderModule(logical_gpu, pipeln->vshader , NULL);
-	if (pipeln->tcshader) vkDestroyShaderModule(logical_gpu, pipeln->tcshader, NULL);
-	if (pipeln->teshader) vkDestroyShaderModule(logical_gpu, pipeln->teshader, NULL);
-	if (pipeln->gshader)  vkDestroyShaderModule(logical_gpu, pipeln->gshader , NULL);
-	if (pipeln->fshader)  vkDestroyShaderModule(logical_gpu, pipeln->fshader , NULL);
-
 	free(pipeln->dsets);
 }
 
