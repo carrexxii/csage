@@ -43,6 +43,7 @@
 	 (x) == VK_QUEUE_TRANSFER_BIT      ? "Transfer"      : \
 	 (x) == VK_QUEUE_SPARSE_BINDING_BIT? "Sparse Binding": \
 	 (x) == VK_QUEUE_PROTECTED_BIT     ? "Protected"     : \
+	 (x) == 0x00000006? "Transfer, Compute"              : \
 	 (x) == 0x00000007? "Transfer, Compute, Graphics"    : \
 	 (x) == 0x0000000F? "Generic (unprotected)"          : \
 	 (x) == 0x0000001F? "Generic (protected)"            : \

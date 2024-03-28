@@ -60,13 +60,19 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 	/*** -------------------- Create the Command Pool -------------------- ***/
 	VkCommandPoolCreateInfo pooli = {
 		.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-		.queueFamilyIndex = qinds.graphics,
+		.queueFamilyIndex = qinds.transfer,
 		.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 	};
-	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &cmd_pool))
+	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &transfer_cmd_pool))
 		ERROR("[VK] Failed to create command pool");
 	else
-		DEBUG(3, "[VK] Created command pool");
+		DEBUG(2, "[VK] Created command pool");
+
+	pooli.queueFamilyIndex = qinds.graphics;
+	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &graphics_cmd_pool))
+		ERROR("[VK] Failed to create command pool");
+	else
+		DEBUG(2, "[VK] Created command pool");
 
 	/*** -------------------- Create Swapchain Images -------------------- ***/
 	vkGetSwapchainImagesKHR(logical_gpu, swapchain.swapchain, &swapchain.imgc, NULL);
@@ -124,8 +130,9 @@ void swapchain_free()
 	image_free(&depth_img);
 	image_free(&resolve_img);
 
-	DEBUG(3, "[VK] Destroying command pool...");
-	vkDestroyCommandPool(logical_gpu, cmd_pool, NULL);
+	DEBUG(3, "[VK] Destroying command pools...");
+	vkDestroyCommandPool(logical_gpu, transfer_cmd_pool, NULL);
+	vkDestroyCommandPool(logical_gpu, graphics_cmd_pool, NULL);
 
 	DEBUG(3, "[VK] Destroying swapchain...");
 	vkDestroySwapchainKHR(logical_gpu, swapchain.swapchain, NULL);

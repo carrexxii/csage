@@ -11,7 +11,8 @@ VkQueue graphicsq;
 VkQueue presentq;
 VkQueue transferq;
 
-VkCommandPool             cmd_pool;
+VkCommandPool             transfer_cmd_pool;
+VkCommandPool             graphics_cmd_pool;
 struct QueueFamilyIndices qinds;
 struct DeviceLimits       gpu_properties;
 
@@ -51,20 +52,20 @@ void device_init_physical(VkInstance inst, VkSurfaceKHR surf)
 
 void device_init_logical(VkSurfaceKHR surf)
 {
+	// TODO: this probably needs to be generalized later
 	set_queue_indices(physical_gpu, surf);
-	const uint devqic = 2;
-	VkDeviceQueueCreateInfo devqis[devqic];
-	float prio = 1.0;
-	for (uint i = 0; i < devqic; i++)
-		devqis[i] = (VkDeviceQueueCreateInfo){
-			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-			.flags = 0,
-			.queueFamilyIndex = ((int[]){ qinds.graphics,
-			                              qinds.present,
-			                              qinds.transfer })[i],
-			.pQueuePriorities = &prio,
-			.queueCount       = 1,
-		};
+	VkDeviceQueueCreateInfo devqis[] = {
+		{ .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+		  .flags = 0,
+		  .queueFamilyIndex = qinds.graphics,
+		  .pQueuePriorities = (float[]){ 1.0f },
+		  .queueCount       = 1, },
+		{ .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+		  .flags = 0,
+		  .queueFamilyIndex = qinds.transfer,
+		  .pQueuePriorities = (float[]){ 1.0f, 1.0f },
+		  .queueCount       = 2, },
+	};
 
 	VkPhysicalDeviceVulkan12Features vk12_features = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
@@ -81,7 +82,7 @@ void device_init_logical(VkSurfaceKHR surf)
 	VkDeviceCreateInfo devi = {
 		.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.flags                = 0,
-		.queueCreateInfoCount = devqic,
+		.queueCreateInfoCount = ARRAY_SIZE(devqis),
 		.pQueueCreateInfos    = devqis,
 		.pEnabledFeatures = &(VkPhysicalDeviceFeatures){
 			// .geometryShader     = true,
@@ -100,14 +101,14 @@ void device_init_logical(VkSurfaceKHR surf)
 		.enabledExtensionCount   = 1,
 		.ppEnabledExtensionNames = (const char*[]){ "VK_KHR_swapchain", },
 	};
-	if (vkCreateDevice(physical_gpu, &devi, NULL, &logical_gpu))
-		ERROR("[VK] Failed to create logical device");
+	if ((vk_err = vkCreateDevice(physical_gpu, &devi, NULL, &logical_gpu)))
+		ERROR("[VK] Failed to create logical device: \n\t\"%d\"", vk_err);
 	else
-		DEBUG(3, "[VK] Created logical device");
+		DEBUG(1, "[VK] Created logical device");
 
-	vkGetDeviceQueue(logical_gpu, qinds.present , 0, &presentq);
 	vkGetDeviceQueue(logical_gpu, qinds.graphics, 0, &graphicsq);
-	vkGetDeviceQueue(logical_gpu, qinds.transfer, 0, &transferq);
+	vkGetDeviceQueue(logical_gpu, qinds.present , 0, &presentq);
+	vkGetDeviceQueue(logical_gpu, qinds.transfer, 1, &transferq);
 }
 
 int device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop)
@@ -155,11 +156,13 @@ static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)
 		return INT_MIN;
 	if (devp.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		rating += 50;
+	else if (devp.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU)
+		rating += 5;
 	else if (devp.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
 		rating += 10;
 
 	debug_physical(dev);
-	DEBUG(3, "\tRated: %d", rating);
+	DEBUG(3, "\tRated: %d\n", rating);
 	return rating;
 }
 
@@ -181,22 +184,19 @@ static void set_queue_indices(VkPhysicalDevice dev, VkSurfaceKHR surf)
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfamilyc, NULL);
 	VkQueueFamilyProperties qfamilies[qfamilyc];
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfamilyc, qfamilies);
-	for (uint i = 0; i < qfamilyc; i++) {
+
+	uint pres;
+	for (int i = 0; i < (int)qfamilyc; i++) {
 		if (qfamilies[i].queueCount > 0) {
-			uint pres;
 			vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, surf, &pres);
-			if (pres)
+			if (pres && !qinds.present)
 				qinds.present = i;
-			if (qfamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+
+			if (qfamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && !qinds.graphics)
 				qinds.graphics = i;
-			if (qfamilies[i].queueFlags == VK_QUEUE_TRANSFER_BIT)
-				qinds.transfer = i;
 			else if (qfamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT && !qinds.transfer)
 				qinds.transfer = i;
 		}
-
-		if (qinds.graphics > 0 && qinds.present > 0 && qinds.transfer > 0)
-			break;
 	}
 }
 
@@ -285,7 +285,7 @@ static void debug_physical(VkPhysicalDevice dev)
 	DEBUG(3, "\t%u device queue families:", qc);
 	for (uint i = 0; i < qc; i++)
 		DEBUG(3, "\t    %2d of 0x%.8X -> %s", qs[i].queueCount,
-			qs[i].queueFlags, STRING_QUEUE_BIT(qs[i].queueFlags));
+		      qs[i].queueFlags, STRING_QUEUE_BIT(qs[i].queueFlags));
 
 	DEBUG(3, "\t%u colour formats available", swapchain_details.fmtc);
 

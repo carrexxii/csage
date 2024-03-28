@@ -11,8 +11,11 @@
 static void init_pipeln(void);
 static inline void update_container(struct UIContainer* container);
 static void cb_mouse_left(bool kdown);
+static void container_free(struct UIContainer* container);
 
-static struct Pipeline pipeln;
+static atomic int pipeln;
+static struct Pipeline pipelns[2];
+static Mutex updating_lock;
 
 int containerc, img_viewc;
 static struct UIContainer containers[UI_MAX_CONTAINERS];
@@ -22,6 +25,7 @@ static struct UIContext context;
 static int  ui_elemc;
 static SBO  ui_elems;
 static bool ui_elems_update;
+static struct VArray free_elems;
 
 static bool pipeln_needs_update;
 static struct Texture* default_tex;
@@ -29,7 +33,8 @@ static struct Texture* default_tex;
 void ui_init()
 {
 	pipeln_needs_update = true;
-	ui_elems = sbo_new(UI_MAX_ELEMENTS * sizeof(struct UIShaderObject));
+	ui_elems    = sbo_new(UI_MAX_ELEMENTS * sizeof(struct UIShaderObject)); // TODO: resize if necessary
+	free_elems  = varray_new(16, sizeof(int));
 	default_tex = load_texture(STRING(TEXTURE_PATH "/default.png"));
 
 	DEBUG(1, "[UI] Initialized UI");
@@ -47,7 +52,14 @@ struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style)
 		return NULL;
 	}
 
-	struct UIContainer* container = &containers[containerc++];
+	int i;
+	for (i = 0; i < containerc; i++)
+		if (containers[i].state.dead)
+			break;
+	if (i >= containerc)
+		containerc++;
+
+	struct UIContainer* container = &containers[i];
 	*container = (struct UIContainer){
 		.rect    = rect,
 		.i       = ui_elemc,
@@ -69,19 +81,31 @@ int ui_add(struct UIContainer* container, struct UIObject* obj)
 {
 	assert(container && obj);
 
-	obj->i = ui_elemc;
+	/* Check for dead elements to reuse */
+	int i;
+	int* free_elem = varray_pop(&free_elems);
+	if (free_elem)
+		i = *free_elem;
+	else
+	 	i = ui_elemc++;
+
+	obj->i = i;
 	varray_push(&container->objects, obj);
 	container->has_update = true;
 
-	return ui_elemc++;
+	return i;
 }
 
 int ui_add_image(VkImageView img_view)
 {
 	assert(img_view);
 
+	for (int i = 0; i < img_viewc; i++)
+		if (img_views[i] == img_view)
+			return i;
 	img_views[img_viewc] = img_view;
 
+	pipeln_needs_update = true;
 	return img_viewc++;
 }
 
@@ -179,8 +203,9 @@ void ui_update_object(struct UIObject* obj)
 
 void ui_record_commands(VkCommandBuffer cmd_buf)
 {
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+	struct Pipeline* pl = &pipelns[pipeln];
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->pipeln);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->layout, 0, 1, pl->dsets, 0, NULL);
 
 	int objc = containerc;
 	for (int i = 0; i < containerc; i++)
@@ -188,31 +213,37 @@ void ui_record_commands(VkCommandBuffer cmd_buf)
 	vkCmdDraw(cmd_buf, 6*objc, 1, 0, 0);
 }
 
-void ui_free()
+void ui_free_container(struct UIContainer* container)
 {
-	struct UIContainer* container;
-	struct UIObject*  obj;
 	for (int i = 0; i < containerc; i++) {
-		container = &containers[i];
-		for (int j = 0; j < container->objects.len; j++) {
-			obj = varray_get(&container->objects, j);
-			if (obj->type == UI_LIST)
-				free(obj->uilist.text_objs);
+		if (container == &containers[i]) {
+			container_free(container);
+			return;
 		}
-		varray_free(&container->objects);
 	}
 
-	pipeln_free(&pipeln);
+	ERROR("[UI] Attempt to free invalid container %p", (void*)container);
+}
+
+void ui_free()
+{
+	for (int i = 0; i < containerc; i++)
+		container_free(&containers[i]);
+
+	pipeln_free(&pipelns[0]);
+	pipeln_free(&pipelns[1]);
 }
 
 /* -------------------------------------------------------------------- */
 
 static void init_pipeln()
 {
-	if (pipeln.pipeln)
-		pipeln_free(&pipeln);
+	int next_pipeln = (pipeln + 1) % 2;
+	struct Pipeline* pl = &pipelns[next_pipeln];
+	if (pl->pipeln)
+		pipeln_free(pl);
 
-	pipeln = (struct Pipeline){
+	*pl = (struct Pipeline){
 		.vshader    = load_shader(STRING(SHADER_PATH "/ui.vert")),
 		.fshader    = load_shader(STRING(SHADER_PATH "/ui.frag")),
 		.topology   = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -220,13 +251,14 @@ static void init_pipeln()
 		.sboc       = 1,
 		.imgc       = img_viewc? img_viewc: 1,
 	};
-	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_dset(&pipeln,
-		pipeln.uboc, NULL,
-		pipeln.sboc, &ui_elems,
-		pipeln.imgc, img_viewc? img_views: &default_tex->image_view);
-	pipeln_init(&pipeln);
+	pipeln_alloc_dsets(pl);
+	pipeln_create_dset(pl,
+		pl->uboc, NULL,
+		pl->sboc, &ui_elems,
+		pl->imgc, img_viewc? img_views: &default_tex->image_view);
+	pipeln_init(pl);
 
+	pipeln = next_pipeln;
 	pipeln_needs_update = false;
 }
 
@@ -234,4 +266,19 @@ static void cb_mouse_left(bool kdown)
 {
 	context.mouse_pressed.lmb  =  kdown;
 	context.mouse_released.lmb = !kdown;
+}
+
+static void container_free(struct UIContainer* container)
+{
+	struct UIObject* obj;
+	for (int i = 0; i < container->objects.len; i++) {
+		obj = varray_get(&container->objects, i);
+		obj->state.dead = true;
+		varray_push(&free_elems, &obj->i);
+		if (obj->type == UI_LIST)
+			free(obj->uilist.text_objs);
+	}
+
+	varray_free(&container->objects);
+	container->state.dead = true;
 }

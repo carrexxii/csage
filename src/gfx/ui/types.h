@@ -28,6 +28,7 @@ struct UIState {
 	bool visible;
 	bool hover;
 	bool clicked;
+	bool dead;
 };
 
 struct UIContext {
@@ -53,6 +54,7 @@ struct UIContainer {
 struct UIShaderObject {
 	Rect rect;
 	Rect hl;
+	Vec2 uvs[2];
 	Vec4 colour;
 	int  tex_id;
 	byte pad[12];
@@ -60,7 +62,8 @@ struct UIShaderObject {
 
 struct UIButton {
 	struct TextObject* text_obj;
-	void (*cb)(void);
+	void (*cb)(int);
+	int data;
 };
 
 struct UILabel {
@@ -84,6 +87,7 @@ struct UICustom {
 struct UIObject {
 	Rect rect;
 	Rect hl;
+	Vec2 uvs[2];
 	Vec2 padding;
 	enum UIObjectType type;
 	struct UIState state;

@@ -5,13 +5,13 @@
 static void copy_buffer(VkBuffer dst, VkBuffer src, VkDeviceSize s);
 
 /* TODO: add multiple usage option */
-VkCommandBuffer begin_command_buffer()
+VkCommandBuffer begin_command_buffer(VkQueue queue)
 {
 	VkCommandBuffer buf;
 	VkCommandBufferAllocateInfo bufi = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandPool        = cmd_pool,
+		.commandPool        = queue == transferq? transfer_cmd_pool: graphics_cmd_pool,
 		.commandBufferCount = 1,
 	};
 	if ((vk_err = vkAllocateCommandBuffers(logical_gpu, &bufi, &buf)))
@@ -26,7 +26,7 @@ VkCommandBuffer begin_command_buffer()
 	return buf;
 }
 
-void end_command_buffer(VkCommandBuffer buf, VkFence fence)
+void end_command_buffer(VkCommandBuffer buf, VkQueue queue)
 {
 	vkEndCommandBuffer(buf);
 	VkSubmitInfo submiti = {
@@ -35,10 +35,10 @@ void end_command_buffer(VkCommandBuffer buf, VkFence fence)
 		.pCommandBuffers    = &buf,
 	};
 
-	vkQueueSubmit(graphicsq, 1, &submiti, fence);
-	if (!fence)
-		vkQueueWaitIdle(graphicsq);
-	vkFreeCommandBuffers(logical_gpu, cmd_pool, 1, &buf);
+	vkQueueSubmit(queue, 1, &submiti, NULL);
+	vkQueueWaitIdle(queue);
+
+	vkFreeCommandBuffers(logical_gpu, queue == transferq? transfer_cmd_pool: graphics_cmd_pool, 1, &buf);
 }
 
 void buffer_new(VkDeviceSize sz, VkBufferUsageFlags buf_flags, VkMemoryPropertyFlags mem_flags, VkBuffer* buf, VkDeviceMemory* mem)
@@ -129,11 +129,16 @@ SBO _sbo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 
 void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data, isize offset)
 {
+	static Mutex buffer_lock = { 0 };
+
 	void* mem;
+	mtx_lock(&buffer_lock);
 	if ((vk_err = vkMapMemory(logical_gpu, buf.mem, offset, sz, 0, &mem)))
 		ERROR("[VK] Failed to map memory\n\t\"%d\"", vk_err);
 	memcpy(mem, data, sz);
+
 	vkUnmapMemory(logical_gpu, buf.mem);
+	mtx_unlock(&buffer_lock);
 }
 
 void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn)
@@ -143,6 +148,7 @@ void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn
 		      file, line, fn);
 		return;
 	}
+
 	vkDestroyBuffer(logical_gpu, buf->buf, NULL);
 	vkFreeMemory(logical_gpu, buf->mem, NULL);
 	memset(buf, 0, sizeof(struct Buffer));
@@ -150,12 +156,12 @@ void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn
 
 static void copy_buffer(VkBuffer dst, VkBuffer src, VkDeviceSize sz)
 {
-	VkCommandBuffer buf = begin_command_buffer();
+	VkCommandBuffer buf = begin_command_buffer(transferq);
 	VkBufferCopy region = {
 		.srcOffset = 0,
 		.dstOffset = 0,
 		.size      = sz,
 	};
 	vkCmdCopyBuffer(buf, src, dst, 1, &region);
-	end_command_buffer(buf, NULL);
+	end_command_buffer(buf, transferq);
 }

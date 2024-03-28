@@ -50,8 +50,8 @@ static struct Character characters[128];
 static struct Texture atlas;
 static float atlas_w;
 static float atlas_h;
+static int text_objc;
 static struct TextObject text_objs[FONT_MAX_TEXT_OBJECTS];
-static intptr text_objc;
 
 void font_init()
 {
@@ -138,7 +138,7 @@ struct TextObject* font_render(String str, float z, float w)
 {
 	assert(str.len && str.data);
 
-	struct TextObject* obj = &text_objs[text_objc++];
+	struct TextObject* obj = &text_objs[text_objc];
 	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*str.len);
 	float* v = verts;
 	int linec = 1;
@@ -202,7 +202,8 @@ struct TextObject* font_render(String str, float z, float w)
 	obj->z_lvl  = z;
 	obj->active = true;
 	obj->vertc  = 6*str.len;
-	obj->vbo    = vbo_new(6*str.len*SIZEOF_FONT_VERTEX, verts, true);
+	obj->vbo = vbo_new(6*str.len*SIZEOF_FONT_VERTEX, verts, true);
+	text_objc++;
 
 	DEBUG(4, "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2fx%.2f]",
 	      str.len, str.data, x, y, z, obj->rect.w, obj->rect.h);
@@ -217,6 +218,7 @@ void font_record_commands(VkCommandBuffer cmd_buf)
 	for (int i = 0; i < text_objc; i++) {
 		if (!text_objs[i].active)
 			continue;
+
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
 		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, (float[]){
 			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y

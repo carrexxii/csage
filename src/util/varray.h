@@ -16,15 +16,15 @@ struct VArray {
 	int elem_sz;
 };
 
-inline static struct VArray varray_new(isize elemc, isize elem_sz);
-inline static void* varray_set(struct VArray* restrict arr, isize i, const void* restrict elem);
-inline static void* varray_get(struct VArray* arr, isize i);
-inline static isize varray_push(struct VArray* restrict arr, const void* restrict data);
-inline static void  varray_resize(struct VArray** arr, isize new_sz);
-inline static void  varray_free(struct VArray* arr);
+static inline struct VArray varray_new(isize elemc, isize elem_sz);
+static inline void* varray_set(struct VArray* restrict arr, isize i, const void* restrict elem);
+static inline void* varray_get(struct VArray* arr, isize i);
+static inline isize varray_push(struct VArray* restrict arr, const void* restrict data);
+static inline void  varray_resize(struct VArray** arr, isize new_sz);
+static inline void  varray_free(struct VArray* arr);
 
 // TODO: flags for slow grow/no grow/...
-inline static struct VArray varray_new(isize elemc, isize elem_sz)
+static inline struct VArray varray_new(isize elemc, isize elem_sz)
 {
 	assert(elemc > 0 && elem_sz > 0);
 	struct VArray arr = {
@@ -38,7 +38,7 @@ inline static struct VArray varray_new(isize elemc, isize elem_sz)
 	return arr;
 }
 
-inline static void* varray_set(struct VArray* arr, isize i, const void* elem)
+static inline void* varray_set(struct VArray* arr, isize i, const void* elem)
 {
 	assert(i >= 0 && i < arr->len);
 
@@ -47,13 +47,23 @@ inline static void* varray_set(struct VArray* arr, isize i, const void* elem)
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static void* varray_get(struct VArray* arr, isize i)
+static inline void* varray_get(struct VArray* arr, isize i)
 {
 	assert(i >= 0 && i < arr->len);
 	return arr->data + i*arr->elem_sz;
 }
 
-inline static isize varray_push(struct VArray* restrict arr, const void* restrict elem)
+static inline void* varray_pop(struct VArray* arr)
+{
+	if (arr->len <= 0)
+		return NULL;
+
+	void* res = varray_get(arr, arr->len - 1);
+	arr->len--;
+	return res;
+}
+
+static inline isize varray_push(struct VArray* restrict arr, const void* restrict elem)
 {
 	if (arr->len >= arr->cap) {
 		arr->cap *= VARRAY_SIZE_MULTIPLIER;
@@ -67,7 +77,7 @@ inline static isize varray_push(struct VArray* restrict arr, const void* restric
 }
 
 // TODO: improve
-inline static isize varray_push_many(struct VArray* restrict arr, isize count, const void* restrict elem)
+static inline isize varray_push_many(struct VArray* restrict arr, isize count, const void* restrict elem)
 {
 	assert(count > 0);
 	isize fst = arr->len;
@@ -77,12 +87,12 @@ inline static isize varray_push_many(struct VArray* restrict arr, isize count, c
 	return fst;
 }
 
-inline static void varray_reset(struct VArray* arr)
+static inline void varray_reset(struct VArray* arr)
 {
 	arr->len = 0;
 }
 
-inline static void varray_free(struct VArray* arr)
+static inline void varray_free(struct VArray* arr)
 {
 	arr->cap = 0;
 	arr->len = 0;

@@ -54,7 +54,7 @@ void texture_free(struct Texture* tex)
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h)
 {
-	VkCommandBuffer cbuf = begin_command_buffer();
+	VkCommandBuffer cbuf = begin_command_buffer(graphicsq);
 	VkBufferImageCopy rgn = {
 		.bufferOffset      = 0,
 		.bufferRowLength   = 0,
@@ -69,5 +69,5 @@ static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h)
 		.imageExtent = { w, h, 1 },
 	};
 	vkCmdCopyBufferToImage(cbuf, buf, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &rgn);
-	end_command_buffer(cbuf, NULL);
+	end_command_buffer(cbuf, graphicsq);
 }

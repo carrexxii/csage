@@ -298,7 +298,7 @@ static void create_command_buffers()
 		.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 		.commandBufferCount = swapchain.imgc,
-		.commandPool        = cmd_pool,
+		.commandPool        = graphics_cmd_pool,
 	};
 	if ((vk_err = vkAllocateCommandBuffers(logical_gpu, &bufi, cmd_bufs)))
 		ERROR("[VK] Failed to create command buffers\n\t\"%d\"", vk_err);

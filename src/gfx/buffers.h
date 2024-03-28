@@ -15,8 +15,8 @@ typedef struct Buffer IBO;
 typedef struct Buffer UBO;
 typedef struct Buffer SBO;
 
-VkCommandBuffer begin_command_buffer();
-void end_command_buffer(VkCommandBuffer buf, VkFence fence);
+VkCommandBuffer begin_command_buffer(VkQueue queue);
+void end_command_buffer(VkCommandBuffer buf, VkQueue queue);
 void buffer_new(VkDeviceSize sz, VkBufferUsageFlags buf_flags, VkMemoryPropertyFlags mem_flags, VkBuffer* buf, VkDeviceMemory* mem);
 // TODO: switch to memory size as last parameter
 VBO _vbo_new(VkDeviceSize s, void* verts, bool can_update, const char* file, int line, const char* fn);

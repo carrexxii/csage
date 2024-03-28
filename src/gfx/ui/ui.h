@@ -31,6 +31,7 @@ Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
 void ui_update(void);
 void ui_update_object(struct UIObject* obj);
 void ui_record_commands(VkCommandBuffer cmd_buf);
+void ui_free_container(struct UIContainer* container);
 void ui_free(void);
 
 static inline Rect ui_calc_rect(Rect rect, struct UIContainer* parent)

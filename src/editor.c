@@ -1,12 +1,13 @@
 #include "SDL3/SDL.h"
 
+#include "resmgr.h"
 #include "util/file.h"
 #include "gfx/ui/ui.h"
 #include "editor.h"
 
 struct UITileset {
 	struct Texture* tex;
-};
+} tileset;
 
 static void new_ui_tileset(struct UIContainer* parent, Rect rect);
 static void ui_tileset_build(struct UIObject* obj);
@@ -15,15 +16,32 @@ static bool ui_tileset_on_hover(struct UIObject* obj, struct UIContext* context)
 static void ui_tileset_on_click(struct UIObject* obj, struct UIContext* context);
 
 /* -------------------------------------------------------------------- */
+static void cb_test(int x) { DEBUG(1, "Clicked: %d", x); }
 
 static struct Arena* arena;
-struct VArray sheets;
-
+static struct VArray sheets;
 static String* selected_file;
+static struct UIContainer* tset_container;
 
-static void cb_load_tileset() {
-	if (selected_file)
-		DEBUG_VALUE(selected_file->data);
+static void cb_load_tileset(int) {
+	if (!selected_file)
+		return;
+
+	tileset.tex = load_texture(*selected_file);
+
+	if (tset_container)
+		ui_free_container(tset_container);
+	tset_container = ui_new_container(RECT(-1.0f, -1.0f, 1.0f, 1.0f), NULL);
+
+	Rect rect;
+	for (int y = 0; y < 2; y++) {
+		for (int x = 0; x < UI_TILESET_GRID_COLUMNS; x++) {
+			rect = RECT((float)x / 4.0f - 1.0f, (float)y / 4.0f - 1.0f, 0.25f, 0.25f);
+			button_new(tset_container, rect, STRING(""), tileset.tex, NULL, cb_test, y*UI_TILESET_GRID_COLUMNS + x, NULL);
+		}
+	}
+
+	ui_build();
 }
 
 static void cb_select_file(int index) {
@@ -32,18 +50,16 @@ static void cb_select_file(int index) {
 	else
 		selected_file = varray_get(&sheets, index);
 }
-static void cb_test() { DEBUG_VALUE("Clicked"); }
 void editor_init()
 {
 	arena  = arena_new(4096, ARENA_RESIZEABLE);
 	sheets = varray_new(32, sizeof(String));
 
-	// TODO: ui object parameters need reordering
 	struct UIContainer* sidebar = ui_new_container(RECT(0.4f, -1.0f, 0.6f, 2.0f), NULL);
-	button_new(sidebar, STRING("Load Tileset"), NULL, NULL, RECT(-0.9f, 0.82f, 0.8f, 0.12f), cb_load_tileset);
-	button_new(sidebar, STRING("Button 2"), NULL, NULL, RECT( 0.1f, 0.82f, 0.8f, 0.12f), cb_test);
+	button_new(sidebar, RECT(-0.9f, 0.82f, 0.8f, 0.12f), STRING("Load Tileset"), NULL, NULL, cb_load_tileset, 0, NULL);
+	button_new(sidebar, RECT( 0.1f, 0.82f, 0.8f, 0.12f), STRING("Button 2"), NULL, NULL, cb_test, 2, NULL);
 
-	dir_enumerate(SPRITE_SHEETS_PATH, false, &sheets, arena);
+	dir_enumerate(SPRITE_SHEETS_PATH, true, &sheets, arena);
 	uilist_new(sidebar, sheets.len, (String*)sheets.data, NULL, RECT(-0.9f, -0.95f, 1.8f, 0.6f), true, cb_select_file);
 
 	new_ui_tileset(sidebar, RECT(-0.95f, -0.3f, 1.9f, 1.0f));

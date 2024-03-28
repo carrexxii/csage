@@ -13,6 +13,7 @@ layout(location = 4) out vec4 Fhl;
 struct UIObject {
 	vec4 rect;
 	vec4 hl;
+	vec2 uvs[2];
 	vec4 colour;
 	int  tex_id;
 };

@@ -83,7 +83,7 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 
 void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 {
-	VkCommandBuffer buf = begin_command_buffer();
+	VkCommandBuffer buf = begin_command_buffer(graphicsq);
 	VkImageMemoryBarrier bar = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 		.oldLayout           = old,
@@ -152,7 +152,7 @@ void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 	}
 
 	vkCmdPipelineBarrier(buf, src, dst, 0, 0, NULL, 0, NULL, 1, &bar);
-	end_command_buffer(buf, NULL);
+	end_command_buffer(buf, graphicsq);
 	DEBUG(3, "[VK] Image layout transitioned (%s -> %s)", STRING_IMAGE_LAYOUT(old), STRING_IMAGE_LAYOUT(new));
 }
 

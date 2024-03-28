@@ -52,23 +52,24 @@
  *  | longlong |   64   | +-9.22e18 || 1.84e19 |
  *  +----------+--------+----------------------+
  */
-typedef  int8_t   int8;
-typedef  int16_t  int16;
-typedef  int32_t  int32;
-typedef  int64_t  int64;
+typedef  int8_t  int8;
+typedef  int16_t int16;
+typedef  int32_t int32;
+typedef  int64_t int64;
 typedef uint8_t  uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 typedef uint64_t ID;
 
-typedef unsigned int uint;
-typedef  intptr_t  intptr;
-typedef uintptr_t uintptr;
+typedef unsigned int  uint;
+typedef intptr_t      intptr;
+typedef uintptr_t     uintptr;
 typedef unsigned char byte;
-typedef  size_t usize;
-typedef ssize_t isize;
+typedef size_t        usize;
+typedef ssize_t       isize;
 
+#define atomic _Atomic
 typedef thrd_t Thread;
 typedef mtx_t  Mutex;
 typedef cnd_t  Condition;

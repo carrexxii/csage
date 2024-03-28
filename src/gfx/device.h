@@ -9,7 +9,8 @@ int  device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop);
 void device_free();
 
 extern VkDevice      logical_gpu;
-extern VkCommandPool cmd_pool;
+extern VkCommandPool transfer_cmd_pool;
+extern VkCommandPool graphics_cmd_pool;
 extern VkQueue       graphicsq;
 extern VkQueue       presentq;
 extern VkQueue       transferq;
