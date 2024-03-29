@@ -15,6 +15,7 @@
 #define MAX_SPRITE_FRAMES     (INT8_MAX + 1)
 #define DEFAULT_SPRITE_SHEETS 8
 #define DEFAULT_SPRITES       16
+#define SPRITE_SCALE          45
 
 // TODO: this needs to be a hashmap
 enum SpriteStateType {
@@ -96,6 +97,7 @@ struct SpriteSheet* sprite_sheet_new(const char* name, int z_lvl);
 struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data);
 struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos);
 struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states);
+struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec3 pos);
 void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir);
 
 #endif

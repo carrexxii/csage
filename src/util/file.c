@@ -66,6 +66,7 @@ static int cb_dir_enumerate(void* user_data, const char* restrict dir, const cha
 	return 1;
 }
 
+// TODO: maybe rewrite with two calls and no arena param
 void dir_enumerate(const char* path, bool with_path, bool with_ext, String ext, struct VArray* arr, struct Arena* arena)
 {
 	assert(path && arr && arena);

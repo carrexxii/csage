@@ -38,6 +38,8 @@ struct Map {
 void    maps_init(void);
 void    map_new(struct Map* map, const char* name);
 MapTile map_get_tile(struct Map* map, Vec3i pos);
+Vec3    map_get_mouse_coords(struct Camera* cam);
+Vec3    map_to_iso(Vec3 pos);
 void    map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map);
 void    map_free(struct Map* map);
 

@@ -45,7 +45,7 @@ void input_register(SDL_Keycode key, void (*fn)(bool))
 		.sym  = key,
 		.fn   = fn,
 	};
-	DEBUG(5, "[INPUT] Registered key %d", key);
+	DEBUG(3, "[INPUT] Registered key %d", key);
 }
 
 void input_deregister(SDL_Keycode key, void (*fn)(bool))

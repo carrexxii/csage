@@ -210,9 +210,11 @@ static void cb_editor_move_right(bool kdown) { camera_move(&editor_cam, DIR_RIGH
 static void cb_editor_move_forwards(bool kdown)  { camera_move(&editor_cam, DIR_FORWARDS , kdown); }
 static void cb_editor_move_backwards(bool kdown) { camera_move(&editor_cam, DIR_BACKWARDS, kdown); }
 static void cb_editor_cam_update() { camera_update(&editor_cam); }
+static void cb_editor_update() { editor_update(&editor_cam); }
 static void load_editor()
 {
 	register_global_keys();
+	editor_register_keys();
 	input_register(SDLK_UP   , cb_editor_player_move_up);
 	input_register(SDLK_LEFT , cb_editor_player_move_left);
 	input_register(SDLK_DOWN , cb_editor_player_move_down);
@@ -236,6 +238,7 @@ static void load_editor()
 	taskmgr_add_task(cb_editor_cam_update);
 	taskmgr_add_task(sprites_update);
 	taskmgr_add_task(player_update);
+	taskmgr_add_task(cb_editor_update);
 
 	ui_build();
 }

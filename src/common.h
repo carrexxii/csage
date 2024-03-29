@@ -120,6 +120,11 @@ enum Direction {
 #define ARRAY_SIZE(a)    (sizeof(a) / sizeof(a[0]))
 #define DIV_CEIL(a, b)   (((a) + (b) - 1) / (b))
 #define AVERAGE(a, b)    (((a) + (b)) / 2)
+#define SWAP(a, b) do {   \
+		typeof(a) tmp = a; \
+		a = b;              \
+		b = tmp;             \
+	} while (0)
 
 #define STRING_TF(x) ((x)? "true": "false")
 #define STRING_YN(x) ((x)? "yes" : "no"   )

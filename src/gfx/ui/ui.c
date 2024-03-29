@@ -258,7 +258,6 @@ static void init_pipeln()
 		pl->sboc, &ui_elems,
 		pl->imgc, img_viewc? img_views: &default_tex->image_view);
 	pipeln_init(pl);
-	DEBUG_VALUE(img_viewc);
 
 	pipeln = next_pipeln;
 	pipeln_needs_update = false;

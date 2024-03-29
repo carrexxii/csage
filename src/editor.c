@@ -2,12 +2,16 @@
 
 #include "resmgr.h"
 #include "util/file.h"
+#include "input.h"
 #include "gfx/ui/ui.h"
 #include "gfx/sprite.h"
+#include "map.h"
 #include "editor.h"
 
 struct UITileset {
 	struct SpriteSheet* sheet;
+	struct Sprite* sprite;
+	int selection;
 } tileset;
 
 static void new_ui_tileset(struct UIContainer* parent, Rect rect);
@@ -15,6 +19,7 @@ static void ui_tileset_build(struct UIObject* obj);
 static void ui_tileset_set_image(String path);
 static bool ui_tileset_on_hover(struct UIObject* obj, struct UIContext* context);
 static void ui_tileset_on_click(struct UIObject* obj, struct UIContext* context);
+static void cb_place_tile(bool kdown);
 
 /* -------------------------------------------------------------------- */
 
@@ -24,12 +29,19 @@ static struct Arena* arena;
 static struct VArray sheets;
 static String* selected_file;
 static struct UIContainer* tset_container;
+static Vec3 mpos;
+
+static void cb_select_tile(int i)
+{
+	tileset.selection = i;
+	tileset.sprite = sprite_new_by_gi(tileset.sheet, i, VEC3_ZERO);
+}
 
 static void cb_load_tileset(int) {
 	if (!selected_file)
 		return;
 
-	tileset.sheet = sprite_sheet_new(selected_file->data, 1);
+	tileset.sheet = sprite_sheet_new(selected_file->data, -1000);
 	if (!tileset.sheet) {
 		ERROR("Failed to load sprite sheet \"%s\"", selected_file->data);
 		return;
@@ -42,7 +54,7 @@ static void cb_load_tileset(int) {
 	struct SpriteGroup* group;
 	struct SpriteState* state;
 	Rect uv_rect;
-	Rect rect = RECT(-1.0f, -1.0f, 0.15f, 0.25f);
+	Rect rect = RECT(-1.0f, -1.0f, 2.0f / UI_TILESET_GRID_COLUMNS, UI_TILESET_TILE_HEIGHT);
 	int spri = 0;
 	for (int i = 0; i < tileset.sheet->groupc; i++) {
 		group = &tileset.sheet->groups[i];
@@ -50,7 +62,7 @@ static void cb_load_tileset(int) {
 			state = &group->states[j];
 			uv_rect = RECT((float)state->frames[0].x / tileset.sheet->w, (float)state->frames[0].y / tileset.sheet->h,
 			               (float)state->frames[0].w / tileset.sheet->w, (float)state->frames[0].h / tileset.sheet->h);
-			button_new(tset_container, rect, STRING(""), tileset.sheet->albedo, uv_rect, cb_test, spri++, NULL);
+			button_new(tset_container, rect, STRING(""), tileset.sheet->albedo, uv_rect, cb_select_tile, state->gi, NULL);
 
 			rect.x += rect.w;
 			if (rect.x + rect.w > 1.0f) {
@@ -82,8 +94,27 @@ void editor_init()
 	uilist_new(sidebar, sheets.len, (String*)sheets.data, NULL, RECT(-0.9f, -0.95f, 1.8f, 0.6f), true, cb_select_file);
 
 	new_ui_tileset(sidebar, RECT(-0.95f, -0.3f, 1.9f, 1.0f));
+}
 
-	arena_reset(arena);
+void editor_register_keys()
+{
+	input_register(SDL_BUTTON_LEFT, cb_place_tile);
+}
+
+void editor_update(struct Camera* cam)
+{
+	if (!tileset.sprite)
+		return;
+
+	mpos = VEC3(mouse_x, mouse_y, 0.0f);
+	Mat4x4 cam_vp = multiply(cam->mats->proj, cam->mats->view);
+	mpos = unproject(mpos, cam_vp, RECT(0.0, 0.0, config.winw, config.winh));
+	mpos.x -= 0.5f;
+	mpos = VEC3(floorf( (mpos.x + mpos.y*2.0f)),
+	            floorf(-(mpos.x - mpos.y*2.0f)),
+	            0.0f);
+
+	tileset.sprite->pos = mpos;
 }
 
 void editor_free()
@@ -141,6 +172,13 @@ static bool ui_tileset_on_hover(struct UIObject* obj, struct UIContext* context)
 
 static void ui_tileset_on_click(struct UIObject* obj, struct UIContext* context)
 {
-	DEBUG_VALUE("click");
 	obj->state.clicked = false;
+}
+
+static void cb_place_tile(bool kdown)
+{
+	if (kdown || !tileset.sprite)
+		return;
+
+	sprite_new(tileset.sheet, 0, mpos);
 }

@@ -189,7 +189,7 @@ struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data)
 
 	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(struct Sprite));
 	sheet->sprite_sheet_data = sbo_new(sizeof(int[4]) + total_framec * sizeof(struct SpriteFrame));
-	buffer_update(sheet->sprite_sheet_data, sizeof(int[4]), (int[]){ sheet_data->w, sheet_data->h, sheet_data->z, 45 }, 0);
+	buffer_update(sheet->sprite_sheet_data, sizeof(int[4]), (int[]){ sheet_data->w, sheet_data->h, sheet_data->z, SPRITE_SCALE }, 0);
 	isize framec = 0;
 	isize total_copied = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
@@ -264,9 +264,6 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 
 struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
 {
-	assert(sheet);
-	assert(group_id < sheet->groupc);
-
 	int sheet_id = sprites_get_sheet_id(sheet);
 	struct SpriteGroup* group = &sheet->groups[group_id];
 	struct Sprite sprite = {
@@ -291,9 +288,6 @@ struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
 
 struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states)
 {
-	assert(sheet);
-	assert(group_id < sheet->groupc);
-
 	int sheet_id = sprites_get_sheet_id(sheet);
 	struct SpriteGroup* group = &sheet->groups[group_id];
 	struct Sprite* sprites = smalloc(spritec * sizeof(struct Sprite));
@@ -320,6 +314,19 @@ struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spr
 	DEBUG(3, "[GFX] Created sprite batch of %d sprites from %s@%s",
 	      spritec, sheets[sheet_id].name, sheets[sheet_id].groups[group_id].name);
 	return varray_get(&sheet->sprites, i);
+}
+
+struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec3 pos)
+{
+	struct SpriteGroup* group;
+	for (int i = 0; i < sheet->groupc; i++) {
+		group = &sheet->groups[i];
+		if (BETWEEN(gi, group->states[0].gi, group->states[group->statec - 1].gi))
+			return sprite_new(sheet, i, pos);
+	}
+
+	ERROR("[GFX] Could not find group containing gi %d in sheet %p", gi, (void*)sheet);
+	return NULL;
 }
 
 void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir)
