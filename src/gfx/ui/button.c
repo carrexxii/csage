@@ -5,18 +5,17 @@
 #include "ui.h"
 #include "button.h"
 
-void button_new(struct UIContainer* parent, Rect rect, String text, struct Texture* tex, Vec2 uvs[2], void (*cb)(int), int data, struct UIStyle* style)
+void button_new(struct UIContainer* parent, Rect rect, String text, struct Texture* tex, Rect uv_rect, void (*cb)(int), int data, struct UIStyle* style)
 {
 	assert(parent);
 
 	struct UIObject obj = {
-		.type   = UI_BUTTON,
-		.style  = style? style: &default_button_style,
-		.rect   = ui_calc_rect(rect, parent),
-		.uvs[0] = uvs? uvs[0]: VEC2(0.0f, 0.0f),
-		.uvs[1] = uvs? uvs[1]: VEC2(1.0f, 1.0f),
-		.imgi   = -1,
-		.state  = default_state,
+		.type    = UI_BUTTON,
+		.style   = style? style: &default_button_style,
+		.rect    = ui_calc_rect(rect, parent),
+		.uv_rect = uv_rect,
+		.imgi    = -1,
+		.state   = default_state,
 		.button = {
 			.cb   = cb,
 			.data = data,

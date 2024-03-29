@@ -2,6 +2,7 @@
 #define MATHS_TYPES_H
 
 #define RECT0 (Rect){ 0 }
+#define RECT1 (Rect){ 0, 0, 1, 1 }
 
 #define VEC2(x, y)       (Vec2){ x, y       }
 #define VEC3(x, y, z)    (Vec3){ x, y, z    }

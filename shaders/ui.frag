@@ -25,4 +25,5 @@ void main()
 		screen_colour = Fcolour;
 	}
 	screen_colour += vec4(hl, 0.0f);
+	screen_colour.rgb = pow(screen_colour.rgb, vec3(1.77f));
 }

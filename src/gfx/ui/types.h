@@ -54,7 +54,7 @@ struct UIContainer {
 struct UIShaderObject {
 	Rect rect;
 	Rect hl;
-	Vec2 uvs[2];
+	Rect uv_rect;
 	Vec4 colour;
 	int  tex_id;
 	byte pad[12];
@@ -87,7 +87,7 @@ struct UICustom {
 struct UIObject {
 	Rect rect;
 	Rect hl;
-	Vec2 uvs[2];
+	Rect uv_rect;
 	Vec2 padding;
 	enum UIObjectType type;
 	struct UIState state;

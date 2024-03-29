@@ -13,7 +13,7 @@ layout(location = 4) out vec4 Fhl;
 struct UIObject {
 	vec4 rect;
 	vec4 hl;
-	vec2 uvs[2];
+	vec4 uv_rect;
 	vec4 colour;
 	int  tex_id;
 };
@@ -30,7 +30,7 @@ void main()
 	float z = 0.01f - 0.0001f*i;
 
 	Fpos    = pos;
-	Fuv     = rect_verts[gl_VertexIndex % 6].xy;
+	Fuv     = obj.uv_rect.xy + obj.uv_rect.zw*rect_verts[gl_VertexIndex % 6].xy;
 	Ftex_id = obj.tex_id;
 	Fhl     = obj.hl;
 	Fcolour = obj.colour;

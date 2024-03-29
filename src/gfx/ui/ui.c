@@ -90,8 +90,8 @@ int ui_add(struct UIContainer* container, struct UIObject* obj)
 	 	i = ui_elemc++;
 
 	obj->i = i;
-	varray_push(&container->objects, obj);
 	container->has_update = true;
+	varray_push(&container->objects, obj);
 
 	return i;
 }
@@ -99,13 +99,13 @@ int ui_add(struct UIContainer* container, struct UIObject* obj)
 int ui_add_image(VkImageView img_view)
 {
 	assert(img_view);
+	pipeln_needs_update = true;
 
 	for (int i = 0; i < img_viewc; i++)
 		if (img_views[i] == img_view)
 			return i;
-	img_views[img_viewc] = img_view;
 
-	pipeln_needs_update = true;
+	img_views[img_viewc] = img_view;
 	return img_viewc++;
 }
 
@@ -194,10 +194,11 @@ void ui_update_object(struct UIObject* obj)
 	                                obj->state.hover  ? obj->style->hover  :
 	                                                    obj->style->normal);
 	buffer_update(ui_elems, sizeof(struct UIShaderObject), &(struct UIShaderObject){
-		.rect   = obj->rect,
-		.colour = colour,
-		.hl     = obj->hl,
-		.tex_id = obj->imgi,
+		.rect    = obj->rect,
+		.uv_rect = obj->uv_rect,
+		.colour  = colour,
+		.hl      = obj->hl,
+		.tex_id  = obj->imgi,
 	}, obj->i * sizeof(struct UIShaderObject));
 }
 
@@ -257,6 +258,7 @@ static void init_pipeln()
 		pl->sboc, &ui_elems,
 		pl->imgc, img_viewc? img_views: &default_tex->image_view);
 	pipeln_init(pl);
+	DEBUG_VALUE(img_viewc);
 
 	pipeln = next_pipeln;
 	pipeln_needs_update = false;

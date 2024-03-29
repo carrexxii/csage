@@ -17,6 +17,7 @@ static bool ui_tileset_on_hover(struct UIObject* obj, struct UIContext* context)
 static void ui_tileset_on_click(struct UIObject* obj, struct UIContext* context);
 
 /* -------------------------------------------------------------------- */
+
 static void cb_test(int x) { DEBUG(1, "Clicked: %d", x); }
 
 static struct Arena* arena;
@@ -29,16 +30,33 @@ static void cb_load_tileset(int) {
 		return;
 
 	tileset.sheet = sprite_sheet_new(selected_file->data, 1);
+	if (!tileset.sheet) {
+		ERROR("Failed to load sprite sheet \"%s\"", selected_file->data);
+		return;
+	}
 
 	if (tset_container)
 		ui_free_container(tset_container);
 	tset_container = ui_new_container(RECT(-1.0f, -1.0f, 1.0f, 1.0f), NULL);
 
-	Rect rect;
-	for (int y = 0; y < 2; y++) {
-		for (int x = 0; x < UI_TILESET_GRID_COLUMNS; x++) {
-			rect = RECT((float)x / 4.0f - 1.0f, (float)y / 4.0f - 1.0f, 0.25f, 0.25f);
-			button_new(tset_container, rect, STRING(""), tileset.sheet->albedo, NULL, cb_test, y*UI_TILESET_GRID_COLUMNS + x, NULL);
+	struct SpriteGroup* group;
+	struct SpriteState* state;
+	Rect uv_rect;
+	Rect rect = RECT(-1.0f, -1.0f, 0.15f, 0.25f);
+	int spri = 0;
+	for (int i = 0; i < tileset.sheet->groupc; i++) {
+		group = &tileset.sheet->groups[i];
+		for (int j = 0; j < group->statec; j++) {
+			state = &group->states[j];
+			uv_rect = RECT((float)state->frames[0].x / tileset.sheet->w, (float)state->frames[0].y / tileset.sheet->h,
+			               (float)state->frames[0].w / tileset.sheet->w, (float)state->frames[0].h / tileset.sheet->h);
+			button_new(tset_container, rect, STRING(""), tileset.sheet->albedo, uv_rect, cb_test, spri++, NULL);
+
+			rect.x += rect.w;
+			if (rect.x + rect.w > 1.0f) {
+				rect.x = -1.0f;
+				rect.y += rect.h;
+			}
 		}
 	}
 
@@ -57,8 +75,8 @@ void editor_init()
 	sheets = varray_new(32, sizeof(String));
 
 	struct UIContainer* sidebar = ui_new_container(RECT(0.4f, -1.0f, 0.6f, 2.0f), NULL);
-	button_new(sidebar, RECT(-0.9f, 0.82f, 0.8f, 0.12f), STRING("Load Tileset"), NULL, NULL, cb_load_tileset, 0, NULL);
-	button_new(sidebar, RECT( 0.1f, 0.82f, 0.8f, 0.12f), STRING("Button 2"), NULL, NULL, cb_test, 2, NULL);
+	button_new(sidebar, RECT(-0.9f, 0.82f, 0.8f, 0.12f), STRING("Load Tileset"), NULL, RECT1, cb_load_tileset, 0, NULL);
+	button_new(sidebar, RECT( 0.1f, 0.82f, 0.8f, 0.12f), STRING("Button 2"), NULL, RECT1, cb_test, 2, NULL);
 
 	dir_enumerate(SPRITE_SHEETS_PATH, false, false, STRING(".lua"), &sheets, arena);
 	uilist_new(sidebar, sheets.len, (String*)sheets.data, NULL, RECT(-0.9f, -0.95f, 1.8f, 0.6f), true, cb_select_file);
