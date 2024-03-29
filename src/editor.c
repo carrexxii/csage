@@ -3,10 +3,11 @@
 #include "resmgr.h"
 #include "util/file.h"
 #include "gfx/ui/ui.h"
+#include "gfx/sprite.h"
 #include "editor.h"
 
 struct UITileset {
-	struct Texture* tex;
+	struct SpriteSheet* sheet;
 } tileset;
 
 static void new_ui_tileset(struct UIContainer* parent, Rect rect);
@@ -27,7 +28,7 @@ static void cb_load_tileset(int) {
 	if (!selected_file)
 		return;
 
-	tileset.tex = load_texture(*selected_file);
+	tileset.sheet = sprite_sheet_new(selected_file->data, 1);
 
 	if (tset_container)
 		ui_free_container(tset_container);
@@ -37,7 +38,7 @@ static void cb_load_tileset(int) {
 	for (int y = 0; y < 2; y++) {
 		for (int x = 0; x < UI_TILESET_GRID_COLUMNS; x++) {
 			rect = RECT((float)x / 4.0f - 1.0f, (float)y / 4.0f - 1.0f, 0.25f, 0.25f);
-			button_new(tset_container, rect, STRING(""), tileset.tex, NULL, cb_test, y*UI_TILESET_GRID_COLUMNS + x, NULL);
+			button_new(tset_container, rect, STRING(""), tileset.sheet->albedo, NULL, cb_test, y*UI_TILESET_GRID_COLUMNS + x, NULL);
 		}
 	}
 
@@ -59,7 +60,7 @@ void editor_init()
 	button_new(sidebar, RECT(-0.9f, 0.82f, 0.8f, 0.12f), STRING("Load Tileset"), NULL, NULL, cb_load_tileset, 0, NULL);
 	button_new(sidebar, RECT( 0.1f, 0.82f, 0.8f, 0.12f), STRING("Button 2"), NULL, NULL, cb_test, 2, NULL);
 
-	dir_enumerate(SPRITE_SHEETS_PATH, true, &sheets, arena);
+	dir_enumerate(SPRITE_SHEETS_PATH, false, false, STRING(".lua"), &sheets, arena);
 	uilist_new(sidebar, sheets.len, (String*)sheets.data, NULL, RECT(-0.9f, -0.95f, 1.8f, 0.6f), true, cb_select_file);
 
 	new_ui_tileset(sidebar, RECT(-0.95f, -0.3f, 1.9f, 1.0f));

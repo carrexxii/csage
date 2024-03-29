@@ -30,7 +30,7 @@ void button_new(struct UIContainer* parent, Rect rect, String text, struct Textu
 	ui_add(parent, &obj);
 
 	DEBUG(3, "[UI] Created new button with parent %p (%.2f, %.2f, %.2f, %.2f): \"%s\" (image: %s)",
-	      parent, rect.x, rect.y, rect.w, rect.h, text.data, STRING_TF(tex));
+	      (void*)parent, rect.x, rect.y, rect.w, rect.h, text.data, STRING_TF(tex));
 }
 
 void button_build(struct UIObject* obj)

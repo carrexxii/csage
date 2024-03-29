@@ -7,7 +7,7 @@ struct Sprite* player_sprite;
 Vec2  player_dir;
 float player_speed = 0.2f;
 
-static isize sprite_sheet;
+static struct SpriteSheet* sprite_sheet;
 static uint dir_mask;
 
 void player_init()

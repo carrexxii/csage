@@ -23,7 +23,7 @@ struct MapLayer {
 
 struct Map {
 	int w, h;
-	int sprite_sheet;
+	struct SpriteSheet* sprite_sheet;
 	int layerc, spot_lightc, point_lightc;
 	struct MapLayer*   layers[MAP_MAX_LAYERS];
 	struct SpotLight*  spot_lights;

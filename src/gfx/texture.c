@@ -40,7 +40,7 @@ void texture_free(struct Texture* tex)
 {
 	if (!tex->image || !tex->memory) {
 		ERROR("[VK] Texture (%p -> %p img | %p mem) does not appear to be valid (probably uninitialized or double free)",
-		      tex, tex->image, tex->memory);
+		      (void*)tex, (void*)tex->image, (void*)tex->memory);
 		return;
 	}
 

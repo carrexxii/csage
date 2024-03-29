@@ -22,7 +22,7 @@ void label_new(struct UIContainer* parent, String str, struct UIStyle* style, Re
 
 	ui_add(parent, &obj);
 	DEBUG(3, "[UI] Created new label with parent %p (%.2f, %.2f, %.2f, %.2f):\n\t\"%s\"",
-	      parent, rect.x, rect.y, rect.w, rect.h, str.data);
+	      (void*)parent, rect.x, rect.y, rect.w, rect.h, str.data);
 }
 
 void label_build(struct UIObject* obj)

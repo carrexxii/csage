@@ -24,24 +24,33 @@ void sprites_init()
 
 }
 
-int sprites_get_sheet(char* sheet_name)
+struct SpriteSheet* sprites_get_sheet(const char* sheet_name)
 {
 	struct SpriteSheet* sheet = NULL;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		if (!strcmp(sheet->name, sheet_name))
-			return i;
+			return sheet;
 	}
 
 	ERROR("[GFX] Sheet \"%s\" not found", sheet_name);
+	return NULL;
+}
+
+int sprites_get_sheet_id(struct SpriteSheet* sheet)
+{
+	for (int i = 0; i < sheetc; i++)
+		if (&sheets[i] == sheet)
+			return i;
+
+	ERROR("[GFX] Invalid sprite sheet: %p", (void*)sheet);
 	return -1;
 }
 
-int sprites_get_group(int sheet_id, char* group_name)
+int sprites_get_group(struct SpriteSheet* sheet, const char* group_name)
 {
-	assert(sheet_id < sheetc);
+	assert(sheet && group_name);
 
-	struct SpriteSheet* sheet = &sheets[sheet_id];
 	struct SpriteGroup* group;
 	for (int i = 0; i < sheet->groupc; i++) {
 		group = &sheet->groups[i];
@@ -49,7 +58,7 @@ int sprites_get_group(int sheet_id, char* group_name)
 			return i;
 	}
 
-	ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheets[sheet_id].name);
+	ERROR("[GFX] Sprite group \"%s\" not found in sheet \"%s\"", group_name, sheet->name);
 	return -1;
 }
 
@@ -126,7 +135,7 @@ void sprite_sheet_init_pipeline(struct SpriteSheet* sheet)
 	sheet->needs_update = false;
 }
 
-int sprite_sheet_new(char* name, int z_lvl)
+struct SpriteSheet* sprite_sheet_new(const char* name, int z_lvl)
 {
 	char path[PATH_BUFFER_SIZE];
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", name);
@@ -134,12 +143,12 @@ int sprite_sheet_new(char* name, int z_lvl)
 	lua_pushstring(lua_state, path);
 	if (lua_pcall(lua_state, 1, 1, 0)) {
 		ERROR("[LUA] Failed in call to \"load_sprite_sheet\": \n\t%s", lua_tostring(lua_state, -1));
-		return -1;
+		return NULL;
 	}
 
 	if (lua_isnoneornil(lua_state, -1)) {
 		ERROR("[RES] Failed to load \"%s\" (%s)", name, path);
-		return -1;
+		return NULL;
 	}
 	struct SpriteSheet* sheet_data = lua_topointer(lua_state, -1);
 	sheet_data->z = z_lvl;
@@ -148,9 +157,9 @@ int sprite_sheet_new(char* name, int z_lvl)
 	return sprite_sheet_load(sheet_data);
 }
 
-int sprite_sheet_load(struct SpriteSheet* sheet_data)
+struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data)
 {
-	struct SpriteSheet* sheet = &sheets[sheetc];
+	struct SpriteSheet* sheet = &sheets[sheetc++];
 
 	*sheet = *sheet_data;
 	sheet->sprites = varray_new(DEFAULT_SPRITES, sizeof(struct Sprite));
@@ -203,8 +212,8 @@ int sprite_sheet_load(struct SpriteSheet* sheet_data)
 	else
 		sheet->needs_update = true;
 
-	DEBUG(1, "[RES] Loaded new sprite sheet \"%s\" with %d sprites", sheet->name, sheet->groupc);
-	return sheetc++;
+	DEBUG(2, "[RES] Loaded new sprite sheet (%d) \"%s\" with %d sprites", sheetc - 1, sheet->name, sheet->groupc);
+	return sheet;
 }
 
 void sprite_sheet_free()
@@ -253,12 +262,12 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 
 /* -------------------------------------------------------------------- */
 
-struct Sprite* sprite_new(int sheet_id, int group_id, Vec3 pos)
+struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
 {
-	assert(sheet_id < sheetc);
-	assert(group_id < sheets[sheet_id].groupc);
+	assert(sheet);
+	assert(group_id < sheet->groupc);
 
-	struct SpriteSheet* sheet = &sheets[sheet_id];
+	int sheet_id = sprites_get_sheet_id(sheet);
 	struct SpriteGroup* group = &sheet->groups[group_id];
 	struct Sprite sprite = {
 		.pos   = pos,
@@ -280,12 +289,12 @@ struct Sprite* sprite_new(int sheet_id, int group_id, Vec3 pos)
 	return varray_get(&sheet->sprites, spri);
 }
 
-struct Sprite* sprite_new_batch(int sheet_id, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states)
+struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states)
 {
-	assert(sheet_id < sheetc);
-	assert(group_id < sheets[sheet_id].groupc);
+	assert(sheet);
+	assert(group_id < sheet->groupc);
 
-	struct SpriteSheet* sheet = &sheets[sheet_id];
+	int sheet_id = sprites_get_sheet_id(sheet);
 	struct SpriteGroup* group = &sheet->groups[group_id];
 	struct Sprite* sprites = smalloc(spritec * sizeof(struct Sprite));
 	int state;

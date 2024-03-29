@@ -37,7 +37,7 @@ void uilist_new(struct UIContainer* parent, int strc, String* strs, struct UISty
 
 	ui_add(parent, &obj);
 	DEBUG(3, "[UI] Created new string list (%d strings) with parent %p (%.2f, %.2f, %.2f, %.2f)",
-	      strc, parent, rect.x, rect.y, rect.w, rect.h);
+	      strc, (void*)parent, rect.x, rect.y, rect.w, rect.h);
 }
 
 void uilist_build(struct UIObject* obj)

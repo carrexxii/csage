@@ -50,13 +50,16 @@ void input_register(SDL_Keycode key, void (*fn)(bool))
 
 void input_deregister(SDL_Keycode key, void (*fn)(bool))
 {
-	for (int i = 0; i < eventc; i++)
+	for (int i = 0; i < eventc; i++) {
 		if (events[i].sym == key) {
-			if (events[i].fn == fn)
-				return events[i] = (struct Event){ 0 }, (void)0;
-			else
+			if (events[i].fn == fn) {
+				events[i] = (struct Event){ 0 };
+				return;
+			} else {
 				ERROR("[INPUT] Event for key %d does not match given function", key);
+			}
 		}
+	}
 
 	ERROR("[INPUT] Could not find event to deregister for key %d", key);
 }

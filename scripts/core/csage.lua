@@ -177,8 +177,8 @@ csage.cdef [[
 		SBO sprite_data;
 	};
 
-	int sprite_sheet_new(char* name);
-	int sprite_sheet_load(struct SpriteSheet* sheet_data);
+	struct SpriteSheet* sprite_sheet_new(char* name);
+	struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data);
 
 	/* ---------------------------------------------------------------- */
 
@@ -193,7 +193,7 @@ csage.cdef [[
 
 	struct Map {
 		int w, h;
-		int sprite_sheet;
+		struct SpriteSheet* sprite_sheet;
 		int layerc, spot_lightc, point_lightc;
 		struct MapLayer*   layers[8];
 		struct SpotLight*  spot_lights;

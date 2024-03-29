@@ -21,6 +21,8 @@ void   string_free(String* str);
 
 void string_clear(String* str);
 void string_cat_cstr(String* str1, char* str2, isize len);
+bool string_endswith(String str, String ext);
+bool string_strip_ext(String* str);
 
 char* string_file_name(String path);
 

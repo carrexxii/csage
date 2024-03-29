@@ -45,27 +45,34 @@ char* file_loadf(FILE* file)
 /* -------------------------------------------------------------------- */
 
 static struct Arena* enumerate_arena;
-static bool enumerate_with_path;
+static bool          enumerate_with_path;
+static bool          enumerate_with_ext;
+static String        enumerate_filter;
 static int cb_dir_enumerate(void* user_data, const char* restrict dir, const char* restrict file) {
 	struct VArray* arr = user_data;
 	String path;
+	String dir_str  = string_new(dir , -1, enumerate_arena);
+	String file_str = string_new(file, -1, enumerate_arena);
 	if (enumerate_with_path)
-		path = string_new_join(2, (String[]){
-			string_new(dir , -1, enumerate_arena),
-			string_new(file, -1, enumerate_arena)
-		}, STRING("/"), enumerate_arena);
+		path = string_new_join(2, (String[]){ dir_str, file_str }, STRING("/"), enumerate_arena);
 	else
 		path = string_new(file, -1, enumerate_arena);
 
-	varray_push(arr, &path);
+	if (enumerate_filter.data && string_endswith(path, enumerate_filter)) {
+		if (!enumerate_with_ext)
+			string_strip_ext(&path);
+		varray_push(arr, &path);
+	}
 	return 1;
 }
 
-void dir_enumerate(char* path, bool with_path, struct VArray* arr, struct Arena* arena)
+void dir_enumerate(const char* path, bool with_path, bool with_ext, String ext, struct VArray* arr, struct Arena* arena)
 {
 	assert(path && arr && arena);
 
 	enumerate_with_path = with_path;
+	enumerate_with_ext  = with_ext;
+	enumerate_filter    = ext;
 	enumerate_arena     = arena;
 	SDL_EnumerateDirectory(path, cb_dir_enumerate, arr);
 }

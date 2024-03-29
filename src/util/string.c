@@ -93,6 +93,26 @@ int string_contains(String str, char c)
 	return -1;
 }
 
+bool string_endswith(String str, String ext)
+{
+	return !strncmp(str.data + str.len - ext.len, ext.data, ext.len);
+}
+
+bool string_strip_ext(String* str)
+{
+	char* p = str->data + str->len - 1;
+	while (*p != '.') {
+		if (p == str->data)
+			return false;
+		else
+			p--;
+	}
+
+	*p = '\0';
+	str->len = p - str->data;
+	return true;
+}
+
 void string_clear(String* str)
 {
 	str->len     = 0;
