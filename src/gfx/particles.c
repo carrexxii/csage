@@ -14,7 +14,7 @@
 #define PARTICLES_UBO_SIZE     sizeof(struct Particle)*MAX_PARTICLES_PER_POOL
 #define PARTICLE_DAMPNER       0.99
 
-static struct Pipeline* pipeln;
+static struct Pipeline* atomic pipeln;
 static UBO ubo;
 static VBO vbo_buf;
 static struct Image* img;
@@ -63,8 +63,7 @@ void particles_init()
 		.imgc        = 1,
 		.imgs        = img,
 	};
-	pipeln = pipeln_new(&pipeln_ci);
-	pipeln_update(pipeln);
+	pipeln = pipeln_new(&pipeln_ci, "Particles");
 
 	float verts[] = {
 		-0.5,  0.5, 0.0, 0.0,   0.5, 0.5, 1.0, 0.0,   -0.5, -0.5, 0.0, 1.0,
@@ -147,7 +146,7 @@ void particles_record_commands(VkCommandBuffer cmd_buf)
 			continue;
 		buffer_update(ubo, PARTICLES_UBO_SIZE, pool->particles, 0);
 
-		vkCmdPushConstants(cmd_buf, pipeln->layout, pipeln->push_stages, 0, sizeof(pool->scale), &pool->scale);
+		vkCmdPushConstants(cmd_buf, pipeln->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pool->scale), &pool->scale);
 		vkCmdDraw(cmd_buf, 6, MAX_PARTICLES_PER_POOL, 0, MAX_PARTICLES_PER_POOL*i);
 	}
 }

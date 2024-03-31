@@ -8,7 +8,7 @@
 #include "types.h"
 #include "ui.h"
 
-static void init_pipeln(void);
+static void update_pipeln(void);
 static inline void update_container(struct UIContainer* container);
 static void cb_mouse_left(bool kdown);
 static void container_free(struct UIContainer* container);
@@ -45,6 +45,7 @@ void ui_init()
 		.imgc          = 1,
 		.imgs[0]       = default_tex,
 	};
+	pipeln = pipeln_new(&pipeln_ci, "UI");
 
 	DEBUG(1, "[UI] Initialized UI");
 }
@@ -141,7 +142,7 @@ void ui_build()
 	}
 
 	if (pipeln_needs_update)
-		init_pipeln();
+		update_pipeln();
 }
 
 void ui_update()
@@ -245,13 +246,9 @@ void ui_free()
 
 /* -------------------------------------------------------------------- */
 
-static void init_pipeln()
+static void update_pipeln()
 {
-	struct Pipeline* pl;
-	pl = pipeln_new(&pipeln_ci);
-	pipeln_update(pl);
-	pipeln = pl;
-
+	pipeln_update(&pipeln, &pipeln_ci);
 	pipeln_needs_update = false;
 }
 

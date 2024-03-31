@@ -19,9 +19,9 @@ static void scratch_add_point(float a[7]);
 static void scratch_add_line(float a[7], float b[7]);
 static void scratch_add_plane(float pts[6][7]);
 
-static struct Pipeline* point_pipeln;
-static struct Pipeline* line_pipeln;
-static struct Pipeline* plane_pipeln;
+static struct Pipeline* atomic point_pipeln;
+static struct Pipeline* atomic line_pipeln;
+static struct Pipeline* atomic plane_pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SCRATCH_VERTEX_SIZE, /* xyzrgba */
@@ -79,16 +79,13 @@ void scratch_init()
 		.uboc        = 1,
 		.ubos[0]     = cam_ubo,
 	};
-	point_pipeln = pipeln_new(&pipeln_ci);
-	pipeln_update(point_pipeln);
+	point_pipeln = pipeln_new(&pipeln_ci, "Scratch points");
 
 	pipeln_ci.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-	line_pipeln = pipeln_new(&pipeln_ci);
-	pipeln_update(line_pipeln);
+	line_pipeln = pipeln_new(&pipeln_ci, "Scratch lines");
 
 	pipeln_ci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	plane_pipeln = pipeln_new(&pipeln_ci);
-	pipeln_update(plane_pipeln);
+	plane_pipeln = pipeln_new(&pipeln_ci, "Scratch planes");
 
 	points = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[1][7]));
 	lines  = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[2][7]));

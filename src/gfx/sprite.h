@@ -80,7 +80,7 @@ struct SpriteSheet {
 	struct SpriteGroup* groups;
 	struct Image*       albedo;
 	struct Image*       normal;
-	struct Pipeline*    pipeln;
+	struct Pipeline* atomic pipeln;
 	SBO sprite_sheet_data;
 	SBO sprite_data;
 };

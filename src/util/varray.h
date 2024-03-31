@@ -29,7 +29,7 @@ static inline struct VArray varray_new(isize elemc, isize elem_sz)
 {
 	assert(elemc > 0 && elem_sz > 0);
 	struct VArray arr = {
-		.data = smalloc(elemc*elem_sz),
+		.data    = smalloc(elemc*elem_sz),
 		.len     = 0,
 		.cap     = elemc,
 		.elem_sz = elem_sz,
@@ -67,7 +67,7 @@ static inline isize varray_push(struct VArray* restrict arr, void* restrict elem
 	if (arr->len >= arr->cap) {
 		arr->cap *= VARRAY_SIZE_MULTIPLIER;
 		arr->data = srealloc(arr->data, arr->cap*arr->elem_sz);
-		DEBUG(4, "[UTIL] Resized VArray [len=%d; cap=%d; elem_sz=%dB]", arr->len, arr->cap, arr->elem_sz);
+		DEBUG(3, "[UTIL] Resized VArray [len=%d; cap=%d; elem_sz=%dB]", arr->len, arr->cap, arr->elem_sz);
 	}
 
 	memcpy(arr->data + arr->len*arr->elem_sz, elem, arr->elem_sz);
@@ -84,6 +84,15 @@ static inline isize varray_push_many(struct VArray* restrict arr, isize count, v
 		varray_push(arr, (byte*)elem + i*arr->elem_sz);
 
 	return fst;
+}
+
+static inline bool varray_contains(struct VArray* arr, void* data)
+{
+	for (int i = 0; i < arr->len; i++)
+		if (!memcmp(varray_get(arr, i), data, arr->elem_sz))
+			return true;
+
+	return false;
 }
 
 static inline void varray_reset(struct VArray* arr)

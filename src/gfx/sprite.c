@@ -80,7 +80,7 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 
 		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln->pipeln);
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln->layout, 0, 1, &sheet->pipeln->dset.set, 0, NULL);
-		vkCmdPushConstants(cmd_buf, sheet->pipeln->layout, sheet->pipeln->push_stages, 0, sizeof(push_const), &push_const);
+		vkCmdPushConstants(cmd_buf, sheet->pipeln->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_const), &push_const);
 		vkCmdDraw(cmd_buf, sheet->sprites.len*6, 1, 0, 0);
 	}
 }
@@ -130,8 +130,7 @@ void sprite_sheet_init_pipeline(struct SpriteSheet* sheet)
 		.push_sz     = sizeof(push_const),
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 	};
-	sheet->pipeln = pipeln_new(&pipeln_ci);
-	pipeln_update(sheet->pipeln);
+	sheet->pipeln = pipeln_new(&pipeln_ci, "Sprites");
 	sheet->needs_update = false;
 }
 

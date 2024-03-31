@@ -22,7 +22,7 @@ struct Character {
 /* -------------------------------------------------------------------- */
 #define SIZEOF_FONT_VERTEX sizeof(float[4])
 
-static struct Pipeline* pipeln;
+static struct Pipeline* atomic pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SIZEOF_FONT_VERTEX, /* xyuv */
@@ -127,8 +127,7 @@ void font_init()
 		.imgc        = 1,
 		.imgs        = &atlas,
 	};
-	pipeln = pipeln_new(&pipeln_ci);
-	pipeln_update(pipeln);
+	pipeln = pipeln_new(&pipeln_ci, "Font");
 }
 
 struct TextObject* font_render(String str, float z, float w)
@@ -217,7 +216,7 @@ void font_record_commands(VkCommandBuffer cmd_buf)
 			continue;
 
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdPushConstants(cmd_buf, pipeln->layout, pipeln->push_stages, 0, sizeof(float[4]), (float[]){ // TODO: make struct
+		vkCmdPushConstants(cmd_buf, pipeln->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float[4]), (float[]){ // TODO: make struct
 			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y
 		});
 		vkCmdDraw(cmd_buf, text_objs[i].vertc, 1, 0, i);
