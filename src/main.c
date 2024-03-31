@@ -77,11 +77,13 @@ noreturn void quit()
 	DEBUG(1, "/------------------------------\\");
 	DEBUG(1, "|        Cleaning up...        |");
 	DEBUG(1, "\\------------------------------/");
-	renderer_free();
+	vkDeviceWaitIdle(logical_gpu);
+
 	entities_free();
 	scenemgr_free();
 	lua_free();
 	resmgr_free();
+	renderer_free();
 	vulkan_free();
 	SDL_Quit();
 	exit(0);

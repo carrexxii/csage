@@ -13,14 +13,13 @@ static inline void update_container(struct UIContainer* container);
 static void cb_mouse_left(bool kdown);
 static void container_free(struct UIContainer* container);
 
-static atomic int pipeln;
-static struct Pipeline pipelns[2];
+static struct PipelineCreateInfo pipeln_ci;
+static struct Pipeline* atomic pipeln;
 static Mutex updating_lock;
 
-int containerc, img_viewc;
+int containerc;
 static struct UIContainer containers[UI_MAX_CONTAINERS];
-static VkImageView img_views[UI_MAX_IMAGES];
-static struct UIContext context;
+static struct UIContext   context;
 
 static int  ui_elemc;
 static SBO  ui_elems;
@@ -28,14 +27,24 @@ static bool ui_elems_update;
 static struct VArray free_elems;
 
 static bool pipeln_needs_update;
-static struct Texture* default_tex;
+static struct Image* default_tex;
 
 void ui_init()
 {
 	pipeln_needs_update = true;
 	ui_elems    = sbo_new(UI_MAX_ELEMENTS * sizeof(struct UIShaderObject)); // TODO: resize if necessary
 	free_elems  = varray_new(16, sizeof(int));
-	default_tex = load_texture(STRING(TEXTURE_PATH "/default.png"));
+	default_tex = load_image(STRING(TEXTURE_PATH "/default.png"));
+
+	pipeln_ci = (struct PipelineCreateInfo){
+		.fshader       = STRING(SHADER_PATH "/ui.frag"),
+		.vshader       = STRING(SHADER_PATH "/ui.vert"),
+		.sbo_stages[0] = VK_SHADER_STAGE_VERTEX_BIT,
+		.sboc          = 1,
+		.sbos[0]       = ui_elems,
+		.imgc          = 1,
+		.imgs[0]       = default_tex,
+	};
 
 	DEBUG(1, "[UI] Initialized UI");
 }
@@ -96,17 +105,17 @@ int ui_add(struct UIContainer* container, struct UIObject* obj)
 	return i;
 }
 
-int ui_add_image(VkImageView img_view)
+int ui_add_image(struct Image* img)
 {
-	assert(img_view);
+	assert(img);
 	pipeln_needs_update = true;
 
-	for (int i = 0; i < img_viewc; i++)
-		if (img_views[i] == img_view)
+	for (int i = 0; i < pipeln_ci.imgc; i++)
+		if (pipeln_ci.imgs[i] == img)
 			return i;
 
-	img_views[img_viewc] = img_view;
-	return img_viewc++;
+	pipeln_ci.imgs[pipeln_ci.imgc] = img;
+	return pipeln_ci.imgc++;
 }
 
 void ui_build()
@@ -204,9 +213,9 @@ void ui_update_object(struct UIObject* obj)
 
 void ui_record_commands(VkCommandBuffer cmd_buf)
 {
-	struct Pipeline* pl = &pipelns[pipeln];
+	struct Pipeline* pl = pipeln;
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->layout, 0, 1, pl->dsets, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->layout, 0, 1, &pl->dset.set, 0, NULL);
 
 	int objc = containerc;
 	for (int i = 0; i < containerc; i++)
@@ -231,35 +240,18 @@ void ui_free()
 	for (int i = 0; i < containerc; i++)
 		container_free(&containers[i]);
 
-	pipeln_free(&pipelns[0]);
-	pipeln_free(&pipelns[1]);
+	pipeln_free(pipeln);
 }
 
 /* -------------------------------------------------------------------- */
 
 static void init_pipeln()
 {
-	int next_pipeln = (pipeln + 1) % 2;
-	struct Pipeline* pl = &pipelns[next_pipeln];
-	if (pl->pipeln)
-		pipeln_free(pl);
+	struct Pipeline* pl;
+	pl = pipeln_new(&pipeln_ci);
+	pipeln_update(pl);
+	pipeln = pl;
 
-	*pl = (struct Pipeline){
-		.vshader    = load_shader(STRING(SHADER_PATH "/ui.vert")),
-		.fshader    = load_shader(STRING(SHADER_PATH "/ui.frag")),
-		.topology   = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.dset_cap   = 1,
-		.sboc       = 1,
-		.imgc       = img_viewc? img_viewc: 1,
-	};
-	pipeln_alloc_dsets(pl);
-	pipeln_create_dset(pl,
-		pl->uboc, NULL,
-		pl->sboc, &ui_elems,
-		pl->imgc, img_viewc? img_views: &default_tex->image_view);
-	pipeln_init(pl);
-
-	pipeln = next_pipeln;
 	pipeln_needs_update = false;
 }
 

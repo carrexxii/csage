@@ -6,9 +6,8 @@
 #include "util/varray.h"
 #include "gfx/buffers.h"
 #include "font.h"
-#include "gfx/texture.h"
 
-#define UI_CONTAINER_MAX_TEXTURES 8
+#define UI_CONTAINER_MAX_IMAGES 8
 
 struct UIVertex {
 	Vec2   pos;

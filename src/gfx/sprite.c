@@ -6,6 +6,7 @@
 #include "util/varray.h"
 #include "vulkan.h"
 #include "buffers.h"
+#include "image.h"
 #include "renderer.h"
 #include "camera.h"
 #include "map.h"
@@ -77,9 +78,9 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 		buffer_update(sheet->sprite_data, sheet->sprites.len*sizeof(struct Sprite), sheet->sprites.data, 0);
 		push_const.sheet = i;
 
-		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.pipeln);
-		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln.layout, 0, 1, sheet->pipeln.dsets, 0, NULL);
-		vkCmdPushConstants(cmd_buf, sheet->pipeln.layout, sheet->pipeln.push_stages, 0, sheet->pipeln.push_sz, &push_const);
+		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln->pipeln);
+		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, sheet->pipeln->layout, 0, 1, &sheet->pipeln->dset.set, 0, NULL);
+		vkCmdPushConstants(cmd_buf, sheet->pipeln->layout, sheet->pipeln->push_stages, 0, sizeof(push_const), &push_const);
 		vkCmdDraw(cmd_buf, sheet->sprites.len*6, 1, 0, 0);
 	}
 }
@@ -110,28 +111,27 @@ void sprites_update()
 
 void sprite_sheet_init_pipeline(struct SpriteSheet* sheet)
 {
-	if (sheet->pipeln.pipeln)
-		pipeln_free(&sheet->pipeln);
-
-	sheet->pipeln = (struct Pipeline){
-		.vshader     = load_shader(STRING(SHADER_PATH "/sprite.vert")),
-		.fshader     = load_shader(STRING(SHADER_PATH "/sprite.frag")),
-		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.push_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		.push_sz     = sizeof(push_const),
-		.dset_cap    = 1,
+	struct PipelineCreateInfo pipeln_ci = {
+		.vshader     = STRING(SHADER_PATH "/sprite.vert"),
+		.fshader     = STRING(SHADER_PATH "/sprite.frag"),
+		.ubo_stages  = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 		.uboc        = 2,
+		.ubos[0]     = global_camera_ubo,
+		.ubos[1]     = global_light_ubo,
+		.sbo_stages  = VK_SHADER_STAGE_VERTEX_BIT,
 		.sboc        = 4,
+		.sbos[0]     = sheet->sprite_sheet_data,
+		.sbos[1]     = sheet->sprite_data,
+		.sbos[2]     = spot_lights_sbo,
+		.sbos[3]     = point_lights_sbo,
 		.imgc        = 2,
+		.imgs[0]     = sheet->albedo,
+		.imgs[1]     = sheet->normal,
+		.push_sz     = sizeof(push_const),
+		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 	};
-	pipeln_alloc_dsets(&sheet->pipeln);
-	pipeln_create_dset(&sheet->pipeln,
-		sheet->pipeln.uboc, (UBO[]){ global_camera_ubo, global_light_ubo },
-	    sheet->pipeln.sboc, (SBO[]){ sheet->sprite_sheet_data, sheet->sprite_data,
-	                                 spot_lights_sbo, point_lights_sbo, },
-		sheet->pipeln.imgc, (VkImageView[]){ sheet->albedo->image_view, sheet->normal->image_view }
-	);
-	pipeln_init(&sheet->pipeln);
+	sheet->pipeln = pipeln_new(&pipeln_ci);
+	pipeln_update(sheet->pipeln);
 	sheet->needs_update = false;
 }
 
@@ -203,9 +203,9 @@ struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data)
 
 	char path[PATH_BUFFER_SIZE];
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", sheet_data->name);
-	sheet->albedo = load_texture(STRING(path));
+	sheet->albedo = load_image(STRING(path));
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s-normal.png", sheet_data->name);
-	sheet->normal = load_texture(STRING(path));
+	sheet->normal = load_image(STRING(path));
 
 	if (spot_lights_sbo.buf && point_lights_sbo.buf)
 		sprite_sheet_init_pipeline(sheet);
@@ -233,7 +233,7 @@ void sprite_sheet_free()
 		varray_free(&sheet->sprites);
 		sbo_free(&sheet->sprite_sheet_data);
 		sbo_free(&sheet->sprite_data);
-		pipeln_free(&sheet->pipeln);
+		pipeln_free(sheet->pipeln);
 	}
 }
 
@@ -276,9 +276,14 @@ struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
 
 	// TODO: handle resizing properly
 	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
-		buffer_free(&sheet->sprite_data);
-		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+		SBO new = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+		SBO old = sheet->sprite_data;
+		sheet->sprite_data = new;
 		sprite_sheet_init_pipeline(sheet);
+		sbo_free(&old);
+		// buffer_free(&sheet->sprite_data);
+		// sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+		// sprite_sheet_init_pipeline(sheet);
 	}
 
 	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %.2f)",

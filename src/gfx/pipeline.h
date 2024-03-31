@@ -1,40 +1,29 @@
 #ifndef GFX_PIPELINE_H
 #define GFX_PIPELINE_H
 
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 
+#include "util/string.h"
 #include "buffers.h"
+#include "image.h"
 
-#define PIPELINE_MAX_BINDINGS        32
-#define PIPELINE_MAX_DESCRIPTOR_SETS 8
+#define MAX_PIPELINES 32
+#define PIPELINE_MAX_UBOS      3
+#define PIPELINE_MAX_SBOS      5
+#define PIPELINE_MAX_IMAGES    3
+#define PIPELINE_MAX_BINDINGS  (PIPELINE_MAX_UBOS + PIPELINE_MAX_SBOS + PIPELINE_MAX_IMAGES + 1)
 
-// TODO: maybe make the descriptor layout parameters
-/* Pipeline layout:
- * - If you have images, call `pipeln_alloc_dsets()` first (`pipeln_init()` will
- *   automatically call it if it has not already been called)
- * - Use `pipeln_create_image_dset` to create descriptors for images before calling `pipeln_init`
- * - Shader descriptor layout is: [Set 0 => [sampler][storage buffers][uniform buffers]]
- *                                [Set 1 => [images]]
- * - The pipeline will only have the descriptor for sampler/storage/uniform buffers, but will
- *   allocate for `dset_cap` descriptors
- * - No values must be changed once `pipeln_init` has been called
- */
+struct DescriptorSet {
+	VkDescriptorSetLayout layout;
+	VkDescriptorSet       set;
+};
+
 struct Pipeline {
-	VkPipeline            pipeln;
-	VkPipelineLayout      layout;
-	VkDescriptorPool      dpool;
-	VkDescriptorSetLayout dset_layout;
-	VkDescriptorSet*      dsets;
-	isize dsetc;
+	struct PipelineCreateInfo* ci;
 
-	/*** Caller-defined values ***/
-	VkSampler           sampler;  /* NULL = use `default_sampler`                     */
-	VkPrimitiveTopology topology; /* 0    = use `VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST` */
-
-	int vert_bindc;
-	int vert_attrc;
-	VkVertexInputBindingDescription*   vert_binds;
-	VkVertexInputAttributeDescription* vert_attrs;
+	VkPipeline           pipeln;
+	VkPipelineLayout     layout;
+	struct DescriptorSet dset;
 
 	VkShaderModule  vshader;
 	VkShaderModule tcshader;
@@ -42,18 +31,44 @@ struct Pipeline {
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
 
-	isize push_sz;
 	VkShaderStageFlags push_stages;
-
-	isize dset_cap;
-	isize uboc;
-	isize sboc;
-	isize imgc;
 };
 
-void pipeln_alloc_dsets(struct Pipeline* pipeln);
-void pipeln_init(struct Pipeline* pipeln);
-VkDescriptorSet pipeln_create_dset(struct Pipeline* pipeln, int uboc, UBO* ubos, int sboc, SBO* sbos, int img_viewc, VkImageView* img_views);
-void pipeln_free(struct Pipeline* pipeln);
+struct PipelineCreateInfo {
+	int                                vert_bindc;
+	VkVertexInputBindingDescription*   vert_binds;
+	int                                vert_attrc;
+	VkVertexInputAttributeDescription* vert_attrs;
+
+	VkSampler           sampler;
+	VkPrimitiveTopology topology;
+	bool                primitive_restart;
+
+	String  vshader;
+	String  fshader;
+	String tcshader;
+	String teshader;
+	String  gshader;
+
+	int                push_sz;
+	VkShaderStageFlags push_stages;
+
+	int uboc;
+	VkShaderStageFlags ubo_stages[PIPELINE_MAX_UBOS];
+	UBO ubos[PIPELINE_MAX_UBOS];
+
+	int sboc;
+	VkShaderStageFlags sbo_stages[PIPELINE_MAX_SBOS];
+	SBO sbos[PIPELINE_MAX_SBOS];
+
+	int imgc;
+	struct Image* imgs[PIPELINE_MAX_IMAGES];
+};
+
+void pipelns_init(void);
+void pipelns_free(void);
+struct Pipeline* pipeln_new(struct PipelineCreateInfo* ci);
+void             pipeln_update(struct Pipeline* pipeln);
+void             pipeln_free(struct Pipeline* pipeln);
 
 #endif

@@ -7,6 +7,8 @@
 #include "swapchain.h"
 #include "image.h"
 
+static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h);
+
 struct Image image_new(uint w, uint h, VkFormat fmt, VkImageUsageFlags usage, VkSampleCountFlags samples)
 {
 	struct Image img;
@@ -79,6 +81,33 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 		DEBUG(3, "[VK] Created image view");
 
 	return img_view;
+}
+
+struct Image image_of_memory(int w, int h, uint8* pxs)
+{
+	void* data;
+	struct Buffer trans_buf;
+	VkDeviceSize size = 4 * w * h;
+	buffer_new(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+	           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	           &trans_buf.buf, &trans_buf.mem);
+	vkMapMemory(logical_gpu, trans_buf.mem, 0, size, 0, &data);
+	memcpy(data, pxs, size);
+	vkUnmapMemory(logical_gpu, trans_buf.mem);
+
+	struct Image img = image_new(w, h, VK_FORMAT_R8G8B8A8_UNORM,
+	                             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+	                             VK_SAMPLE_COUNT_1_BIT);
+
+	image_transition_layout(img.img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	buffer_to_image(trans_buf.buf, img.img, w, h);
+	image_transition_layout(img.img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	img.view = image_new_view(img.img, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	buffer_free(&trans_buf);
+	return img;
 }
 
 void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
@@ -192,3 +221,26 @@ VkSampler image_new_sampler(VkFilter filter)
 
 	return samp;
 }
+
+/* -------------------------------------------------------------------- */
+
+static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h)
+{
+	VkCommandBuffer cbuf = begin_command_buffer(graphicsq);
+	VkBufferImageCopy rgn = {
+		.bufferOffset      = 0,
+		.bufferRowLength   = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource = {
+			.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+			.mipLevel       = 0,
+			.baseArrayLayer = 0,
+			.layerCount     = 1,
+		},
+		.imageOffset = { 0, 0, 0 },
+		.imageExtent = { w, h, 1 },
+	};
+	vkCmdCopyBufferToImage(cbuf, buf, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &rgn);
+	end_command_buffer(cbuf, graphicsq);
+}
+

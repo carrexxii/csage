@@ -10,7 +10,6 @@
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/image.h"
-#include "gfx/texture.h"
 #include "font.h"
 
 struct Character {
@@ -23,7 +22,7 @@ struct Character {
 /* -------------------------------------------------------------------- */
 #define SIZEOF_FONT_VERTEX sizeof(float[4])
 
-static struct Pipeline pipeln;
+static struct Pipeline* pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SIZEOF_FONT_VERTEX, /* xyuv */
@@ -47,7 +46,7 @@ static FT_Library library;
 static FT_Face    face;
 static VkSampler  font_sampler;
 static struct Character characters[128];
-static struct Texture atlas;
+static struct Image atlas;
 static float atlas_w;
 static float atlas_h;
 static int text_objc;
@@ -107,7 +106,7 @@ void font_init()
 		}
 		tex_x += face->glyph->advance.x >> 6;
 	}
-	atlas = texture_of_memory(atlas_w, atlas_h, atlas_bitmap);
+	atlas = image_of_memory(atlas_w, atlas_h, atlas_bitmap);
 
 	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
 	free(atlas_bitmap);
@@ -115,23 +114,21 @@ void font_init()
 	FT_Done_FreeType(library);
 
 	font_sampler = image_new_sampler(VK_FILTER_LINEAR);
-	pipeln = (struct Pipeline){
-		.vshader     = load_shader(STRING(SHADER_PATH "/font.vert")),
-		.fshader     = load_shader(STRING(SHADER_PATH "/font.frag")),
-		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.vert_bindc  = 1,
+	struct PipelineCreateInfo pipeln_ci = {
+		.vshader     = STRING(SHADER_PATH "/font.vert"),
+		.fshader     = STRING(SHADER_PATH "/font.frag"),
+		.vert_bindc  = ARRAY_SIZE(vert_binds),
 		.vert_binds  = vert_binds,
-		.vert_attrc  = 2,
+		.vert_attrc  = ARRAY_SIZE(vert_attrs),
 		.vert_attrs  = vert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(float[4]), /* [z_lvl][padding][position to draw] */
 		.sampler     = font_sampler,
 		.imgc        = 1,
-		.dset_cap    = 1,
+		.imgs        = &atlas,
 	};
-	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_dset(&pipeln, 0, NULL, 0, NULL, 1, &atlas.image_view);
-	pipeln_init(&pipeln);
+	pipeln = pipeln_new(&pipeln_ci);
+	pipeln_update(pipeln);
 }
 
 struct TextObject* font_render(String str, float z, float w)
@@ -213,14 +210,14 @@ struct TextObject* font_render(String str, float z, float w)
 
 void font_record_commands(VkCommandBuffer cmd_buf)
 {
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln->pipeln);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln->layout, 0, 1, &pipeln->dset.set, 0, NULL);
 	for (int i = 0; i < text_objc; i++) {
 		if (!text_objs[i].active)
 			continue;
 
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, (float[]){
+		vkCmdPushConstants(cmd_buf, pipeln->layout, pipeln->push_stages, 0, sizeof(float[4]), (float[]){ // TODO: make struct
 			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y
 		});
 		vkCmdDraw(cmd_buf, text_objs[i].vertc, 1, 0, i);
@@ -231,7 +228,7 @@ void font_free()
 {
 	for (int i = 0; i < text_objc; i++)
 		vbo_free(&text_objs[i].vbo);
-	texture_free(&atlas);
-	pipeln_free(&pipeln);
+	image_free(&atlas);
+	pipeln_free(pipeln);
 	vkDestroySampler(logical_gpu, font_sampler, NULL);
 }

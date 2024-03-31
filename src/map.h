@@ -4,7 +4,6 @@
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/pipeline.h"
-#include "gfx/texture.h"
 #include "gfx/renderer.h"
 #include "maths/types.h"
 

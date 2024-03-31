@@ -3,28 +3,30 @@
 #include "resmgr.h"
 #include "maths/maths.h"
 #include "vulkan.h"
+#include "buffers.h"
 #include "pipeline.h"
+#include "renderer.h"
 #include "camera.h"
-#include "texture.h"
+#include "image.h"
 #include "particles.h"
 
 #define SIZEOF_PARTICLE_VERTEX sizeof(float[4])
 #define PARTICLES_UBO_SIZE     sizeof(struct Particle)*MAX_PARTICLES_PER_POOL
 #define PARTICLE_DAMPNER       0.99
 
-static struct Pipeline pipeln;
-static UBO ubos[2];
+static struct Pipeline* pipeln;
+static UBO ubo;
 static VBO vbo_buf;
-static struct Texture* texture;
+static struct Image* img;
 
 static struct ParticlePool pools[MAX_PARTICLE_POOLS];
 static int poolc;
 
 /* -------------------------------------------------------------------- */
-static VkVertexInputBindingDescription streamvert_binds = {
-	.binding   = 0,
-	.stride    = SIZEOF_PARTICLE_VERTEX, /* xyuv */
-	.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+static VkVertexInputBindingDescription streamvert_binds[] = {
+	{ .binding   = 0,
+	  .stride    = SIZEOF_PARTICLE_VERTEX, /* xyuv */
+	  .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, },
 };
 static VkVertexInputAttributeDescription streamvert_attrs[] = {
 	/* xy */
@@ -42,26 +44,27 @@ static VkVertexInputAttributeDescription streamvert_attrs[] = {
 
 void particles_init()
 {
-	texture = load_texture(STRING(TEXTURE_PATH "/star.png"));
-	ubos[0] = ubo_new(sizeof(Mat4x4[2]));
-	ubos[1] = ubo_new(PARTICLES_UBO_SIZE);
-	pipeln = (struct Pipeline){
-		.vshader     = load_shader(STRING(SHADER_PATH "/particle.vert")),
-		.fshader     = load_shader(STRING(SHADER_PATH "/particle.frag")),
-		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.vert_bindc  = 1,
-		.vert_binds  = &streamvert_binds,
-		.vert_attrc  = 2,
+	img = load_image(STRING(TEXTURE_PATH "/star.png"));
+	// TODO: separate
+	ubo = ubo_new(PARTICLES_UBO_SIZE);
+
+	struct PipelineCreateInfo pipeln_ci = {
+		.vshader     = STRING(SHADER_PATH "/particle.vert"),
+		.fshader     = STRING(SHADER_PATH "/particle.frag"),
+		.vert_bindc  = ARRAY_SIZE(streamvert_binds),
+		.vert_binds  = streamvert_binds,
+		.vert_attrc  = ARRAY_SIZE(streamvert_attrs),
 		.vert_attrs  = streamvert_attrs,
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 		.push_sz     = sizeof(float),
-		.dset_cap    = 1,
 		.uboc        = 2,
+		.ubos[0]     = global_camera_ubo,
+		.ubos[1]     = ubo,
 		.imgc        = 1,
+		.imgs        = img,
 	};
-	pipeln_alloc_dsets(&pipeln);
-	pipeln_create_dset(&pipeln, pipeln.uboc, ubos, pipeln.sboc, NULL, pipeln.imgc, &texture->image_view);
-	pipeln_init(&pipeln);
+	pipeln = pipeln_new(&pipeln_ci);
+	pipeln_update(pipeln);
 
 	float verts[] = {
 		-0.5,  0.5, 0.0, 0.0,   0.5, 0.5, 1.0, 0.0,   -0.5, -0.5, 0.0, 1.0,
@@ -134,17 +137,17 @@ void particles_update()
 
 void particles_record_commands(VkCommandBuffer cmd_buf)
 {
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.pipeln);
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln->pipeln);
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]) { 0 });
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln.layout, 0, 1, pipeln.dsets, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln->layout, 0, 1, &pipeln->dset.set, 0, NULL);
 	struct ParticlePool* pool;
 	for (int i = 0; i < poolc; i++) {
 		pool = &pools[i];
 		if (pool->life <= 0)
 			continue;
-		buffer_update(ubos[1], PARTICLES_UBO_SIZE, pool->particles, 0);
-		vkCmdPushConstants(cmd_buf, pipeln.layout, pipeln.push_stages, 0, pipeln.push_sz, &pool->scale);
+		buffer_update(ubo, PARTICLES_UBO_SIZE, pool->particles, 0);
 
+		vkCmdPushConstants(cmd_buf, pipeln->layout, pipeln->push_stages, 0, sizeof(pool->scale), &pool->scale);
 		vkCmdDraw(cmd_buf, 6, MAX_PARTICLES_PER_POOL, 0, MAX_PARTICLES_PER_POOL*i);
 	}
 }
@@ -152,9 +155,8 @@ void particles_record_commands(VkCommandBuffer cmd_buf)
 void particles_free()
 {
 	vbo_free(&vbo_buf);
-	ubo_free(&ubos[0]);
-	ubo_free(&ubos[1]);
-	pipeln_free(&pipeln);
+	ubo_free(&ubo);
+	pipeln_free(pipeln);
 }
 
 void particles_free_pool(ID pool_id)

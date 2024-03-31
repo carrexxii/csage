@@ -19,9 +19,9 @@ static void scratch_add_point(float a[7]);
 static void scratch_add_line(float a[7], float b[7]);
 static void scratch_add_plane(float pts[6][7]);
 
-static struct Pipeline point_pipeln;
-static struct Pipeline line_pipeln;
-static struct Pipeline plane_pipeln;
+static struct Pipeline* point_pipeln;
+static struct Pipeline* line_pipeln;
+static struct Pipeline* plane_pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SCRATCH_VERTEX_SIZE, /* xyzrgba */
@@ -68,50 +68,27 @@ void scratch_init()
 	cam_ubo  = ubo_new(sizeof(Mat4x4[2]));
 	axes_vbo = vbo_new(sizeof(axes_verts), axes_verts, false);
 
-	point_pipeln = (struct Pipeline){
-		.vshader     = load_shader(STRING(SHADER_PATH "/scratch.vert")),
-		.fshader     = load_shader(STRING(SHADER_PATH "/scratch.frag")),
+	struct PipelineCreateInfo pipeln_ci = {
+		.vshader     = STRING(SHADER_PATH "/scratch.vert"),
+		.fshader     = STRING(SHADER_PATH "/scratch.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
-		.vert_bindc  = 1,
+		.vert_bindc  = ARRAY_SIZE(vert_binds),
 		.vert_binds  = vert_binds,
-		.vert_attrc  = 2,
+		.vert_attrc  = ARRAY_SIZE(vert_attrs),
 		.vert_attrs  = vert_attrs,
 		.uboc        = 1,
-		.dset_cap    = 1,
+		.ubos[0]     = cam_ubo,
 	};
-	pipeln_alloc_dsets(&point_pipeln);
-	pipeln_create_dset(&point_pipeln, 1, &cam_ubo, 0, NULL, 0, NULL);
-	pipeln_init(&point_pipeln);
+	point_pipeln = pipeln_new(&pipeln_ci);
+	pipeln_update(point_pipeln);
 
-	line_pipeln = (struct Pipeline){
-		.vshader     = load_shader(STRING(SHADER_PATH "/scratch.vert")),
-		.fshader     = load_shader(STRING(SHADER_PATH "/scratch.frag")),
-		.topology    = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-		.vert_bindc  = 1,
-		.vert_binds  = vert_binds,
-		.vert_attrc  = 2,
-		.vert_attrs  = vert_attrs,
-		.uboc        = 1,
-		.dset_cap    = 1,
-	};
-	pipeln_alloc_dsets(&line_pipeln);
-	pipeln_create_dset(&line_pipeln, 1, &cam_ubo, 0, NULL, 0, NULL);
-	pipeln_init(&line_pipeln);
+	pipeln_ci.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	line_pipeln = pipeln_new(&pipeln_ci);
+	pipeln_update(line_pipeln);
 
-	plane_pipeln = (struct Pipeline){
-		.vshader     = load_shader(STRING(SHADER_PATH "/scratch.vert")),
-		.fshader     = load_shader(STRING(SHADER_PATH "/scratch.frag")),
-		.topology    = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.vert_bindc  = 1,
-		.vert_binds  = vert_binds,
-		.vert_attrc  = 2,
-		.vert_attrs  = vert_attrs,
-		.uboc        = 1,
-		.dset_cap    = 1,
-	};
-	pipeln_alloc_dsets(&plane_pipeln);
-	pipeln_create_dset(&plane_pipeln, 1, &cam_ubo, 0, NULL, 0, NULL);
-	pipeln_init(&plane_pipeln);
+	pipeln_ci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	plane_pipeln = pipeln_new(&pipeln_ci);
+	pipeln_update(plane_pipeln);
 
 	points = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[1][7]));
 	lines  = varray_new(SCRATCH_DEFAULT_ELEMENT_COUNT, sizeof(float[2][7]));
@@ -193,14 +170,14 @@ void scratch_record_commands(VkCommandBuffer cmd_buf)
 	if (points_on && points.len > 0) {
 		if (!points_vbo.sz)
 			points_vbo = vbo_new(points.len*points.elem_sz, points.data, false);
-		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln.pipeln);
-		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln.layout, 0, 1, point_pipeln.dsets, 0, NULL);
+		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln->pipeln);
+		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, point_pipeln->layout, 0, 1, &point_pipeln->dset.set, 0, NULL);
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &points_vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, points.len, 1, 0, 0);
 	}
 
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln.pipeln);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln.layout, 0, 1, line_pipeln.dsets, 0, NULL);
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln->pipeln);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, line_pipeln->layout, 0, 1, &line_pipeln->dset.set, 0, NULL);
 	if (axes_on) {
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &axes_vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, 6, 1, 0, 0);
@@ -215,8 +192,8 @@ void scratch_record_commands(VkCommandBuffer cmd_buf)
 	if (planes_on && planes.len > 0) {
 		if (!planes_vbo.sz)
 			planes_vbo = vbo_new(planes.len*planes.elem_sz, planes.data, false);
-		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.pipeln);
-		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln.layout, 0, 1, plane_pipeln.dsets, 0, NULL);
+		vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln->pipeln);
+		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, plane_pipeln->layout, 0, 1, &plane_pipeln->dset.set, 0, NULL);
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &planes_vbo.buf, (VkDeviceSize[]){ 0 });
 		vkCmdDraw(cmd_buf, 6*planes.len, 1, 0, 0);
 	}
@@ -229,9 +206,9 @@ void scratch_free()
 	if (points_vbo.sz) vbo_free(&points_vbo);
 	if (lines_vbo.sz)  vbo_free(&lines_vbo);
 	if (planes_vbo.sz) vbo_free(&planes_vbo);
-	pipeln_free(&point_pipeln);
-	pipeln_free(&line_pipeln);
-	pipeln_free(&plane_pipeln);
+	pipeln_free(point_pipeln);
+	pipeln_free(line_pipeln);
+	pipeln_free(plane_pipeln);
 
 	varray_free(&points);
 	varray_free(&lines);

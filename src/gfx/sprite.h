@@ -4,8 +4,8 @@
 #include "maths/types.h"
 #include "util/string.h"
 #include "util/varray.h"
+#include "image.h"
 #include "pipeline.h"
-#include "texture.h"
 #include "camera.h"
 
 /* Using a hash map for many different animations + directions might be good */
@@ -78,9 +78,9 @@ struct SpriteSheet {
 	bool needs_update;
 	struct VArray       sprites;
 	struct SpriteGroup* groups;
-	struct Texture*     albedo;
-	struct Texture*     normal;
-	struct Pipeline pipeln;
+	struct Image*       albedo;
+	struct Image*       normal;
+	struct Pipeline*    pipeln;
 	SBO sprite_sheet_data;
 	SBO sprite_data;
 };

@@ -50,6 +50,7 @@ void scenemgr_init()
 	editor_cam = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f, &global_camera_ubo);
 
 	renderer_init();
+	pipelns_init();
 	maps_init();
 	sprites_init();
 	font_init();

@@ -5,7 +5,7 @@
 #include "ui.h"
 #include "button.h"
 
-void button_new(struct UIContainer* parent, Rect rect, String text, struct Texture* tex, Rect uv_rect, void (*cb)(int), int data, struct UIStyle* style)
+void button_new(struct UIContainer* parent, Rect rect, String text, struct Image* img, Rect uv_rect, void (*cb)(int), int data, struct UIStyle* style)
 {
 	assert(parent);
 
@@ -24,12 +24,12 @@ void button_new(struct UIContainer* parent, Rect rect, String text, struct Textu
 
 	if (text.len)
 		obj.button.text_obj = font_render(text, UI_TEXT_Z_LVL, rect.w * config.winw);
-	if (tex)
-		obj.imgi = ui_add_image(tex->image_view);
+	if (img)
+		obj.imgi = ui_add_image(img);
 	ui_add(parent, &obj);
 
 	DEBUG(3, "[UI] Created new button with parent %p (%.2f, %.2f, %.2f, %.2f): \"%s\" (image: %s)",
-	      (void*)parent, rect.x, rect.y, rect.w, rect.h, text.data, STRING_TF(tex));
+	      (void*)parent, rect.x, rect.y, rect.w, rect.h, text.data, STRING_TF(img));
 }
 
 void button_build(struct UIObject* obj)

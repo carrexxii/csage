@@ -1,7 +1,5 @@
-#include "common.h"
 #include "maths/maths.h"
 #include "util/varray.h"
-#include "gfx/model.h"
 #include "body.h"
 #include "pathfinding.h"
 #include "ai.h"
@@ -27,7 +25,7 @@ static void entity_update_transforms(SBO sbo_buf);
 
 static struct VArray entities;
 static struct VArray transforms;
-static struct VArray models;
+// static struct VArray models;
 static struct VArray bodies;
 static struct VArray paths;
 static struct VArray ais;
@@ -36,18 +34,18 @@ void entities_init()
 {
 	entities   = varray_new(STARTING_ARRAY_SIZE, sizeof(struct Entity));
 	transforms = varray_new(STARTING_ARRAY_SIZE, sizeof(Mat4x4));
-	models     = varray_new(STARTING_ARRAY_SIZE, sizeof(struct Model*));
+	// models     = varray_new(STARTING_ARRAY_SIZE, sizeof(struct Model*));
 	bodies     = varray_new(STARTING_ARRAY_SIZE, sizeof(struct Body));
 	paths      = varray_new(STARTING_ARRAY_SIZE, sizeof(struct Path));
 	ais        = varray_new(STARTING_ARRAY_SIZE, sizeof(struct AI));
 
-	update_mdl_tforms = entity_update_transforms;
-	mdl_tforms = (Mat4x4*)transforms.data;
+	// update_mdl_tforms = entity_update_transforms;
+	// mdl_tforms = (Mat4x4*)transforms.data;
 }
 
 EntityID entity_new(Vec3 pos, char* model_path)
 {
-	struct Model* model = model_new(model_path);
+	// struct Model* model = model_new(model_path);
 	struct Body body = {
 		.pos     = pos,
 		.facing  = VEC3(1.0, 0.0, 0.0),
@@ -55,7 +53,7 @@ EntityID entity_new(Vec3 pos, char* model_path)
 	};
 	struct Entity entity = {
 		.transform = varray_push(&transforms, &MAT4X4_IDENTITY),
-		.model     = varray_push(&models, &model),
+		// .model     = varray_push(&models, &model),
 		.body      = varray_push(&bodies, &body),
 		.path      = varray_push(&paths, &(struct Path){ .complete = true }),
 		.ai        = varray_push(&ais, &(struct AI){ 0 }),
@@ -133,7 +131,7 @@ void entities_free()
 {
 	varray_free(&entities);
 	varray_free(&transforms);
-	varray_free(&models);
+	// varray_free(&models);
 	varray_free(&bodies);
 	varray_free(&paths);
 	varray_free(&ais);

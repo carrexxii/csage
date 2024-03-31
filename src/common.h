@@ -115,6 +115,7 @@ enum Direction {
 	#define MIN(a, b) ((a) < (b)? (a): (b))
 	#define MAX(a, b) ((a) > (b)? (a): (b))
 #endif
+#define MAX3(a, b, c)    MAX(MAX((a), (b)), (c))
 #define BETWEEN(a, b, c) ((bool)((a) >= (b) && (a) <= (c)))
 #define CLAMP(a, b, c)   do { ((a) = (a) < (b)? (b): (a) > (c)? (c): (a)); } while (0)
 #define ARRAY_SIZE(a)    (sizeof(a) / sizeof(a[0]))
@@ -125,6 +126,7 @@ enum Direction {
 		a = b;              \
 		b = tmp;             \
 	} while (0)
+#define DEFAULT(a, b) (a = (a)? (a): (b))
 
 #define STRING_TF(x) ((x)? "true": "false")
 #define STRING_YN(x) ((x)? "yes" : "no"   )

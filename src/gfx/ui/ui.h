@@ -3,6 +3,7 @@
 
 #include "vulkan/vulkan.h"
 
+#include "gfx/image.h"
 #include "types.h"
 #include "label.h"
 #include "button.h"
@@ -25,7 +26,7 @@ void ui_register_keys(void);
 struct UIObject*  ui_alloc_object(void);
 struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style);
 int  ui_add(struct UIContainer* container, struct UIObject* obj);
-int  ui_add_image(VkImageView img_view);
+int  ui_add_image(struct Image* img);
 void ui_build(void);
 Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
 void ui_update(void);

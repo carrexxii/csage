@@ -223,6 +223,8 @@ void renderer_free()
 
 	ubo_free(&global_light_ubo);
 
+	pipelns_free();
+
 	DEBUG(3, "[VK] Destroying render pass...");
 	vkDestroyRenderPass(logical_gpu, renderpass, NULL);
 
