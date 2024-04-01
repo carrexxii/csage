@@ -1,7 +1,7 @@
 #ifndef GFX_PIPELINE_H
 #define GFX_PIPELINE_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "util/string.h"
 #include "buffers.h"

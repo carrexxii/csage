@@ -30,14 +30,14 @@
 
 #define VK_GET_EXT(var, ext) \
 	PFN_##ext var = (PFN_##ext)vkGetInstanceProcAddr(instance, #ext)
-#define STRING_DEVICE_TYPE(x)                                         \
+#define STRING_OF_DEVICE_TYPE(x)                                      \
 	((x) == VK_PHYSICAL_DEVICE_TYPE_OTHER         ? "Other"         : \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU? "Integrated gpu": \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU  ? "Discrete gpu"  : \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU   ? "Virtual gpu"   : \
 	 (x) == VK_PHYSICAL_DEVICE_TYPE_CPU           ? "CPU"           : \
 	 "Unknown")
-#define STRING_QUEUE_BIT(x)                                \
+#define STRING_OF_QUEUE_BIT(x)                             \
 	((x) == VK_QUEUE_GRAPHICS_BIT      ? "Graphics"      : \
 	 (x) == VK_QUEUE_COMPUTE_BIT       ? "Compute"       : \
 	 (x) == VK_QUEUE_TRANSFER_BIT      ? "Transfer"      : \
@@ -48,7 +48,7 @@
 	 (x) == 0x0000000F? "Generic (unprotected)"          : \
 	 (x) == 0x0000001F? "Generic (protected)"            : \
 	 "Other combination")
-#define STRING_PRESENT_MODE(x)                                                      \
+#define STRING_OF_PRESENT_MODE(x)                                                   \
 	((x) == VK_PRESENT_MODE_IMMEDIATE_KHR                ? "Immediate"            : \
 	 (x) == VK_PRESENT_MODE_MAILBOX_KHR                  ? "Mailbox"              : \
 	 (x) == VK_PRESENT_MODE_FIFO_KHR                     ? "FIFO"                 : \
@@ -56,14 +56,14 @@
 	 (x) == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR    ? "Shared demand refresh": \
 	 (x) == VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR? "Shared cont. refresh" : \
 	 "Unknown")
-#define STRING_DEBUG_REPORT(x)                                                  \
+#define STRING_OF_DEBUG_REPORT(x)                                               \
 	((x) == VK_DEBUG_REPORT_INFORMATION_BIT_EXT        ? "Information"        : \
 	 (x) == VK_DEBUG_REPORT_WARNING_BIT_EXT            ? "Warning"            : \
 	 (x) == VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT? "Performance Warning": \
 	 (x) == VK_DEBUG_REPORT_ERROR_BIT_EXT              ? "Error"              : \
 	 (x) == VK_DEBUG_REPORT_DEBUG_BIT_EXT              ? "Debug"              : \
 	 "Unknown")
-#define STRING_DEBUG_REPORT_OBJECT(x)                                                                         \
+#define STRING_OF_DEBUG_REPORT_OBJECT(x)                                                                      \
 	((x) == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT                       ? "Unknown"                       : \
 	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT                      ? "Instance"                      : \
 	 (x) == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT               ? "Physical Device"               : \
@@ -137,6 +137,65 @@
 	 (x) == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR                         ? "VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR"                         : \
 	 (x) == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR                        ? "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR"                        : \
 	 "Unknown")
+
+#define STRING_OF_VK_RESULT(x)                                                                                              \
+	((x) == VK_SUCCESS                                           ? "VK_SUCCESS"                                           : \
+     (x) == VK_NOT_READY                                         ? "VK_NOT_READY"                                         : \
+     (x) == VK_TIMEOUT                                           ? "VK_TIMEOUT"                                           : \
+     (x) == VK_EVENT_SET                                         ? "VK_EVENT_SET"                                         : \
+     (x) == VK_EVENT_RESET                                       ? "VK_EVENT_RESET"                                       : \
+     (x) == VK_INCOMPLETE                                        ? "VK_INCOMPLETE"                                        : \
+     (x) == VK_ERROR_OUT_OF_HOST_MEMORY                          ? "VK_ERROR_OUT_OF_HOST_MEMORY"                          : \
+     (x) == VK_ERROR_OUT_OF_DEVICE_MEMORY                        ? "VK_ERROR_OUT_OF_DEVICE_MEMORY"                        : \
+     (x) == VK_ERROR_INITIALIZATION_FAILED                       ? "VK_ERROR_INITIALIZATION_FAILED"                       : \
+     (x) == VK_ERROR_DEVICE_LOST                                 ? "VK_ERROR_DEVICE_LOST"                                 : \
+     (x) == VK_ERROR_MEMORY_MAP_FAILED                           ? "VK_ERROR_MEMORY_MAP_FAILED"                           : \
+     (x) == VK_ERROR_LAYER_NOT_PRESENT                           ? "VK_ERROR_LAYER_NOT_PRESENT"                           : \
+     (x) == VK_ERROR_EXTENSION_NOT_PRESENT                       ? "VK_ERROR_EXTENSION_NOT_PRESENT"                       : \
+     (x) == VK_ERROR_FEATURE_NOT_PRESENT                         ? "VK_ERROR_FEATURE_NOT_PRESENT"                         : \
+     (x) == VK_ERROR_INCOMPATIBLE_DRIVER                         ? "VK_ERROR_INCOMPATIBLE_DRIVER"                         : \
+     (x) == VK_ERROR_TOO_MANY_OBJECTS                            ? "VK_ERROR_TOO_MANY_OBJECTS"                            : \
+     (x) == VK_ERROR_FORMAT_NOT_SUPPORTED                        ? "VK_ERROR_FORMAT_NOT_SUPPORTED"                        : \
+     (x) == VK_ERROR_FRAGMENTED_POOL                             ? "VK_ERROR_FRAGMENTED_POOL"                             : \
+     (x) == VK_ERROR_UNKNOWN                                     ? "VK_ERROR_UNKNOWN"                                     : \
+     (x) == VK_ERROR_OUT_OF_POOL_MEMORY                          ? "VK_ERROR_OUT_OF_POOL_MEMORY"                          : \
+     (x) == VK_ERROR_INVALID_EXTERNAL_HANDLE                     ? "VK_ERROR_INVALID_EXTERNAL_HANDLE"                     : \
+     (x) == VK_ERROR_FRAGMENTATION                               ? "VK_ERROR_FRAGMENTATION"                               : \
+     (x) == VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS              ? "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS"              : \
+     (x) == VK_PIPELINE_COMPILE_REQUIRED                         ? "VK_PIPELINE_COMPILE_REQUIRED"                         : \
+     (x) == VK_ERROR_SURFACE_LOST_KHR                            ? "VK_ERROR_SURFACE_LOST_KHR"                            : \
+     (x) == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR                    ? "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR"                    : \
+     (x) == VK_SUBOPTIMAL_KHR                                    ? "VK_SUBOPTIMAL_KHR"                                    : \
+     (x) == VK_ERROR_OUT_OF_DATE_KHR                             ? "VK_ERROR_OUT_OF_DATE_KHR"                             : \
+     (x) == VK_ERROR_INCOMPATIBLE_DISPLAY_KHR                    ? "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR"                    : \
+     (x) == VK_ERROR_VALIDATION_FAILED_EXT                       ? "VK_ERROR_VALIDATION_FAILED_EXT"                       : \
+     (x) == VK_ERROR_INVALID_SHADER_NV                           ? "VK_ERROR_INVALID_SHADER_NV"                           : \
+     (x) == VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR               ? "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR"               : \
+     (x) == VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR      ? "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR"      : \
+     (x) == VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR   ? "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR"   : \
+     (x) == VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR      ? "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR"      : \
+     (x) == VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR       ? "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR"       : \
+     (x) == VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR         ? "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR"         : \
+     (x) == VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT? "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT": \
+     (x) == VK_ERROR_NOT_PERMITTED_KHR                           ? "VK_ERROR_NOT_PERMITTED_KHR"                           : \
+     (x) == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT         ? "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT"         : \
+     (x) == VK_THREAD_IDLE_KHR                                   ? "VK_THREAD_IDLE_KHR"                                   : \
+     (x) == VK_THREAD_DONE_KHR                                   ? "VK_THREAD_DONE_KHR"                                   : \
+     (x) == VK_OPERATION_DEFERRED_KHR                            ? "VK_OPERATION_DEFERRED_KHR"                            : \
+     (x) == VK_OPERATION_NOT_DEFERRED_KHR                        ? "VK_OPERATION_NOT_DEFERRED_KHR"                        : \
+     (x) == VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR            ? "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR"            : \
+     (x) == VK_ERROR_COMPRESSION_EXHAUSTED_EXT                   ? "VK_ERROR_COMPRESSION_EXHAUSTED_EXT"                   : \
+     (x) == VK_INCOMPATIBLE_SHADER_BINARY_EXT                    ? "VK_INCOMPATIBLE_SHADER_BINARY_EXT"                    : \
+     (x) == VK_ERROR_OUT_OF_POOL_MEMORY_KHR                      ? "VK_ERROR_OUT_OF_POOL_MEMORY_KHR"                      : \
+     (x) == VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR                 ? "VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR"                 : \
+     (x) == VK_ERROR_FRAGMENTATION_EXT                           ? "VK_ERROR_FRAGMENTATION_EXT"                           : \
+     (x) == VK_ERROR_NOT_PERMITTED_EXT                           ? "VK_ERROR_NOT_PERMITTED_EXT"                           : \
+     (x) == VK_ERROR_INVALID_DEVICE_ADDRESS_EXT                  ? "VK_ERROR_INVALID_DEVICE_ADDRESS_EXT"                  : \
+     (x) == VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR          ? "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR"          : \
+     (x) == VK_PIPELINE_COMPILE_REQUIRED_EXT                     ? "VK_PIPELINE_COMPILE_REQUIRED_EXT"                     : \
+     (x) == VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT               ? "VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT"               : \
+     (x) == VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT              ? "VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT"              : \
+	"Unknown")
 
 void           init_vulkan(SDL_Window* window);
 VkShaderModule create_shader(char* restrict file);

@@ -52,7 +52,7 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 	}
 
 	if ((vk_err = vkCreateSwapchainKHR(logical_gpu, &swapchaini, NULL, &swapchain.swapchain)))
-		ERROR("[VK] Failed to create swapchain:\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to create swapchain:\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
 		DEBUG(1, "[VK] Created swapchain\n\tQueue families: %u\n\tMinimum images: %u",
 		      swapchaini.queueFamilyIndexCount, min_imgc);

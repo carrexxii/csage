@@ -1,6 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "util/string.h"
 #include "util/file.h"
@@ -18,8 +18,7 @@ const char* string_of_handle_type[] = {
 	[RES_FILE]     = "RES_FILE",
 	[RES_SHADER]   = "RES_SHADER",
 	[RES_IMAGE]    = "RES_IMAGE",
-	[RES_UBO]      = "RES_UBO",
-	[RES_SBO]      = "RES_SBO",
+	[RES_BUFFER]   = "RES_BUFFER",
 	[RES_PIPELINE] = "RES_PIPELINE",
 };
 
@@ -34,8 +33,7 @@ struct DeferHandle {
 	enum ResourceType type;
 	union {
 		struct Pipeline* pipeln;
-		UBO ubo;
-		SBO sbo;
+		struct Buffer    buf;
 	} data;
 };
 
@@ -71,9 +69,8 @@ void resmgr_defer(enum ResourceType type, void* data)
 		.frame = frame_number,
 	};
 	switch (type) {
-	case RES_UBO     : handle.data.ubo    = *(UBO*)data; break;
-	case RES_SBO     : handle.data.sbo    = *(SBO*)data; break;
-	case RES_PIPELINE: handle.data.pipeln = data       ; break;
+	case RES_BUFFER  : handle.data.buf = *(struct Buffer*)data; break;
+	case RES_PIPELINE: handle.data.pipeln = data              ; break;
 	default:
 		ERROR("[RES] Unmatched resource type for defer: %s", STRING_OF_RESOURCE_TYPE(type));
 	}
@@ -90,14 +87,12 @@ void resmgr_clean()
 	struct DeferHandle* handle;
 	while (!queue_is_empty(deferred)) {
 		handle = queue_peek(deferred);
-		DEBUG(1, "%p: %ld", (void*)handle->data.pipeln, handle->frame);
 		if (frame_number - handle->frame <= FRAMES_IN_FLIGHT)
 			break;
 
 		dequeue(deferred);
 		switch (handle->type) {
-		case RES_UBO     : ubo_free(&handle->data.ubo)     ; break;
-		case RES_SBO     : sbo_free(&handle->data.sbo)     ; break;
+		case RES_BUFFER  : buffer_free(&handle->data.buf)  ; break;
 		case RES_PIPELINE: pipeln_free(handle->data.pipeln); break;
 		default:
 			ERROR("[RES] Resource of type %s not free'd in defer", STRING_OF_RESOURCE_TYPE(handle->type));

@@ -1,4 +1,4 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "resmgr.h"
 #include "lua.h"
@@ -208,7 +208,7 @@ struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data)
 	return sheet;
 }
 
-void sprite_sheet_free()
+void sprite_sheets_free()
 {
 	struct SpriteSheet* sheet;
 	struct SpriteGroup* group;
@@ -281,7 +281,7 @@ struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
 
 	// TODO: handle resizing properly
 	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
-		resmgr_defer(RES_SBO, &sheet->sprite_data);
+		resmgr_defer(RES_BUFFER, &sheet->sprite_data);
 		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
 		sprite_sheet_update_pipeln(sheet);
 	}
@@ -310,7 +310,7 @@ struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spr
 	isize i = varray_push_many(&sheet->sprites, spritec, sprites);
 
 	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
-		buffer_free(&sheet->sprite_data);
+		resmgr_defer(RES_BUFFER, &sheet->sprite_data);
 		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
 		sprite_sheet_update_pipeln(sheet);
 	}

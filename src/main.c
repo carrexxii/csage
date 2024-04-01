@@ -1,4 +1,4 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 #include "SDL3/SDL.h"
 
 #include "resmgr.h"

@@ -9,5 +9,6 @@ void button_new(struct UIContainer* parent, Rect rect, String text, struct Image
 void button_build(struct UIObject* obj);
 bool button_on_hover(struct UIObject* obj, struct UIContext* context);
 void button_on_click(struct UIObject* obj);
+void button_free(struct UIObject* obj);
 
 #endif

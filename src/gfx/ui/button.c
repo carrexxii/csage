@@ -59,3 +59,8 @@ void button_on_click(struct UIObject* obj)
 	obj->button.cb(obj->button.data);
 	obj->state.clicked = false;
 }
+
+void button_free(struct UIObject* obj)
+{
+	// font_free(obj->button.text_obj);
+}

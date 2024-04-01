@@ -1,7 +1,7 @@
 #ifndef RESMGR_H
 #define RESMGR_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "util/string.h"
 #include "gfx/image.h"
@@ -14,8 +14,7 @@ enum ResourceType {
 	RES_FILE,
 	RES_SHADER,
 	RES_IMAGE,
-	RES_UBO,
-	RES_SBO,
+	RES_BUFFER,
 	RES_PIPELINE,
 	RES_MAX,
 };

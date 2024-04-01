@@ -1,4 +1,4 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "resmgr.h"
 #include "input.h"
@@ -30,7 +30,6 @@ static struct Image* default_tex;
 
 void ui_init()
 {
-	pipeln_needs_update = true;
 	ui_elems    = sbo_new(UI_MAX_ELEMENTS * sizeof(struct UIShaderObject)); // TODO: resize if necessary
 	free_elems  = varray_new(16, sizeof(int));
 	default_tex = load_image(STRING(TEXTURE_PATH "/default.png"));
@@ -89,15 +88,9 @@ struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style)
 
 int ui_add(struct UIContainer* container, struct UIObject* obj)
 {
-	assert(container && obj);
-
 	/* Check for dead elements to reuse */
-	int i;
 	int* free_elem = varray_pop(&free_elems);
-	if (free_elem)
-		i = *free_elem;
-	else
-	 	i = ui_elemc++;
+	int i = free_elem? *free_elem: ui_elemc++;
 
 	obj->i = i;
 	container->has_update = true;
@@ -108,14 +101,12 @@ int ui_add(struct UIContainer* container, struct UIObject* obj)
 
 int ui_add_image(struct Image* img)
 {
-	assert(img);
-	pipeln_needs_update = true;
-
 	for (int i = 0; i < pipeln_ci.imgc; i++)
 		if (pipeln_ci.imgs[i] == img)
 			return i;
 
 	pipeln_ci.imgs[pipeln_ci.imgc] = img;
+	pipeln_needs_update = true;
 	return pipeln_ci.imgc++;
 }
 
@@ -243,9 +234,11 @@ void ui_free_container(struct UIContainer* container)
 
 void ui_free()
 {
-	for (int i = 0; i < containerc; i++)
-		container_free(&containers[i]);
+	while (--containerc)
+		container_free(&containers[containerc]);
 
+	mtx_destroy(&updating_lock);
+	sbo_free(&ui_elems);
 	pipeln_free(pipeln);
 }
 
@@ -260,12 +253,19 @@ static void cb_mouse_left(bool kdown)
 static void container_free(struct UIContainer* container)
 {
 	struct UIObject* obj;
-	for (int i = 0; i < container->objects.len; i++) {
-		obj = varray_get(&container->objects, i);
+	while ((obj = varray_pop(&container->objects))) {
 		obj->state.dead = true;
 		varray_push(&free_elems, &obj->i);
-		if (obj->type == UI_LIST)
-			free(obj->uilist.text_objs);
+		switch (obj->type) {
+		case UI_LABEL : label_free(obj) ; break;
+		case UI_BUTTON: button_free(obj); break;
+		case UI_LIST  : uilist_free(obj); break;
+		case UI_CUSTOM:
+			if (obj->custom.on_free)
+				obj->custom.on_free(obj);
+			break;
+		default:
+		}
 	}
 
 	varray_free(&container->objects);

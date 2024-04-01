@@ -198,7 +198,6 @@ csage.cdef [[
 		struct SpotLight*  spot_lights;
 		struct PointLight* point_lights;
 
-		UBO ubo;
 		SBO spot_lights_sbo;
 		SBO point_lights_sbo;
 		Pipeline pipeln;

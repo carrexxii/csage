@@ -15,7 +15,7 @@ VkCommandBuffer begin_command_buffer(VkQueue queue)
 		.commandBufferCount = 1,
 	};
 	if ((vk_err = vkAllocateCommandBuffers(logical_gpu, &bufi, &buf)))
-		ERROR("[VK] Failed to allocate command buffers\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to allocate command buffers\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -53,7 +53,7 @@ void buffer_new(VkDeviceSize sz, VkBufferUsageFlags buf_flags, VkMemoryPropertyF
 		.pQueueFamilyIndices   = NULL,
 	};
 	if ((vk_err = vkCreateBuffer(logical_gpu, &bufi, NULL, buf)))
-		ERROR("\tFailed to create buffer\n\t\"%d\"", vk_err);
+		ERROR("\tFailed to create buffer\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 
 	VkMemoryRequirements mem_req;
 	vkGetBufferMemoryRequirements(logical_gpu, *buf, &mem_req);
@@ -63,7 +63,7 @@ void buffer_new(VkDeviceSize sz, VkBufferUsageFlags buf_flags, VkMemoryPropertyF
 		.memoryTypeIndex = device_find_memory_index(mem_req.memoryTypeBits, mem_flags),
 	};
 	if ((vk_err = vkAllocateMemory(logical_gpu, &alloci, NULL, mem)))
-		ERROR("\tFailed to allocate memory for buffer\n\t\"%d\"", vk_err);
+		ERROR("\tFailed to allocate memory for buffer\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 
 	vkBindBufferMemory(logical_gpu, *buf, *mem, 0);
 }
@@ -134,7 +134,7 @@ void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data, isize offset)
 	void* mem;
 	mtx_lock(&buffer_lock);
 	if ((vk_err = vkMapMemory(logical_gpu, buf.mem, offset, sz, 0, &mem)))
-		ERROR("[VK] Failed to map memory\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to map memory\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	memcpy(mem, data, sz);
 
 	vkUnmapMemory(logical_gpu, buf.mem);

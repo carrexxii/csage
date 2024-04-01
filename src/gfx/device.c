@@ -1,4 +1,4 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "vulkan.h"
 #include "swapchain.h"
@@ -102,7 +102,7 @@ void device_init_logical(VkSurfaceKHR surf)
 		.ppEnabledExtensionNames = (const char*[]){ "VK_KHR_swapchain", },
 	};
 	if ((vk_err = vkCreateDevice(physical_gpu, &devi, NULL, &logical_gpu)))
-		ERROR("[VK] Failed to create logical device: \n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to create logical device: \n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
 		DEBUG(1, "[VK] Created logical device");
 
@@ -240,7 +240,7 @@ static void debug_physical(VkPhysicalDevice dev)
 	vkGetPhysicalDeviceFeatures(dev, &devf);
 
 	DEBUG(3, "[VK] Physical device: %s (%u)", devp.deviceName, devp.vendorID);
-	DEBUG(3, "\tDevice type                       -> %s (%u)", STRING_DEVICE_TYPE(devp.deviceType), devp.deviceID);
+	DEBUG(3, "\tDevice type                       -> %s (%u)", STRING_OF_DEVICE_TYPE(devp.deviceType), devp.deviceID);
 	patch = VK_VERSION_PATCH(devp.apiVersion);
 	major = VK_VERSION_MAJOR(devp.apiVersion);
 	minor = VK_VERSION_MINOR(devp.apiVersion);
@@ -285,7 +285,7 @@ static void debug_physical(VkPhysicalDevice dev)
 	DEBUG(3, "\t%u device queue families:", qc);
 	for (uint i = 0; i < qc; i++)
 		DEBUG(3, "\t    %2d of 0x%.8X -> %s", qs[i].queueCount,
-		      qs[i].queueFlags, STRING_QUEUE_BIT(qs[i].queueFlags));
+		      qs[i].queueFlags, STRING_OF_QUEUE_BIT(qs[i].queueFlags));
 
 	DEBUG(3, "\t%u colour formats available", swapchain_details.fmtc);
 
@@ -300,5 +300,5 @@ static void debug_physical(VkPhysicalDevice dev)
 
 	DEBUG(3, "\t%u present modes:", swapchain_details.modec);
 	for (uint i = 0; i < swapchain_details.modec; i++)
-		DEBUG(3, "\t    %s", STRING_PRESENT_MODE(swapchain_details.modes[i]));
+		DEBUG(3, "\t    %s", STRING_OF_PRESENT_MODE(swapchain_details.modes[i]));
 }

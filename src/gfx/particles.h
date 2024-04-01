@@ -2,7 +2,7 @@
 #define GFX_PARTICLES_H
 
 #include "maths/maths.h"
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 #include "pipeline.h"
 #include "buffers.h"
 #include "camera.h"

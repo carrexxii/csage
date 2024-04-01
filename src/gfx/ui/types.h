@@ -81,6 +81,7 @@ struct UICustom {
 	void (*build)(struct UIObject*);
 	bool (*on_hover)(struct UIObject*, struct UIContext*);
 	void (*on_click)(struct UIObject*, struct UIContext*);
+	void (*on_free)(struct UIObject*);
 };
 
 struct UIObject {

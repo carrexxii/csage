@@ -1,7 +1,7 @@
 #ifndef UI_FONT_H
 #define UI_FONT_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "maths/maths.h"
 #include "util/string.h"

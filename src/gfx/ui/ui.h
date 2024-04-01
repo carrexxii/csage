@@ -1,7 +1,7 @@
 #ifndef UI_UI_H
 #define UI_UI_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "gfx/image.h"
 #include "types.h"

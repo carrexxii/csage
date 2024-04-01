@@ -1,7 +1,8 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "util/varray.h"
 #include "resmgr.h"
+#include "vulkan.h"
 #include "buffers.h"
 #include "swapchain.h"
 #include "image.h"
@@ -185,7 +186,7 @@ struct Pipeline* pipeln_update(struct Pipeline* old_pipeln, struct PipelineCreat
 		.pPushConstantRanges    = &push_range,
 	};
 	if ((vk_err = vkCreatePipelineLayout(logical_gpu, &tlaysci, NULL, &pipeln->layout)))
-		ERROR("[VK] Failed to create pipeline layout\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to create pipeline layout\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
 		DEBUG(3, "[VK] Created pipeline layout");
 
@@ -208,7 +209,7 @@ struct Pipeline* pipeln_update(struct Pipeline* old_pipeln, struct PipelineCreat
 		.basePipelineIndex   = -1,
 	};
 	if ((vk_err = vkCreateGraphicsPipelines(logical_gpu, NULL, 1, &tpipelnci, NULL, &pipeln->pipeln)))
-		ERROR("[VK] Failed to create pipeline\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to create pipeline\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
 		DEBUG(3, "[VK] Pipeline updated");
 
@@ -336,7 +337,7 @@ static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo*
 		.maxSets       = 1,
 	};
 	if ((vk_err = vkCreateDescriptorPool(logical_gpu, &dpool_ci, NULL, &pipeln->dpool)))
-		ERROR("[VK] Failed to create descriptor pool\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to create descriptor pool\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
 		DEBUG(3, "[VK] Created descriptor pool");
 
@@ -348,7 +349,7 @@ static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo*
 		.pSetLayouts        = &pipeln->dset.layout,
 	};
 	if ((vk_err = vkAllocateDescriptorSets(logical_gpu, &dset_alloci, &pipeln->dset.set)))
-		ERROR("[VK] Failed to allocate descriptor set\n\t\"%d\"", vk_err); // TODO: STRING_OF_VK_ERR
+		ERROR("[VK] Failed to allocate descriptor set\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err)); // TODO: STRING_OF_VK_ERR
 	else
 		DEBUG(3, "[VK] Allocated a descriptor set");
 

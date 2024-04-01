@@ -1,7 +1,7 @@
 #ifndef GFX_IMAGE_H
 #define GFX_IMAGE_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #define MAX_IMAGES 64
 

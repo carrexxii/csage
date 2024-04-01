@@ -1,7 +1,7 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "resmgr.h"
 #include "config.h"
@@ -109,7 +109,7 @@ void font_init()
 	atlas = image_of_memory(atlas_w, atlas_h, atlas_bitmap);
 
 	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
-	free(atlas_bitmap);
+	sfree(atlas_bitmap);
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);
 
@@ -199,12 +199,12 @@ struct TextObject* font_render(String str, float z, float w)
 	obj->z_lvl  = z;
 	obj->active = true;
 	obj->vertc  = 6*str.len;
-	obj->vbo = vbo_new(6*str.len*SIZEOF_FONT_VERTEX, verts, true);
+	obj->vbo    = vbo_new(6*str.len*SIZEOF_FONT_VERTEX, verts, true);
 	text_objc++;
 
-	DEBUG(4, "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2fx%.2f]",
+	DEBUG(3, "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2fx%.2f]",
 	      str.len, str.data, x, y, z, obj->rect.w, obj->rect.h);
-	free(verts);
+	sfree(verts);
 	return obj;
 }
 

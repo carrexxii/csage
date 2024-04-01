@@ -6,5 +6,6 @@
 
 void label_new(struct UIContainer* parent, String str, struct UIStyle* style, Rect rect);
 void label_build(struct UIObject* obj);
+void label_free(struct UIObject* obj);
 
 #endif

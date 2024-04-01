@@ -1,7 +1,7 @@
 #ifndef MATHS_SCRATCH_H
 #define MATHS_SCRATCH_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "types.h"
 #include "camera.h"

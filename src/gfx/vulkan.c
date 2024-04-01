@@ -20,8 +20,8 @@ noreturn static VKAPI_ATTR VkBool32 VKAPI_CALL debug_cb(VkDebugReportFlagsEXT fl
                                                         const char* msg, void* user_data)
 {
 	(void)user_data;
-	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"", layer_prefix, STRING_DEBUG_REPORT(flags), obj,
-	      STRING_DEBUG_REPORT_OBJECT(obj_type), location, msg_code, msg);
+	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"", layer_prefix, STRING_OF_DEBUG_REPORT(flags), obj,
+	      STRING_OF_DEBUG_REPORT_OBJECT(obj_type), location, msg_code, msg);
 	exit(1);
 }
 

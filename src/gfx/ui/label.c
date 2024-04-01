@@ -35,3 +35,8 @@ void label_build(struct UIObject* obj)
 	txt_obj->rect.x =  obj->rect.x                   + obj->padding.x;
 	txt_obj->rect.y = -obj->rect.y - txt_obj->rect.h - obj->padding.y;
 }
+
+void label_free(struct UIObject* obj)
+{
+	// font_free(obj->label.text_obj);
+}

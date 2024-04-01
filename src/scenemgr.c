@@ -1,4 +1,4 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 
 #include "taskmgr.h"
 #include "maths/maths.h"
@@ -105,7 +105,7 @@ void scenemgr_free()
 {
 	scene_exec_defer();
 	editor_free();
-	sprite_sheet_free();
+	sprite_sheets_free();
 
 	camera_free(&game_cam);
 	camera_free(&editor_cam);

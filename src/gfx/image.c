@@ -76,7 +76,7 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 		},
 	};
 	if ((vk_err = vkCreateImageView(logical_gpu, &viewi, NULL, &img_view)))
-		ERROR("[VK] Failed to create image view\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to create image view\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
 		DEBUG(3, "[VK] Created image view");
 

@@ -86,3 +86,9 @@ void uilist_on_click(struct UIObject* obj, struct UIContext* context)
 		rect.y += txt_obj->rect.h + obj->uilist.spacing;
 	}
 }
+
+void uilist_free(struct UIObject* obj)
+{
+	// for (int i = 0; i < obj->uilist.text_objc; i++)
+	// 	font_free(obj->uilist.text_objs);
+}

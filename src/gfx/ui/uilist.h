@@ -7,5 +7,6 @@ void uilist_new(struct UIContainer* parent, int strc, String* strs, struct UISty
 void uilist_build(struct UIObject* obj);
 bool uilist_on_hover(struct UIObject* obj, struct UIContext* context);
 void uilist_on_click(struct UIObject* obj, struct UIContext* context);
+void uilist_free(struct UIObject* obj);
 
 #endif

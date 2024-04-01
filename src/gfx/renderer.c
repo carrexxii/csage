@@ -1,4 +1,4 @@
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 #include "SDL3/SDL.h"
 
 #include "resmgr.h"
@@ -158,7 +158,7 @@ void renderer_draw()
 	// TODO: recreate swapchain for out of data
 	uint imgi;
 	if ((vk_err = vkAcquireNextImageKHR(logical_gpu, swapchain.swapchain, UINT64_MAX, semas.imgavail[frame], NULL, &imgi)))
-		ERROR("[VK] Failed to aquire next swapchain image: \n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to aquire next swapchain image: \n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 
 	vkResetCommandBuffer(cmd_bufs[frame], 0);
 	resmgr_clean();
@@ -177,7 +177,7 @@ void renderer_draw()
 		},
 	};
 	if ((vk_err = vkQueueSubmit(graphicsq, 1, &submiti, fences.frames[frame])))
-		ERROR("[VK] Failed to submit draw command: \n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to submit draw command: \n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 
 	VkPresentInfoKHR presi = {
 		.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -189,7 +189,7 @@ void renderer_draw()
 		.pResults           = NULL,
 	};
 	if ((vk_err = vkQueuePresentKHR(presentq, &presi)))
-		ERROR("[VK] Failed to present queue:\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to present queue:\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 
 	frame_number++;
 }
@@ -221,6 +221,7 @@ void renderer_free()
 	DEBUG(3, "[VK] Freeing particles pipeline...");
 	particles_free();
 
+	ubo_free(&global_camera_ubo);
 	ubo_free(&global_light_ubo);
 
 	pipelns_free();
@@ -303,7 +304,7 @@ static void create_command_buffers()
 		.commandPool        = graphics_cmd_pool,
 	};
 	if ((vk_err = vkAllocateCommandBuffers(logical_gpu, &bufi, cmd_bufs)))
-		ERROR("[VK] Failed to create command buffers\n\t\"%d\"", vk_err);
+		ERROR("[VK] Failed to create command buffers\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
 		DEBUG(3, "[VK] Created command buffers");
 }
