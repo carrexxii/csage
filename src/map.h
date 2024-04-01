@@ -42,7 +42,7 @@ Vec3    map_to_iso(Vec3 pos);
 void    map_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam, struct Map* map);
 void    map_free(struct Map* map);
 
-extern SBO spot_lights_sbo;
-extern SBO point_lights_sbo;
+extern SBO global_spot_lights_sbo;
+extern SBO global_point_lights_sbo;
 
 #endif

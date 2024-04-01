@@ -1,27 +1,29 @@
 #ifdef TESTING_UTIL
 
 #include "maths/maths.h"
-#include "maths/pga2.h"
 #include "varray.h"
 #include "htable.h"
 #include "arena.h"
+#include "queue.h"
 
 static void test_maths(void);
 static void test_arena(void);
 static void test_string(void);
 static void test_varray(void);
 static void test_htable(void);
+static void test_queue(void);
 
 int main()
 {
 	DEBUG(1, "------- Starting Tests -------");
 	DEBUG(1, "------------------------------");
 
-	test_maths();
+	// test_maths();
 	// test_arena();
 	// test_string();
 	// test_varray();
 	// test_htable();
+	test_queue();
 
 	DEBUG(1, "------- Tests Complete -------");
 }
@@ -85,32 +87,32 @@ static void test_string()
 	DEBUG(1, " --- Testing String ---");
 	char* str = "some/file/path.txt";
 	DEBUG(1, "Splitting with `string_new_split()`: \"%s\"", str);
-	DEBUG(1, "\t0 = %s", string_new_split(str, '/', 0).data);
-	DEBUG(1, "\t1 = %s", string_new_split(str, '/', 1).data);
-	DEBUG(1, "\t2 = %s", string_new_split(str, '/', 2).data);
-	DEBUG(1, "\t100 = %s", string_new_split(str, '/', 100).data);
-	DEBUG(1, "\t-123 = %s", string_new_split(str, '/', -123).data);
-	DEBUG(1, "\t-1 = %s", string_new_split(str, '/', -1).data);
+	DEBUG(1, "\t0 = %s", string_new_split(str, '/', 0, NULL).data);
+	DEBUG(1, "\t1 = %s", string_new_split(str, '/', 1, NULL).data);
+	DEBUG(1, "\t2 = %s", string_new_split(str, '/', 2, NULL).data);
+	DEBUG(1, "\t100 = %s", string_new_split(str, '/', 100, NULL).data);
+	DEBUG(1, "\t-123 = %s", string_new_split(str, '/', -123, NULL).data);
+	DEBUG(1, "\t-1 = %s", string_new_split(str, '/', -1, NULL).data);
 
 	str = "abc;123;xyz";
 	DEBUG(1, "\nSplitting with `string_new_split()`: \"%s\"", str);
-	DEBUG(1, "\t0 = %s", string_new_split(str, ';', 0).data);
-	DEBUG(1, "\t1 = %s", string_new_split(str, ';', 1).data);
-	DEBUG(1, "\t2 = %s", string_new_split(str, ';', 2).data);
-	DEBUG(1, "\t3 = %s", string_new_split(str, ';', 3).data);
-	DEBUG(1, "\t-1 = %s", string_new_split(str, ';', -1).data);
+	DEBUG(1, "\t0 = %s", string_new_split(str, ';', 0, NULL).data);
+	DEBUG(1, "\t1 = %s", string_new_split(str, ';', 1, NULL).data);
+	DEBUG(1, "\t2 = %s", string_new_split(str, ';', 2, NULL).data);
+	DEBUG(1, "\t3 = %s", string_new_split(str, ';', 3, NULL).data);
+	DEBUG(1, "\t-1 = %s", string_new_split(str, ';', -1, NULL).data);
 
 	str = ".b.c.d..f";
 	DEBUG(1, "\nSplitting with `string_new_split()`: \"%s\"", str);
-	DEBUG(1, "\t0 = %s", string_new_split(str, '.', 0).data);
-	DEBUG(1, "\t1 = %s", string_new_split(str, '.', 1).data);
-	DEBUG(1, "\t2 = %s", string_new_split(str, '.', 2).data);
-	DEBUG(1, "\t3 = %s", string_new_split(str, '.', 3).data);
-	DEBUG(1, "\t4 = %s", string_new_split(str, '.', 4).data);
-	DEBUG(1, "\t5 = %s", string_new_split(str, '.', 5).data);
-	DEBUG(1, "\t15 = %s", string_new_split(str, '.', 15).data);
-	DEBUG(1, "\t-10 = %s", string_new_split(str, '.', -10).data);
-	DEBUG(1, "\t-1 = %s", string_new_split(str, '.', -1).data);
+	DEBUG(1, "\t0 = %s", string_new_split(str, '.', 0, NULL).data);
+	DEBUG(1, "\t1 = %s", string_new_split(str, '.', 1, NULL).data);
+	DEBUG(1, "\t2 = %s", string_new_split(str, '.', 2, NULL).data);
+	DEBUG(1, "\t3 = %s", string_new_split(str, '.', 3, NULL).data);
+	DEBUG(1, "\t4 = %s", string_new_split(str, '.', 4, NULL).data);
+	DEBUG(1, "\t5 = %s", string_new_split(str, '.', 5, NULL).data);
+	DEBUG(1, "\t15 = %s", string_new_split(str, '.', 15, NULL).data);
+	DEBUG(1, "\t-10 = %s", string_new_split(str, '.', -10, NULL).data);
+	DEBUG(1, "\t-1 = %s", string_new_split(str, '.', -1, NULL).data);
 }
 
 static void test_varray()
@@ -143,50 +145,77 @@ static void test_htable()
 
 	DEBUG(1, "\n - - - - - - - * htable_insert * - - - - - - - ");
 	struct HTable* htable = htable_new(16);
-	htable_insert(htable, string_new("x", -1), 1);
-	htable_insert(htable, string_new("y", -1), 2);
-	htable_insert(htable, string_new("table", -1), 3);
-	htable_insert(htable, string_new("hash", -1), 4);
-	htable_insert(htable, string_new("longer_value", -1), 5);
-	htable_insert(htable, string_new("another_value", -1), 6);
-	htable_insert(htable, string_new("hello", -1), 7);
-	htable_insert(htable, string_new("world", -1), 8);
-	htable_insert(htable, string_new("x2", -1), 9);
-	htable_insert(htable, string_new("y2", -1), 10);
+	htable_insert(htable, string_new("x", -1, NULL), 1);
+	htable_insert(htable, string_new("y", -1, NULL), 2);
+	htable_insert(htable, string_new("table", -1, NULL), 3);
+	htable_insert(htable, string_new("hash", -1, NULL), 4);
+	htable_insert(htable, string_new("longer_value", -1, NULL), 5);
+	htable_insert(htable, string_new("another_value", -1, NULL), 6);
+	htable_insert(htable, string_new("hello", -1, NULL), 7);
+	htable_insert(htable, string_new("world", -1, NULL), 8);
+	htable_insert(htable, string_new("x2", -1, NULL), 9);
+	htable_insert(htable, string_new("y2", -1, NULL), 10);
 
 	DEBUG(1, "\n - - - - - - - * htable_print * - - - - - - - ");
 	htable_print(htable);
 
-	assert(1  == htable_get(htable, string_new("x", -1)));
-	assert(2  == htable_get(htable, string_new("y", -1)));
-	assert(3  == htable_get(htable, string_new("table", -1)));
-	assert(4  == htable_get(htable, string_new("hash", -1)));
-	assert(5  == htable_get(htable, string_new("longer_value", -1)));
-	assert(6  == htable_get(htable, string_new("another_value", -1)));
-	assert(7  == htable_get(htable, string_new("hello", -1)));
-	assert(8  == htable_get(htable, string_new("world", -1)));
-	assert(9  == htable_get(htable, string_new("x2", -1)));
-	assert(10 == htable_get(htable, string_new("y2", -1)));
+	assert(1  == htable_get(htable, string_new("x", -1, NULL)));
+	assert(2  == htable_get(htable, string_new("y", -1, NULL)));
+	assert(3  == htable_get(htable, string_new("table", -1, NULL)));
+	assert(4  == htable_get(htable, string_new("hash", -1, NULL)));
+	assert(5  == htable_get(htable, string_new("longer_value", -1, NULL)));
+	assert(6  == htable_get(htable, string_new("another_value", -1, NULL)));
+	assert(7  == htable_get(htable, string_new("hello", -1, NULL)));
+	assert(8  == htable_get(htable, string_new("world", -1, NULL)));
+	assert(9  == htable_get(htable, string_new("x2", -1, NULL)));
+	assert(10 == htable_get(htable, string_new("y2", -1, NULL)));
 
 	DEBUG(1, "\n - - - - - - - * htable_set * - - - - - - - ");
 	DEBUG(1, "Setting x and y to 50 and x2 and y2 to 100. Changing hash to 30 using htable_insert");
-	htable_set(htable, string_new("x", -1), 50);
-	htable_set(htable, string_new("y", -1), 50);
-	htable_set(htable, string_new("x2", -1), 100);
-	htable_set(htable, string_new("y2", -1), 100);
-	htable_insert(htable, string_new("hash", -1), 30);
+	htable_set(htable, string_new("x", -1, NULL), 50);
+	htable_set(htable, string_new("y", -1, NULL), 50);
+	htable_set(htable, string_new("x2", -1, NULL), 100);
+	htable_set(htable, string_new("y2", -1, NULL), 100);
+	htable_insert(htable, string_new("hash", -1, NULL), 30);
 
-	assert(50  == htable_get(htable, string_new("x", -1)));
-	assert(50  == htable_get(htable, string_new("y", -1)));
-	assert(100 == htable_get(htable, string_new("x2", -1)));
-	assert(100 == htable_get(htable, string_new("y2", -1)));
-	assert(30  == htable_get(htable, string_new("hash", -1)));
+	assert(50  == htable_get(htable, string_new("x", -1, NULL)));
+	assert(50  == htable_get(htable, string_new("y", -1, NULL)));
+	assert(100 == htable_get(htable, string_new("x2", -1, NULL)));
+	assert(100 == htable_get(htable, string_new("y2", -1, NULL)));
+	assert(30  == htable_get(htable, string_new("hash", -1, NULL)));
 
 	DEBUG(1, "\n - - - - - - - * htable_print * - - - - - - - ");
 	htable_print(htable);
 
 	htable_free(htable);
 	DEBUG(1, " --- End of Testing HTable ---");
+}
+
+void test_queue()
+{
+	struct Queue* q = queue_new(4, sizeof(int64));
+	queue_print(q);
+	enqueue(q, (int64[]){ 2 });
+	enqueue(q, (int64[]){ 4 });
+	enqueue(q, (int64[]){ 6 });
+	queue_print(q);
+
+	DEBUG_VALUE(*(int64*)dequeue(q));
+	DEBUG_VALUE(*(int64*)dequeue(q));
+	DEBUG_VALUE(*(int64*)dequeue(q));
+	queue_print(q);
+
+	enqueue(q, (int64[]){ 7 });
+	enqueue(q, (int64[]){ 8 });
+	enqueue(q, (int64[]){ 9 });
+	enqueue(q, (int64[]){ 10 });
+	// queue_print(q);
+	// enqueue(q, (int64[]){ 11 });
+	queue_print(q);
+	DEBUG_VALUE(*(int64*)dequeue(q));
+	DEBUG_VALUE(*(int64*)dequeue(q));
+	// DEBUG_VALUE(*(int64*)dequeue(q));
+	queue_print(q);
 }
 
 #endif /* TESTING_UTIL */

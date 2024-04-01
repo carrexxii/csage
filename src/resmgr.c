@@ -5,47 +5,106 @@
 #include "util/string.h"
 #include "util/file.h"
 #include "util/htable.h"
+#include "util/queue.h"
 #include "gfx/device.h"
 #include "gfx/buffers.h"
 #include "gfx/image.h"
+#include "gfx/pipeline.h"
+#include "gfx/renderer.h"
 #include "resmgr.h"
 
-#define STRING_OF_HANDLE_TYPE(x) ((x) < HANDLE_MAX? string_of_handle_type[x]: "<Not a handle type>")
-enum HandleType {
-	HANDLE_NONE,
-	HANDLE_FILE,
-	HANDLE_SHADER,
-	HANDLE_IMAGE,
-	HANDLE_MAX,
-};
 const char* string_of_handle_type[] = {
-	[HANDLE_NONE]   = "HANDLE_NONE",
-	[HANDLE_FILE]   = "HANDLE_FILE",
-	[HANDLE_SHADER] = "HANDLE_SHADER",
-	[HANDLE_IMAGE]  = "HANDLE_IMAGE",
+	[RES_NONE]     = "RES_NONE",
+	[RES_FILE]     = "RES_FILE",
+	[RES_SHADER]   = "RES_SHADER",
+	[RES_IMAGE]    = "RES_IMAGE",
+	[RES_UBO]      = "RES_UBO",
+	[RES_SBO]      = "RES_SBO",
+	[RES_PIPELINE] = "RES_PIPELINE",
 };
 
 struct Handle {
-	enum HandleType type;
-	int refc;
+	enum ResourceType type;
+	int   refc;
 	void* data;
+};
+
+struct DeferHandle {
+	int64 frame;
+	enum ResourceType type;
+	union {
+		struct Pipeline* pipeln;
+		UBO ubo;
+		SBO sbo;
+	} data;
 };
 
 static VkShaderModule new_shader(String path);
 static struct Image   new_image(String path);
 
-struct HTable* resources;
-struct VArray  handles;
+static struct HTable* resources;
+static struct VArray  handles;
+static struct Queue*  deferred;
+
+static Mutex defer_lock;
 
 void resmgr_init()
 {
+	mtx_init(&defer_lock, mtx_plain);
+
 	resources = htable_new(RESMGR_DEFAULT_HTABLE_SIZE);
 	handles   = varray_new(RESMGR_DEFAULT_HTABLE_SIZE/2, sizeof(struct Handle));
+	deferred  = queue_new(16, sizeof(struct DeferHandle));
 }
 
 void resmgr_printout()
 {
 	htable_print(resources);
+}
+
+void resmgr_defer(enum ResourceType type, void* data)
+{
+	mtx_lock(&defer_lock);
+
+	struct DeferHandle handle = {
+		.type  = type,
+		.frame = frame_number,
+	};
+	switch (type) {
+	case RES_UBO     : handle.data.ubo    = *(UBO*)data; break;
+	case RES_SBO     : handle.data.sbo    = *(SBO*)data; break;
+	case RES_PIPELINE: handle.data.pipeln = data       ; break;
+	default:
+		ERROR("[RES] Unmatched resource type for defer: %s", STRING_OF_RESOURCE_TYPE(type));
+	}
+
+	enqueue(deferred, &handle);
+
+	mtx_unlock(&defer_lock);
+}
+
+void resmgr_clean()
+{
+	mtx_lock(&defer_lock);
+
+	struct DeferHandle* handle;
+	while (!queue_is_empty(deferred)) {
+		handle = queue_peek(deferred);
+		DEBUG(1, "%p: %ld", (void*)handle->data.pipeln, handle->frame);
+		if (frame_number - handle->frame <= FRAMES_IN_FLIGHT)
+			break;
+
+		dequeue(deferred);
+		switch (handle->type) {
+		case RES_UBO     : ubo_free(&handle->data.ubo)     ; break;
+		case RES_SBO     : sbo_free(&handle->data.sbo)     ; break;
+		case RES_PIPELINE: pipeln_free(handle->data.pipeln); break;
+		default:
+			ERROR("[RES] Resource of type %s not free'd in defer", STRING_OF_RESOURCE_TYPE(handle->type));
+		}
+	}
+
+	mtx_unlock(&defer_lock);
 }
 
 void resmgr_free()
@@ -57,14 +116,16 @@ void resmgr_free()
 			continue;
 
 		switch (handle->type) {
-		case HANDLE_FILE  : free(handle->data); break;
-		case HANDLE_SHADER: vkDestroyShaderModule(logical_gpu, handle->data, NULL); break;
-		case HANDLE_IMAGE : image_free(handle->data); break;
+		case RES_FILE  : free(handle->data); break;
+		case RES_SHADER: vkDestroyShaderModule(logical_gpu, handle->data, NULL); break;
+		case RES_IMAGE : image_free(handle->data); break;
 		default:
 			ERROR("[RES] Unmatched handle type \"%s\" (%p with %d references)",
-			      STRING_OF_HANDLE_TYPE(handle->type), handle->data, handle->refc);
+			      STRING_OF_RESOURCE_TYPE(handle->type), handle->data, handle->refc);
 		}
 	}
+
+	queue_free(deferred);
 }
 
 /* -------------------------------------------------------------------- */
@@ -75,7 +136,7 @@ VkShaderModule load_shader(String path)
 	if (res_id == -1) {
 		VkShaderModule module = new_shader(path);
 		struct Handle handle = {
-			.type = HANDLE_SHADER,
+			.type = RES_SHADER,
 			.refc = 0,
 			.data = module,
 		};
@@ -86,8 +147,8 @@ VkShaderModule load_shader(String path)
 	}
 
 	struct Handle* res = varray_get(&handles, res_id);
-	if (res->type != HANDLE_SHADER)
-		ERROR("[RES] Resource requested as shader is listed as \"%s\"", STRING_OF_HANDLE_TYPE(res->type));
+	if (res->type != RES_SHADER)
+		ERROR("[RES] Resource requested as shader is listed as \"%s\"", STRING_OF_RESOURCE_TYPE(res->type));
 
 	res->refc++;
 	return res->data;
@@ -100,7 +161,7 @@ struct Image* load_image(String path)
 		struct Image* img = smalloc(sizeof(struct Image));
 		*img = new_image(path);
 		struct Handle handle = {
-			.type = HANDLE_IMAGE,
+			.type = RES_IMAGE,
 			.refc = 0,
 			.data = img,
 		};
@@ -111,9 +172,9 @@ struct Image* load_image(String path)
 	}
 
 	struct Handle* res = varray_get(&handles, res_id);
-	if (res->type != HANDLE_IMAGE)
+	if (res->type != RES_IMAGE)
 		ERROR("[RES] Resource requested as image is listed as \"%s\":\n\t%p (%d references)",
-		      STRING_OF_HANDLE_TYPE(res->type), res->data, res->refc);
+		      STRING_OF_RESOURCE_TYPE(res->type), res->data, res->refc);
 
 	res->refc++;
 	return res->data;

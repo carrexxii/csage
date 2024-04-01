@@ -46,6 +46,8 @@ struct SpriteGroup* sprite;
 
 void scenemgr_init()
 {
+	taskmgr_init();
+
 	game_cam   = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f, &global_camera_ubo);
 	editor_cam = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f, &global_camera_ubo);
 
@@ -56,9 +58,6 @@ void scenemgr_init()
 	font_init();
 	ui_init();
 	particles_init();
-	editor_init();
-
-	taskmgr_init();
 
 	renderer_set_global_lighting(VEC3(0.2f , 0.2f , 1.0f),
 	                             VEC3(0.01f, 0.01f, 0.01f),
@@ -105,8 +104,8 @@ void scenemgr_defer(DeferFn fn, void* data)
 void scenemgr_free()
 {
 	scene_exec_defer();
-	sprite_sheet_free();
 	editor_free();
+	sprite_sheet_free();
 
 	camera_free(&game_cam);
 	camera_free(&editor_cam);
@@ -214,6 +213,9 @@ static void cb_editor_cam_update() { camera_update(&editor_cam); }
 static void cb_editor_update() { editor_update(&editor_cam); }
 static void load_editor()
 {
+	if (!editor_has_init)
+		editor_init();
+
 	register_global_keys();
 	editor_register_keys();
 	input_register(SDLK_UP   , cb_editor_player_move_up);

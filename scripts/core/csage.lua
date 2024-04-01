@@ -3,8 +3,8 @@ csage.cdef [[
 	typedef char VBO[24];
 	typedef char UBO[24];
 	typedef char SBO[24];
-	typedef char Texture[24];
-	typedef char Pipeline[176];
+	typedef char Image[24];
+	typedef char Pipeline[96];
 
 	/* ---------------------------------------------------------------- */
 
@@ -166,13 +166,12 @@ csage.cdef [[
 		char name[32];
 		int w, h, z;
 		int groupc;
-		bool needs_update;
 		struct VArray       sprites;
 		struct SpriteGroup* groups;
 
-		Texture albedo;
-		Texture normal;
-		Pipeline pipeln;
+		Image* albedo;
+		Image* normal;
+		Pipeline* pipeln;
 		SBO sprite_sheet_data;
 		SBO sprite_data;
 	};

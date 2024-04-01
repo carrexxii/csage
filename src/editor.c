@@ -1,5 +1,3 @@
-#include "SDL3/SDL.h"
-
 #include "resmgr.h"
 #include "util/file.h"
 #include "input.h"
@@ -8,7 +6,9 @@
 #include "map.h"
 #include "editor.h"
 
-struct UITileset {
+bool editor_has_init;
+
+static struct UITileset {
 	struct SpriteSheet* sheet;
 	struct Sprite* sprite;
 	int selection;
@@ -28,6 +28,7 @@ static void cb_test(int x) { DEBUG(1, "Clicked: %d", x); }
 static struct Arena* arena;
 static struct VArray sheets;
 static String* selected_file;
+static struct UIContainer* sidebar;
 static struct UIContainer* tset_container;
 static Vec3 mpos;
 
@@ -71,8 +72,6 @@ static void cb_load_tileset(int) {
 			}
 		}
 	}
-
-	ui_build();
 }
 
 static void cb_select_file(int index) {
@@ -86,7 +85,7 @@ void editor_init()
 	arena  = arena_new(4096, ARENA_RESIZEABLE);
 	sheets = varray_new(32, sizeof(String));
 
-	struct UIContainer* sidebar = ui_new_container(RECT(0.4f, -1.0f, 0.6f, 2.0f), NULL);
+	sidebar = ui_new_container(RECT(0.4f, -1.0f, 0.6f, 2.0f), NULL);
 	button_new(sidebar, RECT(-0.9f, 0.82f, 0.8f, 0.12f), STRING("Load Tileset"), NULL, RECT1, cb_load_tileset, 0, NULL);
 	button_new(sidebar, RECT( 0.1f, 0.82f, 0.8f, 0.12f), STRING("Button 2"), NULL, RECT1, cb_test, 2, NULL);
 
@@ -94,6 +93,8 @@ void editor_init()
 	uilist_new(sidebar, sheets.len, (String*)sheets.data, NULL, RECT(-0.9f, -0.95f, 1.8f, 0.6f), true, cb_select_file);
 
 	new_ui_tileset(sidebar, RECT(-0.95f, -0.3f, 1.9f, 1.0f));
+
+	editor_has_init = true;
 }
 
 void editor_register_keys()
@@ -103,7 +104,8 @@ void editor_register_keys()
 
 void editor_update(struct Camera* cam)
 {
-	if (!tileset.sprite)
+	if (!tileset.sheet ||
+	    !(tileset.sprite = varray_get(&tileset.sheet->sprites, 0)))
 		return;
 
 	mpos = VEC3(mouse_x, mouse_y, 0.0f);
@@ -121,6 +123,8 @@ void editor_free()
 {
 	arena_free(arena);
 	varray_free(&sheets);
+
+	editor_has_init = false;
 }
 
 /* -------------------------------------------------------------------- */

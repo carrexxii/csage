@@ -128,6 +128,7 @@ void font_init()
 		.imgs        = &atlas,
 	};
 	pipeln = pipeln_new(&pipeln_ci, "Font");
+	pipeln = pipeln_update(pipeln, &pipeln_ci);
 }
 
 struct TextObject* font_render(String str, float z, float w)

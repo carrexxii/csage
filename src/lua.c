@@ -7,7 +7,7 @@ struct GlobalConfig config;
 void lua_init()
 {
 	DEBUG(1, "[INFO] LuaJIT version: " LUAJIT_VERSION);
-	DEBUG(1, "[INFO] Lua    version: " LUA_VERSION);
+	DEBUG(1, "[INFO] Lua version: " LUA_VERSION);
 
 	lua_state = luaL_newstate();
 	luaL_openlibs(lua_state);

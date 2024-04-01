@@ -8,7 +8,6 @@
 #include "types.h"
 #include "ui.h"
 
-static void update_pipeln(void);
 static inline void update_container(struct UIContainer* container);
 static void cb_mouse_left(bool kdown);
 static void container_free(struct UIContainer* container);
@@ -46,6 +45,7 @@ void ui_init()
 		.imgs[0]       = default_tex,
 	};
 	pipeln = pipeln_new(&pipeln_ci, "UI");
+	pipeln = pipeln_update(pipeln, &pipeln_ci);
 
 	DEBUG(1, "[UI] Initialized UI");
 }
@@ -139,10 +139,13 @@ void ui_build()
 				ERROR("[UI] Failed to build object with type %d", obj->type);
 			}
 		}
+		container->has_update = false;
 	}
 
-	if (pipeln_needs_update)
-		update_pipeln();
+	if (pipeln_needs_update) {
+		pipeln = pipeln_update(pipeln, &pipeln_ci);
+		pipeln_needs_update = false;
+	}
 }
 
 void ui_update()
@@ -151,7 +154,7 @@ void ui_update()
 	Vec2 mouse = context.mouse_pos;
 
 	struct UIContainer* container;
-	struct UIObject*  obj;
+	struct UIObject*    obj;
 	for (int i = 0; i < containerc; i++) {
 		container = &containers[i];
 		if (point_in_rect(mouse, container->rect)) {
@@ -190,6 +193,8 @@ void ui_update()
 		}
 		container->has_update = true;
 	}
+
+	ui_build();
 }
 
 void ui_update_object(struct UIObject* obj)
@@ -245,12 +250,6 @@ void ui_free()
 }
 
 /* -------------------------------------------------------------------- */
-
-static void update_pipeln()
-{
-	pipeln_update(&pipeln, &pipeln_ci);
-	pipeln_needs_update = false;
-}
 
 static void cb_mouse_left(bool kdown)
 {

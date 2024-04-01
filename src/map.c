@@ -6,8 +6,8 @@
 
 static void map_print(struct Map* map);
 
-SBO spot_lights_sbo;
-SBO point_lights_sbo;
+SBO global_spot_lights_sbo;
+SBO global_point_lights_sbo;
 
 void maps_init()
 {
@@ -28,6 +28,7 @@ void map_new(struct Map* map, const char* name)
 	lua_pop(lua_state, 1);
 	*map = *map_data;
 
+	/*** -------------------- Load the Lights -------------------- ***/
 	map->spot_lights  = smalloc(map->spot_lightc  * sizeof(struct SpotLight));
 	map->point_lights = smalloc(map->point_lightc * sizeof(struct PointLight));
 	memcpy(map->spot_lights , map_data->spot_lights , map->spot_lightc  * sizeof(struct SpotLight));
@@ -40,9 +41,25 @@ void map_new(struct Map* map, const char* name)
 	buffer_update(map->point_lights_sbo, sizeof(map->point_lightc), &map->point_lightc, 0);
 	buffer_update(map->spot_lights_sbo , map->spot_lightc*sizeof(struct SpotLight)  , map->spot_lights , offset);
 	buffer_update(map->point_lights_sbo, map->point_lightc*sizeof(struct PointLight), map->point_lights, offset);
-	spot_lights_sbo  = map->spot_lights_sbo;
-	point_lights_sbo = map->point_lights_sbo;
+	global_spot_lights_sbo  = map->spot_lights_sbo;
+	global_point_lights_sbo = map->point_lights_sbo;
 
+	/*** -------------------- Load the Sprite Sheet -------------------- ***/
+	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", "tiles");
+	lua_getglobal(lua_state, "load_sprite_sheet");
+	lua_pushstring(lua_state, path);
+	if (lua_pcall(lua_state, 1, 1, 0)) {
+		ERROR("[LUA] Failed in call to \"load_sprite_sheet\": \n\t%s", lua_tostring(lua_state, -1));
+		sfree(map->spot_lights);
+		sfree(map->point_lights);
+		return;
+	}
+	map->sprite_sheet = sprite_sheet_load(lua_topointer(lua_state, -1));
+	DEBUG_VALUE(map->sprite_sheet->w);
+	DEBUG_VALUE(map->sprite_sheet->h);
+	lua_pop(lua_state, 1);
+
+	/*** -------------------- Build the Map -------------------- ***/
 	Vec3* tiles = smalloc(map->w * map->h * sizeof(Vec3));
 	enum SpriteStateType* tile_states = smalloc(map->w * map->h * sizeof(enum SpriteStateType));
 	struct MapLayer* layer;
@@ -89,10 +106,14 @@ void map_free(struct Map* map)
 		sfree(map->layers[i]->sprites);
 		sfree(map->layers[i]);
 	}
+
 	sfree(map->spot_lights);
 	sfree(map->point_lights);
 	sbo_free(&map->spot_lights_sbo);
 	sbo_free(&map->point_lights_sbo);
+
+	global_spot_lights_sbo  = (SBO){ 0 };
+	global_point_lights_sbo = (SBO){ 0 };
 }
 
 /* -------------------------------------------------------------------- */

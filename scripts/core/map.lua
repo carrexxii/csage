@@ -109,6 +109,6 @@ function load_tiled_map(fname)
 		end
 	end
 
-	map.sprite_sheet = csage.C.sprite_sheet_load(sheet)
+	-- map.sprite_sheet = csage.C.sprite_sheet_load(sheet)
 	return csage.new("struct Map", map);
 end

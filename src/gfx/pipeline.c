@@ -12,10 +12,10 @@ static int  init_shaders(struct PipelineCreateInfo* ci, VkPipelineShaderStageCre
 static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo* ci);
 static inline VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stage_flags, VkDescriptorType type, int binding);
 
-static struct Pipeline  pipelns[MAX_PIPELINES];
-static struct VArray    free_pipelns;
-static struct Pipeline* pipeln_to_free;
+static struct Pipeline pipelns[MAX_PIPELINES];
+static struct VArray   free_pipelns;
 
+// TODO: create all the pipelines at init and reuse from there
 void pipelns_init()
 {
 	free_pipelns = varray_new(MAX_PIPELINES, sizeof(int));
@@ -29,10 +29,9 @@ void pipelns_free()
 {
 	if (free_pipelns.len != MAX_PIPELINES) {
 		WARNING("[VK] Not all pipelines have been free'd (%d/%d)", free_pipelns.len, MAX_PIPELINES);
-		for (int i = 0; i < MAX_PIPELINES; i++) {
+		for (int i = 0; i < MAX_PIPELINES; i++)
 			if (!varray_contains(&free_pipelns, &i))
 				fprintf(stderr, TERM_YELLOW "\t-> \"%s\"\n" TERM_NORMAL, pipelns[i].name);
-		}
 	}
 }
 
@@ -52,41 +51,36 @@ struct Pipeline* pipeln_new(struct PipelineCreateInfo* ci, const char* name)
 
 	int i = *(int*)varray_pop(&free_pipelns);
 	struct Pipeline* atomic pipeln = &pipelns[i];
+	if (pipeln->is_active)
+		pipeln_free(pipeln);
+
 	*pipeln = (struct Pipeline){
 		.i         = i,
 		.is_active = false,
 		.name      = name,
 	};
-	pipeln_update(&pipeln, ci);
 
-	pipeln->is_active = true;
 	DEBUG(3, "[VK] Created new pipeline \"%s\" ([%d] %p) with:\n\t%d UBOs\n\t%d SBOs\n\t%d Images\n\tPush constants: %s (%dB) (0x%X stages)",
 	      pipeln->name, pipeln->i, (void*)pipeln, ci->uboc, ci->sboc, ci->imgc, STRING_TF(ci->push_sz), ci->push_sz, ci->push_stages);
 	return pipeln;
 }
 
-void pipeln_update(struct Pipeline* atomic* old_pipeln, struct PipelineCreateInfo* ci)
+struct Pipeline* pipeln_update(struct Pipeline* old_pipeln, struct PipelineCreateInfo* ci)
 {
-	assert(old_pipeln && *old_pipeln && ci);
-
-	if (pipeln_to_free) {
-		pipeln_free(pipeln_to_free);
-		pipeln_to_free = NULL;
-	}
-
 	struct Pipeline* pipeln;
-	if ((*old_pipeln)->is_active) {
-		pipeln = pipeln_new(ci, (*old_pipeln)->name);
-		pipeln_to_free = *old_pipeln;
+	if (old_pipeln->is_active) {
+		old_pipeln->is_active = false;
+		resmgr_defer(RES_PIPELINE, old_pipeln);
+		pipeln = pipeln_new(ci, old_pipeln->name);
 	} else {
-	 	pipeln = *old_pipeln;
+	 	pipeln = old_pipeln;
 	}
 
 	VkPipelineShaderStageCreateInfo stages_ci[5];
 	int stagec = init_shaders(ci, stages_ci);
 	if (stagec < 1) {
 		ERROR("[VK] Pipeline does not have any stages (stage count = %d)", stagec);
-		return;
+		return NULL;
 	}
 
 	init_descriptors(pipeln, ci);
@@ -218,7 +212,8 @@ void pipeln_update(struct Pipeline* atomic* old_pipeln, struct PipelineCreateInf
 	else
 		DEBUG(3, "[VK] Pipeline updated");
 
-	*old_pipeln = pipeln;
+	pipeln->is_active = true;
+	return pipeln;
 }
 
 void pipeln_free(struct Pipeline* pipeln)

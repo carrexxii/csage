@@ -64,6 +64,7 @@ void particles_init()
 		.imgs        = img,
 	};
 	pipeln = pipeln_new(&pipeln_ci, "Particles");
+	pipeln = pipeln_update(pipeln, &pipeln_ci);
 
 	float verts[] = {
 		-0.5,  0.5, 0.0, 0.0,   0.5, 0.5, 1.0, 0.0,   -0.5, -0.5, 0.0, 1.0,
@@ -136,9 +137,11 @@ void particles_update()
 
 void particles_record_commands(VkCommandBuffer cmd_buf)
 {
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln->pipeln);
+	struct Pipeline* pl = pipeln;
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->pipeln);
 	vkCmdBindVertexBuffers(cmd_buf, 0, 1, &vbo_buf.buf, (VkDeviceSize[]) { 0 });
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeln->layout, 0, 1, &pipeln->dset.set, 0, NULL);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->layout, 0, 1, &pl->dset.set, 0, NULL);
+
 	struct ParticlePool* pool;
 	for (int i = 0; i < poolc; i++) {
 		pool = &pools[i];
@@ -146,7 +149,7 @@ void particles_record_commands(VkCommandBuffer cmd_buf)
 			continue;
 		buffer_update(ubo, PARTICLES_UBO_SIZE, pool->particles, 0);
 
-		vkCmdPushConstants(cmd_buf, pipeln->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pool->scale), &pool->scale);
+		vkCmdPushConstants(cmd_buf, pl->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pool->scale), &pool->scale);
 		vkCmdDraw(cmd_buf, 6, MAX_PARTICLES_PER_POOL, 0, MAX_PARTICLES_PER_POOL*i);
 	}
 }

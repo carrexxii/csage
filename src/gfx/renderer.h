@@ -5,6 +5,7 @@
 #include "buffers.h"
 #include "camera.h"
 
+#define FRAMES_IN_FLIGHT            2
 #define RENDERER_MAX_DRAW_FUNCTIONS 16
 #define RENDERER_MAX_LIGHTS         128
 
@@ -46,6 +47,7 @@ void renderer_set_global_lighting(Vec3 dir, Vec3 ambient, Vec3 diffuse, Vec3 spe
 void renderer_draw(void);
 void renderer_free(void);
 
+extern int64        frame_number;
 extern VkRenderPass renderpass;
 extern VkSampler    default_sampler;
 extern UBO          global_camera_ubo;

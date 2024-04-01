@@ -9,6 +9,7 @@
 	} while (0)
 
 // TODO: Add allocator parameters
+// TODO: VLS?
 struct VArray {
 	byte* data;
 	int len;
@@ -50,7 +51,9 @@ static inline void* varray_set(struct VArray* arr, isize i, void* elem)
 
 static inline void* varray_get(struct VArray* arr, isize i)
 {
-	assert(i >= 0 && i < arr->len);
+	if (i < 0 || i >= arr->len)
+		return NULL;
+
 	return arr->data + i*arr->elem_sz;
 }
 

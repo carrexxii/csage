@@ -12,4 +12,6 @@ void editor_register_keys(void);
 void editor_update(struct Camera* cam);
 void editor_free(void);
 
+extern bool editor_has_init;
+
 #endif

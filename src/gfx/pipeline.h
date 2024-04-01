@@ -20,7 +20,7 @@ struct DescriptorSet {
 
 struct Pipeline {
 	int i;
-	bool is_active;
+	atomic bool is_active;
 	char* name;
 
 	VkPipeline           pipeln;
@@ -68,7 +68,7 @@ struct PipelineCreateInfo {
 void pipelns_init(void);
 void pipelns_free(void);
 struct Pipeline* pipeln_new(struct PipelineCreateInfo* ci, const char* name);
-void             pipeln_update(struct Pipeline* atomic* pipeln, struct PipelineCreateInfo* pipeln_ci);
+struct Pipeline* pipeln_update(struct Pipeline* pipeln, struct PipelineCreateInfo* pipeln_ci);
 void             pipeln_free(struct Pipeline* pipeln);
 
 #endif

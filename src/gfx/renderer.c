@@ -1,7 +1,7 @@
 #include "vulkan/vulkan.h"
 #include "SDL3/SDL.h"
 
-#include "config.h"
+#include "resmgr.h"
 #include "vulkan.h"
 #include "buffers.h"
 #include "device.h"
@@ -15,8 +15,7 @@
 #include "maths/scratch.h"
 #include "renderer.h"
 
-#define FRAMES_IN_FLIGHT 2
-
+int64                   frame_number;
 VkRenderPass            renderpass;
 VkSampler               default_sampler;
 struct DirectionalLight global_light;
@@ -30,7 +29,6 @@ static void create_sync_objects(void);
 
 static void (*draw_fns[RENDERER_MAX_DRAW_FUNCTIONS])(VkCommandBuffer);
 static int draw_fnc = 0;
-static int frame    = 0;
 static struct {
 	VkSemaphore renderdone[FRAMES_IN_FLIGHT];
 	VkSemaphore imgavail[FRAMES_IN_FLIGHT];
@@ -153,15 +151,17 @@ void renderer_set_global_lighting(Vec3 dir, Vec3 ambient, Vec3 diffuse, Vec3 spe
 
 void renderer_draw()
 {
+	int64 frame = frame_number % FRAMES_IN_FLIGHT;
 	vkWaitForFences(logical_gpu, 1, &fences.frames[frame], true, UINT64_MAX);
 	vkResetFences(logical_gpu, 1, &fences.frames[frame]);
 
-	/* TODO: recreate swapchain for out of date */
+	// TODO: recreate swapchain for out of data
 	uint imgi;
 	if ((vk_err = vkAcquireNextImageKHR(logical_gpu, swapchain.swapchain, UINT64_MAX, semas.imgavail[frame], NULL, &imgi)))
 		ERROR("[VK] Failed to aquire next swapchain image: \n\t\"%d\"", vk_err);
 
 	vkResetCommandBuffer(cmd_bufs[frame], 0);
+	resmgr_clean();
 	record_commands(imgi);
 
 	VkSubmitInfo submiti = {
@@ -191,7 +191,7 @@ void renderer_draw()
 	if ((vk_err = vkQueuePresentKHR(presentq, &presi)))
 		ERROR("[VK] Failed to present queue:\n\t\"%d\"", vk_err);
 
-	frame = (frame + 1) % FRAMES_IN_FLIGHT;
+	frame_number++;
 }
 
 void renderer_free()
@@ -239,7 +239,7 @@ void renderer_free()
  */
 static void record_commands(int imgi)
 {
-	VkCommandBuffer cmd_buf = cmd_bufs[frame];
+	VkCommandBuffer cmd_buf = cmd_bufs[frame_number % FRAMES_IN_FLIGHT];
 	VkCommandBufferBeginInfo begini = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -310,7 +310,6 @@ static void create_command_buffers()
 
 static void create_sync_objects()
 {
-	frame = 0;
 	VkSemaphoreCreateInfo semai = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 	};
