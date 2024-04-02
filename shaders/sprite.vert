@@ -17,7 +17,7 @@ struct SpriteFrame {
 	int16_t x, y, w, h;
 };
 struct Sprite {
-	vec3     pos;
+	vec2     pos;
 	int16_t  gi;
 	int8_t   state, frame;
 	int8_t   sheet, group;
@@ -43,7 +43,7 @@ void main()
 	SpriteFrame frame  = sheet.frames[sprite.gi + sprite.frame];
 	vec3 pos = rect_verts[gl_VertexIndex % 6];
 
-	Fpos = pos + sprite.pos;
+	Fpos = pos + vec3(sprite.pos, sheet.z);
 	Fuv  = vec2(frame.x + frame.w*pos.x, frame.y + frame.h*pos.y) / vec2(sheet.w, sheet.h);
 
 	pos *= vec3(frame.w, frame.h, 0.0f) / (2.0f * sheet.scale);

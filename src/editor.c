@@ -30,12 +30,12 @@ static struct VArray sheets;
 static String* selected_file;
 static struct UIContainer* sidebar;
 static struct UIContainer* tset_container;
-static Vec3 mpos;
+static Vec2 mpos;
 
 static void cb_select_tile(int i)
 {
 	tileset.selection = i;
-	tileset.sprite = sprite_new_by_gi(tileset.sheet, i, VEC3_ZERO);
+	tileset.sprite = sprite_new_by_gi(tileset.sheet, i, VEC2_ZERO);
 }
 
 static void cb_load_tileset(int) {
@@ -108,13 +108,12 @@ void editor_update(struct Camera* cam)
 	    !(tileset.sprite = varray_get(&tileset.sheet->sprites, 0)))
 		return;
 
-	mpos = VEC3(mouse_x, mouse_y, 0.0f);
+	mpos = VEC2(mouse_x, mouse_y);
 	Mat4x4 cam_vp = multiply(cam->mats->proj, cam->mats->view);
-	mpos = unproject(mpos, cam_vp, RECT(0.0, 0.0, config.winw, config.winh));
+	mpos = VEC2_V3(unproject(VEC3_V2(mpos), cam_vp, RECT(0.0, 0.0, config.winw, config.winh)));
 	mpos.x -= 0.5f;
-	mpos = VEC3(floorf( (mpos.x + mpos.y*2.0f)),
-	            floorf(-(mpos.x - mpos.y*2.0f)),
-	            0.0f);
+	mpos = VEC2(floorf( (mpos.x + mpos.y*2.0f)),
+	            floorf(-(mpos.x - mpos.y*2.0f)));
 
 	tileset.sprite->pos = mpos;
 }

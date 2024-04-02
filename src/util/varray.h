@@ -22,8 +22,10 @@ static inline void* varray_set(struct VArray* restrict arr, isize i, void* restr
 static inline void* varray_get(struct VArray* arr, isize i);
 static inline isize varray_push(struct VArray* restrict arr, void* restrict data);
 static inline void* varray_pop(struct VArray* arr);
-static inline void  varray_resize(struct VArray** arr, isize new_sz);
+static inline void  varray_resize(struct VArray* arr, isize new_len, bool shrink);
 static inline void  varray_free(struct VArray* arr);
+
+/* -------------------------------------------------------------------- */
 
 // TODO: flags for slow grow/no grow/...
 static inline struct VArray varray_new(isize elemc, isize elem_sz)
@@ -67,12 +69,7 @@ static inline void* varray_pop(struct VArray* arr)
 
 static inline isize varray_push(struct VArray* restrict arr, void* restrict elem)
 {
-	if (arr->len >= arr->cap) {
-		arr->cap *= VARRAY_SIZE_MULTIPLIER;
-		arr->data = srealloc(arr->data, arr->cap*arr->elem_sz);
-		DEBUG(3, "[UTIL] Resized VArray [len=%d; cap=%d; elem_sz=%dB]", arr->len, arr->cap, arr->elem_sz);
-	}
-
+	varray_resize(arr, arr->len + 1, false);
 	memcpy(arr->data + arr->len*arr->elem_sz, elem, arr->elem_sz);
 
 	return arr->len++;
@@ -96,6 +93,15 @@ static inline bool varray_contains(struct VArray* arr, void* data)
 			return true;
 
 	return false;
+}
+
+static inline void varray_resize(struct VArray* arr, isize new_len, bool shrink)
+{
+	if (arr->cap < new_len || (arr->cap != new_len && shrink)) {
+		arr->cap *= new_len;
+		arr->data = srealloc(arr->data, arr->cap * arr->elem_sz);
+		DEBUG(3, "[UTIL] Resized VArray [len=%d; cap=%d; elem_sz=%dB]", arr->len, arr->cap, arr->elem_sz);
+	}
 }
 
 static inline void varray_reset(struct VArray* arr)

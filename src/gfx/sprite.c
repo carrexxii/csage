@@ -267,7 +267,7 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 
 /* -------------------------------------------------------------------- */
 
-struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
+struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec2 pos)
 {
 	int sheet_id = sprites_get_sheet_id(sheet);
 	struct SpriteGroup* group = &sheet->groups[group_id];
@@ -290,19 +290,20 @@ struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
 	return varray_get(&sheet->sprites, spri);
 }
 
-struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states)
+struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec2* poss, enum SpriteStateType* states)
 {
 	int sheet_id = sprites_get_sheet_id(sheet);
 	struct SpriteGroup* group = &sheet->groups[group_id];
 	struct Sprite* sprites = smalloc(spritec * sizeof(struct Sprite));
 	int state;
 	for (int i = 0; i < spritec; i++) {
+		state = states? states[i]: 0;
 		sprites[i] = (struct Sprite){
 			.pos   = poss[i],
-			.gi    = group->states[states[i]].gi,
+			.gi    = group->states[state].gi,
 			.sheet = sheet_id,
 			.group = group_id,
-			.state = states[i],
+			.state = state,
 		};
 	}
 
@@ -320,7 +321,7 @@ struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spr
 	return varray_get(&sheet->sprites, i);
 }
 
-struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec3 pos)
+struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec2 pos)
 {
 	struct SpriteGroup* group;
 	for (int i = 0; i < sheet->groupc; i++) {

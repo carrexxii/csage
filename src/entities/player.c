@@ -13,7 +13,7 @@ static uint dir_mask;
 void player_init()
 {
 	sprite_sheet  = sprite_sheet_new("player", -2);
-	player_sprite = sprite_new(sprite_sheet, sprites_get_group(sprite_sheet, "player"), VEC3(0.0f, 0.0f, 0.0f));
+	player_sprite = sprite_new(sprite_sheet, sprites_get_group(sprite_sheet, "player"), VEC2(0.0f, 0.0f));
 	sprite_set_state(player_sprite, SPRITE_IDLE, DIR_S);
 
 	DEBUG(1, "[ENT] Initialized player");
@@ -46,5 +46,5 @@ void player_update()
 {
 	Vec2 vel = multiply(normalized(player_dir), player_speed);
 	if (!isnan(vel.x) && !isnan(vel.y))
-		player_sprite->pos = add(player_sprite->pos, VEC3_V2(vel));
+		player_sprite->pos = add(player_sprite->pos, vel);
 }

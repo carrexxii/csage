@@ -80,10 +80,10 @@ void camera_update(struct Camera* cam)
 		cam->zoom -= cam->zoom_speed;
 
 	if (cam->follow) {
-		Vec3 pos = *cam->follow;
+		Vec2 pos = *cam->follow;
 		cam->target = VEC3(-(pos.x - pos.y) / 2.0f,
 		                   (pos.x + pos.y) / 4.0f,
-		                   pos.z);
+		                   0.0f);
 		cam->pos = lerp(cam->pos, cam->target, config.cam_speed*DT);
 	} else {
 		Vec2 vel = { 0 };

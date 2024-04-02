@@ -38,7 +38,7 @@ layout(push_constant) uniform PushConstants {
 void main()
 {
 	vec4 albedo = texture(sampler2D(Falbedo, Fsampler), Fuv);
-	if (albedo.w < 0.3f) discard;
+	if (albedo.w < 0.7f) discard;
 	vec3 normal = normalize(texture(sampler2D(Fnormal, Fsampler), Fuv).rgb * 2.0f - 1.0f);
 
 	vec3 view_dir = normalize(Fpos);

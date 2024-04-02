@@ -32,7 +32,7 @@ struct Camera {
 		Mat4x4 proj;
 		Mat4x4 view;
 	}* mats;
-	Vec3* follow;
+	Vec2* follow;
 };
 
 struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ubo);

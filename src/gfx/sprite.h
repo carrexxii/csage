@@ -63,12 +63,11 @@ struct SpriteGroup {
 };
 
 struct Sprite {
-	Vec3   pos;
+	Vec2   pos;
 	int16  gi;
 	int8   state, frame;
 	int8   sheet, group;
 	uint16 time;
-	byte pad[12];
 };
 
 struct SpriteSheet {
@@ -93,9 +92,9 @@ void sprites_update(void);
 void sprite_sheets_free(void);
 struct SpriteSheet* sprite_sheet_new(const char* name, int z_lvl);
 struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data);
-struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos);
-struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec3* poss, enum SpriteStateType* states);
-struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec3 pos);
+struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec2 pos);
+struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec2* poss, enum SpriteStateType* states);
+struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec2 pos);
 void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir);
 
 #endif

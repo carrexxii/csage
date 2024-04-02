@@ -73,7 +73,7 @@ void scenemgr_init()
 	game_cam.follow = &player_sprite->pos;
 
 	load_level("test");
-	switch_scene(SCENE_EDITOR);
+	switch_scene(SCENE_GAME);
 }
 
 noreturn void scenemgr_loop()

@@ -60,7 +60,7 @@ void map_new(struct Map* map, const char* name)
 	lua_pop(lua_state, 1);
 
 	/*** -------------------- Build the Map -------------------- ***/
-	Vec3* tiles = smalloc(map->w * map->h * sizeof(Vec3));
+	Vec2* tiles = smalloc(map->w * map->h * sizeof(Vec2));
 	enum SpriteStateType* tile_states = smalloc(map->w * map->h * sizeof(enum SpriteStateType));
 	struct MapLayer* layer;
 	for (int i = 0; i < map_data->layerc; i++) {
@@ -78,7 +78,7 @@ void map_new(struct Map* map, const char* name)
 		for (int y = 0; y < layer->h; y++) {
 			for (int x = 0; x < layer->w; x++) {
 				if (layer->data[y*layer->w + x]) {
-					tiles[tilec] = VEC3(x, y, 0.0f);
+					tiles[tilec] = VEC2(x, y);
 					tile_states[tilec] = layer->data[y*layer->w + x] - 1;
 					tilec++;
 				}
