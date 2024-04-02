@@ -1,6 +1,0 @@
-val x = 1
-val y = 100000
-fun f = 3
-
-fun main =
-	f 0 (* print "Test" *)

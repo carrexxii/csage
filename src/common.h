@@ -145,36 +145,52 @@ enum Direction {
 #define COLOUR_CYAN    0.0, 1.0, 1.0
 
 #ifndef NO_TERM_COLOUR
-#define TERM_NORMAL  "\x1B[0m"
-#define TERM_RED     "\x1B[31m"
-#define TERM_GREEN   "\x1B[32m"
-#define TERM_YELLOW  "\x1B[33m"
-#define TERM_BLUE    "\x1B[34m"
-#define TERM_MAGENTA "\x1B[35m"
-#define TERM_CYAN    "\x1B[36m"
-#define TERM_WHITE   "\x1B[37m"
-#define DEBUG_COLOUR(str) (fprintf(stderr,                                     \
-	                               !strncmp((str), "[INIT]", 6)? TERM_BLUE   : \
-	                               !strncmp((str), "[RES]" , 5)? TERM_GREEN  : \
-	                               !strncmp((str), "[UTIL]", 6)? TERM_GREEN  : \
-	                               !strncmp((str), "[INFO]", 6)? TERM_YELLOW : \
-	                               !strncmp((str), "[ENT]" , 5)? TERM_BLUE   : \
-	                               !strncmp((str), "[THR]" , 5)? TERM_YELLOW : \
-	                               !strncmp((str), "[MAP]" , 5)? TERM_YELLOW : \
-	                               !strncmp((str), "[GFX]" , 5)? TERM_MAGENTA: \
-	                               !strncmp((str), "[VK]"  , 4)? TERM_CYAN   : \
-	                               !strncmp((str), "[MEM]" , 5)? TERM_MAGENTA: \
-	                               !strncmp((str), "[UI]"  , 4)? TERM_YELLOW : \
-	                               TERM_NORMAL))
+#define TERM_NORMAL       "\x1B[0m"
+#define TERM_RED          "\x1B[91m"
+#define TERM_DARK_RED     "\x1B[31m"
+#define TERM_GREEN        "\x1B[92m"
+#define TERM_DARK_GREEN   "\x1B[32m"
+#define TERM_ORANGE       "\x1B[93m"
+#define TERM_DARK_YELLOW  "\x1B[33m"
+#define TERM_BLUE         "\x1B[94m"
+#define TERM_DARK_BLUE    "\x1B[34m"
+#define TERM_MAGENTA      "\x1B[95m"
+#define TERM_DARK_MAGENTA "\x1B[35m"
+#define TERM_CYAN         "\x1B[96m"
+#define TERM_DARK_CYAN    "\x1B[36m"
+#define TERM_GRAY         "\x1B[97m"
+#define TERM_WHITE        "\x1B[37m"
+#define DEBUG_COLOUR(str) fprintf(stderr,                                           \
+	                              !strncmp((str), "[INIT]" , 6)? TERM_DARK_BLUE   : \
+	                              !strncmp((str), "[RES]"  , 5)? TERM_GREEN       : \
+	                              !strncmp((str), "[UTIL]" , 6)? TERM_DARK_GREEN  : \
+	                              !strncmp((str), "[INFO]" , 6)? TERM_DARK_YELLOW : \
+	                              !strncmp((str), "[ENT]"  , 5)? TERM_BLUE        : \
+	                              !strncmp((str), "[THR]"  , 5)? TERM_ORANGE      : \
+	                              !strncmp((str), "[MAP]"  , 5)? TERM_DARK_YELLOW : \
+	                              !strncmp((str), "[GFX]"  , 5)? TERM_DARK_MAGENTA: \
+	                              !strncmp((str), "[VK]"   , 4)? TERM_DARK_CYAN   : \
+	                              !strncmp((str), "[MEM]"  , 5)? TERM_MAGENTA     : \
+	                              !strncmp((str), "[UI]"   , 4)? TERM_DARK_YELLOW : \
+	                              !strncmp((str), "[INPUT]", 7)? TERM_GRAY        : \
+	                              !strncmp((str), "[SCENE]", 7)? TERM_MAGENTA     : \
+	                              TERM_NORMAL)
 #else
-#define TERM_NORMAL  ""
-#define TERM_RED     ""
-#define TERM_GREEN   ""
-#define TERM_YELLOW  ""
-#define TERM_BLUE    ""
-#define TERM_MAGENTA ""
-#define TERM_CYAN    ""
-#define TERM_WHITE   ""
+#define TERM_NORMAL
+#define TERM_RED
+#define TERM_DARK_RED
+#define TERM_GREEN
+#define TERM_DARK_GREEN
+#define TERM_ORANGE
+#define TERM_DARK_YELLOW
+#define TERM_BLUE
+#define TERM_DARK_BLUE
+#define TERM_MAGENTA
+#define TERM_DARK_MAGENTA
+#define TERM_CYAN
+#define TERM_DARK_CYAN
+#define TERM_WHITE
+#define TERM_GRAY
 #define DEBUG_COLOUR(str)
 #endif
 
@@ -208,7 +224,7 @@ enum Direction {
 			        __FILE__, __LINE__, __func__);            \
 		} while (0)
 #define WARNING(...) do {                                 \
-			fprintf(stderr, TERM_YELLOW);                  \
+			fprintf(stderr, TERM_ORANGE);                  \
 			fprintf(stderr, __VA_ARGS__);                   \
 			fprintf(stderr, "\n\t%s:%d in %s\n" TERM_NORMAL, \
 			        __FILE__, __LINE__, __func__);            \

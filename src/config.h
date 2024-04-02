@@ -8,6 +8,7 @@
 #define SPRITE_PATH  "gfx/sprites"
 #define SCRIPT_PATH  "scripts"
 #define MAP_PATH     "maps"
+#define LEVEL_PATH   "scripts/levels"
 
 #define ASPECT_RATIO ((float)config.winw / config.winh)
 

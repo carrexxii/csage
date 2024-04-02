@@ -15,6 +15,7 @@ void lua_init()
 	if (lua_get_file(SCRIPT_PATH "/core/csage.lua"))  exit(1);
 	if (lua_get_file(SCRIPT_PATH "/core/map.lua"))    exit(1);
 	if (lua_get_file(SCRIPT_PATH "/core/sprite.lua")) exit(1);
+	if (lua_get_file(SCRIPT_PATH "/core/level.lua"))  exit(1);
 
 	luaL_dofile(lua_state, "config.lua");
 	config.winw      = lua_get_int("window_width");
@@ -69,6 +70,17 @@ char* lua_get_string(char* name)
 	char* str = lua_tostring(lua_state, -1);
 	lua_pop(lua_state, 1);
 	return str;
+}
+
+void* lua_get_pointer(char* name)
+{
+	lua_getglobal(lua_state, name);
+	if (lua_isnil(lua_state, -1))
+		ERROR("[LUA] Expected a pointer for \"%s\", got: \"%s\"", name, lua_tostring(lua_state, -1));
+
+	void* ptr = lua_topointer(lua_state, -1);
+	lua_pop(lua_state, 1);
+	return ptr;
 }
 
 void lua_free()

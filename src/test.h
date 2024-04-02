@@ -10,7 +10,7 @@
 #include "maths/scratch.h"
 #include "map.h"
 
-static EntityID ent;
+static Entity ent;
 
 static void test_scratch()
 {

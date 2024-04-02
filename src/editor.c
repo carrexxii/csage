@@ -121,6 +121,9 @@ void editor_update(struct Camera* cam)
 
 void editor_free()
 {
+	if (!editor_has_init)
+		return;
+
 	arena_free(arena);
 	varray_free(&sheets);
 

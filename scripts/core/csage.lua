@@ -1,5 +1,5 @@
-csage = require("ffi")
-csage.cdef [[
+ffi = require("ffi")
+ffi.cdef [[
 	typedef char VBO[24];
 	typedef char UBO[24];
 	typedef char SBO[24];
@@ -52,6 +52,11 @@ csage.cdef [[
 	};
 
 	/* ---------------------------------------------------------------- */
+
+	typedef struct {
+		isize len, cap;
+		char* data;
+	} String;
 
 	struct VArray {
 		byte* data;
@@ -202,41 +207,66 @@ csage.cdef [[
 		SBO point_lights_sbo;
 		Pipeline pipeln;
 	};
+
+	/* ---------------------------------------------------------------- */
+
+	struct Level {
+		String name;
+	};
+
+	/* ---------------------------------------------------------------- */
+
+	typedef uint16 Entity;
+
+	Entity entity_new(struct SpriteSheet* sheet, Vec2 pos);
 ]]
 
 sprite_path = "./gfx/sprites/"
 
 direction_enum = {
-	[""]             = csage.C.DIR_NONE,
-	["up"]           = csage.C.DIR_UP,
-	["down"]         = csage.C.DIR_DOWN,
-	["right"]        = csage.C.DIR_RIGHT,
-	["left"]         = csage.C.DIR_LEFT,
-	["forwards"]     = csage.C.DIR_FORWARDS,
-	["backwards"]    = csage.C.DIR_BACKWARDS,
-	["rotate_left"]  = csage.C.DIR_ROTATE_LEFT,
-	["rotate_right"] = csage.C.DIR_ROTATE_RIGHT,
-	["n"]            = csage.C.DIR_N,
-	["s"]            = csage.C.DIR_S,
-	["e"]            = csage.C.DIR_E,
-	["w"]            = csage.C.DIR_W,
-	["nw"]           = csage.C.DIR_NW,
-	["ne"]           = csage.C.DIR_NE,
-	["sw"]           = csage.C.DIR_SW,
-	["se"]           = csage.C.DIR_SE,
+	[""]             = ffi.C.DIR_NONE,
+	["up"]           = ffi.C.DIR_UP,
+	["down"]         = ffi.C.DIR_DOWN,
+	["right"]        = ffi.C.DIR_RIGHT,
+	["left"]         = ffi.C.DIR_LEFT,
+	["forwards"]     = ffi.C.DIR_FORWARDS,
+	["backwards"]    = ffi.C.DIR_BACKWARDS,
+	["rotate_left"]  = ffi.C.DIR_ROTATE_LEFT,
+	["rotate_right"] = ffi.C.DIR_ROTATE_RIGHT,
+	["n"]            = ffi.C.DIR_N,
+	["s"]            = ffi.C.DIR_S,
+	["e"]            = ffi.C.DIR_E,
+	["w"]            = ffi.C.DIR_W,
+	["nw"]           = ffi.C.DIR_NW,
+	["ne"]           = ffi.C.DIR_NE,
+	["sw"]           = ffi.C.DIR_SW,
+	["se"]           = ffi.C.DIR_SE,
 }
 
 animation_enum = {
-	[""]    = csage.C.SPRITE_NONE,
-	idle    = csage.C.SPRITE_IDLE,
-	walk    = csage.C.SPRITE_WALK,
-	run     = csage.C.SPRITE_RUN,
-	attack1 = csage.C.SPRITE_ATTACK1,
-	attack2 = csage.C.SPRITE_ATTACK2,
+	[""]    = ffi.C.SPRITE_NONE,
+	idle    = ffi.C.SPRITE_IDLE,
+	walk    = ffi.C.SPRITE_WALK,
+	run     = ffi.C.SPRITE_RUN,
+	attack1 = ffi.C.SPRITE_ATTACK1,
+	attack2 = ffi.C.SPRITE_ATTACK2,
 
-	grass = csage.C.SPRITE_GRASS,
-	dirt  = csage.C.SPRITE_DIRT,
+	grass = ffi.C.SPRITE_GRASS,
+	dirt  = ffi.C.SPRITE_DIRT,
 }
+
+function vec2(x, y)
+	return ffi.new("Vec2", { x = x, y = y })
+end
+
+function to_c_str(str)
+	local cstr = ffi.new("char[?]", #str + 1, str)
+	return ffi.new("String", {
+		cap  = #str + 1,
+		len  = #str,
+		data = cstr,
+	})
+end
 
 function table_len(t)
     local count = 0

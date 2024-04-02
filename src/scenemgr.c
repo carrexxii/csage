@@ -2,6 +2,7 @@
 
 #include "taskmgr.h"
 #include "maths/maths.h"
+#include "lua.h"
 #include "gfx/renderer.h"
 #include "gfx/ui/ui.h"
 #include "gfx/model.h"
@@ -30,6 +31,7 @@ struct SceneDefer {
 static void scene_exec_defer(void);
 static void switch_scene(enum SceneType type);
 static void register_global_keys(void);
+static void load_level(char* name);
 static void load_game(void);
 static void load_editor(void);
 static void load_scratch(void);
@@ -71,7 +73,8 @@ void scenemgr_init()
 	game_cam.follow = &player_sprite->pos;
 	entities_init();
 
-	switch_scene(SCENE_EDITOR);
+	load_level("test");
+	switch_scene(SCENE_GAME);
 }
 
 noreturn void scenemgr_loop()
@@ -165,6 +168,21 @@ static void register_global_keys()
 }
 
 /* -------------------------------------------------------------------- */
+
+static void load_level(char* name)
+{
+	char path[PATH_BUFFER_SIZE];
+	snprintf(path, PATH_BUFFER_SIZE, LEVEL_PATH "/%s.lua", name);
+	lua_getglobal(lua_state, "load_level");
+	if (lua_pcall(lua_state, 0, 1, 0)) {
+		ERROR("[LUA] Failed in call to \"load_level\": \n\t%s", lua_tostring(lua_state, -1));
+		return;
+	}
+	struct Level* lvl = lua_topointer(lua_state, -1);
+	lua_pop(lua_state, 1);
+
+	DEBUG(1, "[SCENE] Loaded level \"%s\"", lvl->name.data);
+}
 
 static void cb_game_move_up(bool kdown)        { player_set_moving(DIR_N, kdown); camera_move(&game_cam, DIR_UP   , kdown); }
 static void cb_game_move_left(bool kdown)      { player_set_moving(DIR_W, kdown); camera_move(&game_cam, DIR_LEFT , kdown); }

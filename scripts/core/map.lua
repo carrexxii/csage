@@ -38,7 +38,7 @@ function load_tiled_map(fname)
 			-- local data = {}
 			-- for i, d in pairs(layer.data) do
 			-- 	if not d then
-			-- 		data[i - 1] = csage.C.SPRITE_NONE
+			-- 		data[i - 1] = ffi.C.SPRITE_NONE
 			-- 	else
 			-- 		local x = math.floor(d % (256 / 80))
 			-- 		local y = math.floor(d / (256 / 64))
@@ -56,7 +56,7 @@ function load_tiled_map(fname)
 			-- 	end
 			-- end
 
-			map.layers[map.layerc] = csage.new("struct MapLayer", #layer.data, {
+			map.layers[map.layerc] = ffi.new("struct MapLayer", #layer.data, {
 				name = layer.name,
 				x    = tonumber(layer.x),
 				y    = tonumber(layer.y),
@@ -99,8 +99,8 @@ function load_tiled_map(fname)
 						map.point_lightc = map.point_lightc + 1
 					end
 				end
-				map.spot_lights  = csage.new("struct SpotLight[?]" , map.spot_lightc , spot_lights)
-				map.point_lights = csage.new("struct PointLight[?]", map.point_lightc, point_lights)
+				map.spot_lights  = ffi.new("struct SpotLight[?]" , map.spot_lightc , spot_lights)
+				map.point_lights = ffi.new("struct PointLight[?]", map.point_lightc, point_lights)
 			else
 				print("[LUA] Ignoring object group: ", layer.name)
 			end
@@ -109,6 +109,6 @@ function load_tiled_map(fname)
 		end
 	end
 
-	-- map.sprite_sheet = csage.C.sprite_sheet_load(sheet)
-	return csage.new("struct Map", map);
+	-- map.sprite_sheet = ffi.C.sprite_sheet_load(sheet)
+	return ffi.new("struct Map", map);
 end

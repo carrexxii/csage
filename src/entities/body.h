@@ -1,13 +1,13 @@
 #ifndef ENTITIES_BODY_H
 #define ENTITIES_BODY_H
 
-#include "maths/maths.h"
+#include "maths/types.h"
 
 #define G 0.5f
 
 struct Body {
-	Vec3  pos;
-	Vec3  facing;
+	Vec2  pos;
+	Vec2  facing;
 	float vel;
 	bool  moving;
 };

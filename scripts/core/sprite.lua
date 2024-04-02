@@ -5,7 +5,7 @@ function load_sprite_sheet(fname)
 		return nil
 	end
 
-	local sheet = csage.new("struct SpriteSheet")
+	local sheet = ffi.new("struct SpriteSheet")
 	sheet.name  = string.match(fname, ".*/(.+).lua")
 	sheet.w     = sheet_data["w"]
 	sheet.h     = sheet_data["h"]
@@ -26,7 +26,7 @@ function load_sprite_sheet(fname)
 			groups[name].states[groups[name].statec] = {
 				duration = tonumber(sheet_data[name .. "@" .. anim_name]),
 				framec   = #state.frames,
-				frames   = csage.new("struct SpriteFrame[?]", #state.frames, state.frames),
+				frames   = ffi.new("struct SpriteFrame[?]", #state.frames, state.frames),
 				type     = animation_enum[anim_name] or direction_enum[""],
 				dir      = direction_enum[dir],
 				gi       = gi,
@@ -37,12 +37,12 @@ function load_sprite_sheet(fname)
 	end
 
 	sheet.groupc = table_len(groups)
-	sheet.groups = csage.new("struct SpriteGroup[?]", sheet.groupc, groups)
+	sheet.groups = ffi.new("struct SpriteGroup[?]", sheet.groupc, groups)
 	local i = 0
 	for _, group in pairs(groups) do
 		sheet.groups[i].name   = group.name
 		sheet.groups[i].statec = group.statec
-		sheet.groups[i].states = csage.new("struct SpriteState[?]", sheet.groups[i].statec, group.states)
+		sheet.groups[i].states = ffi.new("struct SpriteState[?]", sheet.groups[i].statec, group.states)
 		i = i + 1
 	end
 

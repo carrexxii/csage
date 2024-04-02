@@ -234,8 +234,9 @@ void ui_free_container(struct UIContainer* container)
 
 void ui_free()
 {
-	while (--containerc)
-		container_free(&containers[containerc]);
+	for (int i = 0; i < containerc; i++)
+		container_free(&containers[i]);
+	containerc = 0;
 
 	mtx_destroy(&updating_lock);
 	sbo_free(&ui_elems);

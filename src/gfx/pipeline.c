@@ -32,7 +32,7 @@ void pipelns_free()
 		WARNING("[VK] Not all pipelines have been free'd (%d/%d)", free_pipelns.len, MAX_PIPELINES);
 		for (int i = 0; i < MAX_PIPELINES; i++)
 			if (!varray_contains(&free_pipelns, &i))
-				fprintf(stderr, TERM_YELLOW "\t-> \"%s\"\n" TERM_NORMAL, pipelns[i].name);
+				fprintf(stderr, TERM_ORANGE "\t-> \"%s\"\n" TERM_NORMAL, pipelns[i].name);
 	}
 }
 

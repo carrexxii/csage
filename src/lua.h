@@ -10,6 +10,7 @@ int   lua_get_file(char* path);
 int   lua_get_int(char* name);
 float lua_get_float(char* name);
 char* lua_get_string(char* name);
+void* lua_get_pointer(char* name);
 void  lua_free(void);
 
 extern lua_State* lua_state;

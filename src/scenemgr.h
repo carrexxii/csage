@@ -1,6 +1,8 @@
 #ifndef SCENEMGR_H
 #define SCENEMGR_H
 
+#include "util/string.h"
+
 enum SceneType {
 	SCENE_NONE,
 	SCENE_MAINMENU,
@@ -8,6 +10,10 @@ enum SceneType {
 	SCENE_GAME,
 	SCENE_EDITOR,
 	SCENE_SCRATCH,
+};
+
+struct Level {
+	String name;
 };
 
 void scenemgr_init(void);
