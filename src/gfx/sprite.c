@@ -279,10 +279,9 @@ struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec3 pos)
 	};
 	isize spri = varray_push(&sheet->sprites, &sprite);
 
-	// TODO: handle resizing properly
-	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
+	if (sheet->sprite_data.sz < (isize)(sheet->sprites.cap * sizeof(struct Sprite))) {
 		resmgr_defer(RES_BUFFER, &sheet->sprite_data);
-		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+		sheet->sprite_data = sbo_new(sheet->sprites.cap * sizeof(struct Sprite));
 		sprite_sheet_update_pipeln(sheet);
 	}
 
@@ -309,9 +308,9 @@ struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spr
 
 	isize i = varray_push_many(&sheet->sprites, spritec, sprites);
 
-	if (sheet->sprite_data.sz <= (isize)(sheet->sprites.len * sizeof(struct Sprite))) {
+	if (sheet->sprite_data.sz < (isize)(sheet->sprites.cap * sizeof(struct Sprite))) {
 		resmgr_defer(RES_BUFFER, &sheet->sprite_data);
-		sheet->sprite_data = sbo_new(sheet->sprites.len * sizeof(struct Sprite));
+		sheet->sprite_data = sbo_new(sheet->sprites.cap * sizeof(struct Sprite));
 		sprite_sheet_update_pipeln(sheet);
 	}
 

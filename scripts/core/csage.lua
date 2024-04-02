@@ -216,9 +216,10 @@ ffi.cdef [[
 
 	/* ---------------------------------------------------------------- */
 
-	typedef uint16 Entity;
+	typedef uint16 EntityID;
 
-	Entity entity_new(struct SpriteSheet* sheet, Vec2 pos);
+	int entity_new_group(const char* sprite_sheet);
+	EntityID entity_new(int group_id, Vec2 pos);
 ]]
 
 sprite_path = "./gfx/sprites/"

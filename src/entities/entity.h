@@ -4,20 +4,20 @@
 #include "maths/types.h"
 #include "gfx/sprite.h"
 
-#define MAX_ENTITIES        (UINT16_MAX - 1)
-#define STARTING_ARRAY_SIZE 8
-#define ENTITY_PATH_EPSILON 0.1 /* Will be compared to the square of the distance */
+#define MAX_ENTITY_GROUPS      8
+#define MAX_ENTITIES_PER_GROUP (UINT16_MAX - 1)
+#define DEFAULT_ENTITY_COUNT   8
+#define ENTITY_PATH_EPSILON    0.1 /* Will be compared to the square of the distance */
 
-typedef uint16 Entity;
+typedef uint EntityID;
 
-enum EntityComponent {
-	COMPONENT_NONE = 0x0,
-};
+int  entity_new_group(char* sprite_sheet);
+void entity_free_group(int group_id);
 
-void   entities_init(void);
-Entity entity_new(struct SpriteSheet* sheet, Vec2 pos);
-void   entity_path_to(Entity e, Vec3i pos);
-void   entities_update(void);
-void   entities_free(void);
+EntityID entity_new(int group, Vec2 pos);
+void     entity_path_to(EntityID e, Vec3i pos);
+
+void entities_free(void);
+void entities_update(void);
 
 #endif

@@ -10,8 +10,6 @@
 #include "maths/scratch.h"
 #include "map.h"
 
-static Entity ent;
-
 static void test_scratch()
 {
 	// var A=point(0,.8,0), B=point(.8,-1,-.8), C=point(-.8,-1,-.8), D=point(.8,-1,.8), E=point(-.8,-1,.8);
