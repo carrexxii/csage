@@ -15,7 +15,7 @@ int  entity_new_group(char* sprite_sheet);
 void entity_free_group(int group_id);
 
 EntityID entity_new(int group, Vec2 pos);
-void     entity_new_batch(int group_id, int entityc, Vec2* poss);
+isize    entity_new_batch(int group_id, int entityc, Vec2* poss);
 void     entity_path_to(EntityID e, Vec3i pos);
 
 void entities_free(void);

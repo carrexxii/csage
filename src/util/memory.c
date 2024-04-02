@@ -47,8 +47,8 @@ void* _srealloc(void* mem, isize s, const char* file, int line, const char* fn)
 		exit(1);
 	} else {
 		if (s >= DEBUG_MALLOC_MIN)
-			DEBUG(2, "[MEM] Reallocated %luB (%.2fkB) (%.2fkB total) in \"%s:%d:%s\"",
-			      s, (double)s/1024.0, (double)malloced/1024.0, file, line, fn);
+			DEBUG(2, "[MEM] Reallocated %luB (%.2fkB/%.2fMB) (%.2fkB total) in \"%s:%d:%s\"",
+			      s, (double)s/1024.0, (double)s/1024.0/1024.0, (double)malloced/1024.0, file, line, fn);
 		return mem;
 	}
 }

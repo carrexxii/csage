@@ -61,15 +61,15 @@ EntityID entity_new(int group_id, Vec2 pos)
 	return id;
 }
 
-void entity_new_batch(int group_id, int entityc, Vec2* poss)
+isize entity_new_batch(int group_id, int entityc, Vec2* poss)
 {
 	struct EntityGroup* group = &groups[group_id];
 
-	varray_resize(&group->positions, group->positions.len + entityc, false);
-	for (int i = 0; i < entityc; i++)
-		varray_push(&group->positions, &poss[i]);
-
+	isize fst = varray_push_many(&group->positions, entityc, poss);
 	sprite_new_batch(group->sheet, 0, entityc, poss, NULL);
+
+	DEBUG(2, "[ENT] Created new entity batch from group %d with %d entities", group_id, entityc);
+	return fst;
 }
 
 /* -------------------------------------------------------------------- */

@@ -84,7 +84,10 @@ void camera_update(struct Camera* cam)
 		cam->target = VEC3(-(pos.x - pos.y) / 2.0f,
 		                   (pos.x + pos.y) / 4.0f,
 		                   0.0f);
-		cam->pos = lerp(cam->pos, cam->target, config.cam_speed*DT);
+		if (distance2(cam->pos, cam->target) < 0.0001f)
+			cam->pos = cam->target;
+		else
+			cam->pos = lerp(cam->pos, cam->target, config.cam_speed*DT);
 	} else {
 		Vec2 vel = { 0 };
 		if (cam->dir & DIR_LEFT)  vel.x += 1.0f;

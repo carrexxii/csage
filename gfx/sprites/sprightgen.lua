@@ -25,6 +25,7 @@ local sprites = {
 }
 
 local sheet_tmpl = [[
+debug
 description "%s.lua"
 	template "lua.inja"
 
@@ -41,8 +42,7 @@ local tmpl_animated = [[
 glob "renders/%s-%s-%s-*.png"
 	id "%s@%s-%s"
 	maps "" "-normal"
-	crop-pivot true
-
+	crop-pivot
 ]]
 
 local tmpl_static = [[

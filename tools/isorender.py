@@ -25,7 +25,7 @@ try:
             continue
 
         for attached in bpy.data.objects:
-            if attached.name.startswith(obj.name):
+            if attached.name.startswith(obj.name) or attached == target:
                 attached.hide_render = False
             else:
                 attached.hide_render = True
@@ -45,7 +45,7 @@ try:
                     bpy.context.scene.frame_end   = frame_range[1]
                     bpy.context.scene.frame_step  = ceil((frame_range[1] - frame_range[0]) / 10)
 
-                step = 1 if should_animate else 2
+                step = 1 if should_animate else 8
                 for i in range(0, 8, step):
                     target.rotation_euler[2] = i*2.0*pi / 8
                     fmt = "%s%s-%s-##%s" if should_animate else "%s%s-%s%s"

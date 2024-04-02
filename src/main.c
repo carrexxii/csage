@@ -18,8 +18,7 @@
 
 void init_sdl(void);
 
-SDL_Renderer* renderer;
-SDL_Window*   window;
+SDL_Window* window;
 int vk_err;
 
 #ifndef TESTING
@@ -46,7 +45,7 @@ int main(int argc, char** argv)
 	srand(SDL_GetTicks());
 
 	init_vulkan(window);
-	scenemgr_init();
+	scenemgr_init(window);
 
 	scenemgr_loop();
 

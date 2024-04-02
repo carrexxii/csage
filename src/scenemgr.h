@@ -1,6 +1,8 @@
 #ifndef SCENEMGR_H
 #define SCENEMGR_H
 
+#include "SDL3/SDL.h"
+
 #include "util/string.h"
 
 enum SceneType {
@@ -16,7 +18,7 @@ struct Level {
 	String name;
 };
 
-void scenemgr_init(void);
+void scenemgr_init(SDL_Window* window);
 noreturn void scenemgr_loop(void);
 void scenemgr_defer(void (*fn)(void*), void* data);
 void scenemgr_free(void);

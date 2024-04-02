@@ -55,8 +55,6 @@ void map_new(struct Map* map, const char* name)
 		return;
 	}
 	map->sprite_sheet = sprite_sheet_load(lua_topointer(lua_state, -1));
-	DEBUG_VALUE(map->sprite_sheet->w);
-	DEBUG_VALUE(map->sprite_sheet->h);
 	lua_pop(lua_state, 1);
 
 	/*** -------------------- Build the Map -------------------- ***/

@@ -59,10 +59,10 @@ ffi.cdef [[
 	} String;
 
 	struct VArray {
+		isize len;
+		isize cap;
+		isize elem_sz;
 		byte* data;
-		int len;
-		int cap;
-		int elem_sz;
 	};
 
 	/* ---------------------------------------------------------------- */

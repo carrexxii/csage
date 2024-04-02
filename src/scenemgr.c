@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include "SDL3/SDL.h"
 
 #include "taskmgr.h"
 #include "maths/maths.h"
@@ -36,18 +37,18 @@ static void load_game(void);
 static void load_editor(void);
 static void load_scratch(void);
 
+static SDL_Window*    window;
 static enum SceneType curr_scene;
-static struct Camera game_cam;
-static struct Camera editor_cam;
-static struct Camera scratch_cam;
+static struct Camera  game_cam;
+static struct Camera  editor_cam;
+static struct Camera  scratch_cam;
 
 static isize deferc;
 static struct SceneDefer defers[MAX_DEFER_FUNCTIONS];
 
-struct SpriteGroup* sprite;
-
-void scenemgr_init()
+void scenemgr_init(SDL_Window* win)
 {
+	window = win;
 	taskmgr_init();
 
 	game_cam   = camera_new(VEC3_ZERO, VEC3_ZERO, config.winw, config.winh, 0.0f, &global_camera_ubo);
@@ -80,6 +81,7 @@ noreturn void scenemgr_loop()
 {
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks());
+	char title[64];
 	uint64 dt, nt, ot = 0, acc = 0;
 	while (1) {
 		input_poll();
@@ -91,6 +93,10 @@ noreturn void scenemgr_loop()
 			while (!taskmgr_reset());
 			acc -= DT_MS;
 		}
+
+		snprintf(title, 64, "%lums", dt);
+		SDL_SetWindowTitle(window, title);
+
 		renderer_draw();
 	}
 }
