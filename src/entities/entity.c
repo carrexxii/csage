@@ -19,41 +19,17 @@ void entities_init()
 void entities_update()
 {
 	struct EntityGroup* group;
-	struct Entity*      entity;
+	struct Sprite*      sprite;
 	for (int i = 0; i < entity_groupc; i++) {
 		group = &entity_groups[i];
-		entities_update_bodies(&group->entities, &group->bodies);
-		entities_update_sprites(&group->entities, &group->bodies, group->sheet);
-	}
-}
+		if (group->ais)
+			ais_update(group->count, group->ais, group->bodies);
+		bodies_update(group->count, group->bodies);
 
-void entities_update_bodies(struct VArray* entities, struct VArray* bodies)
-{
-	struct Body*   body;
-	struct Sprite* sprite;
-	struct Entity* e;
-	for (int i = 0; i < entities->len; i++) {
-		e = varray_get(entities, i);
-		if (e->id != ENTITY_MAX && e->body != ENTITY_MAX) {
-			body = varray_get(bodies, e->body);
-			body->vel = multiply(normalized(body->dir), body->speed);
-			if (!isnan(body->vel.x) && !isnan(body->vel.y))
-				body->pos = add(body->pos, body->vel);
+		for (int j = 0; j < group->count; j++) {
+			sprite = varray_get(&group->sheet->sprites, group->sprites[j]);
+			sprite->pos = group->bodies[j].pos;
 		}
-	}
-}
-
-void entities_update_sprites(struct VArray* entities, struct VArray* bodies, struct SpriteSheet* sheet)
-{
-	Vec2* vel;
-	struct Entity* entity;
-	struct Body*   body;
-	struct Sprite* sprite;
-	for (int i = 0; i < entities->len; i++) {
-		entity = varray_get(entities, i);
-		body   = varray_get(bodies, entity->body);
-		sprite = varray_get(&sheet->sprites, entity->sprite);
-		sprite->pos = body->pos;
 	}
 }
 
@@ -65,22 +41,38 @@ void entities_free()
 
 /* -------------------------------------------------------------------- */
 
-GroupID entity_new_group(char* sprite_sheet)
+GroupID entity_new_group(char* sprite_sheet, enum EntityGroupMask mask)
 {
 	if (entity_groupc >= MAX_ENTITY_GROUPS) {
 		ERROR("[ENT] Exceeded the maximum number of entity groups (%d)", MAX_ENTITY_GROUPS);
 		return -1;
 	}
 
-	entity_groups[entity_groupc] = (struct EntityGroup){
-		.count     = 0,
-		.sheet     = sprite_sheet_new(sprite_sheet, -2),
-		.entities  = varray_new(DEFAULT_ENTITY_COUNT, sizeof(struct Entity)),
-		.bodies    = varray_new(DEFAULT_ENTITY_COUNT, sizeof(struct Body)),
+	struct EntityGroup* group = &entity_groups[entity_groupc];
+	*group = (struct EntityGroup){
+		.count   = 0,
+		.cap     = DEFAULT_ENTITY_COUNT,
+		.sheet   = sprite_sheet_new(sprite_sheet, -2),
+		.bodies  = smalloc(DEFAULT_ENTITY_COUNT * sizeof(struct Body)),
+		.sprites = smalloc(DEFAULT_ENTITY_COUNT * sizeof(EntityID)),
 	};
+	if (mask & ENTITY_GROUP_AI)
+		group->ais = smalloc(DEFAULT_ENTITY_COUNT * sizeof(struct AI));
 
 	DEBUG(2, "[ENT] Created new entity group using sprite sheet \"%s\"", sprite_sheet);
 	return entity_groupc++;
+}
+
+void entity_resize_group(GroupID gid, isize count)
+{
+	struct EntityGroup* group = &entity_groups[gid];
+	if (count <= group->cap)
+		return;
+
+	group->bodies  = srealloc(group->bodies, count*sizeof(struct Body));
+	group->sprites = srealloc(group->sprites, count*sizeof(EntityID));
+	if (group->ais)
+		group->ais = srealloc(group->ais, count*sizeof(struct AI));
 }
 
 void entity_free_group(GroupID gid)
@@ -88,64 +80,86 @@ void entity_free_group(GroupID gid)
 	struct EntityGroup* group = &entity_groups[gid];
 	// TODO: resmgr handling sprite sheets
 	// sprite_sheet_free(group->sheet);
-	varray_free(&group->entities);
-	varray_free(&group->bodies);
+	sfree(group->bodies);
+	sfree(group->sprites);
+	if (group->ais)
+		sfree(group->ais);
+
+	group->count = 0;
+	group->cap   = 0;
 }
 
 /* -------------------------------------------------------------------- */
 
-EntityID entity_new(GroupID gid, struct Body* body)
+EntityID entity_new(GroupID gid, struct EntityCreateInfo* ci)
 {
 	assert(gid < entity_groupc);
 
-	DEFAULT(body, &default_body);
+	DEFAULT(ci, &default_entity_ci);
 
 	struct EntityGroup* group = &entity_groups[gid];
-	EntityID eid = varray_push(&group->entities, &(struct Entity){
-		.id   = group->count++,
-		.body = varray_push(&group->bodies, body),
-	});
-	sprite_new(group->sheet, 0, body->pos);
+	group->bodies[group->count] = (struct Body){
+		.pos   = ci->pos,
+		.speed = ci->speed,
+	};
+	if (group->ais)
+		group->ais[group->count] = (struct AI){
+			.type = ci->ai_type,
+		};
 
-	return eid;
+	group->sprites[group->count] = group->sheet->sprites.len;
+	sprite_new(group->sheet, 0, ci->pos);
+
+	return group->count++;
 }
 
-isize entity_new_batch(GroupID gid, isize entityc, struct Body* bodies)
+isize entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis)
 {
+	assert(gid < entity_groupc && entityc > 0);
+
 	struct EntityGroup* group = &entity_groups[gid];
+	entity_resize_group(gid, group->count + entityc);
 
-	isize fst  = varray_push_many(&group->bodies, entityc, bodies);
-	Vec2* poss = arena_alloc(scratch, entityc * sizeof(Vec2));
-	for (int i = 0; i < entityc; i++)
-		poss[i] = bodies[i].pos;
-	sprite_new_batch(group->sheet, 0, entityc, poss, NULL);
+	if (!cis) {
+		cis = arena_alloc(scratch, entityc * sizeof(struct EntityCreateInfo));
+		for (int i = 0; i < entityc; i++)
+			cis[i] = default_entity_ci;
+	}
 
+	struct EntityCreateInfo* ci;
+	for (int i = group->count; i < group->count + entityc; i++) {
+		ci = &cis[i];
+		group->bodies[i] = (struct Body){
+			.pos   = ci->pos,
+			.speed = ci->speed,
+		};
+
+		group->sprites[i] = group->sheet->sprites.len;
+		sprite_new(group->sheet, ci->sprite_group, ci->pos);
+	}
+
+	if (group->ais)
+		for (int i = group->count; i < group->count + entityc; i++)
+			group->ais[i] = (struct AI){
+				.type = cis[i].ai_type,
+			};
+
+	isize fst = group->count;
+	group->count += entityc;
+	arena_reset(scratch);
 	DEBUG(2, "[ENT] Created new entity batch from group %d with %ld entities", gid, entityc);
 	return fst;
 }
 
 void entity_set_dir(EntityID eid, GroupID gid, enum Direction d, bool set)
 {
-	struct Body* body = entity_get_body(eid, gid);
-	uint dir_mask = body->dir_mask;
-	if (set)
-		dir_mask |= d;
-	else
-		dir_mask &= ~d;
-
-	Vec2 dir = VEC2_ZERO;
-	if (dir_mask & DIR_N) { dir.x -= 0.5f; dir.y -= 0.5f; }
-	if (dir_mask & DIR_S) { dir.x += 0.5f; dir.y += 0.5f; }
-	if (dir_mask & DIR_E) { dir.y -= 0.5f; dir.x += 0.5f; }
-	if (dir_mask & DIR_W) { dir.y += 0.5f; dir.x -= 0.5f; }
-
+	struct Body*   body   = entity_get_body(eid, gid);
 	struct Sprite* sprite = entity_get_sprite(eid, gid);
-	if (!dir_mask || dir_mask == (DIR_N | DIR_S)
-	              || dir_mask == (DIR_E | DIR_W))
-		sprite_set_state(sprite, SPRITE_IDLE, body->dir_mask);
-	else if (body->dir_mask != dir_mask)
-		sprite_set_state(sprite, SPRITE_RUN, dir_mask);
+	body_set_dir(body, sprite, d, set);
+}
 
-	body->dir      = dir;
-	body->dir_mask = dir_mask;
+void entity_set_ai_state(EntityID eid, GroupID gid, struct AIState state)
+{
+	struct AI* ai = entity_get_ai(eid, gid);
+	ai_set_state(ai, state);
 }

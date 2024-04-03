@@ -22,6 +22,7 @@ static inline void* varray_set(struct VArray* restrict arr, isize i, void* restr
 static inline void* varray_get(struct VArray* arr, isize i);
 static inline isize varray_push(struct VArray* restrict arr, void* restrict data);
 static inline isize varray_push_many(struct VArray* restrict arr, isize count, void* restrict elems);
+static inline isize varray_push_many_strided(struct VArray* restrict arr, isize elemc, void* restrict elems, isize offset, isize stride);
 static inline void* varray_pop(struct VArray* arr);
 static inline bool  varray_contains(struct VArray* arr, void* data);
 static inline void  varray_resize(struct VArray* arr, isize new_len, bool shrink);
@@ -40,7 +41,7 @@ static inline struct VArray varray_new(isize elemc, isize elem_sz)
 		.elem_sz = elem_sz,
 	};
 
-	DEBUG(4, "[UTIL] Created new VArray with %ld elements of size %ld", arr.cap, arr.elem_sz);
+	DEBUG(3, "[UTIL] Created new VArray with %ld elements of size %ld", arr.cap, arr.elem_sz);
 	return arr;
 }
 
@@ -53,6 +54,7 @@ static inline void* varray_set(struct VArray* arr, isize i, void* elem)
 	return arr->data + i*arr->elem_sz;
 }
 
+[[gnu::always_inline]]
 static inline void* varray_get(struct VArray* arr, isize i)
 {
 	if (i < 0 || i >= arr->len)
@@ -83,11 +85,24 @@ static inline isize varray_push_many(struct VArray* restrict arr, isize elemc, v
 
 	varray_resize(arr, arr->len + elemc, false);
 	memcpy(arr->data + arr->len*arr->elem_sz, elems, elemc*arr->elem_sz);
-
-	isize fst = arr->len;
 	arr->len += elemc;
 
-	return fst;
+	return arr->len - elemc;
+}
+
+static inline isize varray_push_many_strided(struct VArray* restrict arr, isize elemc, void* restrict elems, isize offset, isize stride)
+{
+	assert(elems && elemc > 0);
+
+	varray_resize(arr, arr->len + elemc, false);
+	byte* data = (byte*)elems + offset;
+	for (int i = 0; i < elemc; i++) {
+		memcpy(arr->data + arr->len*arr->elem_sz, data, arr->elem_sz);
+		data += stride;
+		arr->len++;
+	}
+
+	return arr->len - elemc;
 }
 
 static inline bool varray_contains(struct VArray* arr, void* data)

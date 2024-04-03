@@ -8,8 +8,10 @@ EntityID player_entity;
 
 void player_init()
 {
-	player_group  = entity_new_group("player");
-	player_entity = entity_new(player_group, NULL);
+	player_group  = entity_new_group("player", 0);
+	player_entity = entity_new(player_group, &(struct EntityCreateInfo){
+		.speed = 0.2f,
+	});
 
 	DEBUG(1, "[ENT] Initialized player");
 }

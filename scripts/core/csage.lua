@@ -215,14 +215,6 @@ ffi.cdef [[
 
 	/* ---------------------------------------------------------------- */
 
-	typedef uint16 EntityID;
-
-	int entity_new_group(const char* sprite_sheet);
-	EntityID entity_new(int group_id, Vec2 pos);
-	void     entity_new_batch(int group_id, int entityc, struct Body* bodies);
-
-	/* ---------------------------------------------------------------- */
-
 	struct Body {
 		Vec2  pos;
 		float speed;
@@ -230,6 +222,62 @@ ffi.cdef [[
 		uint  dir_mask;
 		Vec2  dir;
 	};
+
+	/* ---------------------------------------------------------------- */
+
+	enum AIType {
+		AI_TYPE_NONE,
+		AI_TYPE_CONTROLLABLE,
+		AI_TYPE_FRIENDLY,
+		AI_TYPE_NEUTRAL,
+		AI_TYPE_ENEMY,
+	};
+
+	enum AIStateType {
+		AI_STATE_IDLE,
+		AI_STATE_FOLLOW,
+		AI_STATE_WANDER,
+		AI_STATE_PATHING,
+		AI_STATE_MAX,
+	};
+	struct AIState {
+		enum AIStateType type;
+		union {
+			struct {
+				Vec2* target;
+				float dist;
+			} follow;
+			struct {
+				isize pointc;
+				Vec2* points;
+			} patrol;
+		};
+	};
+
+	/* ---------------------------------------------------------------- */
+
+	enum EntityGroupMask {
+		ENTITY_GROUP_NONE = 0,
+		ENTITY_GROUP_AI   = 1 << 0,
+	};
+
+	typedef uint GroupID;
+	typedef uint EntityID;
+
+	struct EntityCreateInfo {
+		Vec2  pos;
+		float speed;
+		int sprite_group;
+		enum AIType ai_type;
+	};
+
+	GroupID entity_new_group(const char* sprite_sheet, enum EntityGroupMask mask);
+
+	EntityID entity_new(GroupID gid, struct EntityCreateInfo* ci);
+	isize    entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis);
+
+	void entity_set_dir(EntityID eid, GroupID gid, enum Direction d, bool set);
+	void entity_set_ai_state(EntityID eid, GroupID gid, struct AIState state);
 ]]
 
 sprite_path = "./gfx/sprites/"

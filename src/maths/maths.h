@@ -41,6 +41,17 @@ static inline Vec4 colour_normalized(Colour colour)
 	            (float)colour.r * f);
 }
 
+static inline enum Direction dir_mask_of_vec(Vec2 v)
+{
+	enum Direction dir = DIR_NONE;
+	if      (v.x < 0.0f) dir |= DIR_W;
+	else if (v.x > 0.0f) dir |= DIR_E;
+	if      (v.y < 0.0f) dir |= DIR_N;
+	else if (v.y > 0.0f) dir |= DIR_S;
+
+	return dir;
+}
+
 // static inline ivec3s ivec3s_of_vec3s(vec3s v)  { return (ivec3s){ .x = (int)v.x, .y = (int)v.y, .z = (int)v.z }; }
 // static inline vec3s  vec3s_of_ivec3s(ivec3s v) { return (vec3s){ .x = (float)v.x, .y = (float)v.y, .z = (float)v.z }; }
 // static inline vec3s  vec3s_of_int8(int8 v[3])  { return (vec3s){ .x = (float)v[0], .y = (float)v[1], .z = (float)v[2] }; }
