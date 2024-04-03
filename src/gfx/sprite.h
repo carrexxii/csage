@@ -89,9 +89,11 @@ int  sprites_get_sheet_id(struct SpriteSheet* sheet);
 int  sprites_get_group(struct SpriteSheet* sheet, const char* group_name);
 void sprites_record_commands(VkCommandBuffer cmd_buf);
 void sprites_update(void);
+
 void sprite_sheets_free(void);
 struct SpriteSheet* sprite_sheet_new(const char* name, int z_lvl);
 struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data);
+
 struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec2 pos);
 struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec2* poss, enum SpriteStateType* states);
 struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec2 pos);

@@ -77,15 +77,15 @@ static inline isize varray_push(struct VArray* restrict arr, void* restrict elem
 	return arr->len++;
 }
 
-static inline isize varray_push_many(struct VArray* restrict arr, isize count, void* restrict elems)
+static inline isize varray_push_many(struct VArray* restrict arr, isize elemc, void* restrict elems)
 {
-	assert(count > 0);
+	assert(elems && elemc > 0);
 
-	varray_resize(arr, arr->len + count, false);
-	memcpy(arr->data + arr->len*arr->elem_sz, elems, count*arr->elem_sz);
+	varray_resize(arr, arr->len + elemc, false);
+	memcpy(arr->data + arr->len*arr->elem_sz, elems, elemc*arr->elem_sz);
 
 	isize fst = arr->len;
-	arr->len += count;
+	arr->len += elemc;
 
 	return fst;
 }
@@ -104,7 +104,8 @@ static inline void varray_resize(struct VArray* arr, isize new_len, bool shrink)
 	if (arr->cap < new_len || (arr->cap != new_len && shrink)) {
 		arr->cap  = new_len;
 		arr->data = srealloc(arr->data, arr->cap * arr->elem_sz);
-		DEBUG(3, "[UTIL] Resized VArray [len=%ld; cap=%ld; elem_sz=%ldB]", arr->len, arr->cap, arr->elem_sz);
+		DEBUG(3, "[UTIL] Resized VArray [len=%ld; cap=%ld; elem_sz=%ldB] = %ldB/%.2fkB/%.2fMB", arr->len, arr->cap, arr->elem_sz,
+		      arr->cap*arr->elem_sz, arr->cap*arr->elem_sz/1024.0, arr->cap*arr->elem_sz/1024.0/1024.0);
 	}
 }
 

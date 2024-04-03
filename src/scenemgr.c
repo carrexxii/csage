@@ -61,6 +61,7 @@ void scenemgr_init(SDL_Window* win)
 	font_init();
 	ui_init();
 	particles_init();
+	entities_init();
 
 	renderer_set_global_lighting(VEC3(0.2f , 0.2f , 1.0f),
 	                             VEC3(0.01f, 0.01f, 0.01f),
@@ -71,7 +72,7 @@ void scenemgr_init(SDL_Window* win)
 	scenemgr_defer((DeferFn)map_free, &map);
 
 	player_init();
-	game_cam.follow = &player_sprite->pos;
+	game_cam.follow = &entity_get_body(player_entity, player_group)->pos;
 
 	load_level("test");
 	switch_scene(SCENE_GAME);
@@ -217,7 +218,6 @@ static void load_game()
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(cb_game_cam_update);
 	taskmgr_add_task(sprites_update);
-	taskmgr_add_task(player_update);
 }
 
 /* -------------------------------------------------------------------- */
@@ -263,7 +263,6 @@ static void load_editor()
 	taskmgr_add_task(entities_update);
 	taskmgr_add_task(cb_editor_cam_update);
 	taskmgr_add_task(sprites_update);
-	taskmgr_add_task(player_update);
 	taskmgr_add_task(cb_editor_update);
 
 	ui_build();

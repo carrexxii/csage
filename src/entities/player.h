@@ -2,13 +2,16 @@
 #define ENTITIES_PLAYER_H
 
 #include "maths/types.h"
+#include "entity.h"
 
-extern struct Sprite* player_sprite;
-extern Vec2  player_dir;
-extern float player_speed;
+extern GroupID  player_group;
+extern EntityID player_entity;
 
 void player_init(void);
-void player_set_moving(enum Direction dir, bool set);
-void player_update(void);
+
+static inline void player_set_moving(enum Direction d, bool set)
+{
+	entity_set_dir(player_entity, player_group, d, set);
+}
 
 #endif

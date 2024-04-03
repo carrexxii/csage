@@ -7,9 +7,14 @@
 
 struct Body {
 	Vec2  pos;
-	Vec2  facing;
-	float vel;
-	bool  moving;
+	float speed;
+	Vec2  vel;
+	uint  dir_mask;
+	Vec2  dir;
+};
+
+static const struct Body default_body = {
+	.speed = 0.1f,
 };
 
 void bodies_update(int bodyc, struct Body* bodies);

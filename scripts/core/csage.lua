@@ -219,7 +219,17 @@ ffi.cdef [[
 
 	int entity_new_group(const char* sprite_sheet);
 	EntityID entity_new(int group_id, Vec2 pos);
-	void     entity_new_batch(int group_id, int entityc, Vec2* poss);
+	void     entity_new_batch(int group_id, int entityc, struct Body* bodies);
+
+	/* ---------------------------------------------------------------- */
+
+	struct Body {
+		Vec2  pos;
+		float speed;
+		Vec2  vel;
+		uint  dir_mask;
+		Vec2  dir;
+	};
 ]]
 
 sprite_path = "./gfx/sprites/"
