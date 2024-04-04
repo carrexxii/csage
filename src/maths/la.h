@@ -298,7 +298,7 @@ static Mat4x4 mat4x4_inverse(Mat4x4 a)
 	};
 }
 
-static inline Vec3 unproject(Vec3 v, Mat4x4 a, Rect vp)
+static Vec3 unproject(Vec3 v, Mat4x4 a, Rect vp)
 {
 	Mat4x4 a_inv = mat4x4_inverse(a);
 	Vec4 u = VEC4(2.0f*(v.x - vp.x) / vp.w - 1.0f,
@@ -312,3 +312,4 @@ static inline Vec3 unproject(Vec3 v, Mat4x4 a, Rect vp)
 }
 
 #endif
+

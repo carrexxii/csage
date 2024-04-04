@@ -338,16 +338,17 @@ void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Dir
 {
 	// TODO: update
 	struct SpriteSheet* sheet = &sheets[sprite->sheet];
-	sprite->time = 0;
 	int gi = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
 		for (int j = 0; j < sheet->groups[i].statec; j++) {
 			if (sheet->groups[i].states[j].type == type && sheet->groups[i].states[j].dir == dir) {
 				sprite->state = j;
 				sprite->gi    = gi;
+				sprite->time  = 0;
 				return;
 			}
 			gi += sheet->groups[i].states[j].framec;
 		}
 	}
 }
+

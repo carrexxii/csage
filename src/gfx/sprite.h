@@ -18,29 +18,28 @@
 #define SPRITE_SCALE          45
 
 // TODO: this needs to be a hashmap
+#define STRING_OF_ANIMATION_STATE(x) ((x) < SPRITE_STATE_MAX? string_of_animation_state[x]: "<Unknown>")
 enum SpriteStateType {
-	SPRITE_NONE,
-	SPRITE_IDLE,
-	SPRITE_WALK,
-	SPRITE_RUN,
-	SPRITE_ATTACK1,
-	SPRITE_ATTACK2,
+	SPRITE_STATE_IDLE,
+	SPRITE_STATE_WALK,
+	SPRITE_STATE_RUN,
+	SPRITE_STATE_ATTACK1,
+	SPRITE_STATE_ATTACK2,
 
-	SPRITE_GRASS,
-	SPRITE_DIRT,
+	SPRITE_STATE_GRASS,
+	SPRITE_STATE_DIRT,
 
-	SPRITE_LAST,
+	SPRITE_STATE_MAX,
 };
 static const char* string_of_animation_state[] = {
-	[SPRITE_NONE]    = PPSTR(SPRITE_NONE),
-	[SPRITE_IDLE]    = PPSTR(SPRITE_IDLE),
-	[SPRITE_WALK]    = PPSTR(SPRITE_WALK),
-	[SPRITE_RUN]     = PPSTR(SPRITE_RUN),
-	[SPRITE_ATTACK1] = PPSTR(SPRITE_ATTACK1),
-	[SPRITE_ATTACK2] = PPSTR(SPRITE_ATTACK2),
+	[SPRITE_STATE_IDLE]    = PPSTR(SPRITE_STATE_IDLE),
+	[SPRITE_STATE_WALK]    = PPSTR(SPRITE_STATE_WALK),
+	[SPRITE_STATE_RUN]     = PPSTR(SPRITE_STATE_RUN),
+	[SPRITE_STATE_ATTACK1] = PPSTR(SPRITE_STATE_ATTACK1),
+	[SPRITE_STATE_ATTACK2] = PPSTR(SPRITE_STATE_ATTACK2),
 
-	[SPRITE_GRASS] = PPSTR(SPRITE_GRASS),
-	[SPRITE_DIRT]  = PPSTR(SPRITE_DIRT),
+	[SPRITE_STATE_GRASS] = PPSTR(SPRITE_STATE_GRASS),
+	[SPRITE_STATE_DIRT]  = PPSTR(SPRITE_STATE_DIRT),
 };
 
 struct SpriteFrame {
@@ -57,7 +56,7 @@ struct SpriteState {
 };
 
 struct SpriteGroup {
-	char name[32]; // Remove?
+	char name[32];
 	int statec;
 	struct SpriteState* states;
 };
@@ -100,3 +99,4 @@ struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec2 pos);
 void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir);
 
 #endif
+

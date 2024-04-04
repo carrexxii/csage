@@ -3,6 +3,7 @@
 
 #include "maths/types.h"
 #include "gfx/sprite.h"
+#include "components.h"
 #include "body.h"
 #include "ai.h"
 
@@ -12,30 +13,9 @@
 #define DEFAULT_ENTITY_COUNT   8
 #define ENTITY_PATH_EPSILON    0.1 /* Will be compared to the square of the distance */
 
-enum EntityGroupMask {
-	ENTITY_GROUP_NONE = 0,
-	ENTITY_GROUP_AI   = 1 << 0,
-};
-
-typedef int GroupID;
-typedef int EntityID;
-
 extern isize entity_groupc;
-extern struct EntityGroup {
-	isize count;
-	isize cap;
-	struct SpriteSheet* sheet;
-	struct Body* bodies;
-	EntityID*    sprites;
-	struct AI*   ais;
-} entity_groups[MAX_ENTITY_GROUPS];
+extern struct EntityGroup entity_groups[MAX_ENTITY_GROUPS];
 
-struct EntityCreateInfo {
-	Vec2  pos;
-	float speed;
-	int sprite_group;
-	enum AIType ai_type;
-};
 static const struct EntityCreateInfo default_entity_ci = {
 	.speed   = 0.1f,
 	.ai_type = AI_TYPE_NEUTRAL,
@@ -71,7 +51,10 @@ static inline struct Sprite* entity_get_sprite(GroupID gid, EntityID eid)
 {
 	assert(gid < entity_groupc && eid < entity_groups[gid].count);
 
-	return varray_get(&entity_groups[gid].sheet->sprites, eid);
+	struct EntityGroup* group = &entity_groups[gid];
+	EntityID* sprites = group->sprites;
+	return varray_get(&group->sheet->sprites, sprites[eid]);
 }
 
 #endif
+

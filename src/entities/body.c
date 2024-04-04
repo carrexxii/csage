@@ -1,16 +1,19 @@
 #include "maths/maths.h"
-#include "gfx/sprite.h"
-#include "entity.h"
+#include "components.h"
 #include "body.h"
 
 void bodies_update(isize count, struct Body* bodies)
 {
 	struct Body*   body;
-	struct Sprite* sprite;
 	struct Entity* e;
+	Vec2 dir;
 	for (int i = 0; i < count; i++) {
 		body = &bodies[i];
-		body->vel = multiply(normalized(body->dir), body->speed);
+		if (!body->moving)
+			continue;
+
+		dir = dir_of_mask(body->dir_mask);
+		body->vel = multiply(dir, body->speed);
 		if (!isnan(body->vel.x) && !isnan(body->vel.y))
 			body->pos = add(body->pos, body->vel);
 	}
@@ -18,26 +21,20 @@ void bodies_update(isize count, struct Body* bodies)
 
 /* -------------------------------------------------------------------- */
 
-void body_set_dir(struct Body* body, struct Sprite* sprite, enum Direction d, bool set)
+void body_set_dir(struct Body* body, enum Direction d, bool set)
 {
-	uint dir_mask = body->dir_mask;
+	if (!body->moving)
+		body->dir_mask = 0;
+
+	enum Direction old_mask = body->dir_mask;
 	if (set)
-		dir_mask |= d;
+		body->dir_mask |= d;
 	else
-		dir_mask &= ~d;
+		body->dir_mask &= ~d;
 
-	Vec2 dir = VEC2_ZERO;
-	if (dir_mask & DIR_N) { dir.x -= 0.5f; dir.y -= 0.5f; }
-	if (dir_mask & DIR_S) { dir.x += 0.5f; dir.y += 0.5f; }
-	if (dir_mask & DIR_E) { dir.y -= 0.5f; dir.x += 0.5f; }
-	if (dir_mask & DIR_W) { dir.y += 0.5f; dir.x -= 0.5f; }
-
-	if (!dir_mask || dir_mask == (DIR_N | DIR_S)
-	              || dir_mask == (DIR_E | DIR_W))
-		sprite_set_state(sprite, SPRITE_IDLE, body->dir_mask);
-	else if (body->dir_mask != dir_mask)
-		sprite_set_state(sprite, SPRITE_RUN, dir_mask);
-
-	body->dir      = dir;
-	body->dir_mask = dir_mask;
+	body->moving        = !!body->dir_mask;
+	body->changed_state = old_mask != body->dir_mask;
+	if (!body->dir_mask)
+		body->dir_mask = old_mask;
 }
+

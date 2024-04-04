@@ -35,21 +35,33 @@ static inline float rad_to_deg(float r) { return r/2.0f*PI * 360.0f; }
 static inline Vec4 colour_normalized(Colour colour)
 {
 	float f = 1.0f / 255.0f;
-	return VEC4((float)colour.a * f,
-	            (float)colour.b * f,
-	            (float)colour.g * f,
-	            (float)colour.r * f);
+	return VEC4(colour.a * f,
+	            colour.b * f,
+	            colour.g * f,
+	            colour.r * f);
 }
 
-static inline enum Direction dir_mask_of_vec(Vec2 v)
+static inline enum Direction mask_of_dir(Vec2 v, float threshold)
 {
+	threshold /= 2.0f;
 	enum Direction dir = DIR_NONE;
-	if      (v.x < 0.0f) dir |= DIR_W;
-	else if (v.x > 0.0f) dir |= DIR_E;
-	if      (v.y < 0.0f) dir |= DIR_N;
-	else if (v.y > 0.0f) dir |= DIR_S;
-
+	if      (v.x < -threshold) dir |= DIR_W; // DIR_NW;
+	else if (v.x >  threshold) dir |= DIR_E; // DIR_SE;
+	if      (v.y < -threshold) dir |= DIR_N; // DIR_NE;
+	else if (v.y >  threshold) dir |= DIR_S; // DIR_SW;
+	
 	return dir;
+}
+
+static inline Vec2 dir_of_mask(enum Direction dir_mask)
+{
+	Vec2 dir = VEC2_ZERO;
+	if (dir_mask & DIR_N) { dir.x -= 0.5f; dir.y -= 0.5f; }
+	if (dir_mask & DIR_S) { dir.x += 0.5f; dir.y += 0.5f; }
+	if (dir_mask & DIR_E) { dir.y -= 0.5f; dir.x += 0.5f; }
+	if (dir_mask & DIR_W) { dir.y += 0.5f; dir.x -= 0.5f; }
+
+	return normalized(dir);
 }
 
 // static inline ivec3s ivec3s_of_vec3s(vec3s v)  { return (ivec3s){ .x = (int)v.x, .y = (int)v.y, .z = (int)v.z }; }
@@ -173,3 +185,4 @@ static inline float polygon_moment(int vertc, Vec2 verts, Vec2 cm, float m)
 }
 
 #endif
+

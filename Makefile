@@ -15,6 +15,7 @@ TOOL_DIR    = ./tools
 
 COMPILE_WITH = -DDEBUG_LEVEL=5
 
+# -Winline
 WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict                      \
            -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration \
            -Wmissing-prototypes -Wstrict-prototypes -Wunsafe-loop-optimizations -Wbad-function-cast -Wmissing-noreturn  \
@@ -105,7 +106,7 @@ test:
 
 .PHONY: analyzer
 analyzer:
-	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -fanalyzer -Winline' -j12
+	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -fanalyzer' -j12
 
 .PHONY: libs
 libs:
@@ -182,3 +183,4 @@ remove:	clean
 .PHONY: cloc
 cloc:
 	cloc --vcs=git
+

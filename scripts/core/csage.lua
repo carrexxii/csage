@@ -126,17 +126,16 @@ ffi.cdef [[
 	/* ---------------------------------------------------------------- */
 
 	enum SpriteStateType {
-		SPRITE_NONE,
-		SPRITE_IDLE,
-		SPRITE_WALK,
-		SPRITE_RUN,
-		SPRITE_ATTACK1,
-		SPRITE_ATTACK2,
+		SPRITE_STATE_IDLE,
+		SPRITE_STATE_WALK,
+		SPRITE_STATE_RUN,
+		SPRITE_STATE_ATTACK1,
+		SPRITE_STATE_ATTACK2,
 
-		SPRITE_GRASS,
-		SPRITE_DIRT,
+		SPRITE_STATE_GRASS,
+		SPRITE_STATE_DIRT,
 
-		SPRITE_LAST,
+		SPRITE_STATE_MAX,
 	};
 
 	struct SpriteFrame {
@@ -312,15 +311,14 @@ direction_enum = {
 }
 
 animation_enum = {
-	[""]    = ffi.C.SPRITE_NONE,
-	idle    = ffi.C.SPRITE_IDLE,
-	walk    = ffi.C.SPRITE_WALK,
-	run     = ffi.C.SPRITE_RUN,
-	attack1 = ffi.C.SPRITE_ATTACK1,
-	attack2 = ffi.C.SPRITE_ATTACK2,
+	idle    = ffi.C.SPRITE_STATE_IDLE,
+	walk    = ffi.C.SPRITE_STATE_WALK,
+	run     = ffi.C.SPRITE_STATE_RUN,
+	attack1 = ffi.C.SPRITE_STATE_ATTACK1,
+	attack2 = ffi.C.SPRITE_STATE_ATTACK2,
 
-	grass = ffi.C.SPRITE_GRASS,
-	dirt  = ffi.C.SPRITE_DIRT,
+	grass = ffi.C.SPRITE_STATE_GRASS,
+	dirt  = ffi.C.SPRITE_STATE_DIRT,
 }
 
 function vec2(x, y)
@@ -358,7 +356,7 @@ function get_player_pos()
 end
 
 function ai_set_follow(group, entity, target, dist)
-	ffi.C.entity_set_ai_state(entity, group, {
+	ffi.C.entity_set_ai_state(group, entity, {
 		type = "AI_STATE_FOLLOW",
 		follow = {
 			target = target,

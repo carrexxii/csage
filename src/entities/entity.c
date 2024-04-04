@@ -19,16 +19,25 @@ void entities_init()
 void entities_update()
 {
 	struct EntityGroup* group;
+	struct Body*        body;
 	struct Sprite*      sprite;
 	for (int i = 0; i < entity_groupc; i++) {
 		group = &entity_groups[i];
 		if (group->ais)
 			ais_update(group->count, group->ais, group->bodies);
+
 		bodies_update(group->count, group->bodies);
 
 		for (int j = 0; j < group->count; j++) {
+			body = &group->bodies[j];
 			sprite = varray_get(&group->sheet->sprites, group->sprites[j]);
 			sprite->pos = group->bodies[j].pos;
+
+			if (body->changed_state) {
+				enum SpriteStateType state = body->moving? SPRITE_STATE_RUN: SPRITE_STATE_IDLE;
+				sprite_set_state(sprite, state, body->dir_mask);
+				body->changed_state = false;
+			}
 		}
 	}
 }
@@ -71,6 +80,7 @@ void entity_resize_group(GroupID gid, isize count)
 
 	group->bodies  = srealloc(group->bodies, count*sizeof(struct Body));
 	group->sprites = srealloc(group->sprites, count*sizeof(EntityID));
+	varray_resize(&group->sheet->sprites, count, false);
 	if (group->ais)
 		group->ais = srealloc(group->ais, count*sizeof(struct AI));
 }
@@ -154,14 +164,13 @@ isize entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis)
 
 void entity_set_dir(GroupID gid, EntityID eid, enum Direction d, bool set)
 {
-	struct Body*   body   = entity_get_body(eid, gid);
-	struct Sprite* sprite = entity_get_sprite(eid, gid);
-	body_set_dir(body, sprite, d, set);
+	struct Body* body = entity_get_body(gid, eid);
+	body_set_dir(body, d, set);
 }
 
 void entity_set_ai_state(GroupID gid, EntityID eid, struct AIState state)
 {
-	struct AI* ai = entity_get_ai(eid, gid);
+	struct AI* ai = entity_get_ai(gid, eid);
 	ai_set_state(ai, state);
 }
 

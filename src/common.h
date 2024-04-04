@@ -96,6 +96,7 @@ enum Direction {
 	DIR_NE           = DIR_N | DIR_E,
 	DIR_SW           = DIR_S | DIR_W,
 	DIR_SE           = DIR_S | DIR_E,
+	DIR_ALL          = DIR_N | DIR_S | DIR_E | DIR_W,
 };
 
 #define PPSTR(x) #x
@@ -278,3 +279,4 @@ inline static int random_int(int min, int max)
 extern int vk_err;
 
 #endif
+
