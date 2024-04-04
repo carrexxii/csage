@@ -19,6 +19,8 @@ FILE* file_open(char* restrict path, char* restrict mode)
 
 intptr file_size(FILE* file)
 {
+	assert(file);
+
 	intptr sz;
 #if defined _WIN32
 	sz = _filelengthi64(fileno(file));

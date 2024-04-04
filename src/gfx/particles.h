@@ -37,13 +37,13 @@ struct ParticlePool {
 	float scale;
 };
 
-void particles_init(void);
-ID   particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2 start_pos, Vec2 start_vel, float scale);
-void particles_enable(ID particle_id);
-void particles_disable(ID particle_id);
-void particles_update(void);
-void particles_record_commands(VkCommandBuffer cmd_buf);
-void particles_free(void);
-void particles_free_pool(ID pool_id);
+void  particles_init(void);
+isize particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2 start_pos, Vec2 start_vel, float scale);
+void  particles_enable(isize particle_id);
+void  particles_disable(isize particle_id);
+void  particles_update(void);
+void  particles_record_commands(VkCommandBuffer cmd_buf);
+void  particles_free(void);
+void  particles_free_pool(isize pool_id);
 
 #endif

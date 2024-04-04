@@ -15,9 +15,10 @@ VkSurfaceKHR surface;
 
 static VkDebugReportCallbackEXT dbg_cb;
 
-noreturn static VKAPI_ATTR VkBool32 VKAPI_CALL debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
-                                                        uint64 obj, uintptr location, int32 msg_code, const char* layer_prefix,
-                                                        const char* msg, void* user_data)
+[[noreturn]]
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_cb(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
+                                               uint64 obj, uintptr location, int32 msg_code, const char* layer_prefix,
+                                               const char* msg, void* user_data)
 {
 	(void)user_data;
 	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"", layer_prefix, STRING_OF_DEBUG_REPORT(flags), obj,

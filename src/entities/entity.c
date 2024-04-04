@@ -122,6 +122,7 @@ isize entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis)
 
 	if (!cis) {
 		cis = arena_alloc(scratch, entityc * sizeof(struct EntityCreateInfo));
+		if (!cis) return -1;
 		for (int i = 0; i < entityc; i++)
 			cis[i] = default_entity_ci;
 	}
@@ -151,15 +152,16 @@ isize entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis)
 	return fst;
 }
 
-void entity_set_dir(EntityID eid, GroupID gid, enum Direction d, bool set)
+void entity_set_dir(GroupID gid, EntityID eid, enum Direction d, bool set)
 {
 	struct Body*   body   = entity_get_body(eid, gid);
 	struct Sprite* sprite = entity_get_sprite(eid, gid);
 	body_set_dir(body, sprite, d, set);
 }
 
-void entity_set_ai_state(EntityID eid, GroupID gid, struct AIState state)
+void entity_set_ai_state(GroupID gid, EntityID eid, struct AIState state)
 {
 	struct AI* ai = entity_get_ai(eid, gid);
 	ai_set_state(ai, state);
 }
+

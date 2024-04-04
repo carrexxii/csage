@@ -12,13 +12,8 @@ function load_level()
 	end
 	local fst_entity = ffi.C.entity_new_batch(group, 10, ecis)
 
-	ffi.C.entity_set_ai_state(fst_entity, group, {
-		type = "AI_STATE_FOLLOW",
-		follow = {
-			target = vec2(10, 10),
-			dist   = 1.0,
-		},
-	});
+	ai_set_follow(group, fst_entity, vec2(10, 10))
+	ai_set_patrol(group, fst_entity + 1, {vec2(5, 5), vec2(10, 10)})
 
 	return ffi.new("struct Level", {
 		name = to_c_str("The level's name"),

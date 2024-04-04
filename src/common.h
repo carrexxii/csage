@@ -8,7 +8,6 @@
 #include <inttypes.h>
 #include <float.h>
 #include <limits.h>
-#include <stdnoreturn.h>
 #include <stdalign.h>
 #include <string.h>
 #include <assert.h>
@@ -60,7 +59,6 @@ typedef uint8_t  uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
-typedef uint64_t ID;
 
 typedef unsigned int  uint;
 typedef intptr_t      intptr;
@@ -73,7 +71,6 @@ typedef ssize_t       isize;
 typedef thrd_t Thread;
 typedef mtx_t  Mutex;
 typedef cnd_t  Condition;
-typedef tss_t  ThreadLocal;
 
 enum Axis {
 	AXIS_NONE,

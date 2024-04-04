@@ -41,7 +41,7 @@ inline static struct Arena* arena_new(isize sz, enum ArenaFlag flags)
 
 inline static void* arena_alloc(struct Arena* arena, isize in_sz)
 {
-	assert(arena);
+	assert(arena && in_sz > 0);
 
 	isize sz = in_sz;
 	if (!(arena->flags & ARENA_NO_ALIGN))
@@ -53,7 +53,8 @@ inline static void* arena_alloc(struct Arena* arena, isize in_sz)
 			arena->cap = MAX(arena->cap*ARENA_RESIZE_FACTOR, sz);
 			arena = srealloc(arena, sizeof(struct Arena) + arena->cap);
 		} else {
-			ERROR("[MEM] Arena out of memory.\n\tAvailable: %ldB of %ldB\n\trequested: %ldB", avail, arena->cap, in_sz);
+			ERROR("[MEM] Arena out of memory.\n\tAvailable: %ldB of %ldB\n\trequested: %ldB",
+			      avail, arena->cap, in_sz);
 			return NULL;
 		}
 	}

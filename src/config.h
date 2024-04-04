@@ -28,7 +28,7 @@ struct GlobalConfig {
 	char* font_name;
 };
 
-noreturn void quit();
+[[noreturn]] void quit(void);
 
 extern struct GlobalConfig config;
 

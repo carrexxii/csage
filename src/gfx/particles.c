@@ -19,8 +19,8 @@ static UBO ubo;
 static VBO vbo_buf;
 static struct Image* img;
 
+static isize poolc;
 static struct ParticlePool pools[MAX_PARTICLE_POOLS];
-static int poolc;
 
 /* -------------------------------------------------------------------- */
 static VkVertexInputBindingDescription streamvert_binds[] = {
@@ -73,7 +73,7 @@ void particles_init()
 	vbo_buf = vbo_new(sizeof(verts), verts, false);
 }
 
-ID particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2 start_pos, Vec2 start_vel, float scale)
+isize particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2 start_pos, Vec2 start_vel, float scale)
 {
 	if (particle_life/interval >= MAX_PARTICLES_PER_POOL)
 		ERROR("[GFX] Potentially too many particles");
@@ -89,12 +89,12 @@ ID particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2
 	return poolc++;
 }
 
-void particles_enable(ID particle_id)
+void particles_enable(isize particle_id)
 {
 	pools[particle_id].enabled = true;
 }
 
-void particles_disable(ID particle_id)
+void particles_disable(isize particle_id)
 {
 	pools[particle_id].enabled = false;
 }
@@ -161,7 +161,7 @@ void particles_free()
 	pipeln_free(pipeln);
 }
 
-void particles_free_pool(ID pool_id)
+void particles_free_pool(isize pool_id)
 {
 	if (pool_id >= MAX_PARTICLE_POOLS)
 		ERROR("[GFX] Invalid particle pool id: %ld", pool_id);

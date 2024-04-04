@@ -9,9 +9,11 @@ String string_new(char* src, isize cap, struct Arena* arena)
 		.len  = src? cap: 0,
 		.cap  = cap,
 	};
-	if (src)
-		memcpy(str.data, src, str.len);
-	str.data[str.len] = '\0';
+	if (str.data) {
+		if (src)
+			memcpy(str.data, src, str.len);
+		str.data[str.len] = '\0';
+	}
 
 	return str;
 }
@@ -26,16 +28,18 @@ String string_new_join(isize strc, String* strs, String sep, struct Arena* arena
 		.data = arena? arena_alloc(arena, len + 1): smalloc(len + 1),
 		.len  = len,
 	};
-	char* head = str.data;
-	for (int i = 0; i < strc; i++) {
-		memcpy(head, strs[i].data, strs[i].len*sizeof(char));
-		head += strs[i].len;
-		if (i != strc - 1) {
-			memcpy(head, sep.data, sep.len*sizeof(char));
-			head += sep.len;
+	if (str.data) {
+		char* head = str.data;
+		for (int i = 0; i < strc; i++) {
+			memcpy(head, strs[i].data, strs[i].len*sizeof(char));
+			head += strs[i].len;
+			if (i != strc - 1) {
+				memcpy(head, sep.data, sep.len*sizeof(char));
+				head += sep.len;
+			}
 		}
+		*head = '\0';
 	}
-	*head = '\0';
 
 	return str;
 }

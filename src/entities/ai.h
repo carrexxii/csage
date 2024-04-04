@@ -5,6 +5,8 @@
 #include "util/varray.h"
 #include "body.h"
 
+#define AI_MOVE_TO_PRECISION 0.5f
+
 #define STRING_OF_AI_TYPE(x) ((x) >= AI_TYPE_MAX? "<Unknown>": string_of_ai_type[x])
 enum AIType {
 	AI_TYPE_NONE,
@@ -26,6 +28,7 @@ static const char* string_of_ai_type[] = {
 enum AIStateType {
 	AI_STATE_IDLE,
 	AI_STATE_FOLLOW,
+	AI_STATE_PATROL,
 	AI_STATE_WANDER,
 	AI_STATE_PATHING,
 	AI_STATE_MAX,
@@ -33,6 +36,7 @@ enum AIStateType {
 static const char* string_of_ai_state_type[] = {
 	[AI_STATE_IDLE]    = "AI_STATE_IDLE",
 	[AI_STATE_FOLLOW]  = "AI_STATE_FOLLOW",
+	[AI_STATE_PATROL]  = "AI_STATE_PATROL",
 	[AI_STATE_WANDER]  = "AI_STATE_WANDER",
 	[AI_STATE_PATHING] = "AI_STATE_PATHING",
 };
@@ -44,8 +48,9 @@ struct AIState {
 			float dist;
 		} follow;
 		struct {
-			isize pointc;
-			Vec2* points;
+			uint8  pointc, i;
+			uint16 delay, timer;
+			Vec2*  points;
 		} patrol;
 	};
 };
@@ -69,3 +74,4 @@ static inline void ai_set_state(struct AI* ai, struct AIState state)
 }
 
 #endif
+

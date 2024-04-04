@@ -19,7 +19,7 @@ struct Level {
 };
 
 void scenemgr_init(SDL_Window* window);
-noreturn void scenemgr_loop(void);
+[[noreturn]] void scenemgr_loop(void);
 void scenemgr_defer(void (*fn)(void*), void* data);
 void scenemgr_free(void);
 

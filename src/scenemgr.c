@@ -78,7 +78,8 @@ void scenemgr_init(SDL_Window* win)
 	switch_scene(SCENE_GAME);
 }
 
-noreturn void scenemgr_loop()
+[[noreturn]]
+void scenemgr_loop()
 {
 	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks());
@@ -150,16 +151,16 @@ static void switch_scene(enum SceneType scene)
 	}
 }
 
-static noreturn void cb_quit(bool) { quit(); }
+[[noreturn]]
+static void cb_quit(bool) { quit(); }
 static void cb_switch_scene_game(bool kdown)    { if (kdown) switch_scene(SCENE_GAME);    }
 static void cb_switch_scene_editor(bool kdown)  { if (kdown) switch_scene(SCENE_EDITOR);  }
 static void cb_switch_scene_scratch(bool kdown) { if (kdown) switch_scene(SCENE_SCRATCH); }
 static void cb_toggle_view(bool kdown) {
-	if (!kdown)
-		return;
+	if (!kdown) return;
 	struct Camera* cam = curr_scene == SCENE_GAME  ? &game_cam  :
-	                     curr_scene == SCENE_EDITOR? &editor_cam: NULL;
-	camera_set_projection(cam, cam->type == CAMERA_PERSPECTIVE? CAMERA_ORTHOGONAL: CAMERA_PERSPECTIVE);
+	                     curr_scene == SCENE_EDITOR? &editor_cam:
+	                     NULL;
 }
 static void register_global_keys()
 {

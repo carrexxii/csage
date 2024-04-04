@@ -236,6 +236,7 @@ ffi.cdef [[
 	enum AIStateType {
 		AI_STATE_IDLE,
 		AI_STATE_FOLLOW,
+		AI_STATE_PATROL,
 		AI_STATE_WANDER,
 		AI_STATE_PATHING,
 		AI_STATE_MAX,
@@ -248,8 +249,9 @@ ffi.cdef [[
 				float dist;
 			} follow;
 			struct {
-				isize pointc;
-				Vec2* points;
+				uint8  pointc, i;
+				uint16 delay, timer;
+				Vec2*  points;
 			} patrol;
 		};
 	};
@@ -278,6 +280,13 @@ ffi.cdef [[
 
 	void entity_set_dir(EntityID eid, GroupID gid, enum Direction d, bool set);
 	void entity_set_ai_state(EntityID eid, GroupID gid, struct AIState state);
+
+	struct Body* entity_get_body(GroupID gid, EntityID eid);
+	
+	/* ---------------------------------------------------------------- */
+
+	GroupID  player_group;
+	EntityID player_entity;
 ]]
 
 sprite_path = "./gfx/sprites/"
@@ -342,3 +351,32 @@ function vec3_of_colour(string)
 		tonumber(string:sub(6, 7), 16) / 255.0,
 	}
 end
+
+function get_player_pos()
+	local body = ffi.C.get_entity_body(player_group, player_entity)
+	return body.pos
+end
+
+function ai_set_follow(group, entity, target, dist)
+	ffi.C.entity_set_ai_state(entity, group, {
+		type = "AI_STATE_FOLLOW",
+		follow = {
+			target = target,
+			dist   = dist or 1.0,
+		},
+	});
+end
+
+function ai_set_patrol(group, entity, points, delay)
+	local pointc = #points
+	local points = ffi.new("Vec2[?]", pointc, points)
+	ffi.C.entity_set_ai_state(group, entity, {
+		type = "AI_STATE_PATROL",
+		patrol = {
+			pointc = pointc,
+			points = points,
+			delay  = delay or 500,
+		},
+	})
+end
+

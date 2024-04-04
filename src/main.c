@@ -71,7 +71,8 @@ void init_sdl()
 		DEBUG(1, "[INIT] Created window");
 }
 
-noreturn void quit()
+[[noreturn]]
+void quit()
 {
 	DEBUG(1, "/------------------------------\\");
 	DEBUG(1, "|        Cleaning up...        |");

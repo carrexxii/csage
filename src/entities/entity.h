@@ -51,14 +51,14 @@ void    entity_free_group(GroupID gid);
 
 EntityID entity_new(GroupID gid, struct EntityCreateInfo* ci);
 isize    entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis);
-void entity_set_dir(EntityID eid, GroupID gid, enum Direction d, bool set);
-void entity_set_ai_state(EntityID eid, GroupID gid, struct AIState state);
+void entity_set_dir(GroupID gid, EntityID eid, enum Direction d, bool set);
+void entity_set_ai_state(GroupID gid, EntityID eid, struct AIState state);
 
 /* -------------------------------------------------------------------- */
 
 #define EGET(type, name, arr)                                        \
 	[[gnu::always_inline]]                                            \
-	static inline type entity_get_##name(EntityID eid, GroupID gid) {  \
+	static inline type entity_get_##name(GroupID gid, EntityID eid) {  \
 		assert(gid < entity_groupc && eid < entity_groups[gid].count);  \
 		return &entity_groups[gid].arr[eid];                             \
 	}
@@ -67,7 +67,7 @@ EGET(struct AI*  , ai  , ais   )
 #undef EGET
 
 [[gnu::always_inline]]
-static inline struct Sprite* entity_get_sprite(EntityID eid, GroupID gid)
+static inline struct Sprite* entity_get_sprite(GroupID gid, EntityID eid)
 {
 	assert(gid < entity_groupc && eid < entity_groups[gid].count);
 

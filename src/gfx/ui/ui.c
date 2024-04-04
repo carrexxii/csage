@@ -89,14 +89,12 @@ struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style)
 int ui_add(struct UIContainer* container, struct UIObject* obj)
 {
 	/* Check for dead elements to reuse */
-	int* free_elem = varray_pop(&free_elems);
-	int i = free_elem? *free_elem: ui_elemc++;
-
-	obj->i = i;
-	container->has_update = true;
+	obj->i = free_elems.len > 0? *(int*)varray_pop(&free_elems)
+	                           : ui_elemc++;
 	varray_push(&container->objects, obj);
+	container->has_update = true;
 
-	return i;
+	return obj->i;
 }
 
 int ui_add_image(struct Image* img)
@@ -254,7 +252,8 @@ static void cb_mouse_left(bool kdown)
 static void container_free(struct UIContainer* container)
 {
 	struct UIObject* obj;
-	while ((obj = varray_pop(&container->objects))) {
+	while (container->objects.len > 0) {
+		obj = varray_pop(&container->objects);
 		obj->state.dead = true;
 		varray_push(&free_elems, &obj->i);
 		switch (obj->type) {

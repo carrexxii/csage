@@ -91,7 +91,7 @@ void map_new(struct Map* map, const char* name)
 	      name, map->w, map->h, map->layerc, map->spot_lightc, map->point_lightc);
 }
 
-noreturn MapTile map_get_tile(struct Map* map, Vec3i pos)
+MapTile map_get_tile(struct Map* map, Vec3i pos)
 {
 	(void)map;
 	(void)pos;

@@ -34,6 +34,7 @@ static inline void  varray_free(struct VArray* arr);
 static inline struct VArray varray_new(isize elemc, isize elem_sz)
 {
 	assert(elemc > 0 && elem_sz > 0);
+	
 	struct VArray arr = {
 		.data    = smalloc(elemc*elem_sz),
 		.len     = 0,
@@ -57,16 +58,14 @@ static inline void* varray_set(struct VArray* arr, isize i, void* elem)
 [[gnu::always_inline]]
 static inline void* varray_get(struct VArray* arr, isize i)
 {
-	if (i < 0 || i >= arr->len)
-		return NULL;
+	assert(i >= 0 && i < arr->len);
 
 	return arr->data + i*arr->elem_sz;
 }
 
 static inline void* varray_pop(struct VArray* arr)
 {
-	if (arr->len <= 0)
-		return NULL;
+	assert(arr->len > 0);
 
 	return arr->data + (--arr->len)*arr->elem_sz;
 }
@@ -81,7 +80,7 @@ static inline isize varray_push(struct VArray* restrict arr, void* restrict elem
 
 static inline isize varray_push_many(struct VArray* restrict arr, isize elemc, void* restrict elems)
 {
-	assert(elems && elemc > 0);
+	assert(elemc > 0);
 
 	varray_resize(arr, arr->len + elemc, false);
 	memcpy(arr->data + arr->len*arr->elem_sz, elems, elemc*arr->elem_sz);
@@ -92,7 +91,7 @@ static inline isize varray_push_many(struct VArray* restrict arr, isize elemc, v
 
 static inline isize varray_push_many_strided(struct VArray* restrict arr, isize elemc, void* restrict elems, isize offset, isize stride)
 {
-	assert(elems && elemc > 0);
+	assert(elemc > 0);
 
 	varray_resize(arr, arr->len + elemc, false);
 	byte* data = (byte*)elems + offset;
