@@ -14,6 +14,14 @@ local sprites = {
 			run  = 100,
 		},
 	},
+	weapon = {
+		type = "animated",
+		directions = 8,
+		states = {
+			idle = 250,
+			run  = 100,
+		},
+	},
 	tiles = {
 		type = "static",
 		directions = 1,
