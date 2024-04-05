@@ -40,14 +40,14 @@ static inline void* enqueue(struct Queue* restrict q, void* restrict data)
 
 	q->rear = (q->rear + 1) % q->cap;
 	if (q->rear == q->front) {
-		ERROR("Need to resize queue");
+		ERROR("Need to resize queue"); // TODO
 		return NULL;
 	}
 
 	if (q->front == -1)
 		q->front = 0;
 
-	void* dst = q->data + q->rear*q->elem_sz;
+	void* dst = q->data + q->rear*q->elem_sz; // FIXME: %
 	memcpy(dst, data, q->elem_sz);
 	return dst;
 }
@@ -101,3 +101,4 @@ static void queue_print(struct Queue* q)
 }
 
 #endif
+

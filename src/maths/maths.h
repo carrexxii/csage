@@ -41,15 +41,14 @@ static inline Vec4 colour_normalized(Colour colour)
 	            colour.r * f);
 }
 
-static inline enum Direction mask_of_dir(Vec2 v, float threshold)
+static inline enum Direction mask_of_dir(Vec2 v)
 {
-	threshold /= 2.0f;
 	enum Direction dir = DIR_NONE;
-	if      (v.x < -threshold) dir |= DIR_W; // DIR_NW;
-	else if (v.x >  threshold) dir |= DIR_E; // DIR_SE;
-	if      (v.y < -threshold) dir |= DIR_N; // DIR_NE;
-	else if (v.y >  threshold) dir |= DIR_S; // DIR_SW;
-	
+	if      (v.y < -0.1f) dir |= DIR_N;
+	else if (v.y >  0.1f) dir |= DIR_S;
+	else if (v.x < -0.1f) dir |= DIR_W;
+	else if (v.x >  0.1f) dir |= DIR_E;
+
 	return dir;
 }
 

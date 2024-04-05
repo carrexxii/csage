@@ -32,7 +32,6 @@ description "%s.lua"
 sheet "%s"
 	output "sheets/%s.png"
 		maps "" "-normal"
-	padding      1
 	power-of-two true
 	square       true
 	allow-rotate true
@@ -42,7 +41,10 @@ local tmpl_animated = [[
 glob "renders/%s-%s-%s-*.png"
 	id "%s@%s-%s"
 	maps "" "-normal"
-	crop-pivot
+	crop           true
+	crop-pivot     true
+	trim           rect
+	trim-threshold 50
 ]]
 
 local tmpl_static = [[

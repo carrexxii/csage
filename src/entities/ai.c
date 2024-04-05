@@ -22,7 +22,7 @@ void ais_update(isize count, struct AI* ais, struct Body* bodies)
 			if (distance(body->pos, *state->follow.target) > state->follow.dist) {
 				body->dir_mask = 0;
 				Vec2 dir = sub(*state->follow.target, body->pos);
-				body_set_dir(body, mask_of_dir(dir, state->follow.dist), true);
+				body_set_dir(body, mask_of_dir(dir), true);
 			} else if (body->moving) {
 				body_set_dir(body, DIR_ALL, false);
 			}
@@ -36,7 +36,7 @@ void ais_update(isize count, struct AI* ais, struct Body* bodies)
 				if (distance(body->pos, target) > AI_MOVE_TO_PRECISION) {
 					body->dir_mask = 0;
 					Vec2 dir = sub(target, body->pos);
-					body_set_dir(body, mask_of_dir(dir, AI_MOVE_TO_PRECISION), true);
+					body_set_dir(body, mask_of_dir(dir), true);
 				} else {
 					state->patrol.i     = (state->patrol.i + 1) % state->patrol.pointc;
 					state->patrol.timer = 0;

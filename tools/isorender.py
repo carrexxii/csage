@@ -2,18 +2,22 @@ import bpy
 from math import *
 from mathutils import *
 
+matcap_dir = "/home/charles/Pictures/matcaps/"
 directions = ["sw", "s", "se", "e", "ne", "n", "nw", "w"]
-shadings   = [("", "toon.exr", "TEXTURE"), ("-normal", "check_normal+y.exr", "MATERIAL")]
+matcaps    = [
+    (""       , matcap_dir + "toon.exr"          , 1.0),
+    ("-normal", matcap_dir + "check_normal+y.exr", 0.0),
+]
+
+matcap_tex = bpy.data.materials["matcap"].node_tree.nodes["matcap"].image
+matcap_fac = bpy.data.materials["matcap"].node_tree.nodes["factor"].inputs[0]
 
 target   = bpy.data.objects["floor"]
 armature = bpy.data.objects["armature"]
+light    = bpy.data.objects["light"]
 
-bpy.data.scenes[0].render.engine = "BLENDER_WORKBENCH"
-bpy.data.scenes[0].display.shading.type  = "SOLID"
-bpy.data.scenes[0].display.shading.light = "MATCAP"
-
-bpy.data.scenes[0].render.use_freestyle       = True
-bpy.data.scenes[0].render.line_thickness_mode = "RELATIVE"
+bpy.data.scenes[0].render.engine        = "BLENDER_EEVEE"
+bpy.data.scenes[0].display.shading.type = "RENDERED"
 
 for obj in bpy.data.objects:
     obj.hide_render = True
@@ -25,13 +29,13 @@ try:
             continue
 
         for attached in bpy.data.objects:
-            if attached.name.startswith(obj.name) or attached == target:
+            if attached.name.startswith(obj.name) or attached == target or attached == light:
                 attached.hide_render = False
             else:
                 attached.hide_render = True
-        for shading in shadings:
-            bpy.data.scenes[0].display.shading.studio_light = shading[1]
-            bpy.data.scenes[0].display.shading.color_type   = shading[2]
+        for matcap in matcaps:
+            matcap_tex.filepath      = matcap[1]
+            matcap_fac.default_value = matcap[2]
             for action in bpy.data.actions:
                 should_animate = not obj in list(bpy.data.collections["tiles"].all_objects)
                 if should_animate:
@@ -53,7 +57,7 @@ try:
                         original_path,
                         action.name if should_animate else obj.name,
                         directions[i],
-                        shading[0])
+                        matcap[0])
                     bpy.ops.render.render(animation=should_animate, write_still=not should_animate)
                 target.rotation_euler[2] = 0.0
 finally:
