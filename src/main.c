@@ -1,9 +1,12 @@
 #include <vulkan/vulkan.h>
 #include "SDL3/SDL.h"
 
+#define CLIB_IMPLEMENTATION
+#include "clib/clib.h"
+#include "common.h"
+
 #include "resmgr.h"
 #include "lua.h"
-#include "config.h"
 #include "taskmgr.h"
 #include "gfx/vulkan.h"
 #include "gfx/renderer.h"
@@ -14,7 +17,6 @@
 #include "scenemgr.h"
 
 #include "gfx/particles.h"
-#include "test.h"
 
 void init_sdl(void);
 
@@ -31,15 +33,15 @@ int main(int argc, char** argv)
 	lua_init();
 	init_sdl();
 
-	DEBUG(1, "[INFO] Platform: %s", SDL_GetPlatform());
-	DEBUG(1, "[INFO] CPU info:");
-	DEBUG(1, "\tLogical cores: %d", SDL_GetCPUCount());
-	DEBUG(1, "\tL1 Cache Line: %dB", SDL_GetCPUCacheLineSize());
-	DEBUG(1, "\tRAM          : %.1fGB", SDL_GetSystemRAM() / 1024.0f);
+	INFO(TERM_DARK_YELLOW "[INFO] Platform: %s", SDL_GetPlatform());
+	INFO(TERM_DARK_YELLOW "[INFO] CPU info:");
+	INFO(TERM_DARK_YELLOW "\tLogical cores: %d", SDL_GetCPUCount());
+	INFO(TERM_DARK_YELLOW "\tL1 Cache Line: %dB", SDL_GetCPUCacheLineSize());
+	INFO(TERM_DARK_YELLOW "\tRAM          : %.1fGB", SDL_GetSystemRAM() / 1024.0f);
 
 	uint32 vkversion;
 	vkEnumerateInstanceVersion(&vkversion);
-	DEBUG(1, "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
+	INFO(TERM_DARK_YELLOW "[INFO] Vulkan version: %u.%u.%u", VK_API_VERSION_MAJOR(vkversion),
 	      VK_API_VERSION_MINOR(vkversion), VK_API_VERSION_PATCH(vkversion));
 
 	srand(SDL_GetTicks());
@@ -57,26 +59,26 @@ void init_sdl()
 {
 	SDL_Version sdlversion;
 	SDL_GetVersion(&sdlversion);
-	DEBUG(1, "[INFO] SDL version: %u.%u.%u", sdlversion.major, sdlversion.minor, sdlversion.patch);
+	INFO(TERM_DARK_YELLOW "[INFO] SDL version: %u.%u.%u", sdlversion.major, sdlversion.minor, sdlversion.patch);
 
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
 		ERROR("[INIT] Failed to initialize SDL (%s)", SDL_GetError());
 	else
-		DEBUG(1, "[INIT] Initialized SDL");
+		INFO(TERM_DARK_YELLOW "[INIT] Initialized SDL");
 
 	window = SDL_CreateWindow("CSage", config.winw, config.winh, SDL_WINDOW_VULKAN);
 	if (!window)
 		ERROR("[INIT] Failed to create window (%s)", SDL_GetError());
 	else
-		DEBUG(1, "[INIT] Created window");
+		INFO(TERM_DARK_YELLOW "[INIT] Created window");
 }
 
 [[noreturn]]
 void quit()
 {
-	DEBUG(1, "/------------------------------\\");
-	DEBUG(1, "|        Cleaning up...        |");
-	DEBUG(1, "\\------------------------------/");
+	INFO(TERM_DARK_YELLOW "/------------------------------\\");
+	INFO(TERM_DARK_YELLOW "|        Cleaning up...        |");
+	INFO(TERM_DARK_YELLOW "\\------------------------------/");
 	vkDeviceWaitIdle(logical_gpu);
 
 	entities_free();

@@ -25,13 +25,13 @@ ffi.cdef [[
 	typedef  size_t usize;
 	typedef ssize_t isize;
 
-	enum Axis {
+	typedef enum AxisType {
 		AXIS_NONE,
 		AXIS_X = 1 << 0,
 		AXIS_Y = 1 << 1,
 		AXIS_Z = 1 << 2,
-	};
-	enum Direction {
+	} AxisType;
+	typedef enum DirectionMask {
 		DIR_NONE         = 0,
 		DIR_UP           = 1 << 0,
 		DIR_DOWN         = 1 << 1,
@@ -49,21 +49,21 @@ ffi.cdef [[
 		DIR_NE           = DIR_N | DIR_E,
 		DIR_SW           = DIR_S | DIR_W,
 		DIR_SE           = DIR_S | DIR_E,
-	};
+	} DirectionMask;
 
 	/* ---------------------------------------------------------------- */
 
-	typedef struct {
-		isize len, cap;
+	typedef struct String {
+		isize len;
 		char* data;
 	} String;
 
-	struct VArray {
+	typedef struct VArray {
 		isize len;
 		isize cap;
 		isize elem_sz;
 		byte* data;
-	};
+	} VArray;
 
 	/* ---------------------------------------------------------------- */
 
@@ -92,40 +92,40 @@ ffi.cdef [[
 
 	/* ---------------------------------------------------------------- */
 
-	struct DirectionalLight {
-		Vec3 dir;      float pad1;
-		Vec3 ambient;  float pad2;
-		Vec3 diffuse;  float pad3;
-		Vec3 specular; float pad4;
-	};
+	typedef struct DirectionalLight {
+		Vec3 dir;      byte pad1[4];
+		Vec3 ambient;  byte pad2[4];
+		Vec3 diffuse;  byte pad3[4];
+		Vec3 specular; byte pad4[4];
+	} DirectionalLight;
 
-	struct PointLight {
-		Vec3 pos;     float pad1;
-		Vec3 ambient; float pad2;
-		Vec3 diffuse; float pad3;
+	typedef struct PointLight {
+		Vec3 pos;     byte pad1[4];
+		Vec3 ambient; byte pad2[4];
+		Vec3 diffuse; byte pad3[4];
 		Vec3 specular;
 		float constant;
 		float linear;
 		float quadratic;
-		float pad4[2];
-	};
+		byte pad4[8];
+	} PointLight;
 
-	struct SpotLight {
-		Vec3 pos;     float pad1;
-		Vec3 dir;     float pad2;
-		Vec3 ambient; float pad3;
-		Vec3 diffuse; float pad4;
+	typedef struct SpotLight {
+		Vec3 pos;     byte pad1[4];
+		Vec3 dir;     byte pad2[4];
+		Vec3 ambient; byte pad3[4];
+		Vec3 diffuse; byte pad4[4];
 		Vec3 specular;
 		float constant;
 		float linear;
 		float quadratic;
 		float cutoff;
 		float outer_cutoff;
-	};
+	} SpotLight;
 
 	/* ---------------------------------------------------------------- */
 
-	enum SpriteStateType {
+	typedef enum SpriteStateType {
 		SPRITE_STATE_IDLE,
 		SPRITE_STATE_WALK,
 		SPRITE_STATE_RUN,
@@ -136,36 +136,36 @@ ffi.cdef [[
 		SPRITE_STATE_DIRT,
 
 		SPRITE_STATE_MAX,
-	};
+	} SpriteStateType;
 
-	struct SpriteFrame {
+	typedef struct SpriteFrame {
 		uint16 x, y, w, h;
-	};
+	} SpriteFrame;
 
-	struct SpriteState {
-		enum SpriteStateType type;
-		enum Direction       dir;
+	typedef struct SpriteState {
+		SpriteStateType type;
+		DirectionMask   dir;
 		int duration;
 		int gi;
 		int framec;
-		struct SpriteFrame* frames;
-	};
+		SpriteFrame* frames;
+	} SpriteState;
 
-	struct SpriteGroup {
+	typedef struct SpriteGroup {
 		char name[32];
 		int statec;
-		struct SpriteState* states;
-	};
+		SpriteState* states;
+	} SpriteGroup;
 
-	struct Sprite {
+	typedef struct Sprite {
 		Vec2   pos;
 		int16  gi;
 		int8   state, frame;
 		int8   sheet, group;
 		uint16 time;
-	};
+	} Sprite;
 
-	struct SpriteSheet {
+	typedef struct SpriteSheet {
 		char name[32];
 		int w, h, z;
 		int groupc;
@@ -177,71 +177,71 @@ ffi.cdef [[
 		Pipeline* pipeln;
 		SBO sprite_sheet_data;
 		SBO sprite_data;
-	};
+	} SpriteSheet;
 
-	struct SpriteSheet* sprite_sheet_new(char* name);
-	struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data);
+	SpriteSheet* sprite_sheet_new(char* name);
+	SpriteSheet* sprite_sheet_load(SpriteSheet* sheet_data);
 
 	/* ---------------------------------------------------------------- */
 
 	typedef uint16 MapTile;
 
-	struct MapLayer {
+	typedef struct MapLayer {
 		char name[32];
 		int x, y, w, h;
-		struct Sprite** sprites;
+		Sprite** sprites;
 		MapTile data[?];
-	};
+	} MapLayer;
 
-	struct Map {
+	typedef struct Map {
 		int w, h;
-		struct SpriteSheet* sprite_sheet;
+		SpriteSheet* sprite_sheet;
 		int layerc, spot_lightc, point_lightc;
-		struct MapLayer*   layers[8];
-		struct SpotLight*  spot_lights;
-		struct PointLight* point_lights;
+		MapLayer*   layers[8];
+		SpotLight*  spot_lights;
+		PointLight* point_lights;
 
 		SBO spot_lights_sbo;
 		SBO point_lights_sbo;
 		Pipeline pipeln;
-	};
+	} Map;
 
 	/* ---------------------------------------------------------------- */
 
-	struct Level {
+	typedef struct Level {
 		String name;
-	};
+	} Level;
 
 	/* ---------------------------------------------------------------- */
 
-	struct Body {
+	typedef struct Body {
 		Vec2  pos;
 		float speed;
 		Vec2  vel;
 		uint  dir_mask;
 		Vec2  dir;
-	};
+	} Body;
 
 	/* ---------------------------------------------------------------- */
 
-	enum AIType {
+	typedef enum AIType {
 		AI_TYPE_NONE,
 		AI_TYPE_CONTROLLABLE,
 		AI_TYPE_FRIENDLY,
 		AI_TYPE_NEUTRAL,
 		AI_TYPE_ENEMY,
-	};
+	} AIType;
 
-	enum AIStateType {
+	typedef enum AIStateType {
 		AI_STATE_IDLE,
 		AI_STATE_FOLLOW,
 		AI_STATE_PATROL,
 		AI_STATE_WANDER,
 		AI_STATE_PATHING,
 		AI_STATE_MAX,
-	};
-	struct AIState {
-		enum AIStateType type;
+	} AIStateType;
+	typedef struct AIState {
+		AIStateType type;
 		union {
 			struct {
 				Vec2* target;
@@ -253,35 +253,35 @@ ffi.cdef [[
 				Vec2*  points;
 			} patrol;
 		};
-	};
+	} AIState;
 
 	/* ---------------------------------------------------------------- */
 
-	enum EntityGroupMask {
+	typedef enum EntityGroupMask {
 		ENTITY_GROUP_NONE = 0,
 		ENTITY_GROUP_AI   = 1 << 0,
-	};
+	} EntityGroupMask;
 
 	typedef uint GroupID;
 	typedef uint EntityID;
 
-	struct EntityCreateInfo {
-		Vec2  pos;
-		float speed;
-		int sprite_group;
-		enum AIType ai_type;
-	};
+	typedef struct EntityCreateInfo {
+		Vec2   pos;
+		float  speed;
+		int    sprite_group;
+		AIType ai_type;
+	} EntityCreateInfo;
 
-	GroupID entity_new_group(const char* sprite_sheet, enum EntityGroupMask mask);
+	GroupID entity_new_group(const char* sprite_sheet, EntityGroupMask mask);
 
-	EntityID entity_new(GroupID gid, struct EntityCreateInfo* ci);
-	isize    entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis);
+	EntityID entity_new(GroupID gid, EntityCreateInfo* ci);
+	isize    entity_new_batch(GroupID gid, isize entityc, EntityCreateInfo* cis);
 
-	void entity_set_dir(EntityID eid, GroupID gid, enum Direction d, bool set);
-	void entity_set_ai_state(EntityID eid, GroupID gid, struct AIState state);
+	void entity_set_dir(EntityID eid, GroupID gid, DirectionMask dir, bool set);
+	void entity_set_ai_state(EntityID eid, GroupID gid, AIState state);
 
-	struct Body* entity_get_body(GroupID gid, EntityID eid);
-	
+	Body* entity_get_body(GroupID gid, EntityID eid);
+
 	/* ---------------------------------------------------------------- */
 
 	GroupID  player_group;

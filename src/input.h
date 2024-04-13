@@ -3,6 +3,8 @@
 
 #include "SDL3/SDL.h"
 
+#include "common.h"
+
 #define MAX_EVENT_CALLBACKS 64
 
 /* !! Does not match with `SDL_BUTTON_*` values */

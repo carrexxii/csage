@@ -27,14 +27,14 @@ void taskmgr_init()
 		if (thrd_create(&threads[threadc++], thread_loop, NULL))
 			ERROR("[THR] Failed to create thread %u", i);
 
-	DEBUG(2, "[THR] Initialized %d threads", threadc);
+	INFO(TERM_MAGENTA "[THR] Initialized %d threads", threadc);
 }
 
 void taskmgr_add_task(void (*fn)())
 {
 	if (taskc < MAX_TASKS) {
 		tasks[taskc++].fn = fn;
-		DEBUG(3, "[THR] Added new task (%u)", taskc);
+		INFO(TERM_MAGENTA "[THR] Added new task (%u)", taskc);
 	} else {
 		ERROR("[THR] Task list is already full");
 	}

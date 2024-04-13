@@ -1,106 +1,105 @@
 #ifndef UI_TYPES_H
 #define UI_TYPES_H
 
+#include "common.h"
 #include "maths/types.h"
-#include "util/string.h"
-#include "util/varray.h"
 #include "gfx/buffers.h"
 #include "font.h"
 
 #define UI_CONTAINER_MAX_IMAGES 8
 
-struct UIVertex {
+typedef struct UIVertex {
 	Vec2   pos;
 	Colour colour;
-};
+} UIVertex;
 
-enum UIObjectType {
+typedef enum UIObjectType {
 	UI_NONE,
 	UI_CONTAINER,
 	UI_BUTTON,
 	UI_LABEL,
 	UI_LIST,
 	UI_CUSTOM,
-};
+} UIObjectType;
 
-struct UIState {
+typedef struct UIState {
 	bool visible;
 	bool hover;
 	bool clicked;
 	bool dead;
-};
+} UIState;
 
-struct UIContext {
+typedef struct UIContext {
 	Vec2 mouse_pos;
 	struct { bool lmb, rmb; } mouse_pressed;
 	struct { bool lmb, rmb; } mouse_released;
-};
+} UIContext;
 
-struct UIStyle {
+typedef struct UIStyle {
 	Colour normal;
 	Colour hover;
 	Colour clicked;
-};
+} UIStyle;
 
-struct UIContainer {
-	Rect rect;
-	struct UIState state;
-	bool has_update;
-	int i;
-	struct VArray objects;
-};
+typedef struct UIContainer {
+	Rect    rect;
+	UIState state;
+	bool    has_update;
+	int     i;
+	VArray  objects;
+} UIContainer;
 
-struct UIShaderObject {
+typedef struct UIShaderObject {
 	Rect rect;
 	Rect hl;
 	Rect uv_rect;
 	Vec4 colour;
 	int  tex_id;
 	byte pad[12];
-};
+} UIShaderObject;
 
-struct UIButton {
-	struct TextObject* text_obj;
+typedef struct UIButton {
+	TextObject* text_obj;
 	void (*cb)(int);
 	int data;
-};
+} UIButton;
 
-struct UILabel {
-	struct TextObject* text_obj;
-};
+typedef struct UILabel {
+	TextObject* text_obj;
+} UILabel;
 
-struct UIList {
-	float spacing;
-	int text_objc;
-	struct TextObject** text_objs;
+typedef struct UIList {
+	float        spacing;
+	int          text_objc;
+	TextObject** text_objs;
 	void (*cb)(int);
-};
+} UIList;
 
 struct UIObject;
-struct UICustom {
+typedef struct UICustom {
 	void (*build)(struct UIObject*);
 	bool (*on_hover)(struct UIObject*, struct UIContext*);
 	void (*on_click)(struct UIObject*, struct UIContext*);
 	void (*on_free)(struct UIObject*);
-};
+} UICustom;
 
-struct UIObject {
+typedef struct UIObject {
 	Rect rect;
 	Rect hl;
 	Rect uv_rect;
 	Vec2 padding;
-	enum UIObjectType type;
-	struct UIState state;
+	UIObjectType type;
+	UIState state;
 	int imgi;
 	int i;
-	struct UIStyle* style;
+	UIStyle* style;
 	union {
-		struct UIButton button;
-		struct UILabel  label;
-		struct UIList   uilist;
-		struct UICustom custom;
+		UIButton button;
+		UILabel  label;
+		UIList   uilist;
+		UICustom custom;
 	};
-};
+} UIObject;
 
 /* -------------------------------------------------------------------- */
 
@@ -133,3 +132,4 @@ static struct UIStyle default_list_style = {
 };
 
 #endif
+

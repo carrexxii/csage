@@ -1,6 +1,8 @@
 #ifndef MATHS_TYPES_H
 #define MATHS_TYPES_H
 
+#include <inttypes.h>
+
 #define RECT0 (Rect){ 0 }
 #define RECT1 (Rect){ 0, 0, 1, 1 }
 
@@ -33,8 +35,8 @@
 #define VEC3_Z    (Vec3){ .x = 0.0f, .y = 0.0f, .z = 1.0f }
 #define MAT4X4_IDENTITY (Mat4x4){ 1.0f, 0.0f, 0.0f, 0.0f, \
                                   0.0f, 1.0f, 0.0f, 0.0f, \
-								  0.0f, 0.0f, 1.0f, 0.0f, \
-								  0.0f, 0.0f, 0.0f, 1.0f, }
+                                  0.0f, 0.0f, 1.0f, 0.0f, \
+                                  0.0f, 0.0f, 0.0f, 1.0f, }
 
 #define SCALAR(a)                     (float)(a)
 #define VEC(x, y, z, w)               (Vec){ x, y, z, w }
@@ -86,9 +88,37 @@ typedef union PsS { float e0123; } PsS;
 
 /* -------------------------------------------------------------------- */
 
+typedef enum AxisMask {
+	AXIS_NONE,
+	AXIS_X = 1 << 0,
+	AXIS_Y = 1 << 1,
+	AXIS_Z = 1 << 2,
+} AxisMask;
+
+typedef enum DirectionMask {
+	DIR_NONE         = 0,
+	DIR_UP           = 1 << 0,
+	DIR_DOWN         = 1 << 1,
+	DIR_RIGHT        = 1 << 2,
+	DIR_LEFT         = 1 << 3,
+	DIR_FORWARDS     = 1 << 4,
+	DIR_BACKWARDS    = 1 << 5,
+	DIR_ROTATE_LEFT  = 1 << 6,
+	DIR_ROTATE_RIGHT = 1 << 7,
+	DIR_N            = 1 << 8,
+	DIR_S            = 1 << 9,
+	DIR_E            = 1 << 10,
+	DIR_W            = 1 << 11,
+	DIR_NW           = DIR_N | DIR_W,
+	DIR_NE           = DIR_N | DIR_E,
+	DIR_SW           = DIR_S | DIR_W,
+	DIR_SE           = DIR_S | DIR_E,
+	DIR_ALL          = DIR_N | DIR_S | DIR_E | DIR_W,
+} DirectionMask;
+
 typedef union Colour {
-	uint32 rgba;
-	struct { uint8 r, g, b, a; };
+	uint32_t rgba;
+	struct { uint8_t r, g, b, a; };
 } Colour;
 
 typedef union Point {
@@ -101,24 +131,25 @@ typedef struct Rect {
 	float x, y, w, h;
 } Rect;
 typedef struct Recti {
-	int16 x, y, w, h;
+	int16_t x, y, w, h;
 } Recti;
 
-struct Transform {
-	Vec4 rot;
-	Vec3 trans;
+typedef struct Transform {
+	Vec4  rot;
+	Vec3  trans;
 	float scale;
-};
+} Transform;
 
 /* P(t) = p + t*v */
-struct Ray {
+typedef struct Ray {
 	Vec3 p;
 	Vec3 v;
-};
+} Ray;
 
-struct Capsule {
-	Vec3 p1, p2;
+typedef struct Capsule {
+	Vec3  p1, p2;
 	float r;
-};
+} Capsule;
 
 #endif
+

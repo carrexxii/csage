@@ -19,3 +19,6 @@
 [submodule "lib/luajit"]
 	path = lib/luajit
 	url = https://github.com/LuaJIT/LuaJIT/
+[submodule "lib/clib"]
+	path = lib/clib
+	url = https://github.com/carrexxii/clibanarii

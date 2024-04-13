@@ -3,10 +3,12 @@
 
 #include <vulkan/vulkan.h>
 
+#include "common.h"
+
 void device_init_physical(VkInstance inst, VkSurfaceKHR surf);
 void device_init_logical(VkSurfaceKHR surf);
 int  device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop);
-void device_free();
+void device_free(void);
 
 extern VkDevice      logical_gpu;
 extern VkCommandPool transfer_cmd_pool;
@@ -25,3 +27,4 @@ extern struct DeviceLimits {
 } gpu_properties;
 
 #endif
+

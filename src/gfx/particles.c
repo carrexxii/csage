@@ -11,16 +11,16 @@
 #include "particles.h"
 
 #define SIZEOF_PARTICLE_VERTEX sizeof(float[4])
-#define PARTICLES_UBO_SIZE     sizeof(struct Particle)*MAX_PARTICLES_PER_POOL
+#define PARTICLES_UBO_SIZE     (sizeof(Particle)*MAX_PARTICLES_PER_POOL)
 #define PARTICLE_DAMPNER       0.99
 
-static struct Pipeline* atomic pipeln;
-static UBO ubo;
-static VBO vbo_buf;
-static struct Image* img;
+static Pipeline* pipeln;
+static UBO       ubo;
+static VBO       vbo_buf;
+static Image*    img;
 
-static isize poolc;
-static struct ParticlePool pools[MAX_PARTICLE_POOLS];
+static isize        poolc;
+static ParticlePool pools[MAX_PARTICLE_POOLS];
 
 /* -------------------------------------------------------------------- */
 static VkVertexInputBindingDescription streamvert_binds[] = {
@@ -71,13 +71,15 @@ void particles_init()
 		-0.5, -0.5, 0.0, 1.0,   0.5, 0.5, 1.0, 0.0,    0.5, -0.5, 1.0, 1.0,
 	};
 	vbo_buf = vbo_new(sizeof(verts), verts, false);
+
+	INFO(TERM_DARK_GREEN "[GFX] Initialized particles");
 }
 
 isize particles_new_pool(int32 pool_life, int32 particle_life, int32 interval, Vec2 start_pos, Vec2 start_vel, float scale)
 {
 	if (particle_life/interval >= MAX_PARTICLES_PER_POOL)
 		ERROR("[GFX] Potentially too many particles");
-	pools[poolc] = (struct ParticlePool){
+	pools[poolc] = (ParticlePool){
 		.life          = pool_life,
 		.scale         = scale,
 		.particle_life = particle_life,
@@ -102,7 +104,7 @@ void particles_disable(isize particle_id)
 void particles_update()
 {
 	int first_free;
-	struct ParticlePool* pool;
+	ParticlePool* pool;
 	for (int i = 0; i < poolc; i++) {
 		pool = &pools[i];
 		if (pool->enabled) {
@@ -112,7 +114,7 @@ void particles_update()
 					first_free++;
 
 				pool->timer -= pool->interval;
-				pool->particles[first_free] = (struct Particle){
+				pool->particles[first_free] = (Particle){
 					.life = pool->particle_life,
 					.v.x = pool->start_vel.x,
 					.v.y = pool->start_vel.y,
@@ -167,3 +169,4 @@ void particles_free_pool(isize pool_id)
 		ERROR("[GFX] Invalid particle pool id: %ld", pool_id);
 	pools[pool_id].life = -1;
 }
+

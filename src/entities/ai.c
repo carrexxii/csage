@@ -1,15 +1,14 @@
 #include "maths/maths.h"
-#include "util/varray.h"
 #include "pathfinding.h"
 #include "components.h"
 #include "body.h"
 #include "ai.h"
 
-void ais_update(isize count, struct AI* ais, struct Body* bodies)
+void ais_update(isize count, AI* ais, Body* bodies)
 {
-	struct AI*      ai;
-	struct AIState* state;
-	struct Body*    body;
+	AI*      ai;
+	AIState* state;
+	Body*    body;
 	for (int i = 0; i < count; i++) {
 		ai    = &ais[i];
 		state = &ai->state;
@@ -29,7 +28,7 @@ void ais_update(isize count, struct AI* ais, struct Body* bodies)
 			break;
 		case AI_STATE_PATROL:
 			assert(state->patrol.points);
-			
+
 			Vec2 target = state->patrol.points[state->patrol.i];
 			state->patrol.timer += DT_MS;
 			if (state->patrol.timer >= state->patrol.delay) {

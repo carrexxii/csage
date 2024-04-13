@@ -1,15 +1,13 @@
 #include "maths/maths.h"
-#include "util/varray.h"
-#include "util/arena.h"
 #include "body.h"
 #include "pathfinding.h"
 #include "ai.h"
 #include "entity.h"
 
-isize entity_groupc;
-struct EntityGroup entity_groups[MAX_ENTITY_GROUPS];
+isize       entity_groupc;
+EntityGroup entity_groups[MAX_ENTITY_GROUPS];
 
-static struct Arena* scratch;
+static Arena scratch;
 
 void entities_init()
 {
@@ -18,9 +16,9 @@ void entities_init()
 
 void entities_update()
 {
-	struct EntityGroup* group;
-	struct Body*        body;
-	struct Sprite*      sprite;
+	EntityGroup* group;
+	Body*        body;
+	Sprite*      sprite;
 	for (int i = 0; i < entity_groupc; i++) {
 		group = &entity_groups[i];
 		if (group->ais)
@@ -34,7 +32,7 @@ void entities_update()
 			sprite->pos = group->bodies[j].pos;
 
 			if (body->changed_state) {
-				enum SpriteStateType state = body->moving? SPRITE_STATE_RUN: SPRITE_STATE_IDLE;
+				SpriteStateType state = body->moving? SPRITE_STATE_RUN: SPRITE_STATE_IDLE;
 				sprite_set_state(sprite, state, body->dir_mask);
 				body->changed_state = false;
 			}
@@ -50,44 +48,44 @@ void entities_free()
 
 /* -------------------------------------------------------------------- */
 
-GroupID entity_new_group(char* sprite_sheet, enum EntityGroupMask mask)
+GroupID entity_new_group(char* sprite_sheet, EntityGroupMask mask)
 {
 	if (entity_groupc >= MAX_ENTITY_GROUPS) {
 		ERROR("[ENT] Exceeded the maximum number of entity groups (%d)", MAX_ENTITY_GROUPS);
 		return -1;
 	}
 
-	struct EntityGroup* group = &entity_groups[entity_groupc];
-	*group = (struct EntityGroup){
+	EntityGroup* group = &entity_groups[entity_groupc];
+	*group = (EntityGroup){
 		.count   = 0,
 		.cap     = DEFAULT_ENTITY_COUNT,
 		.sheet   = sprite_sheet_new(sprite_sheet, -2),
-		.bodies  = smalloc(DEFAULT_ENTITY_COUNT * sizeof(struct Body)),
+		.bodies  = smalloc(DEFAULT_ENTITY_COUNT * sizeof(Body)),
 		.sprites = smalloc(DEFAULT_ENTITY_COUNT * sizeof(EntityID)),
 	};
 	if (mask & ENTITY_GROUP_AI)
-		group->ais = smalloc(DEFAULT_ENTITY_COUNT * sizeof(struct AI));
+		group->ais = smalloc(DEFAULT_ENTITY_COUNT * sizeof(AI));
 
-	DEBUG(2, "[ENT] Created new entity group using sprite sheet \"%s\"", sprite_sheet);
+	INFO(TERM_ORANGE "[ENT] Created new entity group using sprite sheet \"%s\"", sprite_sheet);
 	return entity_groupc++;
 }
 
 void entity_resize_group(GroupID gid, isize count)
 {
-	struct EntityGroup* group = &entity_groups[gid];
+	EntityGroup* group = &entity_groups[gid];
 	if (count <= group->cap)
 		return;
 
-	group->bodies  = srealloc(group->bodies, count*sizeof(struct Body));
+	group->bodies  = srealloc(group->bodies, count*sizeof(Body));
 	group->sprites = srealloc(group->sprites, count*sizeof(EntityID));
 	varray_resize(&group->sheet->sprites, count, false);
 	if (group->ais)
-		group->ais = srealloc(group->ais, count*sizeof(struct AI));
+		group->ais = srealloc(group->ais, count*sizeof(AI));
 }
 
 void entity_free_group(GroupID gid)
 {
-	struct EntityGroup* group = &entity_groups[gid];
+	EntityGroup* group = &entity_groups[gid];
 	// TODO: resmgr handling sprite sheets
 	// sprite_sheet_free(group->sheet);
 	sfree(group->bodies);
@@ -101,19 +99,19 @@ void entity_free_group(GroupID gid)
 
 /* -------------------------------------------------------------------- */
 
-EntityID entity_new(GroupID gid, struct EntityCreateInfo* ci)
+EntityID entity_new(GroupID gid, EntityCreateInfo* ci)
 {
 	assert(gid < entity_groupc);
 
-	DEFAULT(ci, &default_entity_ci);
+	DEFAULT(ci, (struct EntityCreateInfo*)&default_entity_ci);
 
-	struct EntityGroup* group = &entity_groups[gid];
-	group->bodies[group->count] = (struct Body){
+	EntityGroup* group = &entity_groups[gid];
+	group->bodies[group->count] = (Body){
 		.pos   = ci->pos,
 		.speed = ci->speed,
 	};
 	if (group->ais)
-		group->ais[group->count] = (struct AI){
+		group->ais[group->count] = (AI){
 			.type = ci->ai_type,
 		};
 
@@ -123,24 +121,24 @@ EntityID entity_new(GroupID gid, struct EntityCreateInfo* ci)
 	return group->count++;
 }
 
-isize entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis)
+isize entity_new_batch(GroupID gid, isize entityc, EntityCreateInfo* cis)
 {
 	assert(gid < entity_groupc && entityc > 0);
 
-	struct EntityGroup* group = &entity_groups[gid];
+	EntityGroup* group = &entity_groups[gid];
 	entity_resize_group(gid, group->count + entityc);
 
 	if (!cis) {
-		cis = arena_alloc(scratch, entityc * sizeof(struct EntityCreateInfo));
+		cis = arena_alloc(&scratch, entityc * sizeof(EntityCreateInfo));
 		if (!cis) return -1;
 		for (int i = 0; i < entityc; i++)
 			cis[i] = default_entity_ci;
 	}
 
-	struct EntityCreateInfo* ci;
+	EntityCreateInfo* ci;
 	for (int i = group->count; i < group->count + entityc; i++) {
 		ci = &cis[i];
-		group->bodies[i] = (struct Body){
+		group->bodies[i] = (Body){
 			.pos   = ci->pos,
 			.speed = ci->speed,
 		};
@@ -151,26 +149,26 @@ isize entity_new_batch(GroupID gid, isize entityc, struct EntityCreateInfo* cis)
 
 	if (group->ais)
 		for (int i = group->count; i < group->count + entityc; i++)
-			group->ais[i] = (struct AI){
+			group->ais[i] = (AI){
 				.type = cis[i].ai_type,
 			};
 
 	isize fst = group->count;
 	group->count += entityc;
-	arena_reset(scratch);
-	DEBUG(2, "[ENT] Created new entity batch from group %d with %ld entities", gid, entityc);
+	arena_reset(&scratch);
+	INFO(TERM_ORANGE "[ENT] Created new entity batch from group %d with %ld entities", gid, entityc);
 	return fst;
 }
 
-void entity_set_dir(GroupID gid, EntityID eid, enum Direction d, bool set)
+void entity_set_dir(GroupID gid, EntityID eid, DirectionMask dir, bool set)
 {
-	struct Body* body = entity_get_body(gid, eid);
-	body_set_dir(body, d, set);
+	Body* body = entity_get_body(gid, eid);
+	body_set_dir(body, dir, set);
 }
 
-void entity_set_ai_state(GroupID gid, EntityID eid, struct AIState state)
+void entity_set_ai_state(GroupID gid, EntityID eid, AIState state)
 {
-	struct AI* ai = entity_get_ai(gid, eid);
+	AI* ai = entity_get_ai(gid, eid);
 	ai_set_state(ai, state);
 }
 

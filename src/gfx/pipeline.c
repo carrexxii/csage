@@ -1,6 +1,5 @@
 #include <vulkan/vulkan.h>
 
-#include "util/varray.h"
 #include "resmgr.h"
 #include "vulkan.h"
 #include "buffers.h"
@@ -9,12 +8,12 @@
 #include "renderer.h"
 #include "pipeline.h"
 
-static int  init_shaders(struct PipelineCreateInfo* ci, VkPipelineShaderStageCreateInfo* stage_cis);
-static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo* ci);
+static int  init_shaders(PipelineCreateInfo* ci, VkPipelineShaderStageCreateInfo* stage_cis);
+static void init_descriptors(Pipeline* pipeln, PipelineCreateInfo* ci);
 static inline VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagBits stage_flags, VkDescriptorType type, int binding);
 
-static struct Pipeline pipelns[MAX_PIPELINES];
-static struct VArray   free_pipelns;
+static Pipeline pipelns[MAX_PIPELINES];
+static VArray   free_pipelns;
 
 // TODO: create all the pipelines at init and reuse from there
 void pipelns_init()
@@ -23,13 +22,13 @@ void pipelns_init()
 	for (int i = 0; i < MAX_PIPELINES; i++)
 		varray_push(&free_pipelns, &i);
 
-	DEBUG(1, "[VK] Initialized pipelines (%d total)", MAX_PIPELINES);
+	INFO(TERM_DARK_GREEN "[VK] Initialized pipelines (%d total)", MAX_PIPELINES);
 }
 
 void pipelns_free()
 {
 	if (free_pipelns.len != MAX_PIPELINES) {
-		WARNING("[VK] Not all pipelines have been free'd (%ld/%d)", free_pipelns.len, MAX_PIPELINES);
+		WARN("[VK] Not all pipelines have been free'd (%ld/%d)", free_pipelns.len, MAX_PIPELINES);
 		for (int i = 0; i < MAX_PIPELINES; i++)
 			if (!varray_contains(&free_pipelns, &i))
 				fprintf(stderr, TERM_ORANGE "\t-> \"%s\"\n" TERM_NORMAL, pipelns[i].name);
@@ -38,7 +37,7 @@ void pipelns_free()
 
 /* -------------------------------------------------------------------- */
 
-struct Pipeline* pipeln_new(struct PipelineCreateInfo* ci, const char* name)
+Pipeline* pipeln_new(PipelineCreateInfo* ci, const char* name)
 {
 	if (free_pipelns.len < 1) {
 		ERROR("[GFX] No more pipelines available (of total %d)", MAX_PIPELINES);
@@ -51,24 +50,24 @@ struct Pipeline* pipeln_new(struct PipelineCreateInfo* ci, const char* name)
 	DEFAULT(ci->push_stages      , VK_SHADER_STAGE_ALL);
 
 	int i = *(int*)varray_pop(&free_pipelns);
-	struct Pipeline* atomic pipeln = &pipelns[i];
+	Pipeline* atomic pipeln = &pipelns[i];
 	if (pipeln->is_active)
 		pipeln_free(pipeln);
 
-	*pipeln = (struct Pipeline){
+	*pipeln = (Pipeline){
 		.i         = i,
 		.is_active = false,
 		.name      = name,
 	};
 
-	DEBUG(3, "[VK] Created new pipeline \"%s\" ([%d] %p) with:\n\t%d UBOs\n\t%d SBOs\n\t%d Images\n\tPush constants: %s (%dB) (0x%X stages)",
-	      pipeln->name, pipeln->i, (void*)pipeln, ci->uboc, ci->sboc, ci->imgc, STRING_TF(ci->push_sz), ci->push_sz, ci->push_stages);
+	INFO(TERM_DARK_GREEN "[VK] Created new pipeline \"%s\" ([%d] %p) with:\n\t%d UBOs\n\t%d SBOs\n\t%d Images\n\tPush constants: %s (%dB) (0x%X stages)",
+	      pipeln->name, pipeln->i, (void*)pipeln, ci->uboc, ci->sboc, ci->imgc, STR_TF(ci->push_sz), ci->push_sz, ci->push_stages);
 	return pipeln;
 }
 
-struct Pipeline* pipeln_update(struct Pipeline* old_pipeln, struct PipelineCreateInfo* ci)
+Pipeline* pipeln_update(Pipeline* old_pipeln, PipelineCreateInfo* ci)
 {
-	struct Pipeline* pipeln;
+	Pipeline* pipeln;
 	if (old_pipeln->is_active) {
 		old_pipeln->is_active = false;
 		resmgr_defer(RES_PIPELINE, old_pipeln);
@@ -188,7 +187,7 @@ struct Pipeline* pipeln_update(struct Pipeline* old_pipeln, struct PipelineCreat
 	if ((vk_err = vkCreatePipelineLayout(logical_gpu, &tlaysci, NULL, &pipeln->layout)))
 		ERROR("[VK] Failed to create pipeline layout\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
-		DEBUG(3, "[VK] Created pipeline layout");
+		INFO(TERM_DARK_GREEN "[VK] Created pipeline layout");
 
 	VkGraphicsPipelineCreateInfo tpipelnci = {
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -211,13 +210,13 @@ struct Pipeline* pipeln_update(struct Pipeline* old_pipeln, struct PipelineCreat
 	if ((vk_err = vkCreateGraphicsPipelines(logical_gpu, NULL, 1, &tpipelnci, NULL, &pipeln->pipeln)))
 		ERROR("[VK] Failed to create pipeline\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
-		DEBUG(3, "[VK] Pipeline updated");
+		INFO(TERM_DARK_GREEN "[VK] Pipeline updated");
 
 	pipeln->is_active = true;
 	return pipeln;
 }
 
-void pipeln_free(struct Pipeline* pipeln)
+void pipeln_free(Pipeline* pipeln)
 {
 	vkDestroyDescriptorPool(logical_gpu, pipeln->dpool, NULL);
 	vkDestroyDescriptorSetLayout(logical_gpu, pipeln->dset.layout, NULL);
@@ -231,7 +230,7 @@ void pipeln_free(struct Pipeline* pipeln)
 /* -------------------------------------------------------------------- */
 
 // TODO: specialization constants
-static int init_shaders(struct PipelineCreateInfo* ci, VkPipelineShaderStageCreateInfo* stage_cis)
+static int init_shaders(PipelineCreateInfo* ci, VkPipelineShaderStageCreateInfo* stage_cis)
 {
 	int stageic = 0;
 	if (ci->vshader.data)
@@ -270,12 +269,12 @@ static int init_shaders(struct PipelineCreateInfo* ci, VkPipelineShaderStageCrea
 			.pName  = "main",
 		};
 
-	DEBUG(3, "[GFX] Initialized %d shaders with %d buffers (UBOs: %d; SBOs: %d) and %d images",
+	INFO(TERM_DARK_GREEN "[GFX] Initialized %d shaders with %d buffers (UBOs: %d; SBOs: %d) and %d images",
 	      stageic, ci->uboc + ci->sboc, ci->uboc, ci->sboc, ci->imgc);
 	return stageic;
 }
 
-static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo* ci)
+static void init_descriptors(Pipeline* pipeln, PipelineCreateInfo* ci)
 {
 	/*** -------------------- Create the Descriptor Set Layout -------------------- ***/
 	VkDescriptorSetLayoutBinding bindings[PIPELINE_MAX_BINDINGS];
@@ -304,7 +303,7 @@ static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo*
 	if ((vk_err = vkCreateDescriptorSetLayout(logical_gpu, &layout_ci, NULL, &pipeln->dset.layout)))
 		ERROR("[VK] Failed to create descriptor set layout (%d)", vk_err);
 	else
-		DEBUG(3, "[VK] Created descriptor set layout with %d descriptors", bindingc);
+		INFO(TERM_DARK_GREEN "[VK] Created descriptor set layout with %d descriptors", bindingc);
 
 	/*** -------------------- Create the Descriptor Pool -------------------- ***/
 	VkDescriptorPoolSize pool_szs[4];
@@ -339,7 +338,7 @@ static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo*
 	if ((vk_err = vkCreateDescriptorPool(logical_gpu, &dpool_ci, NULL, &pipeln->dpool)))
 		ERROR("[VK] Failed to create descriptor pool\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
-		DEBUG(3, "[VK] Created descriptor pool");
+		INFO(TERM_DARK_GREEN "[VK] Created descriptor pool");
 
 	/*** -------------------- Allocate the Descriptor Set -------------------- ***/
 	VkDescriptorSetAllocateInfo dset_alloci = {
@@ -351,7 +350,7 @@ static void init_descriptors(struct Pipeline* pipeln, struct PipelineCreateInfo*
 	if ((vk_err = vkAllocateDescriptorSets(logical_gpu, &dset_alloci, &pipeln->dset.set)))
 		ERROR("[VK] Failed to allocate descriptor set\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err)); // TODO: STRING_OF_VK_ERR
 	else
-		DEBUG(3, "[VK] Allocated a descriptor set");
+		INFO(TERM_DARK_GREEN "[VK] Allocated a descriptor set");
 
 	/*** -------------------- Update the Descriptors -------------------- ***/
 	VkWriteDescriptorSet dset_write;
@@ -439,3 +438,4 @@ static inline VkDescriptorSetLayoutBinding create_dset_layout(VkShaderStageFlagB
 		.pImmutableSamplers = NULL,
 	};
 }
+

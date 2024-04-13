@@ -29,7 +29,7 @@ void device_init_physical(VkInstance inst, VkSurfaceKHR surf)
 	if (devc == 0)
 		ERROR("[VK] Failed to find a physical device with vulkan support");
 	else
-		DEBUG(3, "[VK] %u devices found", devc);
+		INFO(TERM_DARK_GREEN "[VK] %u devices found", devc);
 
 	VkPhysicalDevice devs[devc];
 	int rating;
@@ -47,7 +47,7 @@ void device_init_physical(VkInstance inst, VkSurfaceKHR surf)
 	if (!physical_gpu)
 		ERROR("[VK] No suitable physical device found");
 	else
-		DEBUG(3, "[VK] Created physical device (rating: %d)", max_rating);
+		INFO(TERM_DARK_GREEN "[VK] Created physical device (rating: %d)", max_rating);
 }
 
 void device_init_logical(VkSurfaceKHR surf)
@@ -104,7 +104,7 @@ void device_init_logical(VkSurfaceKHR surf)
 	if ((vk_err = vkCreateDevice(physical_gpu, &devi, NULL, &logical_gpu)))
 		ERROR("[VK] Failed to create logical device: \n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
-		DEBUG(1, "[VK] Created logical device");
+		INFO(TERM_DARK_GREEN "[VK] Created logical device");
 
 	vkGetDeviceQueue(logical_gpu, qinds.graphics, 0, &graphicsq);
 	vkGetDeviceQueue(logical_gpu, qinds.present , 0, &presentq);
@@ -125,7 +125,7 @@ int device_find_memory_index(uint type, VkMemoryPropertyFlagBits prop)
 
 void device_free()
 {
-	DEBUG(3, "[VK] Destroying device...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying device...");
 	vkDestroyDevice(logical_gpu, NULL);
 }
 
@@ -162,7 +162,7 @@ static int rate_device(VkPhysicalDevice dev, VkSurfaceKHR surf)
 		rating += 10;
 
 	debug_physical(dev);
-	DEBUG(3, "\tRated: %d\n", rating);
+	INFO(TERM_DARK_GREEN "\tRated: %d\n", rating);
 	return rating;
 }
 
@@ -224,11 +224,11 @@ static void get_device_properties(VkPhysicalDevice dev)
 		if (dev_memp.memoryTypes[i].propertyFlags == VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
 			gpu_properties.lazy_mem = true;
 
-	DEBUG(1, "[VK] GPU has the following support:");
-	DEBUG(1, "\tMSAA samples     -> %d", max_samples);
-	DEBUG(1, "\tLazy memory      -> %s", STRING_TF(gpu_properties.lazy_mem));
-	DEBUG(1, "\tPoint size range -> %1.2f - %1.2f", devp.limits.pointSizeRange[0], devp.limits.pointSizeRange[1]);
-	DEBUG(1, "\tLine width range -> %1.2f - %1.2f", devp.limits.lineWidthRange[0], devp.limits.lineWidthRange[1]);
+	INFO(TERM_DARK_GREEN "[VK] GPU has the following support:");
+	INFO(TERM_DARK_GREEN "\tMSAA samples     -> %d", max_samples);
+	INFO(TERM_DARK_GREEN "\tLazy memory      -> %s", STR_TF(gpu_properties.lazy_mem));
+	INFO(TERM_DARK_GREEN "\tPoint size range -> %1.2f - %1.2f", devp.limits.pointSizeRange[0], devp.limits.pointSizeRange[1]);
+	INFO(TERM_DARK_GREEN "\tLine width range -> %1.2f - %1.2f", devp.limits.lineWidthRange[0], devp.limits.lineWidthRange[1]);
 }
 
 static void debug_physical(VkPhysicalDevice dev)
@@ -239,66 +239,67 @@ static void debug_physical(VkPhysicalDevice dev)
 	vkGetPhysicalDeviceProperties(dev, &devp);
 	vkGetPhysicalDeviceFeatures(dev, &devf);
 
-	DEBUG(3, "[VK] Physical device: %s (%u)", devp.deviceName, devp.vendorID);
-	DEBUG(3, "\tDevice type                       -> %s (%u)", STRING_OF_DEVICE_TYPE(devp.deviceType), devp.deviceID);
+	INFO(TERM_DARK_GREEN "[VK] Physical device: %s (%u)", devp.deviceName, devp.vendorID);
+	INFO(TERM_DARK_GREEN "\tDevice type                       -> %s (%u)", STRING_OF_DEVICE_TYPE(devp.deviceType), devp.deviceID);
 	patch = VK_VERSION_PATCH(devp.apiVersion);
 	major = VK_VERSION_MAJOR(devp.apiVersion);
 	minor = VK_VERSION_MINOR(devp.apiVersion);
-	DEBUG(3, "\tAPI version                       -> %u.%u.%u", major, minor, patch);
+	INFO(TERM_DARK_GREEN "\tAPI version                       -> %u.%u.%u", major, minor, patch);
 	major = VK_VERSION_MAJOR(devp.driverVersion);
 	minor = VK_VERSION_MINOR(devp.driverVersion);
 	patch = VK_VERSION_PATCH(devp.driverVersion);
-	DEBUG(3, "\tDriver version                    -> %u.%u.%u", major, minor, patch);
-	DEBUG(3, "\tGeometry shader                   -> %s", STRING_YN(devf.geometryShader));
-	DEBUG(3, "\tTessellation shader               -> %s", STRING_YN(devf.tessellationShader));
-	DEBUG(3, "\tSampler anisotropy                -> %s", STRING_YN(devf.samplerAnisotropy));
-	DEBUG(3, "\tMSAA sample count                 -> %d", gpu_properties.max_samples);
-	DEBUG(3, "\tMax image dimensions (1/2/3)      -> %u/%u/%u", devp.limits.maxImageDimension1D,
+	INFO(TERM_DARK_GREEN "\tDriver version                    -> %u.%u.%u", major, minor, patch);
+	INFO(TERM_DARK_GREEN "\tGeometry shader                   -> %s", STR_YN(devf.geometryShader));
+	INFO(TERM_DARK_GREEN "\tTessellation shader               -> %s", STR_YN(devf.tessellationShader));
+	INFO(TERM_DARK_GREEN "\tSampler anisotropy                -> %s", STR_YN(devf.samplerAnisotropy));
+	INFO(TERM_DARK_GREEN "\tMSAA sample count                 -> %d", gpu_properties.max_samples);
+	INFO(TERM_DARK_GREEN "\tMax image dimensions (1/2/3)      -> %u/%u/%u", devp.limits.maxImageDimension1D,
 	                                                            devp.limits.maxImageDimension2D,
 	                                                            devp.limits.maxImageDimension3D);
-	DEBUG(3, "\tMax sampler allocations           -> %u", devp.limits.maxSamplerAllocationCount);
-	DEBUG(3, "\tMax memory allocations            -> %u", devp.limits.maxMemoryAllocationCount);
-	DEBUG(3, "\tMax uniform buffer range          -> %u (%uMB)", devp.limits.maxUniformBufferRange,
+	INFO(TERM_DARK_GREEN "\tMax sampler allocations           -> %u", devp.limits.maxSamplerAllocationCount);
+	INFO(TERM_DARK_GREEN "\tMax memory allocations            -> %u", devp.limits.maxMemoryAllocationCount);
+	INFO(TERM_DARK_GREEN "\tMax uniform buffer range          -> %u (%uMB)", devp.limits.maxUniformBufferRange,
 	                                                             devp.limits.maxUniformBufferRange/8/1024/1024);
-	DEBUG(3, "\tMax storage buffer range          -> %u (%uMB)", devp.limits.maxStorageBufferRange,
+	INFO(TERM_DARK_GREEN "\tMax storage buffer range          -> %u (%uMB)", devp.limits.maxStorageBufferRange,
 	                                                             devp.limits.maxStorageBufferRange/8/1024/1024);
-	DEBUG(3, "\tMax push constants size           -> %uB", devp.limits.maxPushConstantsSize);
-	DEBUG(3, "\tMax bound descriptor sets         -> %u", devp.limits.maxBoundDescriptorSets);
-	DEBUG(3, "\tMax vertex input attributes       -> %u", devp.limits.maxVertexInputAttributes);
-	DEBUG(3, "\tMax vertex input bindings         -> %u", devp.limits.maxVertexInputBindings);
-	DEBUG(3, "\tMax vertex input attribute offset -> %u", devp.limits.maxVertexInputAttributeOffset);
-	DEBUG(3, "\tMax vertex input binding stride   -> %u", devp.limits.maxVertexInputBindingStride);
-	DEBUG(3, "\tMax vertex output components      -> %u", devp.limits.maxVertexOutputComponents);
-	DEBUG(3, "\tMipmap precision bits             -> %u", devp.limits.mipmapPrecisionBits);
-	DEBUG(3, "\tMax draw indexed index value      -> %u", devp.limits.maxDrawIndexedIndexValue);
-	DEBUG(3, "\tMax draw indirect count           -> %u", devp.limits.maxDrawIndirectCount);
-	DEBUG(3, "\tMax sampler LoD bias              -> %f", devp.limits.maxSamplerLodBias);
-	DEBUG(3, "\tMax sampler anisotropy            -> %f", devp.limits.maxSamplerAnisotropy);
-	DEBUG(3, "\tMax clip distances                -> %u", devp.limits.maxClipDistances);
-	DEBUG(3, "\tMax cull distances                -> %u", devp.limits.maxCullDistances);
-	DEBUG(3, "\tMax combined clip/cull distances  -> %u", devp.limits.maxCombinedClipAndCullDistances);
+	INFO(TERM_DARK_GREEN "\tMax push constants size           -> %uB", devp.limits.maxPushConstantsSize);
+	INFO(TERM_DARK_GREEN "\tMax bound descriptor sets         -> %u", devp.limits.maxBoundDescriptorSets);
+	INFO(TERM_DARK_GREEN "\tMax vertex input attributes       -> %u", devp.limits.maxVertexInputAttributes);
+	INFO(TERM_DARK_GREEN "\tMax vertex input bindings         -> %u", devp.limits.maxVertexInputBindings);
+	INFO(TERM_DARK_GREEN "\tMax vertex input attribute offset -> %u", devp.limits.maxVertexInputAttributeOffset);
+	INFO(TERM_DARK_GREEN "\tMax vertex input binding stride   -> %u", devp.limits.maxVertexInputBindingStride);
+	INFO(TERM_DARK_GREEN "\tMax vertex output components      -> %u", devp.limits.maxVertexOutputComponents);
+	INFO(TERM_DARK_GREEN "\tMipmap precision bits             -> %u", devp.limits.mipmapPrecisionBits);
+	INFO(TERM_DARK_GREEN "\tMax draw indexed index value      -> %u", devp.limits.maxDrawIndexedIndexValue);
+	INFO(TERM_DARK_GREEN "\tMax draw indirect count           -> %u", devp.limits.maxDrawIndirectCount);
+	INFO(TERM_DARK_GREEN "\tMax sampler LoD bias              -> %f", devp.limits.maxSamplerLodBias);
+	INFO(TERM_DARK_GREEN "\tMax sampler anisotropy            -> %f", devp.limits.maxSamplerAnisotropy);
+	INFO(TERM_DARK_GREEN "\tMax clip distances                -> %u", devp.limits.maxClipDistances);
+	INFO(TERM_DARK_GREEN "\tMax cull distances                -> %u", devp.limits.maxCullDistances);
+	INFO(TERM_DARK_GREEN "\tMax combined clip/cull distances  -> %u", devp.limits.maxCombinedClipAndCullDistances);
 
 	uint qc;
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qc, NULL);
 	VkQueueFamilyProperties qs[qc];
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qc, qs);
-	DEBUG(3, "\t%u device queue families:", qc);
+	INFO(TERM_DARK_GREEN "\t%u device queue families:", qc);
 	for (uint i = 0; i < qc; i++)
-		DEBUG(3, "\t    %2d of 0x%.8X -> %s", qs[i].queueCount,
+		INFO(TERM_DARK_GREEN "\t    %2d of 0x%.8X -> %s", qs[i].queueCount,
 		      qs[i].queueFlags, STRING_OF_QUEUE_BIT(qs[i].queueFlags));
 
-	DEBUG(3, "\t%u colour formats available", swapchain_details.fmtc);
+	INFO(TERM_DARK_GREEN "\t%u colour formats available", swapchain_details.fmtc);
 
-	DEBUG(3, "\tSurface Capabilities:");
-	DEBUG(3, "\t    Image count  -> %u..%u", swapchain_details.abilities.minImageCount,
+	INFO(TERM_DARK_GREEN "\tSurface Capabilities:");
+	INFO(TERM_DARK_GREEN "\t    Image count  -> %u..%u", swapchain_details.abilities.minImageCount,
 	                                         swapchain_details.abilities.maxImageCount);
-	DEBUG(3, "\t    Extent       -> %ux%u (%ux%u..%ux%u)",
+	INFO(TERM_DARK_GREEN "\t    Extent       -> %ux%u (%ux%u..%ux%u)",
 	      swapchain_details.abilities.currentExtent.width , swapchain_details.abilities.currentExtent.height,
 	      swapchain_details.abilities.minImageExtent.width, swapchain_details.abilities.minImageExtent.height,
 	      swapchain_details.abilities.maxImageExtent.width, swapchain_details.abilities.maxImageExtent.height);
-	DEBUG(3, "\t    Array layers -> %u", swapchain_details.abilities.maxImageArrayLayers);
+	INFO(TERM_DARK_GREEN "\t    Array layers -> %u", swapchain_details.abilities.maxImageArrayLayers);
 
-	DEBUG(3, "\t%u present modes:", swapchain_details.modec);
+	INFO(TERM_DARK_GREEN "\t%u present modes:", swapchain_details.modec);
 	for (uint i = 0; i < swapchain_details.modec; i++)
-		DEBUG(3, "\t    %s", STRING_OF_PRESENT_MODE(swapchain_details.modes[i]));
+		INFO(TERM_DARK_GREEN "\t    %s", STRING_OF_PRESENT_MODE(swapchain_details.modes[i]));
 }
+

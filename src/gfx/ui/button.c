@@ -1,15 +1,13 @@
 #include "maths/types.h"
-#include "util/varray.h"
-#include "gfx/primitives.h"
 #include "types.h"
 #include "ui.h"
 #include "button.h"
 
-void button_new(struct UIContainer* parent, Rect rect, String text, struct Image* img, Rect uv_rect, void (*cb)(int), int data, struct UIStyle* style)
+void button_new(UIContainer* parent, Rect rect, String text, Image* img, Rect uv_rect, void (*cb)(int), int data, UIStyle* style)
 {
 	assert(parent);
 
-	struct UIObject obj = {
+	UIObject obj = {
 		.type    = UI_BUTTON,
 		.style   = style? style: &default_button_style,
 		.rect    = ui_calc_rect(rect, parent),
@@ -28,24 +26,24 @@ void button_new(struct UIContainer* parent, Rect rect, String text, struct Image
 		obj.imgi = ui_add_image(img);
 	ui_add(parent, &obj);
 
-	DEBUG(3, "[UI] Created new button with parent %p (%.2f, %.2f, %.2f, %.2f): \"%s\" (image: %s)",
-	      (void*)parent, rect.x, rect.y, rect.w, rect.h, text.data, STRING_TF(img));
+	INFO(TERM_DARK_CYAN "[UI] Created new button with parent %p (%.2f, %.2f, %.2f, %.2f): \"%s\" (image: %s)",
+	      (void*)parent, rect.x, rect.y, rect.w, rect.h, text.data, STR_TF(img));
 }
 
-void button_build(struct UIObject* obj)
+void button_build(UIObject* obj)
 {
 	assert(obj->type == UI_BUTTON);
 
 	ui_update_object(obj);
 
 	if (obj->button.text_obj) {
-		struct TextObject* txt_obj = obj->button.text_obj;
+		TextObject* txt_obj = obj->button.text_obj;
 		txt_obj->rect.x =  obj->rect.x + obj->rect.w/2.0f - txt_obj->rect.w/2.0f;
 		txt_obj->rect.y = -obj->rect.y - obj->rect.h/2.0f - txt_obj->rect.h/2.0f;
 	}
 }
 
-bool button_on_hover(struct UIObject* obj, struct UIContext* context)
+bool button_on_hover(UIObject* obj, UIContext* context)
 {
 	bool update = obj->state.hover || (obj->state.clicked == context->mouse_pressed.lmb);
 	obj->state.hover   = true;
@@ -54,13 +52,14 @@ bool button_on_hover(struct UIObject* obj, struct UIContext* context)
 	return update;
 }
 
-void button_on_click(struct UIObject* obj)
+void button_on_click(UIObject* obj)
 {
 	obj->button.cb(obj->button.data);
 	obj->state.clicked = false;
 }
 
-void button_free(struct UIObject* obj)
+void button_free(UIObject*)
 {
 	// font_free(obj->button.text_obj);
 }
+

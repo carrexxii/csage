@@ -1,10 +1,12 @@
 #ifndef MATHS_LA_H
 #define MATHS_LA_H
 
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+
 #include "types.h"
 #include "macros.h"
-
-/* -------------------------------------------------------------------- */
 
 #define IZ(a, b) (fabsf(a - b) <= FLT_EPSILON)
 static inline bool vec2_equal_vec2(Vec2 v, Vec2 u) { return IZ(v.x, u.x) && IZ(v.y, u.y);                                 }

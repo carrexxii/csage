@@ -1,9 +1,8 @@
 #ifndef GFX_SPRITE_H
 #define GFX_SPRITE_H
 
+#include "common.h"
 #include "maths/types.h"
-#include "util/string.h"
-#include "util/varray.h"
 #include "image.h"
 #include "pipeline.h"
 #include "camera.h"
@@ -19,7 +18,7 @@
 
 // TODO: this needs to be a hashmap
 #define STRING_OF_ANIMATION_STATE(x) ((x) < SPRITE_STATE_MAX? string_of_animation_state[x]: "<Unknown>")
-enum SpriteStateType {
+typedef enum SpriteStateType {
 	SPRITE_STATE_IDLE,
 	SPRITE_STATE_WALK,
 	SPRITE_STATE_RUN,
@@ -30,7 +29,7 @@ enum SpriteStateType {
 	SPRITE_STATE_DIRT,
 
 	SPRITE_STATE_MAX,
-};
+} SpriteStateType;
 static const char* string_of_animation_state[] = {
 	[SPRITE_STATE_IDLE]    = PPSTR(SPRITE_STATE_IDLE),
 	[SPRITE_STATE_WALK]    = PPSTR(SPRITE_STATE_WALK),
@@ -42,61 +41,61 @@ static const char* string_of_animation_state[] = {
 	[SPRITE_STATE_DIRT]  = PPSTR(SPRITE_STATE_DIRT),
 };
 
-struct SpriteFrame {
+typedef struct SpriteFrame {
 	uint16 x, y, w, h;
-};
+} SpriteFrame;
 
-struct SpriteState {
+typedef struct SpriteState {
 	enum SpriteStateType type;
-	enum Direction       dir;
-	int duration;
-	int gi;
-	int framec;
-	struct SpriteFrame* frames;
-};
+	enum DirectionMask   dir;
+	int                  duration;
+	int                  gi;
+	int                  framec;
+	struct SpriteFrame*  frames;
+} SpriteState;
 
-struct SpriteGroup {
+typedef struct SpriteGroup {
 	char name[32];
 	int statec;
 	struct SpriteState* states;
-};
+} SpriteGroup;
 
-struct Sprite {
+typedef struct Sprite {
 	Vec2   pos;
 	int16  gi;
 	int8   state, frame;
 	int8   sheet, group;
 	uint16 time;
-};
+} Sprite;
 
-struct SpriteSheet {
+typedef struct SpriteSheet {
 	char name[32];
 	int w, h, z;
 	int groupc;
-	struct VArray       sprites;
-	struct SpriteGroup* groups;
-	struct Image*       albedo;
-	struct Image*       normal;
-	struct Pipeline* atomic pipeln;
+	VArray       sprites;
+	SpriteGroup* groups;
+	Image*       albedo;
+	Image*       normal;
+	Pipeline*    pipeln;
 	SBO sprite_sheet_data;
 	SBO sprite_data;
-};
+} SpriteSheet;
 
-void sprites_init(void);
-struct SpriteSheet* sprites_get_sheet(const char* sheet_name);
-int  sprites_get_sheet_id(struct SpriteSheet* sheet);
-int  sprites_get_group(struct SpriteSheet* sheet, const char* group_name);
-void sprites_record_commands(VkCommandBuffer cmd_buf);
-void sprites_update(void);
+void         sprites_init(void);
+SpriteSheet* sprites_get_sheet(const char* sheet_name);
+int          sprites_get_sheet_id(SpriteSheet* sheet);
+int          sprites_get_group(SpriteSheet* restrict sheet, const char* restrict group_name);
+void         sprites_record_commands(VkCommandBuffer cmd_buf);
+void         sprites_update(void);
 
-void sprite_sheets_free(void);
-struct SpriteSheet* sprite_sheet_new(const char* name, int z_lvl);
-struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data);
+void         sprite_sheets_free(void);
+SpriteSheet* sprite_sheet_new(const char* name, int z_lvl);
+SpriteSheet* sprite_sheet_load(const SpriteSheet* sheet_data);
 
-struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec2 pos);
-struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec2* poss, enum SpriteStateType* states);
-struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec2 pos);
-void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir);
+Sprite* sprite_new(SpriteSheet* sheet, int group_id, Vec2 pos);
+Sprite* sprite_new_batch(SpriteSheet* restrict sheet, int group_id, int spritec, Vec2* poss, SpriteStateType* restrict states);
+Sprite* sprite_new_by_gi(SpriteSheet* sheet, int gi, Vec2 pos);
+void    sprite_set_state(Sprite* sprite, SpriteStateType type, DirectionMask dir);
 
 #endif
 

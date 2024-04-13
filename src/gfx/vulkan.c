@@ -1,8 +1,6 @@
 #include <vulkan/vulkan.h>
 #include "SDL3/SDL_vulkan.h"
 
-#include "config.h"
-#include "util/file.h"
 #include "device.h"
 #include "buffers.h"
 #include "pipeline.h"
@@ -21,14 +19,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_cb(VkDebugReportFlagsEXT flags, VkDe
                                                const char* msg, void* user_data)
 {
 	(void)user_data;
-	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"", layer_prefix, STRING_OF_DEBUG_REPORT(flags), obj,
+	ERROR("\n%s - %s [Object: %ld] for a %s at %zu [%d]: \n\t\"%s\"", layer_prefix, STRING_OF_DEBUG_REPORT_OBJECT(flags), obj,
 	      STRING_OF_DEBUG_REPORT_OBJECT(obj_type), location, msg_code, msg);
 	exit(1);
 }
 
 void init_vulkan(SDL_Window* win)
 {
-	DEBUG(1, "[INIT] Initializing Vulkan...");
+	INFO(TERM_DARK_GREEN "[INIT] Initializing Vulkan...");
 	VkApplicationInfo appi = {
 		.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pApplicationName   = APPLICATION_NAME,
@@ -42,19 +40,19 @@ void init_vulkan(SDL_Window* win)
 	vkEnumerateInstanceExtensionProperties(NULL, &extpc, NULL);
 	VkExtensionProperties extps[extpc];
 	vkEnumerateInstanceExtensionProperties(NULL, &extpc, extps);
-	DEBUG(3, "[VK] %u Vulkan extensions are supported:", extpc);
+	INFO(TERM_DARK_GREEN "[VK] %u Vulkan extensions are supported:", extpc);
 	for (uint i = 0; i < extpc; i++)
-		DEBUG(3, "\t%s", extps[i].extensionName);
+		INFO(TERM_DARK_GREEN "\t%s", extps[i].extensionName);
 
 	/* Debugging exts must come last */
 #ifdef _WIN32
-	char const* exts[4] = { "VK_KHR_surface", "VK_KHR_win32_surface",
+	const char* exts[4] = { "VK_KHR_surface", "VK_KHR_win32_surface",
 	                        "VK_EXT_debug_report", "VK_EXT_debug_utils" };
 #else
-	char const* exts[5] = { "VK_KHR_surface", "VK_KHR_xcb_surface", "VK_KHR_xlib_surface",
+	const char* exts[5] = { "VK_KHR_surface", "VK_KHR_xcb_surface", "VK_KHR_xlib_surface",
 	                        "VK_EXT_debug_report", "VK_EXT_debug_utils" };
 #endif
-#if DEBUG_LEVEL > 0
+#ifdef DEBUG
 	uint extc = 5;
 #else
 	uint extc = 2;
@@ -64,13 +62,13 @@ void init_vulkan(SDL_Window* win)
 	vkEnumerateInstanceLayerProperties(&vlc, NULL);
 	VkLayerProperties vl[vlc];
 	vkEnumerateInstanceLayerProperties(&vlc, vl);
-	DEBUG(3, "[VK] %u Vulkan validation layers available: ", vlc);
+	INFO(TERM_DARK_GREEN "[VK] %u Vulkan validation layers available: ", vlc);
 	for (uint i = 0; i < vlc; i++)
-		DEBUG(3, "\t%s", vl[i].layerName);
+		INFO(TERM_DARK_GREEN "\t%s", vl[i].layerName);
 
-	DEBUG(3, "[VK] %d extensions enabled:", extc);
+	INFO(TERM_DARK_GREEN "[VK] %d extensions enabled:", extc);
 	for (uint i = 0; i < extc; i++)
-		DEBUG(3, "\t%s", exts[i]);
+		INFO(TERM_DARK_GREEN "\t%s", exts[i]);
 
 	VkInstanceCreateInfo instci = {
 		.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -84,10 +82,10 @@ void init_vulkan(SDL_Window* win)
 	if (vkCreateInstance(&instci, NULL, &instance) != VK_SUCCESS)
 		ERROR("[VK] Failed to create Vulkan instance");
 	else
-		DEBUG(1, "[VK] Created Vulkan instance");
+		INFO(TERM_DARK_GREEN "[VK] Created Vulkan instance");
 
 	/* Set up the callback for validation layer error messages */
-#if DEBUG_LEVEL > 0
+#ifdef DEBUG
 	VkDebugReportCallbackCreateInfoEXT debugi = {
 		.sType       = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
 		.flags       = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT,
@@ -97,7 +95,7 @@ void init_vulkan(SDL_Window* win)
 	if (!dbgfn)
 		ERROR("[VK] Failed to find debug extension callback function");
 	dbgfn(instance, &debugi, NULL, &dbg_cb);
-	DEBUG(3, "[VK] Created debug callback");
+	INFO(TERM_DARK_GREEN "[VK] Created debug callback");
 #endif
 
 	if (!SDL_Vulkan_CreateSurface(win, instance, NULL, &surface))
@@ -109,7 +107,7 @@ void init_vulkan(SDL_Window* win)
 
 void vulkan_free()
 {
-#if DEBUG_LEVEL > 0
+#ifdef DEBUG
 	VK_GET_EXT(dbgfn, vkDestroyDebugReportCallbackEXT);
 	if (!dbgfn)
 		ERROR("[VK] Failed to find debug extension callback destructor function");
@@ -119,6 +117,7 @@ void vulkan_free()
 	vkDestroySurfaceKHR(instance, surface, NULL);
 	device_free();
 
-	DEBUG(2, "[VK] Destroying Vulkan instance...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying Vulkan instance...");
 	vkDestroyInstance(instance, NULL);
 }
+

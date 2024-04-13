@@ -70,8 +70,8 @@ void buffer_new(VkDeviceSize sz, VkBufferUsageFlags buf_flags, VkMemoryPropertyF
 
 VBO _vbo_new(VkDeviceSize sz, void* verts, bool can_update, char const* file, int line, char const* fn)
 {
-	DEBUG(3, "[VK] Creating vertex buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
-	struct Buffer tmpbuf;
+	INFO(TERM_DARK_GREEN "[VK] Creating vertex buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
+	Buffer tmpbuf;
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
@@ -90,8 +90,8 @@ VBO _vbo_new(VkDeviceSize sz, void* verts, bool can_update, char const* file, in
 
 IBO _ibo_new(VkDeviceSize sz, void* inds, char const* file, int line, char const* fn)
 {
-	DEBUG(3, "[VK] Creating index buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
-	struct Buffer tmpbuf;
+	INFO(TERM_DARK_GREEN "[VK] Creating index buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
+	Buffer tmpbuf;
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	              &tmpbuf.buf, &tmpbuf.mem);
@@ -108,7 +108,7 @@ IBO _ibo_new(VkDeviceSize sz, void* inds, char const* file, int line, char const
 
 UBO _ubo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 {
-	DEBUG(3, "[VK] Creating uniform buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
+	INFO(TERM_DARK_GREEN "[VK] Creating uniform buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	UBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 	                                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -119,7 +119,7 @@ UBO _ubo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 
 SBO _sbo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 {
-	DEBUG(3, "[VK] Creating storage buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
+	INFO(TERM_DARK_GREEN "[VK] Creating storage buffer in \"%s:%d:%s\" (size: %luB)", file, line, fn, sz);
 	SBO buf = { .sz = sz };
 	buffer_new(sz, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buf.buf, &buf.mem);
@@ -127,7 +127,7 @@ SBO _sbo_new(VkDeviceSize sz, char const* file, int line, char const* fn)
 	return buf;
 }
 
-void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data, isize offset)
+void buffer_update(Buffer buf, VkDeviceSize sz, void* data, isize offset)
 {
 	static Mutex buffer_lock = { 0 };
 
@@ -141,7 +141,7 @@ void buffer_update(struct Buffer buf, VkDeviceSize sz, void* data, isize offset)
 	mtx_unlock(&buffer_lock);
 }
 
-void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn)
+void _buffer_free(Buffer* buf, const char* file, int line, const char* fn)
 {
 	if (!buf->buf || !buf->mem) {
 		ERROR("[VK] Buffer does not appear to be valid (probably uninitialized or double free) in \"%s:%d:%s\"",
@@ -151,7 +151,7 @@ void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn
 
 	vkDestroyBuffer(logical_gpu, buf->buf, NULL);
 	vkFreeMemory(logical_gpu, buf->mem, NULL);
-	memset(buf, 0, sizeof(struct Buffer));
+	memset(buf, 0, sizeof(Buffer));
 }
 
 static void copy_buffer(VkBuffer dst, VkBuffer src, VkDeviceSize sz)
@@ -165,3 +165,4 @@ static void copy_buffer(VkBuffer dst, VkBuffer src, VkDeviceSize sz)
 	vkCmdCopyBuffer(buf, src, dst, 1, &region);
 	end_command_buffer(buf, transferq);
 }
+

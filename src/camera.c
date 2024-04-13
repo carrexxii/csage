@@ -1,5 +1,3 @@
-#include "common.h"
-#include "config.h"
 #include "maths/la.h"
 #include "maths/maths.h"
 #include "input.h"
@@ -7,9 +5,9 @@
 
 // TODO: make camera the set-0 global uniform
 
-struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ubo)
+Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ubo)
 {
-	struct Camera cam = {
+	Camera cam = {
 		.ubo        = ubo,
 		.pos        = pos,
 		.up         = up,
@@ -30,7 +28,7 @@ struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ub
 	return cam;
 }
 
-void camera_set_projection(struct Camera* cam, enum CameraType type)
+void camera_set_projection(Camera* cam, enum CameraType type)
 {
 	float dist, sz_x, sz_y;
 	cam->type = type;
@@ -54,7 +52,7 @@ void camera_set_projection(struct Camera* cam, enum CameraType type)
 	}
 }
 
-void camera_move(struct Camera* cam, enum Direction dir, bool kdown)
+void camera_move(Camera* cam, DirectionMask dir, bool kdown)
 {
 	if (kdown)
 		cam->dir |= dir;
@@ -62,7 +60,7 @@ void camera_move(struct Camera* cam, enum Direction dir, bool kdown)
 		cam->dir &= ~dir;
 }
 
-void camera_rotate(struct Camera* cam, enum Axis axis, float angle)
+void camera_rotate(Camera* cam, AxisMask axis, float angle)
 {
 	switch (axis) {
 	case AXIS_X: cam->pos = rotate(cam->pos, VEC3_X, angle); break;
@@ -72,7 +70,7 @@ void camera_rotate(struct Camera* cam, enum Axis axis, float angle)
 	}
 }
 
-void camera_update(struct Camera* cam)
+void camera_update(Camera* cam)
 {
 	if (cam->dir & DIR_FORWARDS)
 		cam->zoom += cam->zoom_speed;
@@ -108,7 +106,7 @@ void camera_update(struct Camera* cam)
 	buffer_update(*cam->ubo, sizeof(Mat4x4[2]), (Mat4x4[]){ cam->mats->proj, cam->mats->view }, 0);
 }
 
-struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y)
+Ray camera_get_mouse_ray(Camera* cam, float x, float y)
 {
 	Mat4x4 cam_vp = multiply(cam->mats->proj, cam->mats->view);
 
@@ -118,15 +116,16 @@ struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y)
 	return ray_from_points(p1, p2);
 }
 
-Vec2 camera_get_map_point(struct Ray ray)
+Vec2 camera_get_map_point(Ray ray)
 {
 	Vec3 p = ray_plane_intersection(ray, VEC4(0.0, 0.0, -1.0, 0.0));
 
 	return (Vec2){ p.x, p.y };
 }
 
-void camera_free(struct Camera* cam)
+void camera_free(Camera* cam)
 {
 	sfree(cam->mats);
-	*cam = (struct Camera){ 0 };
+	*cam = (Camera){ 0 };
 }
+

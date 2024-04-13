@@ -3,6 +3,7 @@
 
 #include "taskmgr.h"
 #include "maths/maths.h"
+#include "maths/scratch.h"
 #include "lua.h"
 #include "gfx/renderer.h"
 #include "gfx/ui/ui.h"
@@ -16,7 +17,6 @@
 #include "editor.h"
 #include "scenemgr.h"
 
-#include "test.h"
 #include "resmgr.h"
 #include "gfx/sprite.h"
 
@@ -24,10 +24,10 @@
 
 typedef void (*DeferFn)(void*);
 
-struct SceneDefer {
+typedef struct SceneDefer {
 	DeferFn fn;
 	void* data;
-};
+} SceneDefer;
 
 static void scene_exec_defer(void);
 static void switch_scene(enum SceneType type);
@@ -37,14 +37,18 @@ static void load_game(void);
 static void load_editor(void);
 static void load_scratch(void);
 
-static SDL_Window*    window;
-static enum SceneType curr_scene;
-static struct Camera  game_cam;
-static struct Camera  editor_cam;
-static struct Camera  scratch_cam;
+static SDL_Window* window;
+static SceneType   curr_scene;
+static Camera      game_cam;
+static Camera      editor_cam;
+static Camera      scratch_cam;
 
-static isize deferc;
-static struct SceneDefer defers[MAX_DEFER_FUNCTIONS];
+static isize      deferc;
+static SceneDefer defers[MAX_DEFER_FUNCTIONS];
+
+///
+Map map;
+///
 
 void scenemgr_init(SDL_Window* win)
 {
@@ -81,7 +85,7 @@ void scenemgr_init(SDL_Window* win)
 [[noreturn]]
 void scenemgr_loop()
 {
-	DEBUG(1, "\nBeginning main loop (load time: %lums)\n"
+	INFO(TERM_GRAY "\nBeginning main loop (load time: %lums)\n"
 	           "--------------------------------------", SDL_GetTicks());
 	char title[64];
 	uint64 dt, nt, ot = 0, acc = 0;
@@ -105,7 +109,7 @@ void scenemgr_loop()
 
 void scenemgr_defer(DeferFn fn, void* data)
 {
-	defers[deferc++] = (struct SceneDefer){
+	defers[deferc++] = (SceneDefer){
 		.fn   = fn,
 		.data = data,
 	};
@@ -125,7 +129,7 @@ void scenemgr_free()
 
 static void scene_exec_defer()
 {
-	struct SceneDefer defer;
+	SceneDefer defer;
 	while (deferc) {
 		defer = defers[--deferc];
 		defer.fn(defer.data);
@@ -158,7 +162,7 @@ static void cb_switch_scene_editor(bool kdown)  { if (kdown) switch_scene(SCENE_
 static void cb_switch_scene_scratch(bool kdown) { if (kdown) switch_scene(SCENE_SCRATCH); }
 static void cb_toggle_view(bool kdown) {
 	if (!kdown) return;
-	struct Camera* cam = curr_scene == SCENE_GAME  ? &game_cam  :
+	Camera* cam = curr_scene == SCENE_GAME  ? &game_cam  :
 	                     curr_scene == SCENE_EDITOR? &editor_cam:
 	                     NULL;
 }
@@ -185,10 +189,10 @@ static void load_level(char* name)
 		ERROR("[LUA] Failed in call to \"load_level\": \n\t%s", lua_tostring(lua_state, -1));
 		return;
 	}
-	struct Level* lvl = lua_topointer(lua_state, -1);
+	const Level* lvl = lua_topointer(lua_state, -1);
 	lua_pop(lua_state, 1);
 
-	DEBUG(1, "[SCENE] Loaded level \"%s\"", lvl->name.data);
+	INFO(TERM_GRAY "[SCENE] Loaded level \"%s\"", lvl->name.data);
 }
 
 static void cb_game_move_up(bool kdown)        { player_set_moving(DIR_N, kdown); camera_move(&game_cam, DIR_UP   , kdown); }
@@ -294,3 +298,4 @@ static void load_scratch()
 
 	taskmgr_add_task(cb_scratch_cam_update);
 }
+

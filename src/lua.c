@@ -1,4 +1,3 @@
-#include "util/string.h"
 #include "lua.h"
 
 lua_State* lua_state;
@@ -6,8 +5,8 @@ struct GlobalConfig config;
 
 void lua_init()
 {
-	DEBUG(1, "[INFO] LuaJIT version: " LUAJIT_VERSION);
-	DEBUG(1, "[INFO] Lua version: " LUA_VERSION);
+	INFO(TERM_CYAN "[INFO] LuaJIT version: " LUAJIT_VERSION);
+	INFO(TERM_CYAN "[INFO] Lua version: " LUA_VERSION);
 
 	lua_state = luaL_newstate();
 	luaL_openlibs(lua_state);
@@ -23,13 +22,13 @@ void lua_init()
 	config.cam_speed = lua_get_float("camera_speed");
 	config.font_name = strdup(lua_get_string("font_name"));
 
-	DEBUG(1, "[INFO] Initialized Lua");
-	DEBUG(1, "[INFO] Config:");
+	INFO(TERM_CYAN "[INFO] Initialized Lua");
+	INFO(TERM_CYAN "[INFO] Config:");
 	fprintf(stderr, "\twindow_width  -> %d\n", config.winw);
 	fprintf(stderr, "\twindow_heigth -> %d\n", config.winh);
 }
 
-int lua_get_file(char* path)
+int lua_get_file(const char* path)
 {
 	if (luaL_loadfile(lua_state, path) || lua_pcall(lua_state, 0, 0, 0)) {
 		ERROR("[LUA] Failed to load \"%s\": \n\t%s", path, lua_tostring(lua_state, -1));
@@ -39,7 +38,7 @@ int lua_get_file(char* path)
 	return 0;
 }
 
-int lua_get_int(char* name)
+int lua_get_int(const char* name)
 {
 	lua_getglobal(lua_state, name);
 	if (!lua_isnumber(lua_state, -1))
@@ -50,7 +49,7 @@ int lua_get_int(char* name)
 	return num;
 }
 
-float lua_get_float(char* name)
+float lua_get_float(const char* name)
 {
 	lua_getglobal(lua_state, name);
 	if (!lua_isnumber(lua_state, -1))
@@ -61,24 +60,24 @@ float lua_get_float(char* name)
 	return num;
 }
 
-char* lua_get_string(char* name)
+const char* lua_get_string(const char* name)
 {
 	lua_getglobal(lua_state, name);
 	if (!lua_isstring(lua_state, -1))
 		ERROR("[LUA] Expected a string for \"%s\", got: \"%s\"", name, lua_tostring(lua_state, -1));
 
-	char* str = lua_tostring(lua_state, -1);
+	const char* str = lua_tostring(lua_state, -1);
 	lua_pop(lua_state, 1);
 	return str;
 }
 
-void* lua_get_pointer(char* name)
+const void* lua_get_pointer(const char* name)
 {
 	lua_getglobal(lua_state, name);
 	if (lua_isnil(lua_state, -1))
 		ERROR("[LUA] Expected a pointer for \"%s\", got: \"%s\"", name, lua_tostring(lua_state, -1));
 
-	void* ptr = lua_topointer(lua_state, -1);
+	const void* ptr = lua_topointer(lua_state, -1);
 	lua_pop(lua_state, 1);
 	return ptr;
 }
@@ -88,3 +87,4 @@ void lua_free()
 	sfree(config.font_name);
 	lua_close(lua_state);
 }
+

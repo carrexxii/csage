@@ -13,5 +13,6 @@ void player_init()
 		.speed = 0.2f,
 	});
 
-	DEBUG(1, "[ENT] Initialized player");
+	INFO(TERM_ORANGE "[ENT] Initialized player");
 }
+

@@ -1,6 +1,5 @@
 #include "SDL3/SDL.h"
 
-#include "config.h"
 #include "input.h"
 
 struct Event {
@@ -45,7 +44,7 @@ void input_register(SDL_Keycode key, void (*fn)(bool))
 		.sym  = key,
 		.fn   = fn,
 	};
-	DEBUG(3, "[INPUT] Registered key %d", key);
+	INFO(TERM_MAGENTA "[INPUT] Registered key %d", key);
 }
 
 void input_deregister(SDL_Keycode key, void (*fn)(bool))
@@ -75,3 +74,4 @@ inline static bool is_button_down(SDL_EventType event_type)
 {
 	return event_type == SDL_EVENT_KEY_DOWN || event_type == SDL_EVENT_MOUSE_BUTTON_DOWN;
 }
+

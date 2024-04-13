@@ -3,13 +3,14 @@
 
 #include <vulkan/vulkan.h>
 
+#include "common.h"
 #include "device.h"
 
-struct Buffer {
+typedef struct Buffer {
 	VkBuffer       buf;
 	VkDeviceMemory mem;
 	isize          sz;
-};
+} Buffer;
 typedef struct Buffer VBO;
 typedef struct Buffer IBO;
 typedef struct Buffer UBO;
@@ -46,3 +47,4 @@ void _buffer_free(struct Buffer* buf, const char* file, int line, const char* fn
 #define sbo_free(buf) _Generic(buf, SBO*: buffer_free(buf))
 
 #endif
+

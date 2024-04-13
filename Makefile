@@ -13,17 +13,16 @@ GFX_DIR     = ./gfx
 LIB_DIR     = ./lib
 TOOL_DIR    = ./tools
 
-COMPILE_WITH = -DDEBUG_LEVEL=5
+COMPILE_WITH = -DDEBUG
 
 # -Winline
-WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict                      \
-           -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration \
-           -Wmissing-prototypes -Wstrict-prototypes -Wunsafe-loop-optimizations -Wbad-function-cast -Wmissing-noreturn  \
-           -Wdisabled-optimization -Wno-unused-variable -Wno-discarded-qualifiers
-CFLAGS = -std=c2x -pedantic -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR) \
-         -isystem$(LIB_DIR)/include -ftabstop=4 -include $(SRC_DIR)/common.h -include $(SRC_DIR)/config.h \
-         $(COMPILE_WITH) -fstack-protector-strong -fstack-clash-protection -fno-omit-frame-pointer         \
-         -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope
+WARNINGS = -Wall -Wextra -Wshadow -Wpointer-arith -Wdangling-else -Wstrict-overflow=2 -Wrestrict                         \
+           -Wstrict-aliasing=3 -Wno-missing-braces -Wno-unused-function -Wold-style-definition -Wold-style-declaration    \
+           -Wmissing-prototypes -Wstrict-prototypes -Wunsafe-loop-optimizations -Wmissing-noreturn -Wdisabled-optimization \
+           -Wno-unused-variable
+CFLAGS = -std=c2x -pedantic -march=native -Og -fstrict-aliasing -g2 -ggdb -pipe $(WARNINGS) -I$(SRC_DIR)         \
+         -isystem$(LIB_DIR)/include -ftabstop=4 $(COMPILE_WITH) -fstack-protector-strong -fstack-clash-protection \
+         -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope
 
 LFLAGS   = -L$(LIB_DIR) -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined -fsanitize-address-use-after-scope \
            -lm -lvulkan -Wl,-rpath,$(LIB_DIR) -lfreetype -export-dynamic
@@ -110,6 +109,9 @@ analyzer:
 
 .PHONY: libs
 libs:
+	@mkdir -p $(LIB_DIR)/include/clib
+	@cp $(LIB_DIR)/clib/*.h $(LIB_DIR)/include/clib
+
 	@mkdir -p $(LIB_DIR)/include/stb
 	@cp $(LIB_DIR)/stb/*.h $(LIB_DIR)/include/stb
 
@@ -160,6 +162,10 @@ restore: clean
 	@make -C $(TOOL_DIR)/spright -j8
 
 	@echo "Restore complete"
+
+.PHONY: enums
+enums:
+	@python -m $(LIB_DIR)/clib/string_of_enum.py $(SRC) -o $(LIB_DIR)/include/eos.h
 
 .PHONY: clean
 clean:

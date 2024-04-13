@@ -1,19 +1,18 @@
 #include "maths/maths.h"
-#include "util/minheap.h"
 #include "map.h"
 #include "pathfinding.h"
 
 #define HEAP_STARTING_DEPTH    10
 #define MAX_SEARCHED_POSITIONS 1024
 
-struct PathNode {
-	int g, h;
+typedef struct PathNode {
+	int   g, h;
 	Vec3i pos;
 	struct PathNode* parent;
-};
+} PathNode;
 
-inline static int dist(Vec3i p1, Vec3i p2);
-inline static void build_path(struct Path* path, int nodec, struct PathNode* nodes, bool is_local);
+static inline int dist(Vec3i p1, Vec3i p2);
+static inline void build_path(Path* path, int nodec, PathNode* nodes, bool is_local);
 
 static Vec3i directions[] = {
 	{  1, 0, 0 }, { -1,  0, 0 },
@@ -22,7 +21,7 @@ static Vec3i directions[] = {
 	{ -1, 1, 0 }, {  1, -1, 0 },
 };
 
-void path_new(struct Path* path, struct Map* map)
+void path_new(Path* path, Map* map)
 {
 	Vec3i start = path->start;
 	Vec3i end   = path->end;
@@ -40,22 +39,22 @@ void path_new(struct Path* path, struct Map* map)
 	if (start.z != end.z)
 		ERROR("[ENT] Traversing z-levels is not completed");
 
-	struct MinHeap   open_nodes   = minheap_new(HEAP_STARTING_DEPTH, sizeof(struct PathNode));
-	struct PathNode* closed_nodes = smalloc(MAX_SEARCHED_POSITIONS*sizeof(struct PathNode));
+	MinHeap   open_nodes   = minheap_new(HEAP_STARTING_DEPTH, sizeof(PathNode));
+	PathNode* closed_nodes = smalloc(MAX_SEARCHED_POSITIONS*sizeof(PathNode));
 	int closed_nodec = 0;
 
-	struct PathNode current_node = {
+	PathNode current_node = {
 		.pos    = start,
 		.parent = NULL,
 		.h      = dist(start, end),
 	};
 	minheap_push(&open_nodes, 0, &current_node);
 
-	MapTile tile;
-	struct PathNode  new_node;
-	struct PathNode* old_node;
+	MapTile   tile;
+	PathNode  new_node;
+	PathNode* old_node;
 	do {
-		current_node = *(struct PathNode*)minheap_pop(&open_nodes);
+		current_node = *(PathNode*)minheap_pop(&open_nodes);
 		closed_nodes[closed_nodec++] = current_node;
 		if (!equal(current_node.pos, end)) {
 			for (int i = 0; i < (int)ARRAY_SIZE(directions); i++) {
@@ -104,7 +103,7 @@ void path_new(struct Path* path, struct Map* map)
 	minheap_free(&open_nodes, NULL);
 }
 
-inline static int dist(Vec3i p1, Vec3i p2)
+static inline int dist(Vec3i p1, Vec3i p2)
 {
 	int dx = abs(p1.x - p2.x);
 	int dy = abs(p1.y - p2.y);
@@ -112,7 +111,7 @@ inline static int dist(Vec3i p1, Vec3i p2)
 	                14*dx + 10*(dy - dx);
 }
 
-inline static void build_path(struct Path* path, int nodec, struct PathNode* nodes, bool is_local)
+static inline void build_path(Path* path, int nodec, PathNode* nodes, bool is_local)
 {
 	if (is_local) {
 		path->local_path_current = 0;
@@ -126,3 +125,4 @@ inline static void build_path(struct Path* path, int nodec, struct PathNode* nod
 		D;
 	}
 }
+

@@ -1,5 +1,4 @@
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include "vulkan.h"
 #include "device.h"
@@ -9,9 +8,9 @@
 
 static void buffer_to_image(VkBuffer buf, VkImage img, uint w, uint h);
 
-struct Image image_new(uint w, uint h, VkFormat fmt, VkImageUsageFlags usage, VkSampleCountFlags samples)
+Image image_new(uint w, uint h, VkFormat fmt, VkImageUsageFlags usage, VkSampleCountFlags samples)
 {
-	struct Image img;
+	Image img;
 	VkImageCreateInfo imgi = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext  = NULL,
@@ -36,7 +35,7 @@ struct Image image_new(uint w, uint h, VkFormat fmt, VkImageUsageFlags usage, Vk
 	if (vkCreateImage(logical_gpu, &imgi, NULL, &img.img))
 		ERROR("[VK] Failed to create image");
 	else
-		DEBUG(3, "[VK] Created image (%ux%d)", w, h);
+		INFO(TERM_DARK_GREEN "[VK] Created image (%ux%d)", w, h);
 
 	VkMemoryRequirements mem_req;
 	vkGetImageMemoryRequirements(logical_gpu, img.img, &mem_req);
@@ -78,15 +77,15 @@ VkImageView image_new_view(VkImage img, VkFormat fmt, VkImageAspectFlags asp)
 	if ((vk_err = vkCreateImageView(logical_gpu, &viewi, NULL, &img_view)))
 		ERROR("[VK] Failed to create image view\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
-		DEBUG(3, "[VK] Created image view");
+		INFO(TERM_DARK_GREEN "[VK] Created image view");
 
 	return img_view;
 }
 
-struct Image image_of_memory(int w, int h, uint8* pxs)
+Image image_of_memory(int w, int h, uint8* pxs)
 {
 	void* data;
-	struct Buffer trans_buf;
+	Buffer trans_buf;
 	VkDeviceSize size = 4 * w * h;
 	buffer_new(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 	           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -96,9 +95,9 @@ struct Image image_of_memory(int w, int h, uint8* pxs)
 	memcpy(data, pxs, size);
 	vkUnmapMemory(logical_gpu, trans_buf.mem);
 
-	struct Image img = image_new(w, h, VK_FORMAT_R8G8B8A8_UNORM,
-	                             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-	                             VK_SAMPLE_COUNT_1_BIT);
+	Image img = image_new(w, h, VK_FORMAT_R8G8B8A8_UNORM,
+	                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+	                      VK_SAMPLE_COUNT_1_BIT);
 
 	image_transition_layout(img.img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	buffer_to_image(trans_buf.buf, img.img, w, h);
@@ -182,10 +181,10 @@ void image_transition_layout(VkImage img, VkImageLayout old, VkImageLayout new)
 
 	vkCmdPipelineBarrier(buf, src, dst, 0, 0, NULL, 0, NULL, 1, &bar);
 	end_command_buffer(buf, graphicsq);
-	DEBUG(3, "[VK] Image layout transitioned (%s -> %s)", STRING_IMAGE_LAYOUT(old), STRING_IMAGE_LAYOUT(new));
+	INFO(TERM_DARK_GREEN "[VK] Image layout transitioned (%s -> %s)", STRING_IMAGE_LAYOUT(old), STRING_IMAGE_LAYOUT(new));
 }
 
-void image_free(struct Image* img)
+void image_free(Image* img)
 {
 	vkDestroyImageView(logical_gpu, img->view, NULL);
 	vkDestroyImage(logical_gpu, img->img, NULL);
@@ -217,7 +216,7 @@ VkSampler image_new_sampler(VkFilter filter)
 	if (vkCreateSampler(logical_gpu, &sampi, NULL, &samp))
 		ERROR("[VK] Failed to create sampler");
 	else
-		DEBUG(2, "[VK] Created sampler");
+		INFO(TERM_DARK_GREEN "[VK] Created sampler");
 
 	return samp;
 }

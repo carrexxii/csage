@@ -5,6 +5,7 @@
 // #undef CGLTF_IMPLEMENTATION
 // #include "cgltf/cgltf.h"
 
+// #include "common.h"
 // #include "maths/maths.h"
 // #include "buffers.h"
 // #include "camera.h"
@@ -103,3 +104,4 @@
 // extern struct Material default_mtl;
 
 // #endif
+

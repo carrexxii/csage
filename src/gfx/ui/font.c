@@ -4,25 +4,22 @@
 #include <vulkan/vulkan.h>
 
 #include "resmgr.h"
-#include "config.h"
-#include "util/string.h"
-#include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/image.h"
 #include "font.h"
 
-struct Character {
+typedef struct Character {
 	int sz[2];
 	int bearing[2];
 	int advance;
 	int offset; /* In the main texture */
-};
+} Character;
 
 /* -------------------------------------------------------------------- */
 #define SIZEOF_FONT_VERTEX sizeof(float[4])
 
-static struct Pipeline* atomic pipeln;
+static Pipeline* pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SIZEOF_FONT_VERTEX, /* xyuv */
@@ -45,12 +42,12 @@ int font_size = 36;
 static FT_Library library;
 static FT_Face    face;
 static VkSampler  font_sampler;
-static struct Character characters[128];
-static struct Image atlas;
+static Character characters[128];
+static Image atlas;
 static float atlas_w;
 static float atlas_h;
 static int text_objc;
-static struct TextObject text_objs[FONT_MAX_TEXT_OBJECTS];
+static TextObject text_objs[FONT_MAX_TEXT_OBJECTS];
 
 void font_init()
 {
@@ -85,7 +82,7 @@ void font_init()
 			ERROR("[GFX] Error loading glyph bitmap \"%c\"", (char)i);
 
 		bitmap = face->glyph->bitmap;
-		characters[i] = (struct Character){
+		characters[i] = ( Character){
 			.sz[0]      = bitmap.width,
 			.sz[1]      = bitmap.rows,
 			.bearing[0] = face->glyph->bitmap_left,
@@ -108,13 +105,13 @@ void font_init()
 	}
 	atlas = image_of_memory(atlas_w, atlas_h, atlas_bitmap);
 
-	DEBUG(2, "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
+	INFO(TERM_DARK_CYAN "[GFX] Font initialized with size %d (%ld available glyphs)", font_size, face->num_glyphs);
 	sfree(atlas_bitmap);
 	FT_Done_Face(face);
 	FT_Done_FreeType(library);
 
 	font_sampler = image_new_sampler(VK_FILTER_LINEAR);
-	struct PipelineCreateInfo pipeln_ci = {
+	 PipelineCreateInfo pipeln_ci = {
 		.vshader     = STRING(SHADER_PATH "/font.vert"),
 		.fshader     = STRING(SHADER_PATH "/font.frag"),
 		.vert_bindc  = ARRAY_SIZE(vert_binds),
@@ -131,11 +128,11 @@ void font_init()
 	pipeln = pipeln_update(pipeln, &pipeln_ci);
 }
 
-struct TextObject* font_render(String str, float z, float w)
+ TextObject* font_render(String str, float z, float w)
 {
 	assert(str.len && str.data);
 
-	struct TextObject* obj = &text_objs[text_objc];
+	 TextObject* obj = &text_objs[text_objc];
 	float* verts = smalloc(6*SIZEOF_FONT_VERTEX*str.len);
 	float* v = verts;
 	int linec = 1;
@@ -202,7 +199,7 @@ struct TextObject* font_render(String str, float z, float w)
 	obj->vbo    = vbo_new(6*str.len*SIZEOF_FONT_VERTEX, verts, true);
 	text_objc++;
 
-	DEBUG(3, "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2fx%.2f]",
+	INFO(TERM_DARK_CYAN "[GFX] Created new text object (%zd characters) for \"%s\" at (%.2f, %.2f, %.2f) [%.2fx%.2f]",
 	      str.len, str.data, x, y, z, obj->rect.w, obj->rect.h);
 	sfree(verts);
 	return obj;
@@ -217,7 +214,7 @@ void font_record_commands(VkCommandBuffer cmd_buf)
 			continue;
 
 		vkCmdBindVertexBuffers(cmd_buf, 0, 1, &text_objs[i].vbo.buf, (VkDeviceSize[]) { 0 });
-		vkCmdPushConstants(cmd_buf, pipeln->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float[4]), (float[]){ // TODO: make struct
+		vkCmdPushConstants(cmd_buf, pipeln->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float[4]), (float[]){ // TODO: make
 			text_objs[i].z_lvl, 0.0f, text_objs[i].rect.x, text_objs[i].rect.y
 		});
 		vkCmdDraw(cmd_buf, text_objs[i].vertc, 1, 0, i);
@@ -232,3 +229,4 @@ void font_free()
 	pipeln_free(pipeln);
 	vkDestroySampler(logical_gpu, font_sampler, NULL);
 }
+

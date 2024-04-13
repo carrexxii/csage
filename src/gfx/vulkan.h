@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include "SDL3/SDL.h"
 
+#include "common.h"
 #include "device.h"
 #include "pipeline.h"
 #include "buffers.h"
@@ -205,3 +206,4 @@ extern VkInstance   instance;
 extern VkSurfaceKHR surface;
 
 #endif
+

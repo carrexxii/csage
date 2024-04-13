@@ -1,12 +1,13 @@
 #ifndef GFX_PRIMITIVES_H
 #define GFX_PRIMITIVES_H
 
+#include "common.h"
 #include "maths/maths.h"
 
 #define EXPAND_COLOUR(x) x.r/255.0f, x.g/255.0f, x.b/255.0f, x.a/255.0f
 
 // TODO: Change to vec type
-inline static void quad_from_rect(float* pts, Rect rect, float z, union Colour colour)
+static inline void quad_from_rect(float* pts, Rect rect, float z, Colour colour)
 {
 	memcpy(pts, (float[]){
 		rect.x         , rect.y         , z, EXPAND_COLOUR(colour),
@@ -19,3 +20,4 @@ inline static void quad_from_rect(float* pts, Rect rect, float z, union Colour c
 }
 
 #endif
+

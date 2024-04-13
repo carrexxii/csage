@@ -41,9 +41,9 @@ static inline Vec4 colour_normalized(Colour colour)
 	            colour.r * f);
 }
 
-static inline enum Direction mask_of_dir(Vec2 v)
+static inline DirectionMask mask_of_dir(Vec2 v)
 {
-	enum Direction dir = DIR_NONE;
+	DirectionMask dir = DIR_NONE;
 	if      (v.y < -0.1f) dir |= DIR_N;
 	else if (v.y >  0.1f) dir |= DIR_S;
 	else if (v.x < -0.1f) dir |= DIR_W;
@@ -52,7 +52,7 @@ static inline enum Direction mask_of_dir(Vec2 v)
 	return dir;
 }
 
-static inline Vec2 dir_of_mask(enum Direction dir_mask)
+static inline Vec2 dir_of_mask(DirectionMask dir_mask)
 {
 	Vec2 dir = VEC2_ZERO;
 	if (dir_mask & DIR_N) { dir.x -= 0.5f; dir.y -= 0.5f; }
@@ -62,40 +62,6 @@ static inline Vec2 dir_of_mask(enum Direction dir_mask)
 
 	return normalized(dir);
 }
-
-// static inline ivec3s ivec3s_of_vec3s(vec3s v)  { return (ivec3s){ .x = (int)v.x, .y = (int)v.y, .z = (int)v.z }; }
-// static inline vec3s  vec3s_of_ivec3s(ivec3s v) { return (vec3s){ .x = (float)v.x, .y = (float)v.y, .z = (float)v.z }; }
-// static inline vec3s  vec3s_of_int8(int8 v[3])  { return (vec3s){ .x = (float)v[0], .y = (float)v[1], .z = (float)v[2] }; }
-
-// static inline void ivec3_copy_vec3(vec3 v, ivec3 u) {
-// 	u[0] = (int)v[0];
-// 	u[1] = (int)v[1];
-// 	u[2] = (int)v[2];
-// }
-
-// static inline bool vec3_is_zero(vec3 v) {
-// 	return (fabs(v[0]) < GLM_FLT_EPSILON &&
-// 	        fabs(v[1]) < GLM_FLT_EPSILON &&
-// 	        fabs(v[2]) < GLM_FLT_EPSILON);
-// }
-
-// static inline void vec3_clamp(vec3 v, vec3 vmax, vec3 vmin) {
-// 	CLAMP(v[0], vmin[0], vmax[0]);
-// 	CLAMP(v[1], vmin[1], vmax[1]);
-// 	CLAMP(v[2], vmin[2], vmax[2]);
-// }
-
-// static inline bool ivec3s_eq(ivec3s v, ivec3s u) {
-// 	return v.x == u.x && v.y == u.y && v.z == u.z;
-// }
-
-// static inline ivec3s ivec3s_add(ivec3s v, ivec3s u) {
-// 	return (ivec3s){
-// 		.x = v.x + u.x,
-// 		.y = v.y + u.y,
-// 		.z = v.z + u.z,
-// 	};
-// }
 
 /* This is modified from Paul Bourke's solution: http://paulbourke.net/geometry/pointlineplane/
  * Calculate the line segment p1p2 that is the shortest route between two lines p1p2 and p3p4.
@@ -135,9 +101,9 @@ static bool line_line_nearest_points(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 p4, Vec3* p
 	return true;
 }
 
-static inline struct Ray ray_from_points(Vec3 p1, Vec3 p2) {
+static inline Ray ray_from_points(Vec3 p1, Vec3 p2) {
 	Vec3 d = sub(p2, p1);
-	struct Ray r = {
+	Ray r = {
 		.p = p1,
 		.v = normalized(d),
 	};
@@ -145,13 +111,13 @@ static inline struct Ray ray_from_points(Vec3 p1, Vec3 p2) {
 	return r;
 }
 
-static void ray_print(struct Ray r) {
+static void ray_print(Ray r) {
 	fprintf(stderr, "Ray from (%.2f %.2f %.2f) in dRectiion (%.2f %.2f %.2f)\n",
 	        r.p.x, r.p.y, r.p.z, r.v.x, r.v.y, r.v.z);
 }
 
 /* t = -(L (*) p)/(L (*) v) */
-static inline Vec3 ray_plane_intersection(struct Ray r, Vec4 L) {
+static inline Vec3 ray_plane_intersection(Ray r, Vec4 L) {
 	float t = -dot(VEC3_V4(L), r.p) / dot(VEC3_V4(L), r.v);
 	return add(r.p, multiply(r.v, t));
 }

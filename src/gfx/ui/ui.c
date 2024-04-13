@@ -2,39 +2,38 @@
 
 #include "resmgr.h"
 #include "input.h"
-#include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "types.h"
 #include "ui.h"
 
-static inline void update_container(struct UIContainer* container);
+static inline void update_container(UIContainer* container);
 static void cb_mouse_left(bool kdown);
-static void container_free(struct UIContainer* container);
+static void container_free(UIContainer* container);
 
-static struct PipelineCreateInfo pipeln_ci;
-static struct Pipeline* atomic pipeln;
+static PipelineCreateInfo pipeln_ci;
+static Pipeline* atomic pipeln;
 static Mutex updating_lock;
 
 int containerc;
-static struct UIContainer containers[UI_MAX_CONTAINERS];
-static struct UIContext   context;
+static UIContainer containers[UI_MAX_CONTAINERS];
+static UIContext   context;
 
 static int  ui_elemc;
 static SBO  ui_elems;
 static bool ui_elems_update;
-static struct VArray free_elems;
+static VArray free_elems;
 
 static bool pipeln_needs_update;
-static struct Image* default_tex;
+static Image* default_tex;
 
 void ui_init()
 {
-	ui_elems    = sbo_new(UI_MAX_ELEMENTS * sizeof(struct UIShaderObject)); // TODO: resize if necessary
+	ui_elems    = sbo_new(UI_MAX_ELEMENTS * sizeof(UIShaderObject)); // TODO: resize if necessary
 	free_elems  = varray_new(16, sizeof(int));
 	default_tex = load_image(STRING(TEXTURE_PATH "/default.png"));
 
-	pipeln_ci = (struct PipelineCreateInfo){
+	pipeln_ci = (PipelineCreateInfo){
 		.fshader       = STRING(SHADER_PATH "/ui.frag"),
 		.vshader       = STRING(SHADER_PATH "/ui.vert"),
 		.sbo_stages[0] = VK_SHADER_STAGE_VERTEX_BIT,
@@ -46,7 +45,7 @@ void ui_init()
 	pipeln = pipeln_new(&pipeln_ci, "UI");
 	pipeln = pipeln_update(pipeln, &pipeln_ci);
 
-	DEBUG(1, "[UI] Initialized UI");
+	INFO(TERM_DARK_CYAN "[UI] Initialized UI");
 }
 
 void ui_register_keys()
@@ -54,7 +53,7 @@ void ui_register_keys()
 	input_register(SDL_BUTTON_LEFT, cb_mouse_left);
 }
 
-struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style)
+UIContainer* ui_new_container(Rect rect, UIStyle* style)
 {
 	if (containerc >= UI_MAX_CONTAINERS) {
 		ERROR("[UI] Total container count (%d) exceeded", UI_MAX_CONTAINERS);
@@ -68,25 +67,25 @@ struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style)
 	if (i >= containerc)
 		containerc++;
 
-	struct UIContainer* container = &containers[i];
-	*container = (struct UIContainer){
+	UIContainer* container = &containers[i];
+	*container = (UIContainer){
 		.rect    = rect,
 		.i       = ui_elemc,
-		.objects = varray_new(UI_DEFAULT_OBJECTS, sizeof(struct UIObject)),
+		.objects = varray_new(UI_DEFAULT_OBJECTS, sizeof(UIObject)),
 	};
 
-	buffer_update(ui_elems, sizeof(struct UIShaderObject), &(struct UIShaderObject){
+	buffer_update(ui_elems, sizeof(UIShaderObject), &(UIShaderObject){
 		.rect   = rect,
 		.colour = colour_normalized(style? style->normal: default_container_style.normal),
 		.hl     = RECT0,
 		.tex_id = -1,
-	}, ui_elemc * sizeof(struct UIShaderObject));
+	}, ui_elemc * sizeof(UIShaderObject));
 
 	ui_elemc++;
 	return container;
 }
 
-int ui_add(struct UIContainer* container, struct UIObject* obj)
+int ui_add(UIContainer* container, UIObject* obj)
 {
 	/* Check for dead elements to reuse */
 	obj->i = free_elems.len > 0? *(int*)varray_pop(&free_elems)
@@ -97,7 +96,7 @@ int ui_add(struct UIContainer* container, struct UIObject* obj)
 	return obj->i;
 }
 
-int ui_add_image(struct Image* img)
+int ui_add_image(Image* img)
 {
 	for (int i = 0; i < pipeln_ci.imgc; i++)
 		if (pipeln_ci.imgs[i] == img)
@@ -110,8 +109,8 @@ int ui_add_image(struct Image* img)
 
 void ui_build()
 {
-	struct UIContainer* container;
-	struct UIObject*  obj;
+	UIContainer* container;
+	UIObject*  obj;
 	for (int i = 0; i < containerc; i++) {
 		container = &containers[i];
 		if (!container->has_update)
@@ -142,8 +141,8 @@ void ui_update()
 	context.mouse_pos = VEC2(2.0f*(mouse_x / config.winw - 0.5f), 2.0f*(mouse_y / config.winh - 0.5f));
 	Vec2 mouse = context.mouse_pos;
 
-	struct UIContainer* container;
-	struct UIObject*    obj;
+	UIContainer* container;
+	UIObject*    obj;
 	for (int i = 0; i < containerc; i++) {
 		container = &containers[i];
 		if (point_in_rect(mouse, container->rect)) {
@@ -186,7 +185,7 @@ void ui_update()
 	ui_build();
 }
 
-void ui_update_object(struct UIObject* obj)
+void ui_update_object(UIObject* obj)
 {
 	assert(obj->i >= 0 && obj->i <= ui_elemc);
 	if (!obj->style) {
@@ -197,18 +196,18 @@ void ui_update_object(struct UIObject* obj)
 	Vec4 colour = colour_normalized(obj->state.clicked? obj->style->clicked:
 	                                obj->state.hover  ? obj->style->hover  :
 	                                                    obj->style->normal);
-	buffer_update(ui_elems, sizeof(struct UIShaderObject), &(struct UIShaderObject){
+	buffer_update(ui_elems, sizeof(UIShaderObject), &(UIShaderObject){
 		.rect    = obj->rect,
 		.uv_rect = obj->uv_rect,
 		.colour  = colour,
 		.hl      = obj->hl,
 		.tex_id  = obj->imgi,
-	}, obj->i * sizeof(struct UIShaderObject));
+	}, obj->i * sizeof(UIShaderObject));
 }
 
 void ui_record_commands(VkCommandBuffer cmd_buf)
 {
-	struct Pipeline* pl = pipeln;
+	Pipeline* pl = pipeln;
 	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->pipeln);
 	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pl->layout, 0, 1, &pl->dset.set, 0, NULL);
 
@@ -218,7 +217,7 @@ void ui_record_commands(VkCommandBuffer cmd_buf)
 	vkCmdDraw(cmd_buf, 6*objc, 1, 0, 0);
 }
 
-void ui_free_container(struct UIContainer* container)
+void ui_free_container(UIContainer* container)
 {
 	for (int i = 0; i < containerc; i++) {
 		if (container == &containers[i]) {
@@ -249,9 +248,9 @@ static void cb_mouse_left(bool kdown)
 	context.mouse_released.lmb = !kdown;
 }
 
-static void container_free(struct UIContainer* container)
+static void container_free(UIContainer* container)
 {
-	struct UIObject* obj;
+	UIObject* obj;
 	while (container->objects.len > 0) {
 		obj = varray_pop(&container->objects);
 		obj->state.dead = true;
@@ -271,3 +270,4 @@ static void container_free(struct UIContainer* container)
 	varray_free(&container->objects);
 	container->state.dead = true;
 }
+

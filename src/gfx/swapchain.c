@@ -5,15 +5,15 @@
 #include "image.h"
 #include "swapchain.h"
 
-struct Swapchain        swapchain;
-struct SwapchainDetails swapchain_details;
-struct Image depth_img;
-struct Image resolve_img;
+Swapchain        swapchain;
+SwapchainDetails swapchain_details;
+Image            depth_img;
+Image            resolve_img;
 
 static VkSurfaceFormatKHR choose_surface_format();
 static VkPresentModeKHR   choose_present_mode();
 
-__attribute__((no_sanitize_address))
+// __attribute__((no_sanitize_address))
 void swapchain_init(VkSurfaceKHR surf, int w, int h)
 {
 	swapchain.ext  = (VkExtent2D){ w, h };
@@ -40,12 +40,12 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 		.clipped          = true,
 	};
 	if (qinds.graphics != qinds.present) {
-		DEBUG(3, "[VK] Using different queues for graphics and presenting");
+		INFO(TERM_DARK_GREEN "[VK] Using different queues for graphics and presenting");
 		swapchaini.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
 		swapchaini.queueFamilyIndexCount = 2;
 		swapchaini.pQueueFamilyIndices   = (uint32[]){ qinds.graphics, qinds.present };
 	} else {
-		DEBUG(3, "[VK] Using the same queues for graphics and presenting");
+		INFO(TERM_DARK_GREEN "[VK] Using the same queues for graphics and presenting");
 		swapchaini.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
 		swapchaini.queueFamilyIndexCount = 0;
 		swapchaini.pQueueFamilyIndices   = NULL;
@@ -54,7 +54,7 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 	if ((vk_err = vkCreateSwapchainKHR(logical_gpu, &swapchaini, NULL, &swapchain.swapchain)))
 		ERROR("[VK] Failed to create swapchain:\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
-		DEBUG(1, "[VK] Created swapchain\n\tQueue families: %u\n\tMinimum images: %u",
+		INFO(TERM_DARK_GREEN "[VK] Created swapchain\n\tQueue families: %u\n\tMinimum images: %u",
 		      swapchaini.queueFamilyIndexCount, min_imgc);
 
 	/*** -------------------- Create the Command Pool -------------------- ***/
@@ -66,18 +66,18 @@ void swapchain_init(VkSurfaceKHR surf, int w, int h)
 	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &transfer_cmd_pool))
 		ERROR("[VK] Failed to create command pool");
 	else
-		DEBUG(2, "[VK] Created command pool");
+		INFO(TERM_DARK_GREEN "[VK] Created command pool");
 
 	pooli.queueFamilyIndex = qinds.graphics;
 	if (vkCreateCommandPool(logical_gpu, &pooli, NULL, &graphics_cmd_pool))
 		ERROR("[VK] Failed to create command pool");
 	else
-		DEBUG(2, "[VK] Created command pool");
+		INFO(TERM_DARK_GREEN "[VK] Created command pool");
 
 	/*** -------------------- Create Swapchain Images -------------------- ***/
 	vkGetSwapchainImagesKHR(logical_gpu, swapchain.swapchain, &swapchain.imgc, NULL);
 	VkImage tmp_imgs[swapchain.imgc];
-	swapchain.imgs = smalloc(swapchain.imgc*sizeof(struct Image));
+	swapchain.imgs = smalloc(swapchain.imgc*sizeof(Image));
 	vkGetSwapchainImagesKHR(logical_gpu, swapchain.swapchain, &swapchain.imgc, tmp_imgs);
 	for (int i = 0; i < (int)swapchain.imgc; i++) {
 		swapchain.imgs[i].img  = tmp_imgs[i];
@@ -124,17 +124,17 @@ void swapchain_set(VkPhysicalDevice dev, VkSurfaceKHR surf)
 
 void swapchain_free()
 {
-	DEBUG(3, "[VK] Destroying swapchain image views...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying swapchain image views...");
 	for (int i = 0; i < (int)swapchain.imgc; i++)
 		vkDestroyImageView(logical_gpu, swapchain.imgs[i].view, NULL);
 	image_free(&depth_img);
 	image_free(&resolve_img);
 
-	DEBUG(3, "[VK] Destroying command pools...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying command pools...");
 	vkDestroyCommandPool(logical_gpu, transfer_cmd_pool, NULL);
 	vkDestroyCommandPool(logical_gpu, graphics_cmd_pool, NULL);
 
-	DEBUG(3, "[VK] Destroying swapchain...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying swapchain...");
 	vkDestroySwapchainKHR(logical_gpu, swapchain.swapchain, NULL);
 
 	free(swapchain.imgs);
@@ -183,3 +183,4 @@ VkPresentModeKHR choose_present_mode()
 
 	return md;
 }
+

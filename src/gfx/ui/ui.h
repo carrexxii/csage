@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "common.h"
 #include "gfx/image.h"
 #include "types.h"
 #include "label.h"
@@ -21,21 +22,21 @@
 #define ONE_PXX (1.0f / config.winw)
 #define ONE_PXY (1.0f / config.winh)
 
-void ui_init(void);
-void ui_register_keys(void);
-struct UIObject*  ui_alloc_object(void);
-struct UIContainer* ui_new_container(Rect rect, struct UIStyle* style);
-int  ui_add(struct UIContainer* container, struct UIObject* obj);
-int  ui_add_image(struct Image* img);
-void ui_build(void);
-Rect ui_build_rect(struct UIObject* obj, bool absolute_sz);
-void ui_update(void);
-void ui_update_object(struct UIObject* obj);
-void ui_record_commands(VkCommandBuffer cmd_buf);
-void ui_free_container(struct UIContainer* container);
-void ui_free(void);
+void         ui_init(void);
+void         ui_register_keys(void);
+UIObject*    ui_alloc_object(void);
+UIContainer* ui_new_container(Rect rect, UIStyle* style);
+int          ui_add(UIContainer* container, UIObject* obj);
+int          ui_add_image(Image* img);
+void         ui_build(void);
+Rect         ui_build_rect(UIObject* obj, bool absolute_sz);
+void         ui_update(void);
+void         ui_update_object(UIObject* obj);
+void         ui_record_commands(VkCommandBuffer cmd_buf);
+void         ui_free_container(UIContainer* container);
+void         ui_free(void);
 
-static inline Rect ui_calc_rect(Rect rect, struct UIContainer* parent)
+static inline Rect ui_calc_rect(Rect rect, UIContainer* parent)
 {
 	Rect prect = parent->rect;
 	float sx = prect.w / 2.0f;
@@ -49,3 +50,4 @@ static inline Rect ui_calc_rect(Rect rect, struct UIContainer* parent)
 }
 
 #endif
+

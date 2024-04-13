@@ -1,6 +1,7 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
+#include "common.h"
 #include "camera.h"
 
 #define SPRITE_SHEETS_PATH      SPRITE_PATH
@@ -9,9 +10,10 @@
 
 void editor_init(void);
 void editor_register_keys(void);
-void editor_update(struct Camera* cam);
+void editor_update(Camera* cam);
 void editor_free(void);
 
 extern bool editor_has_init;
 
 #endif
+

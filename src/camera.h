@@ -1,6 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include "common.h"
 #include "maths/types.h"
 #include "gfx/buffers.h"
 
@@ -10,13 +11,13 @@
 #define CAMERA_MAX_ZOOM           10.0f
 #define CAMERA_DEFAULT_ZOOM_SPEED (3.0f*DT)
 
-enum CameraType {
+typedef enum CameraType {
 	CAMERA_NONE,
 	CAMERA_ORTHOGONAL,
 	CAMERA_PERSPECTIVE,
-};
+} CameraType;
 
-struct Camera {
+typedef struct Camera {
 	UBO* ubo;
 	Vec3 pos;
 	Vec3 up;
@@ -25,7 +26,7 @@ struct Camera {
 	float zoom;
 	float zoom_speed;
 	uint dir;
-	enum CameraType type;
+	CameraType type;
 	float fov;
 	float w, h;
 	struct {
@@ -33,15 +34,16 @@ struct Camera {
 		Mat4x4 view;
 	}* mats;
 	Vec2* follow;
-};
+} Camera;
 
-struct Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ubo);
-void camera_set_projection(struct Camera* cam, enum CameraType type);
-void camera_move(struct Camera* cam, enum Direction dir, bool kdown);
-void camera_rotate(struct Camera* cam, enum Axis axis, float angle);
-void camera_update(struct Camera* cam);
-struct Ray camera_get_mouse_ray(struct Camera* cam, float x, float y);
-Vec2 camera_get_map_point(struct Ray ray);
-void camera_free(struct Camera* cam);
+Camera camera_new(Vec3 pos, Vec3 up, float w, float h, float fov, UBO* ubo);
+void   camera_set_projection(Camera* cam, enum CameraType type);
+void   camera_move(Camera* cam, enum DirectionMask dir, bool kdown);
+void   camera_rotate(Camera* cam, enum AxisMask axis, float angle);
+void   camera_update(Camera* cam);
+Ray    camera_get_mouse_ray(Camera* cam, float x, float y);
+Vec2   camera_get_map_point(Ray ray);
+void   camera_free(Camera* cam);
 
 #endif
+

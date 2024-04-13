@@ -1,7 +1,7 @@
 #include <vulkan/vulkan.h>
 
+#include "common.h"
 #include "resmgr.h"
-#include "util/varray.h"
 #include "gfx/vulkan.h"
 #include "gfx/buffers.h"
 #include "gfx/pipeline.h"
@@ -19,9 +19,9 @@ static void scratch_add_point(float a[7]);
 static void scratch_add_line(float a[7], float b[7]);
 static void scratch_add_plane(float pts[6][7]);
 
-static struct Pipeline* point_pipeln;
-static struct Pipeline* line_pipeln;
-static struct Pipeline* plane_pipeln;
+static Pipeline* point_pipeln;
+static Pipeline* line_pipeln;
+static Pipeline* plane_pipeln;
 static VkVertexInputBindingDescription vert_binds[] = {
 	{ .binding   = 0,
 	  .stride    = SCRATCH_VERTEX_SIZE, /* xyzrgba */
@@ -55,9 +55,9 @@ static VBO axes_vbo;
 static VBO points_vbo;
 static VBO lines_vbo;
 static VBO planes_vbo;
-static struct VArray points;
-static struct VArray lines;
-static struct VArray planes;
+static VArray points;
+static VArray lines;
+static VArray planes;
 static bool axes_on;
 static bool points_on;
 static bool lines_on;
@@ -68,7 +68,7 @@ void scratch_init()
 	cam_ubo  = ubo_new(sizeof(Mat4x4[2]));
 	axes_vbo = vbo_new(sizeof(axes_verts), axes_verts, false);
 
-	struct PipelineCreateInfo pipeln_ci = {
+	PipelineCreateInfo pipeln_ci = {
 		.vshader     = STRING(SHADER_PATH "/scratch.vert"),
 		.fshader     = STRING(SHADER_PATH "/scratch.frag"),
 		.topology    = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
@@ -157,9 +157,9 @@ void scratch_add_trivecs(Trivec as[4])
 
 void scratch_clear()
 {
-	varray_reset(&points);
-	varray_reset(&lines);
-	varray_reset(&planes);
+	points.len = 0;
+	lines.len  = 0;
+	planes.len = 0;
 	vbo_free(&points_vbo);
 	vbo_free(&lines_vbo);
 	vbo_free(&planes_vbo);
@@ -232,3 +232,4 @@ static void scratch_add_plane(float pts[6][7])
 	varray_push(&planes, (float[6][7]){ UNPACK7(pts[0]), UNPACK7(pts[1]), UNPACK7(pts[2]),
 	                                    UNPACK7(pts[3]), UNPACK7(pts[4]), UNPACK7(pts[5]), });
 }
+

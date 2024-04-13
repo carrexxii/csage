@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "util/string.h"
+#include "common.h"
 #include "buffers.h"
 #include "image.h"
 
@@ -13,29 +13,29 @@
 #define PIPELINE_MAX_IMAGES    3
 #define PIPELINE_MAX_BINDINGS  (PIPELINE_MAX_UBOS + PIPELINE_MAX_SBOS + PIPELINE_MAX_IMAGES + 1)
 
-struct DescriptorSet {
+typedef struct DescriptorSet {
 	VkDescriptorSetLayout layout;
 	VkDescriptorSet       set;
-};
+} DescriptorSet;
 
-struct Pipeline {
+typedef struct Pipeline {
 	int i;
 	atomic bool is_active;
-	char* name;
+	const char* name;
 
-	VkPipeline           pipeln;
-	VkPipelineLayout     layout;
-	VkDescriptorPool     dpool;
-	struct DescriptorSet dset;
+	VkPipeline       pipeln;
+	VkPipelineLayout layout;
+	VkDescriptorPool dpool;
+	DescriptorSet    dset;
 
 	VkShaderModule  vshader;
 	VkShaderModule tcshader;
 	VkShaderModule teshader;
 	VkShaderModule  gshader;
 	VkShaderModule  fshader;
-};
+} Pipeline;
 
-struct PipelineCreateInfo {
+typedef struct PipelineCreateInfo {
 	int vert_bindc, vert_attrc;
 	VkVertexInputBindingDescription*   vert_binds;
 	VkVertexInputAttributeDescription* vert_attrs;
@@ -62,13 +62,14 @@ struct PipelineCreateInfo {
 	SBO sbos[PIPELINE_MAX_SBOS];
 
 	int imgc;
-	struct Image* imgs[PIPELINE_MAX_IMAGES];
-};
+	Image* imgs[PIPELINE_MAX_IMAGES];
+} PipelineCreateInfo;
 
-void pipelns_init(void);
-void pipelns_free(void);
-struct Pipeline* pipeln_new(struct PipelineCreateInfo* ci, const char* name);
-struct Pipeline* pipeln_update(struct Pipeline* pipeln, struct PipelineCreateInfo* pipeln_ci);
-void             pipeln_free(struct Pipeline* pipeln);
+void      pipelns_init(void);
+void      pipelns_free(void);
+Pipeline* pipeln_new(PipelineCreateInfo* ci, const char* name);
+Pipeline* pipeln_update(Pipeline* pipeln, PipelineCreateInfo* pipeln_ci);
+void      pipeln_free(Pipeline* pipeln);
 
 #endif
+

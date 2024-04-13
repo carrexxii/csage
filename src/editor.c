@@ -1,5 +1,4 @@
 #include "resmgr.h"
-#include "util/file.h"
 #include "input.h"
 #include "gfx/ui/ui.h"
 #include "gfx/sprite.h"
@@ -9,28 +8,28 @@
 bool editor_has_init;
 
 static struct UITileset {
-	struct SpriteSheet* sheet;
-	struct Sprite* sprite;
+	SpriteSheet* sheet;
+	Sprite* sprite;
 	int selection;
 } tileset;
 
-static void new_ui_tileset(struct UIContainer* parent, Rect rect);
-static void ui_tileset_build(struct UIObject* obj);
+static void new_ui_tileset(UIContainer* parent, Rect rect);
+static void ui_tileset_build(UIObject* obj);
 static void ui_tileset_set_image(String path);
-static bool ui_tileset_on_hover(struct UIObject* obj, struct UIContext* context);
-static void ui_tileset_on_click(struct UIObject* obj, struct UIContext* context);
+static bool ui_tileset_on_hover(UIObject* obj, UIContext* context);
+static void ui_tileset_on_click(UIObject* obj, UIContext* context);
 static void cb_place_tile(bool kdown);
 
 /* -------------------------------------------------------------------- */
 
-static void cb_test(int x) { DEBUG(1, "Clicked: %d", x); }
+static void cb_test(int x) { INFO("Clicked: %d", x); }
 
-static struct Arena* arena;
-static struct VArray sheets;
-static String* selected_file;
-static struct UIContainer* sidebar;
-static struct UIContainer* tset_container;
-static Vec2 mpos;
+static Arena        arena;
+static VArray       sheets;
+static String*      selected_file;
+static UIContainer* sidebar;
+static UIContainer* tset_container;
+static Vec2         mpos;
 
 static void cb_select_tile(int i)
 {
@@ -52,8 +51,8 @@ static void cb_load_tileset(int) {
 		ui_free_container(tset_container);
 	tset_container = ui_new_container(RECT(-1.0f, -1.0f, 1.0f, 1.0f), NULL);
 
-	struct SpriteGroup* group;
-	struct SpriteState* state;
+	SpriteGroup* group;
+	SpriteState* state;
 	Rect uv_rect;
 	Rect rect = RECT(-1.0f, -1.0f, 2.0f / UI_TILESET_GRID_COLUMNS, UI_TILESET_TILE_HEIGHT);
 	int spri = 0;
@@ -89,7 +88,7 @@ void editor_init()
 	button_new(sidebar, RECT(-0.9f, 0.82f, 0.8f, 0.12f), STRING("Load Tileset"), NULL, RECT1, cb_load_tileset, 0, NULL);
 	button_new(sidebar, RECT( 0.1f, 0.82f, 0.8f, 0.12f), STRING("Button 2"), NULL, RECT1, cb_test, 2, NULL);
 
-	dir_enumerate(SPRITE_SHEETS_PATH, false, false, STRING(".lua"), &sheets, arena);
+	enumerate_dir(SPRITE_SHEETS_PATH, false, false, STRING(".lua"), &sheets, &arena);
 	uilist_new(sidebar, sheets.len, (String*)sheets.data, NULL, RECT(-0.9f, -0.95f, 1.8f, 0.6f), true, cb_select_file);
 
 	new_ui_tileset(sidebar, RECT(-0.95f, -0.3f, 1.9f, 1.0f));
@@ -102,7 +101,7 @@ void editor_register_keys()
 	input_register(SDL_BUTTON_LEFT, cb_place_tile);
 }
 
-void editor_update(struct Camera* cam)
+void editor_update(Camera* cam)
 {
 	if (!tileset.sheet ||
 	    !(tileset.sprite = varray_get(&tileset.sheet->sprites, 0)))
@@ -123,7 +122,7 @@ void editor_free()
 	if (!editor_has_init)
 		return;
 
-	arena_free(arena);
+	arena_free(&arena);
 	varray_free(&sheets);
 
 	editor_has_init = false;
@@ -131,15 +130,15 @@ void editor_free()
 
 /* -------------------------------------------------------------------- */
 
-static struct UIStyle tileset_style = {
+static UIStyle tileset_style = {
 	.normal  = 0xFF5555FF,
 	.hover   = 0x55FF55FF,
 	.clicked = 0x5555FFFF,
 };
 
-static void new_ui_tileset(struct UIContainer* parent, Rect rect)
+static void new_ui_tileset(UIContainer* parent, Rect rect)
 {
-	struct UIObject obj = {
+	UIObject obj = {
 		.type    = UI_CUSTOM,
 		.style   = &default_style,
 		.rect    = ui_calc_rect(rect, parent),
@@ -155,19 +154,19 @@ static void new_ui_tileset(struct UIContainer* parent, Rect rect)
 	ui_add(parent, &obj);
 }
 
-static void ui_tileset_build(struct UIObject* obj)
+static void ui_tileset_build(UIObject* obj)
 {
 	assert(obj->type == UI_CUSTOM);
 
 	ui_update_object(obj);
 }
 
-static void ui_tileset_set_image(String path)
+static void ui_tileset_set_image(String)
 {
 
 }
 
-static bool ui_tileset_on_hover(struct UIObject* obj, struct UIContext* context)
+static bool ui_tileset_on_hover(UIObject* obj, UIContext* context)
 {
 	bool update = !obj->state.hover;
 	obj->state.hover   = true;
@@ -176,7 +175,7 @@ static bool ui_tileset_on_hover(struct UIObject* obj, struct UIContext* context)
 	return update;
 }
 
-static void ui_tileset_on_click(struct UIObject* obj, struct UIContext* context)
+static void ui_tileset_on_click(UIObject* obj, UIContext*)
 {
 	obj->state.clicked = false;
 }
@@ -188,3 +187,4 @@ static void cb_place_tile(bool kdown)
 
 	sprite_new(tileset.sheet, 0, mpos);
 }
+

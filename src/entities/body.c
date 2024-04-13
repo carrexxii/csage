@@ -2,10 +2,9 @@
 #include "components.h"
 #include "body.h"
 
-void bodies_update(isize count, struct Body* bodies)
+void bodies_update(isize count, Body* bodies)
 {
-	struct Body*   body;
-	struct Entity* e;
+	Body* body;
 	Vec2 dir;
 	for (int i = 0; i < count; i++) {
 		body = &bodies[i];
@@ -21,16 +20,16 @@ void bodies_update(isize count, struct Body* bodies)
 
 /* -------------------------------------------------------------------- */
 
-void body_set_dir(struct Body* body, enum Direction d, bool set)
+void body_set_dir(Body* body, DirectionMask dir, bool set)
 {
 	if (!body->moving)
 		body->dir_mask = 0;
 
-	enum Direction old_mask = body->dir_mask;
+	DirectionMask old_mask = body->dir_mask;
 	if (set)
-		body->dir_mask |= d;
+		body->dir_mask |= dir;
 	else
-		body->dir_mask &= ~d;
+		body->dir_mask &= ~dir;
 
 	body->moving        = !!body->dir_mask;
 	body->changed_state = old_mask != body->dir_mask;

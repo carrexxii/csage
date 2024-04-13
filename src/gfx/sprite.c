@@ -3,7 +3,6 @@
 #include "resmgr.h"
 #include "lua.h"
 #include "maths/maths.h"
-#include "util/varray.h"
 #include "vulkan.h"
 #include "buffers.h"
 #include "image.h"
@@ -12,19 +11,19 @@
 #include "map.h"
 #include "sprite.h"
 
-static void sprite_sheet_print(struct SpriteSheet* sheet);
-static void sprite_sheet_update_pipeln(struct SpriteSheet* sheet);
+static void sprite_sheet_print(SpriteSheet* sheet);
+static void sprite_sheet_update_pipeln(SpriteSheet* sheet);
 
-static struct PipelineCreateInfo pipeln_ci;
+static PipelineCreateInfo pipeln_ci;
 static int sheetc;
-static struct SpriteSheet sheets[MAX_SPRITE_SHEETS];
+static SpriteSheet sheets[MAX_SPRITE_SHEETS];
 static struct {
 	int sheet;
 } push_const;
 
 void sprites_init()
 {
-	pipeln_ci = (struct PipelineCreateInfo){
+	pipeln_ci = (PipelineCreateInfo){
 		.vshader     = STRING(SHADER_PATH "/sprite.vert"),
 		.fshader     = STRING(SHADER_PATH "/sprite.frag"),
 		.ubo_stages  = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -35,11 +34,13 @@ void sprites_init()
 		.push_sz     = sizeof(push_const),
 		.push_stages = VK_SHADER_STAGE_VERTEX_BIT,
 	};
+
+	INFO(TERM_DARK_GREEN "[GFX] Initialized sprites");
 }
 
-struct SpriteSheet* sprites_get_sheet(const char* sheet_name)
+SpriteSheet* sprites_get_sheet(const char* sheet_name)
 {
-	struct SpriteSheet* sheet = NULL;
+	SpriteSheet* sheet = NULL;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		if (!strcmp(sheet->name, sheet_name))
@@ -50,7 +51,7 @@ struct SpriteSheet* sprites_get_sheet(const char* sheet_name)
 	return NULL;
 }
 
-int sprites_get_sheet_id(struct SpriteSheet* sheet)
+int sprites_get_sheet_id(SpriteSheet* sheet)
 {
 	for (int i = 0; i < sheetc; i++)
 		if (&sheets[i] == sheet)
@@ -60,11 +61,11 @@ int sprites_get_sheet_id(struct SpriteSheet* sheet)
 	return -1;
 }
 
-int sprites_get_group(struct SpriteSheet* sheet, const char* group_name)
+int sprites_get_group(SpriteSheet* restrict sheet, const char* restrict group_name)
 {
 	assert(sheet && group_name);
 
-	struct SpriteGroup* group;
+	SpriteGroup* group;
 	for (int i = 0; i < sheet->groupc; i++) {
 		group = &sheet->groups[i];
 		if (!strcmp(group->name, group_name))
@@ -77,16 +78,16 @@ int sprites_get_group(struct SpriteSheet* sheet, const char* group_name)
 
 void sprites_record_commands(VkCommandBuffer cmd_buf)
 {
-	isize data_sz;
-	struct Pipeline*    pl;
-	struct SpriteSheet* sheet;
-	struct Sprite*      sprite;
+	isize        data_sz;
+	Pipeline*    pl;
+	SpriteSheet* sheet;
+	Sprite*      sprite;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		if (!sheet->sprites.len)
 			continue;
 
-		buffer_update(sheet->sprite_data, sheet->sprites.len*sizeof(struct Sprite), sheet->sprites.data, 0);
+		buffer_update(sheet->sprite_data, sheet->sprites.len*sizeof(Sprite), sheet->sprites.data, 0);
 		push_const.sheet = i;
 
 		pl = sheet->pipeln;
@@ -99,9 +100,9 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 
 void sprites_update()
 {
-	struct SpriteSheet* sheet;
-	struct SpriteGroup* group;
-	struct Sprite*      sprite;
+	SpriteSheet* sheet;
+	SpriteGroup* group;
+	Sprite*      sprite;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 
@@ -121,7 +122,7 @@ void sprites_update()
 
 /* -------------------------------------------------------------------- */
 
-struct SpriteSheet* sprite_sheet_new(const char* name, int z_lvl)
+SpriteSheet* sprite_sheet_new(const char* name, int z_lvl)
 {
 	char path[PATH_BUFFER_SIZE];
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", name);
@@ -136,29 +137,29 @@ struct SpriteSheet* sprite_sheet_new(const char* name, int z_lvl)
 		ERROR("[RES] Failed to load \"%s\" (%s)", name, path);
 		return NULL;
 	}
-	struct SpriteSheet* sheet_data = lua_topointer(lua_state, -1);
+	SpriteSheet* sheet_data = (struct SpriteSheet*)lua_topointer(lua_state, -1);
 	sheet_data->z = z_lvl;
 	lua_pop(lua_state, 1);
 
 	return sprite_sheet_load(sheet_data);
 }
 
-struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data)
+SpriteSheet* sprite_sheet_load(const SpriteSheet* sheet_data)
 {
-	struct SpriteSheet* sheet = &sheets[sheetc++];
+	SpriteSheet* sheet = &sheets[sheetc++];
 
 	*sheet = *sheet_data;
-	sheet->sprites = varray_new(DEFAULT_SPRITES, sizeof(struct Sprite));
-	sheet->groups  = smalloc(sheet_data->groupc*sizeof(struct SpriteGroup));
-	memcpy(sheet->groups, sheet_data->groups, sheet_data->groupc*sizeof(struct SpriteGroup));
+	sheet->sprites = varray_new(DEFAULT_SPRITES, sizeof(Sprite));
+	sheet->groups  = smalloc(sheet_data->groupc*sizeof(SpriteGroup));
+	memcpy(sheet->groups, sheet_data->groups, sheet_data->groupc*sizeof(SpriteGroup));
 
-	struct SpriteGroup* group;
-	struct SpriteState* state;
+	SpriteGroup* group;
+	SpriteState* state;
 	int total_framec = 0;
 	for (int i = 0; i < sheet_data->groupc; i++) {
 		group = &sheet->groups[i];
 		group->statec = sheet_data->groups[i].statec;
-		group->states = smalloc(sheet_data->groups[i].statec*sizeof(struct SpriteState));
+		group->states = smalloc(sheet_data->groups[i].statec*sizeof(SpriteState));
 		for (int j = 0; j < sheet_data->groups[i].statec; j++) {
 			state = &group->states[j];
 			state->gi       = sheet_data->groups[i].states[j].gi;
@@ -166,23 +167,23 @@ struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data)
 			state->dir      = sheet_data->groups[i].states[j].dir;
 			state->duration = sheet_data->groups[i].states[j].duration;
 			state->framec   = sheet_data->groups[i].states[j].framec;
-			state->frames   = smalloc(sheet_data->groups[i].states[j].framec*sizeof(struct SpriteFrame));
+			state->frames   = smalloc(sheet_data->groups[i].states[j].framec*sizeof(SpriteFrame));
 			total_framec += sheet_data->groups[i].states[j].framec;
 			for (int k = 0; k < sheet_data->groups[i].states[j].framec; k++)
 				state->frames[k] = sheet_data->groups[i].states[j].frames[k];
 		}
 	}
 
-	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(struct Sprite));
-	sheet->sprite_sheet_data = sbo_new(sizeof(int[4]) + total_framec * sizeof(struct SpriteFrame));
+	sheet->sprite_data       = sbo_new(DEFAULT_SPRITES * sizeof(Sprite));
+	sheet->sprite_sheet_data = sbo_new(sizeof(int[4]) + total_framec * sizeof(SpriteFrame));
 	buffer_update(sheet->sprite_sheet_data, sizeof(int[4]), (int[]){ sheet_data->w, sheet_data->h, sheet_data->z, SPRITE_SCALE }, 0);
 	isize framec = 0;
 	isize total_copied = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
 		for (int j = 0; j < sheet->groups[i].statec; j++) {
 			framec = sheet->groups[i].states[j].framec;
-			buffer_update(sheet->sprite_sheet_data, framec*sizeof(struct SpriteFrame),
-			              sheet->groups[i].states[j].frames, sizeof(int[4]) + total_copied*sizeof(struct SpriteFrame));
+			buffer_update(sheet->sprite_sheet_data, framec*sizeof(SpriteFrame),
+			              sheet->groups[i].states[j].frames, sizeof(int[4]) + total_copied*sizeof(SpriteFrame));
 			total_copied += framec;
 		}
 	}
@@ -204,14 +205,14 @@ struct SpriteSheet* sprite_sheet_load(struct SpriteSheet* sheet_data)
 	sheet->pipeln = pipeln_new(&pipeln_ci, "Sprites");
 	sheet->pipeln = pipeln_update(sheet->pipeln, &pipeln_ci);
 
-	DEBUG(1, "[RES] Loaded new sprite sheet (%d) \"%s\" with %d sprites", sheetc - 1, sheet->name, sheet->groupc);
+	INFO(TERM_GREEN "[RES] Loaded new sprite sheet (%d) \"%s\" with %d sprites", sheetc - 1, sheet->name, sheet->groupc);
 	return sheet;
 }
 
 void sprite_sheets_free()
 {
-	struct SpriteSheet* sheet;
-	struct SpriteGroup* group;
+	SpriteSheet* sheet;
+	SpriteGroup* group;
 	for (int i = 0; i < sheetc; i++) {
 		sheet = &sheets[i];
 		for (int j = 0; j < sheet->groupc; j++) {
@@ -229,7 +230,7 @@ void sprite_sheets_free()
 	}
 }
 
-static void sprite_sheet_update_pipeln(struct SpriteSheet* sheet)
+static void sprite_sheet_update_pipeln(SpriteSheet* sheet)
 {
 	assert(pipeln_ci.uboc == 2 && pipeln_ci.sboc == 4 && pipeln_ci.imgc == 2);
 
@@ -242,18 +243,18 @@ static void sprite_sheet_update_pipeln(struct SpriteSheet* sheet)
 	sheet->pipeln = pipeln_update(sheet->pipeln, &pipeln_ci);
 }
 
-static void sprite_sheet_print(struct SpriteSheet* sheet)
+static void sprite_sheet_print(SpriteSheet* sheet)
 {
-	DEBUG(1, "Sprite sheet \"%s\" is %dx%d with %d groups", sheet->name, sheet->w, sheet->h, sheet->groupc);
-	struct SpriteGroup* group;
-	struct SpriteState* state;
-	struct SpriteFrame* frame;
+	INFO(TERM_DARK_GREEN "Sprite sheet \"%s\" is %dx%d with %d groups", sheet->name, sheet->w, sheet->h, sheet->groupc);
+	SpriteGroup* group;
+	SpriteState* state;
+	SpriteFrame* frame;
 	for (int i = 0; i < sheet->groupc; i++) {
 		group = &sheet->groups[i];
-		DEBUG(1, "\tGroup \"%s\" w/%d states", group->name, group->statec);
+		INFO(TERM_DARK_GREEN "\tGroup \"%s\" w/%d states", group->name, group->statec);
 		for (int j = 0; j < group->statec; j++) {
 			state = &group->states[j];
-			DEBUG(1, "\tState \"%s\" w/%d frames in direction %u and frame time of %d",
+			INFO(TERM_DARK_GREEN "\tState \"%s\" w/%d frames in direction %u and frame time of %d",
 			      string_of_animation_state[state->type], state->framec, state->dir, state->duration); // TODO: STRING_OF_DIRECTION
 			for (int k = 0; k < state->framec; k++) {
 				frame = &state->frames[k];
@@ -262,16 +263,16 @@ static void sprite_sheet_print(struct SpriteSheet* sheet)
 			fprintf(stderr, "\n");
 		}
 	}
-	DEBUG(1, "\n");
+	INFO(TERM_DARK_GREEN "\n");
 }
 
 /* -------------------------------------------------------------------- */
 
-struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec2 pos)
+Sprite* sprite_new(SpriteSheet* sheet, int group_id, Vec2 pos)
 {
 	int sheet_id = sprites_get_sheet_id(sheet);
-	struct SpriteGroup* group = &sheet->groups[group_id];
-	struct Sprite sprite = {
+	SpriteGroup* group = &sheet->groups[group_id];
+	Sprite sprite = {
 		.pos   = pos,
 		.gi    = group->states[0].gi,
 		.group = group_id,
@@ -279,26 +280,26 @@ struct Sprite* sprite_new(struct SpriteSheet* sheet, int group_id, Vec2 pos)
 	};
 	isize spri = varray_push(&sheet->sprites, &sprite);
 
-	if (sheet->sprite_data.sz < (isize)(sheet->sprites.cap * sizeof(struct Sprite))) {
+	if (sheet->sprite_data.sz < (isize)(sheet->sprites.cap * sizeof(Sprite))) {
 		resmgr_defer(RES_BUFFER, &sheet->sprite_data);
-		sheet->sprite_data = sbo_new(sheet->sprites.cap * sizeof(struct Sprite));
+		sheet->sprite_data = sbo_new(sheet->sprites.cap * sizeof(Sprite));
 		sprite_sheet_update_pipeln(sheet);
 	}
 
-	DEBUG(5, "[GFX] Created new sprite (%d %s@%s) at (%.2f, %.2f)",
+	INFO(TERM_DARK_GREEN "[GFX] Created new sprite (%d %s@%s) at (%.2f, %.2f)",
 	      sprite.gi, sheet->name, sheet->groups[group_id].name, pos.x, pos.y);
 	return varray_get(&sheet->sprites, spri);
 }
 
-struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spritec, Vec2* poss, enum SpriteStateType* states)
+Sprite* sprite_new_batch(SpriteSheet* restrict sheet, int group_id, int spritec, Vec2* poss, enum SpriteStateType* restrict states)
 {
 	int sheet_id = sprites_get_sheet_id(sheet);
-	struct SpriteGroup* group = &sheet->groups[group_id];
-	struct Sprite* sprites = smalloc(spritec * sizeof(struct Sprite));
+	SpriteGroup* group = &sheet->groups[group_id];
+	Sprite* sprites = smalloc(spritec * sizeof(Sprite));
 	int state;
 	for (int i = 0; i < spritec; i++) {
 		state = states? states[i]: 0;
-		sprites[i] = (struct Sprite){
+		sprites[i] = (Sprite){
 			.pos   = poss[i],
 			.gi    = group->states[state].gi,
 			.sheet = sheet_id,
@@ -309,21 +310,21 @@ struct Sprite* sprite_new_batch(struct SpriteSheet* sheet, int group_id, int spr
 
 	isize i = varray_push_many(&sheet->sprites, spritec, sprites);
 
-	if (sheet->sprite_data.sz < (isize)(sheet->sprites.cap * sizeof(struct Sprite))) {
+	if (sheet->sprite_data.sz < (isize)(sheet->sprites.cap * sizeof(Sprite))) {
 		resmgr_defer(RES_BUFFER, &sheet->sprite_data);
-		sheet->sprite_data = sbo_new(sheet->sprites.cap * sizeof(struct Sprite));
+		sheet->sprite_data = sbo_new(sheet->sprites.cap * sizeof(Sprite));
 		sprite_sheet_update_pipeln(sheet);
 	}
 
 	sfree(sprites);
-	DEBUG(3, "[GFX] Created sprite batch of %d sprites from %s@%s",
+	INFO(TERM_DARK_GREEN "[GFX] Created sprite batch of %d sprites from %s@%s",
 	      spritec, sheets[sheet_id].name, sheets[sheet_id].groups[group_id].name);
 	return varray_get(&sheet->sprites, i);
 }
 
-struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec2 pos)
+Sprite* sprite_new_by_gi(SpriteSheet* sheet, int gi, Vec2 pos)
 {
-	struct SpriteGroup* group;
+	SpriteGroup* group;
 	for (int i = 0; i < sheet->groupc; i++) {
 		group = &sheet->groups[i];
 		if (BETWEEN(gi, group->states[0].gi, group->states[group->statec - 1].gi))
@@ -334,10 +335,10 @@ struct Sprite* sprite_new_by_gi(struct SpriteSheet* sheet, int gi, Vec2 pos)
 	return NULL;
 }
 
-void sprite_set_state(struct Sprite* sprite, enum SpriteStateType type, enum Direction dir)
+void sprite_set_state(Sprite* sprite, SpriteStateType type, DirectionMask dir)
 {
 	// TODO: update
-	struct SpriteSheet* sheet = &sheets[sprite->sheet];
+	SpriteSheet* sheet = &sheets[sprite->sheet];
 	int gi = 0;
 	for (int i = 0; i < sheet->groupc; i++) {
 		for (int j = 0; j < sheet->groups[i].statec; j++) {

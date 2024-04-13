@@ -15,12 +15,12 @@
 #include "maths/scratch.h"
 #include "renderer.h"
 
-int64                   frame_number;
-VkRenderPass            renderpass;
-VkSampler               default_sampler;
-struct DirectionalLight global_light;
-UBO                     global_camera_ubo;
-UBO                     global_light_ubo;
+int64            frame_number;
+VkRenderPass     renderpass;
+VkSampler        default_sampler;
+DirectionalLight global_light;
+UBO              global_camera_ubo;
+UBO              global_light_ubo;
 
 static void record_commands(int imgi);
 static void create_frame_buffers(void);
@@ -116,7 +116,7 @@ void renderer_init()
 	if (vkCreateRenderPass(logical_gpu, &renpassi, NULL, &renderpass))
 		ERROR("[VK] Failed to create render pass");
 	else
-		DEBUG(1, "[VK] Created render pass");
+		INFO(TERM_DARK_GREEN "[VK] Created render pass");
 
 	create_frame_buffers();
 	create_command_buffers();
@@ -198,7 +198,7 @@ void renderer_free()
 {
 	vkDeviceWaitIdle(logical_gpu);
 
-	DEBUG(3, "[VK] Destroying sync objects...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying sync objects...");
 	for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(logical_gpu, semas.imgavail[i], NULL);
 		vkDestroySemaphore(logical_gpu, semas.renderdone[i], NULL);
@@ -208,17 +208,17 @@ void renderer_free()
 	swapchain_free();
 	vkDestroySampler(logical_gpu, default_sampler, NULL);
 
-	DEBUG(3, "[VK] Destroying frambuffers...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying frambuffers...");
 	for (uint i = 0; i < swapchain.imgc; i++)
 		vkDestroyFramebuffer(logical_gpu, frame_bufs[i], NULL);
 
-	DEBUG(3, "[VK] Freeing UI pipeline...");
+	INFO(TERM_DARK_GREEN "[VK] Freeing UI pipeline...");
 	ui_free();
-	// DEBUG(3, "[VK] Freeing models pipeline...");
+	// INFO(TERM_DARK_GREEN "[VK] Freeing models pipeline...");
 	// models_free();
-	DEBUG(3, "[VK] Freeing font pipeline...");
+	INFO(TERM_DARK_GREEN "[VK] Freeing font pipeline...");
 	font_free();
-	DEBUG(3, "[VK] Freeing particles pipeline...");
+	INFO(TERM_DARK_GREEN "[VK] Freeing particles pipeline...");
 	particles_free();
 
 	ubo_free(&global_camera_ubo);
@@ -226,7 +226,7 @@ void renderer_free()
 
 	pipelns_free();
 
-	DEBUG(3, "[VK] Destroying render pass...");
+	INFO(TERM_DARK_GREEN "[VK] Destroying render pass...");
 	vkDestroyRenderPass(logical_gpu, renderpass, NULL);
 
 	free(frame_bufs);
@@ -290,7 +290,7 @@ static void create_frame_buffers()
 		if (vkCreateFramebuffer(logical_gpu, &framebufi, NULL, &frame_bufs[i]))
 			ERROR("[VK] Failed to create framebuffer %u", i);
 		else
-			DEBUG(3, "[VK] Created framebuffer %u", i);
+			INFO(TERM_DARK_GREEN "[VK] Created framebuffer %u", i);
 	}
 }
 
@@ -306,7 +306,7 @@ static void create_command_buffers()
 	if ((vk_err = vkAllocateCommandBuffers(logical_gpu, &bufi, cmd_bufs)))
 		ERROR("[VK] Failed to create command buffers\n\t\"%s\"", STRING_OF_VK_RESULT(vk_err));
 	else
-		DEBUG(3, "[VK] Created command buffers");
+		INFO(TERM_DARK_GREEN "[VK] Created command buffers");
 }
 
 static void create_sync_objects()
@@ -323,6 +323,6 @@ static void create_sync_objects()
 		    vkCreateSemaphore(logical_gpu, &semai, NULL, &semas.imgavail[i]) ||
 		    vkCreateFence(logical_gpu, &fencei, NULL, &fences.frames[i]))
 			ERROR("[VK] Failed to create sync object(s) for frame %d", i);
-	DEBUG(3, "[VK] Created %d sync objects", FRAMES_IN_FLIGHT);
+	INFO(TERM_DARK_GREEN "[VK] Created %d sync objects", FRAMES_IN_FLIGHT);
 }
 

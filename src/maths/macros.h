@@ -1,7 +1,9 @@
 #ifndef MATHS_MACROS_H
 #define MATHS_MACROS_H
 
-static inline void not_implemented(void) { assert(false); }
+#include <assert.h>
+
+[[noreturn]] static inline void not_implemented(void) { assert(false); }
 
 #define equal(a, b) _Generic(a,   \
 		Vec2 : vec2_equal_vec2,   \
@@ -249,3 +251,4 @@ static inline void not_implemented(void) { assert(false); }
 	)(a, b, t)
 
 #endif
+

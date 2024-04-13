@@ -2,11 +2,11 @@
 #include "ui.h"
 #include "uilist.h"
 
-void uilist_new(struct UIContainer* parent, int strc, String* strs, struct UIStyle* style, Rect rect, bool numbered, void (*cb)(int))
+void uilist_new(UIContainer* parent, int strc, String* strs, UIStyle* style, Rect rect, bool numbered, void (*cb)(int))
 {
 	assert(parent);
 
-	struct UIObject obj = {
+	UIObject obj = {
 		.type    = UI_LIST,
 		.style   = style? style: &default_list_style,
 		.rect    = ui_calc_rect(rect, parent),
@@ -16,7 +16,7 @@ void uilist_new(struct UIContainer* parent, int strc, String* strs, struct UISty
 		.uilist = {
 			.spacing   = 15.0f / config.winh,
 			.text_objc = strc,
-			.text_objs = smalloc(strc * sizeof(struct TextObject)),
+			.text_objs = smalloc(strc * sizeof(TextObject)),
 			.cb        = cb,
 		},
 	};
@@ -29,24 +29,24 @@ void uilist_new(struct UIContainer* parent, int strc, String* strs, struct UISty
 			sprintf(str.data, "%d. ", i);
 			str.len += strlen(str.data);
 		}
-		string_cat_cstr(&str, strs[i].data, -1);
+		str_cat(str.data, strs[i].data);
 		obj.uilist.text_objs[i] = font_render(str, UI_TEXT_Z_LVL, text_w);
 		string_clear(&str);
 	}
 	string_free(&str);
 
 	ui_add(parent, &obj);
-	DEBUG(3, "[UI] Created new string list (%d strings) with parent %p (%.2f, %.2f, %.2f, %.2f)",
+	INFO(TERM_DARK_CYAN "[UI] Created new string list (%d strings) with parent %p (%.2f, %.2f, %.2f, %.2f)",
 	      strc, (void*)parent, rect.x, rect.y, rect.w, rect.h);
 }
 
-void uilist_build(struct UIObject* obj)
+void uilist_build(UIObject* obj)
 {
 	assert(obj->type == UI_LIST);
 
 	ui_update_object(obj);
 
-	struct TextObject* txt_obj;
+	TextObject* txt_obj;
 	float y = (float)font_size / config.winh;
 	for (int i = 0; i < obj->uilist.text_objc; i++) {
 		txt_obj = obj->uilist.text_objs[i];
@@ -56,7 +56,7 @@ void uilist_build(struct UIObject* obj)
 	}
 }
 
-bool uilist_on_hover(struct UIObject* obj, struct UIContext* context)
+bool uilist_on_hover(UIObject* obj, UIContext* context)
 {
 	assert(obj->type == UI_LIST);
 
@@ -67,12 +67,12 @@ bool uilist_on_hover(struct UIObject* obj, struct UIContext* context)
 	return update;
 }
 
-void uilist_on_click(struct UIObject* obj, struct UIContext* context)
+void uilist_on_click(UIObject* obj, UIContext* context)
 {
 	assert(obj->type == UI_LIST);
 
 	obj->state.clicked = false;
-	struct TextObject* txt_obj;
+	TextObject* txt_obj;
 	Rect rect = RECT(obj->rect.x, obj->rect.y + 2.0f*obj->padding.y - 2.0f*ONE_PXY, obj->rect.w, 0.0f);
 	for (int i = 0; i < obj->uilist.text_objc; i++) {
 		txt_obj = obj->uilist.text_objs[i];
@@ -87,10 +87,11 @@ void uilist_on_click(struct UIObject* obj, struct UIContext* context)
 	}
 }
 
-void uilist_free(struct UIObject* obj)
+void uilist_free(UIObject* obj)
 {
 	// for (int i = 0; i < obj->uilist.text_objc; i++)
 	// 	font_free(obj->uilist.text_objs);
 
 	sfree(obj->uilist.text_objs);
 }
+
