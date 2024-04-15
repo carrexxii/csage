@@ -42,7 +42,7 @@ void init_vulkan(SDL_Window* win)
 	vkEnumerateInstanceExtensionProperties(NULL, &extpc, extps);
 	INFO(TERM_DARK_GREEN "[VK] %u Vulkan extensions are supported:", extpc);
 	for (uint i = 0; i < extpc; i++)
-		INFO(TERM_DARK_GREEN "\t%s", extps[i].extensionName);
+		INFO("\t%s", extps[i].extensionName);
 
 	/* Debugging exts must come last */
 #ifdef _WIN32
@@ -64,11 +64,11 @@ void init_vulkan(SDL_Window* win)
 	vkEnumerateInstanceLayerProperties(&vlc, vl);
 	INFO(TERM_DARK_GREEN "[VK] %u Vulkan validation layers available: ", vlc);
 	for (uint i = 0; i < vlc; i++)
-		INFO(TERM_DARK_GREEN "\t%s", vl[i].layerName);
+		INFO("\t%s", vl[i].layerName);
 
 	INFO(TERM_DARK_GREEN "[VK] %d extensions enabled:", extc);
 	for (uint i = 0; i < extc; i++)
-		INFO(TERM_DARK_GREEN "\t%s", exts[i]);
+		INFO("\t%s", exts[i]);
 
 	VkInstanceCreateInfo instci = {
 		.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,

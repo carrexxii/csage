@@ -47,7 +47,7 @@ static isize      deferc;
 static SceneDefer defers[MAX_DEFER_FUNCTIONS];
 
 ///
-Map map;
+// Map map;
 ///
 
 void scenemgr_init(SDL_Window* win)
@@ -72,8 +72,8 @@ void scenemgr_init(SDL_Window* win)
 	                             VEC3(0.01f, 0.01f, 0.01f),
 	                             VEC3(0.2f , 0.2f , 0.2f));
 
-	map_new(&map, "test");
-	scenemgr_defer((DeferFn)map_free, &map);
+	// map_new(&map, "test");
+	// scenemgr_defer((DeferFn)map_free, &map);
 
 	player_init();
 	game_cam.follow = &entity_get_body(player_entity, player_group)->pos;
@@ -119,7 +119,7 @@ void scenemgr_free()
 {
 	scene_exec_defer();
 	editor_free();
-	sprite_sheets_free();
+	sprites_free();
 
 	camera_free(&game_cam);
 	camera_free(&editor_cam);

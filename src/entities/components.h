@@ -18,7 +18,6 @@ typedef struct Body {
 
 #define AI_MOVE_TO_PRECISION 0.5f
 
-#define STRING_OF_AI_TYPE(x) ((x) >= AI_TYPE_MAX? "<Unknown>": string_of_ai_type[x])
 typedef enum AIType {
 	AI_TYPE_NONE,
 	AI_TYPE_CONTROLLABLE,
@@ -27,15 +26,7 @@ typedef enum AIType {
 	AI_TYPE_ENEMY,
 	AI_TYPE_MAX,
 } AIType;
-static const char* string_of_ai_type[] = {
-	[AI_TYPE_NONE]         = "AI_TYPE_NONE",
-	[AI_TYPE_CONTROLLABLE] = "AI_TYPE_CONTROLLABLE",
-	[AI_TYPE_FRIENDLY]     = "AI_TYPE_FRIENDLY",
-	[AI_TYPE_NEUTRAL]      = "AI_TYPE_NEUTRAL",
-	[AI_TYPE_ENEMY]        = "AI_TYPE_ENEMY",
-};
 
-#define STRING_OF_AI_STATE_TYPE(x) ((x) >= AI_STATE_MAX? "<Unknown>": string_of_ai_state_type[x])
 typedef enum AIStateType {
 	AI_STATE_IDLE,
 	AI_STATE_FOLLOW,
@@ -44,13 +35,7 @@ typedef enum AIStateType {
 	AI_STATE_PATHING,
 	AI_STATE_MAX,
 } AIStateType;
-static const char* string_of_ai_state_type[] = {
-	[AI_STATE_IDLE]    = "AI_STATE_IDLE",
-	[AI_STATE_FOLLOW]  = "AI_STATE_FOLLOW",
-	[AI_STATE_PATROL]  = "AI_STATE_PATROL",
-	[AI_STATE_WANDER]  = "AI_STATE_WANDER",
-	[AI_STATE_PATHING] = "AI_STATE_PATHING",
-};
+
 typedef struct AIState {
 	AIStateType type;
 	union {

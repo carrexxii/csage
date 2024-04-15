@@ -225,10 +225,10 @@ static void get_device_properties(VkPhysicalDevice dev)
 			gpu_properties.lazy_mem = true;
 
 	INFO(TERM_DARK_GREEN "[VK] GPU has the following support:");
-	INFO(TERM_DARK_GREEN "\tMSAA samples     -> %d", max_samples);
-	INFO(TERM_DARK_GREEN "\tLazy memory      -> %s", STR_TF(gpu_properties.lazy_mem));
-	INFO(TERM_DARK_GREEN "\tPoint size range -> %1.2f - %1.2f", devp.limits.pointSizeRange[0], devp.limits.pointSizeRange[1]);
-	INFO(TERM_DARK_GREEN "\tLine width range -> %1.2f - %1.2f", devp.limits.lineWidthRange[0], devp.limits.lineWidthRange[1]);
+	INFO("\tMSAA samples     -> %d", max_samples);
+	INFO("\tLazy memory      -> %s", STR_TF(gpu_properties.lazy_mem));
+	INFO("\tPoint size range -> %1.2f - %1.2f", devp.limits.pointSizeRange[0], devp.limits.pointSizeRange[1]);
+	INFO("\tLine width range -> %1.2f - %1.2f", devp.limits.lineWidthRange[0], devp.limits.lineWidthRange[1]);
 }
 
 static void debug_physical(VkPhysicalDevice dev)
@@ -240,66 +240,66 @@ static void debug_physical(VkPhysicalDevice dev)
 	vkGetPhysicalDeviceFeatures(dev, &devf);
 
 	INFO(TERM_DARK_GREEN "[VK] Physical device: %s (%u)", devp.deviceName, devp.vendorID);
-	INFO(TERM_DARK_GREEN "\tDevice type                       -> %s (%u)", STRING_OF_DEVICE_TYPE(devp.deviceType), devp.deviceID);
+	INFO("\tDevice type                       -> %s (%u)", STRING_OF_DEVICE_TYPE(devp.deviceType), devp.deviceID);
 	patch = VK_VERSION_PATCH(devp.apiVersion);
 	major = VK_VERSION_MAJOR(devp.apiVersion);
 	minor = VK_VERSION_MINOR(devp.apiVersion);
-	INFO(TERM_DARK_GREEN "\tAPI version                       -> %u.%u.%u", major, minor, patch);
+	INFO("\tAPI version                       -> %u.%u.%u", major, minor, patch);
 	major = VK_VERSION_MAJOR(devp.driverVersion);
 	minor = VK_VERSION_MINOR(devp.driverVersion);
 	patch = VK_VERSION_PATCH(devp.driverVersion);
-	INFO(TERM_DARK_GREEN "\tDriver version                    -> %u.%u.%u", major, minor, patch);
-	INFO(TERM_DARK_GREEN "\tGeometry shader                   -> %s", STR_YN(devf.geometryShader));
-	INFO(TERM_DARK_GREEN "\tTessellation shader               -> %s", STR_YN(devf.tessellationShader));
-	INFO(TERM_DARK_GREEN "\tSampler anisotropy                -> %s", STR_YN(devf.samplerAnisotropy));
-	INFO(TERM_DARK_GREEN "\tMSAA sample count                 -> %d", gpu_properties.max_samples);
-	INFO(TERM_DARK_GREEN "\tMax image dimensions (1/2/3)      -> %u/%u/%u", devp.limits.maxImageDimension1D,
+	INFO("\tDriver version                    -> %u.%u.%u", major, minor, patch);
+	INFO("\tGeometry shader                   -> %s", STR_YN(devf.geometryShader));
+	INFO("\tTessellation shader               -> %s", STR_YN(devf.tessellationShader));
+	INFO("\tSampler anisotropy                -> %s", STR_YN(devf.samplerAnisotropy));
+	INFO("\tMSAA sample count                 -> %d", gpu_properties.max_samples);
+	INFO("\tMax image dimensions (1/2/3)      -> %u/%u/%u", devp.limits.maxImageDimension1D,
 	                                                            devp.limits.maxImageDimension2D,
 	                                                            devp.limits.maxImageDimension3D);
-	INFO(TERM_DARK_GREEN "\tMax sampler allocations           -> %u", devp.limits.maxSamplerAllocationCount);
-	INFO(TERM_DARK_GREEN "\tMax memory allocations            -> %u", devp.limits.maxMemoryAllocationCount);
-	INFO(TERM_DARK_GREEN "\tMax uniform buffer range          -> %u (%uMB)", devp.limits.maxUniformBufferRange,
+	INFO("\tMax sampler allocations           -> %u", devp.limits.maxSamplerAllocationCount);
+	INFO("\tMax memory allocations            -> %u", devp.limits.maxMemoryAllocationCount);
+	INFO("\tMax uniform buffer range          -> %u (%uMB)", devp.limits.maxUniformBufferRange,
 	                                                             devp.limits.maxUniformBufferRange/8/1024/1024);
-	INFO(TERM_DARK_GREEN "\tMax storage buffer range          -> %u (%uMB)", devp.limits.maxStorageBufferRange,
+	INFO("\tMax storage buffer range          -> %u (%uMB)", devp.limits.maxStorageBufferRange,
 	                                                             devp.limits.maxStorageBufferRange/8/1024/1024);
-	INFO(TERM_DARK_GREEN "\tMax push constants size           -> %uB", devp.limits.maxPushConstantsSize);
-	INFO(TERM_DARK_GREEN "\tMax bound descriptor sets         -> %u", devp.limits.maxBoundDescriptorSets);
-	INFO(TERM_DARK_GREEN "\tMax vertex input attributes       -> %u", devp.limits.maxVertexInputAttributes);
-	INFO(TERM_DARK_GREEN "\tMax vertex input bindings         -> %u", devp.limits.maxVertexInputBindings);
-	INFO(TERM_DARK_GREEN "\tMax vertex input attribute offset -> %u", devp.limits.maxVertexInputAttributeOffset);
-	INFO(TERM_DARK_GREEN "\tMax vertex input binding stride   -> %u", devp.limits.maxVertexInputBindingStride);
-	INFO(TERM_DARK_GREEN "\tMax vertex output components      -> %u", devp.limits.maxVertexOutputComponents);
-	INFO(TERM_DARK_GREEN "\tMipmap precision bits             -> %u", devp.limits.mipmapPrecisionBits);
-	INFO(TERM_DARK_GREEN "\tMax draw indexed index value      -> %u", devp.limits.maxDrawIndexedIndexValue);
-	INFO(TERM_DARK_GREEN "\tMax draw indirect count           -> %u", devp.limits.maxDrawIndirectCount);
-	INFO(TERM_DARK_GREEN "\tMax sampler LoD bias              -> %f", devp.limits.maxSamplerLodBias);
-	INFO(TERM_DARK_GREEN "\tMax sampler anisotropy            -> %f", devp.limits.maxSamplerAnisotropy);
-	INFO(TERM_DARK_GREEN "\tMax clip distances                -> %u", devp.limits.maxClipDistances);
-	INFO(TERM_DARK_GREEN "\tMax cull distances                -> %u", devp.limits.maxCullDistances);
-	INFO(TERM_DARK_GREEN "\tMax combined clip/cull distances  -> %u", devp.limits.maxCombinedClipAndCullDistances);
+	INFO("\tMax push constants size           -> %uB", devp.limits.maxPushConstantsSize);
+	INFO("\tMax bound descriptor sets         -> %u", devp.limits.maxBoundDescriptorSets);
+	INFO("\tMax vertex input attributes       -> %u", devp.limits.maxVertexInputAttributes);
+	INFO("\tMax vertex input bindings         -> %u", devp.limits.maxVertexInputBindings);
+	INFO("\tMax vertex input attribute offset -> %u", devp.limits.maxVertexInputAttributeOffset);
+	INFO("\tMax vertex input binding stride   -> %u", devp.limits.maxVertexInputBindingStride);
+	INFO("\tMax vertex output components      -> %u", devp.limits.maxVertexOutputComponents);
+	INFO("\tMipmap precision bits             -> %u", devp.limits.mipmapPrecisionBits);
+	INFO("\tMax draw indexed index value      -> %u", devp.limits.maxDrawIndexedIndexValue);
+	INFO("\tMax draw indirect count           -> %u", devp.limits.maxDrawIndirectCount);
+	INFO("\tMax sampler LoD bias              -> %f", devp.limits.maxSamplerLodBias);
+	INFO("\tMax sampler anisotropy            -> %f", devp.limits.maxSamplerAnisotropy);
+	INFO("\tMax clip distances                -> %u", devp.limits.maxClipDistances);
+	INFO("\tMax cull distances                -> %u", devp.limits.maxCullDistances);
+	INFO("\tMax combined clip/cull distances  -> %u", devp.limits.maxCombinedClipAndCullDistances);
 
 	uint qc;
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qc, NULL);
 	VkQueueFamilyProperties qs[qc];
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &qc, qs);
-	INFO(TERM_DARK_GREEN "\t%u device queue families:", qc);
+	INFO("\t%u device queue families:", qc);
 	for (uint i = 0; i < qc; i++)
-		INFO(TERM_DARK_GREEN "\t    %2d of 0x%.8X -> %s", qs[i].queueCount,
+		INFO("\t    %2d of 0x%.8X -> %s", qs[i].queueCount,
 		      qs[i].queueFlags, STRING_OF_QUEUE_BIT(qs[i].queueFlags));
 
-	INFO(TERM_DARK_GREEN "\t%u colour formats available", swapchain_details.fmtc);
+	INFO("\t%u colour formats available", swapchain_details.fmtc);
 
-	INFO(TERM_DARK_GREEN "\tSurface Capabilities:");
-	INFO(TERM_DARK_GREEN "\t    Image count  -> %u..%u", swapchain_details.abilities.minImageCount,
+	INFO("\tSurface Capabilities:");
+	INFO("\t    Image count  -> %u..%u", swapchain_details.abilities.minImageCount,
 	                                         swapchain_details.abilities.maxImageCount);
-	INFO(TERM_DARK_GREEN "\t    Extent       -> %ux%u (%ux%u..%ux%u)",
+	INFO("\t    Extent       -> %ux%u (%ux%u..%ux%u)",
 	      swapchain_details.abilities.currentExtent.width , swapchain_details.abilities.currentExtent.height,
 	      swapchain_details.abilities.minImageExtent.width, swapchain_details.abilities.minImageExtent.height,
 	      swapchain_details.abilities.maxImageExtent.width, swapchain_details.abilities.maxImageExtent.height);
-	INFO(TERM_DARK_GREEN "\t    Array layers -> %u", swapchain_details.abilities.maxImageArrayLayers);
+	INFO("\t    Array layers -> %u", swapchain_details.abilities.maxImageArrayLayers);
 
-	INFO(TERM_DARK_GREEN "\t%u present modes:", swapchain_details.modec);
+	INFO("\t%u present modes:", swapchain_details.modec);
 	for (uint i = 0; i < swapchain_details.modec; i++)
-		INFO(TERM_DARK_GREEN "\t    %s", STRING_OF_PRESENT_MODE(swapchain_details.modes[i]));
+		INFO("\t    %s", STRING_OF_PRESENT_MODE(swapchain_details.modes[i]));
 }
 

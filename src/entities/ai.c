@@ -1,3 +1,4 @@
+#include "soe.h"
 #include "maths/maths.h"
 #include "pathfinding.h"
 #include "components.h"

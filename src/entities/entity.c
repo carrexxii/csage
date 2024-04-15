@@ -87,7 +87,7 @@ void entity_free_group(GroupID gid)
 {
 	EntityGroup* group = &entity_groups[gid];
 	// TODO: resmgr handling sprite sheets
-	// sprite_sheet_free(group->sheet);
+	sprite_sheet_free(group->sheet);
 	sfree(group->bodies);
 	sfree(group->sprites);
 	if (group->ais)

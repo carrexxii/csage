@@ -8,7 +8,6 @@
 
 #define RESMGR_DEFAULT_HTABLE_SIZE 64
 
-#define STRING_OF_RESOURCE_TYPE(x) ((x) < RES_MAX? string_of_handle_type[x]: "<Not a handle type>")
 typedef enum ResourceType {
 	RES_NONE,
 	RES_FILE,
@@ -18,7 +17,6 @@ typedef enum ResourceType {
 	RES_PIPELINE,
 	RES_MAX,
 } ResourceType;
-extern const char* string_of_handle_type[];
 
 void resmgr_init(void);
 void resmgr_printout(void);

@@ -54,12 +54,12 @@ void map_new(Map* map, const char* name)
 		sfree(map->point_lights);
 		return;
 	}
-	map->sprite_sheet = sprite_sheet_load(lua_topointer(lua_state, -1));
+	// map->sprite_sheet = sprite_sheet_load(lua_topointer(lua_state, -1));
 	lua_pop(lua_state, 1);
 
 	/*** -------------------- Build the Map -------------------- ***/
 	Vec2* tiles = smalloc(map->w * map->h * sizeof(Vec2));
-	SpriteStateType* tile_states = smalloc(map->w * map->h * sizeof(SpriteStateType));
+	// SpriteStateType* tile_states = smalloc(map->w * map->h * sizeof(SpriteStateType));
 	MapLayer* layer;
 	for (int i = 0; i < map_data->layerc; i++) {
 		layer = map_data->layers[i];
@@ -77,16 +77,16 @@ void map_new(Map* map, const char* name)
 			for (int x = 0; x < layer->w; x++) {
 				if (layer->data[y*layer->w + x]) {
 					tiles[tilec] = VEC2(x, y);
-					tile_states[tilec] = layer->data[y*layer->w + x] - 1;
+					// tile_states[tilec] = layer->data[y*layer->w + x] - 1;
 					tilec++;
 				}
 			}
 		}
-		sprite_new_batch(map->sprite_sheet, sprites_get_group(map->sprite_sheet, "tiles"), tilec, tiles, tile_states);
+		// sprite_new_batch(map->sprite_sheet, sprites_get_group(map->sprite_sheet, "tiles"), tilec, tiles, tile_states);
 	}
 
 	sfree(tiles);
-	sfree(tile_states);
+	// sfree(tile_states);
 	INFO(TERM_ORANGE "[MAP] Created new map \"%s\" (%dx%d) with %d layers, %d spot lights, %d point_lights",
 	      name, map->w, map->h, map->layerc, map->spot_lightc, map->point_lightc);
 }

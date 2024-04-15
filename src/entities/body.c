@@ -18,8 +18,6 @@ void bodies_update(isize count, Body* bodies)
 	}
 }
 
-/* -------------------------------------------------------------------- */
-
 void body_set_dir(Body* body, DirectionMask dir, bool set)
 {
 	if (!body->moving)

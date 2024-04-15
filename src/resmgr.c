@@ -3,21 +3,13 @@
 #include <vulkan/vulkan.h>
 #include "SDL3/SDL.h"
 
+#include "soe.h"
 #include "gfx/device.h"
 #include "gfx/buffers.h"
 #include "gfx/image.h"
 #include "gfx/pipeline.h"
 #include "gfx/renderer.h"
 #include "resmgr.h"
-
-const char* string_of_handle_type[] = {
-	[RES_NONE]     = "RES_NONE",
-	[RES_FILE]     = "RES_FILE",
-	[RES_SHADER]   = "RES_SHADER",
-	[RES_IMAGE]    = "RES_IMAGE",
-	[RES_BUFFER]   = "RES_BUFFER",
-	[RES_PIPELINE] = "RES_PIPELINE",
-};
 
 typedef struct Handle {
 	ResourceType type;

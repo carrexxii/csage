@@ -35,9 +35,9 @@ int main(int argc, char** argv)
 
 	INFO(TERM_DARK_YELLOW "[INFO] Platform: %s", SDL_GetPlatform());
 	INFO(TERM_DARK_YELLOW "[INFO] CPU info:");
-	INFO(TERM_DARK_YELLOW "\tLogical cores: %d", SDL_GetCPUCount());
-	INFO(TERM_DARK_YELLOW "\tL1 Cache Line: %dB", SDL_GetCPUCacheLineSize());
-	INFO(TERM_DARK_YELLOW "\tRAM          : %.1fGB", SDL_GetSystemRAM() / 1024.0f);
+	INFO("\tLogical cores -> %d", SDL_GetCPUCount());
+	INFO("\tL1 Cache Line -> %dB", SDL_GetCPUCacheLineSize());
+	INFO("\tRAM           -> %.1fGB", SDL_GetSystemRAM() / 1024.0f);
 
 	uint32 vkversion;
 	vkEnumerateInstanceVersion(&vkversion);

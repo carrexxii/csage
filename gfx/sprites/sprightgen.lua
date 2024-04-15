@@ -14,14 +14,6 @@ local sprites = {
 			run  = 100,
 		},
 	},
-	weapon = {
-		type = "animated",
-		directions = 8,
-		states = {
-			idle = 250,
-			run  = 100,
-		},
-	},
 	tiles = {
 		type = "static",
 		directions = 1,
@@ -47,7 +39,7 @@ sheet "%s"
 
 local tmpl_animated = [[
 glob "renders/%s-%s-%s-*.png"
-	id "%s@%s-%s"
+	id "%s-%s-%s"
 	maps "" "-normal"
 	crop           true
 	crop-pivot     true
@@ -57,7 +49,7 @@ glob "renders/%s-%s-%s-*.png"
 
 local tmpl_static = [[
 glob "renders/%s-%s.png"
-	id "%s@%s-%s"
+	id "%s-%s-%s"
 	maps "" "-normal"
 	crop true
 	min-bounds 64 64
@@ -70,7 +62,7 @@ for sprite_name, sprite in pairs(sprites) do
 	file:write(sheet_tmpl:format(sprite_name, sprite_name, sprite_name))
 	if sprite.type == "animated" then
 		for state, time in pairs(sprite.states) do
-			file:write(("\ntag \"%s@%s\" %d"):format(sprite_name, state, time))
+			file:write(("\ntag \"%s-%s\" %d"):format(sprite_name, state, time))
 		end
 	end
 	file:write("\n")

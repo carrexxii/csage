@@ -60,8 +60,9 @@ Pipeline* pipeln_new(PipelineCreateInfo* ci, const char* name)
 		.name      = name,
 	};
 
-	INFO(TERM_DARK_GREEN "[VK] Created new pipeline \"%s\" ([%d] %p) with:\n\t%d UBOs\n\t%d SBOs\n\t%d Images\n\tPush constants: %s (%dB) (0x%X stages)",
-	      pipeln->name, pipeln->i, (void*)pipeln, ci->uboc, ci->sboc, ci->imgc, STR_TF(ci->push_sz), ci->push_sz, ci->push_stages);
+	INFO(TERM_DARK_GREEN "[VK] Created new pipeline \"%s\" ([%d] %p) with:"
+	     TERM_NORMAL     "\n\t%d UBOs\n\t%d SBOs\n\t%d Images\n\tPush constants: %s (%dB) (0x%X stages)",
+	     pipeln->name, pipeln->i, (void*)pipeln, ci->uboc, ci->sboc, ci->imgc, STR_TF(ci->push_sz), ci->push_sz, ci->push_stages);
 	return pipeln;
 }
 

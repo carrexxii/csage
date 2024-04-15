@@ -12,6 +12,21 @@
 #define MAP_PATH     "maps"
 #define LEVEL_PATH   "scripts/levels"
 
+#define PATH_BUFFER_SIZE 256
+#define FPS              50.0
+#define DT               (1.0/FPS)
+#define DT_MS            (DT*1000.0)
+#define DEBUG_MALLOC_MIN (128*1024)
+
+#define COLOUR_WHITE   1.0f, 1.0f, 1.0f
+#define COLOUR_BLACK   0.0f, 0.0f, 0.0f
+#define COLOUR_RED     1.0f, 0.0f, 0.0f
+#define COLOUR_GREEN   0.0f, 1.0f, 0.0f
+#define COLOUR_BLUE    0.0f, 0.0f, 1.0f
+#define COLOUR_MAGENTA 1.0f, 0.0f, 1.0f
+#define COLOUR_YELLOW  1.0f, 1.0f, 0.0f
+#define COLOUR_CYAN    0.0f, 1.0f, 1.0f
+
 #define ASPECT_RATIO ((float)config.winw / config.winh)
 
 #define DEFAULT_LIGHT_AMBIENT   (uint8[]){ 255, 255, 255, 255 }
@@ -31,22 +46,6 @@ extern struct GlobalConfig {
 } config;
 
 [[noreturn]] void quit(void);
-
-#define PATH_BUFFER_SIZE 256
-
-#define FPS              50.0
-#define DT               (1.0/FPS)
-#define DT_MS            (DT*1000.0)
-#define DEBUG_MALLOC_MIN (128*1024)
-
-#define COLOUR_WHITE   1.0f, 1.0f, 1.0f
-#define COLOUR_BLACK   0.0f, 0.0f, 0.0f
-#define COLOUR_RED     1.0f, 0.0f, 0.0f
-#define COLOUR_GREEN   0.0f, 1.0f, 0.0f
-#define COLOUR_BLUE    0.0f, 0.0f, 1.0f
-#define COLOUR_MAGENTA 1.0f, 0.0f, 1.0f
-#define COLOUR_YELLOW  1.0f, 1.0f, 0.0f
-#define COLOUR_CYAN    0.0f, 1.0f, 1.0f
 
 extern int vk_err;
 

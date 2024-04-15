@@ -99,18 +99,19 @@ game:
 
 .PHONY: test
 test:
-	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -DTESTING -DTESTING_UTIL' -j12
+	@make COMPILE_WITH='-DDEBUG -DTESTING' -j12
 	./$(BIN)
 	@echo "Tests complete"
 
 .PHONY: analyzer
 analyzer:
-	@make COMPILE_WITH='-DDEBUG_LEVEL=5 -fanalyzer' -j12
+	@make COMPILE_WITH='-DDEBUG -fanalyzer' -j12
 
 .PHONY: libs
 libs:
 	@mkdir -p $(LIB_DIR)/include/clib
 	@cp $(LIB_DIR)/clib/*.h $(LIB_DIR)/include/clib
+	@make enums
 
 	@mkdir -p $(LIB_DIR)/include/stb
 	@cp $(LIB_DIR)/stb/*.h $(LIB_DIR)/include/stb
@@ -165,7 +166,8 @@ restore: clean
 
 .PHONY: enums
 enums:
-	@python -m $(LIB_DIR)/clib/string_of_enum.py $(SRC) -o $(LIB_DIR)/include/eos.h
+	@python $(LIB_DIR)/clib/string_of_enum.py -o $(LIB_DIR)/include/soe.h --append \
+	        $(wildcard $(SRC_DIR)/*.h) $(wildcard $(SRC_DIR)/*/*.h)
 
 .PHONY: clean
 clean:

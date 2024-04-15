@@ -5,46 +5,57 @@ function load_sprite_sheet(fname)
 		return nil
 	end
 
-	local sheet = ffi.new("struct SpriteSheet")
-	sheet.name  = string.match(fname, ".*/(.+).lua")
+	local sheet = ffi.new("struct SpriteSheetCreateInfo")
 	sheet.w     = sheet_data["w"]
 	sheet.h     = sheet_data["h"]
 
-	local gi = 0
-	local groups = {}
+	local framec
+	local sprites = {}
 	for i, state in pairs(sheet_data) do
 		if tonumber(i) then
-			local name, anim_name, dir = string.match(state.id, "(.+)@(.+)-(.+)")
-			if groups[name] == nil then
-				groups[name] = {
-					name   = name,
-					statec = 0,
-					states = {},
+			local name, dir = string.match(state.id, "(.+[-].+)-(.+)")
+			if sprites[name] == nil then
+				framec = 0
+				sprites[name] = {
+					framec   = table_len(state.frames),
+					duration = tonumber(sheet_data[name]),
+					frames   = {},
 				}
 			end
 
-			groups[name].states[groups[name].statec] = {
-				duration = tonumber(sheet_data[name .. "@" .. anim_name]),
-				framec   = #state.frames,
-				frames   = ffi.new("struct SpriteFrame[?]", #state.frames, state.frames),
-				type     = animation_enum[anim_name] or direction_enum[""],
-				dir      = direction_enum[dir],
-				gi       = gi,
-			}
-			groups[name].statec = groups[name].statec + 1
-			gi = gi + #state.frames
+			-- TODO: direction ordering
+			sprites[name].frames[framec] = state.frames
+			framec = framec + 1
 		end
 	end
 
-	sheet.groupc = table_len(groups)
-	sheet.groups = ffi.new("struct SpriteGroup[?]", sheet.groupc, groups)
-	local i = 0
-	for _, group in pairs(groups) do
-		sheet.groups[i].name   = group.name
-		sheet.groups[i].statec = group.statec
-		sheet.groups[i].states = ffi.new("struct SpriteState[?]", sheet.groups[i].statec, group.states)
-		i = i + 1
+	local names     = {}
+	local framecs   = {}
+	local frames    = {}
+	local durations = {}
+	local spritec   = 0
+	for name, sprite in pairs(sprites) do
+		-- print("-->", name)
+		names[spritec]     = ffi.new("char[32]", name)
+		framecs[spritec]   = sprite.framec
+		durations[spritec] = sprite.duration
+		frames[spritec]    = ffi.new("SpriteFrame*[8]")
+		assert(table_len(sprite.frames) == 8)
+		for i, dir in pairs(sprite.frames) do
+			frames[spritec][i] = ffi.new("SpriteFrame[?]", sprite.framec)
+			for j, frame in pairs(dir) do
+				frames[spritec][i][j] = frame
+				-- print(i, j, frames[spritec][i][j].x, frames[spritec][i][j].y, frames[spritec][i][j].w, frames[spritec][i][j].h)
+			end
+		end
+		spritec = spritec + 1
 	end
 
+	sheet.spritec   = spritec
+	sheet.framecs   = ffi.new("int[?]"            , spritec, framecs)
+	sheet.names     = ffi.new("char[?][32]"       , spritec, names)
+	sheet.frames    = ffi.new("SpriteFrame*[?][8]", spritec, frames)
+	sheet.durations = ffi.new("uint16[?]"         , spritec, durations)
 	return sheet
 end
+

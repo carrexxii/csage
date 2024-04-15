@@ -1,5 +1,11 @@
 ffi = require("ffi")
 ffi.cdef [[
+	typedef char Arena[32];
+	typedef char String[16];
+	typedef char VArray[32];
+	typedef char HPair[32];
+	typedef char HTable[48];
+
 	typedef char VBO[24];
 	typedef char UBO[24];
 	typedef char SBO[24];
@@ -50,20 +56,6 @@ ffi.cdef [[
 		DIR_SW           = DIR_S | DIR_W,
 		DIR_SE           = DIR_S | DIR_E,
 	} DirectionMask;
-
-	/* ---------------------------------------------------------------- */
-
-	typedef struct String {
-		isize len;
-		char* data;
-	} String;
-
-	typedef struct VArray {
-		isize len;
-		isize cap;
-		isize elem_sz;
-		byte* data;
-	} VArray;
 
 	/* ---------------------------------------------------------------- */
 
@@ -125,62 +117,54 @@ ffi.cdef [[
 
 	/* ---------------------------------------------------------------- */
 
-	typedef enum SpriteStateType {
-		SPRITE_STATE_IDLE,
-		SPRITE_STATE_WALK,
-		SPRITE_STATE_RUN,
-		SPRITE_STATE_ATTACK1,
-		SPRITE_STATE_ATTACK2,
-
-		SPRITE_STATE_GRASS,
-		SPRITE_STATE_DIRT,
-
-		SPRITE_STATE_MAX,
-	} SpriteStateType;
+	typedef enum SpriteFrameType {
+		SPRITE_FRAME_E  = 0,
+		SPRITE_FRAME_NE = 1,
+		SPRITE_FRAME_N  = 2,
+		SPRITE_FRAME_NW = 3,
+		SPRITE_FRAME_W  = 4,
+		SPRITE_FRAME_SW = 5,
+		SPRITE_FRAME_S  = 6,
+		SPRITE_FRAME_SE = 7,
+		SPRITE_FRAME_NONE,
+	} SpriteFrameType;
 
 	typedef struct SpriteFrame {
 		uint16 x, y, w, h;
 	} SpriteFrame;
 
-	typedef struct SpriteState {
-		SpriteStateType type;
-		DirectionMask   dir;
-		int duration;
-		int gi;
-		int framec;
-		SpriteFrame* frames;
-	} SpriteState;
-
 	typedef struct SpriteGroup {
-		char name[32];
-		int statec;
-		SpriteState* states;
+		int         duration;
+		int         framec;
+		SpriteFrame frames[];
 	} SpriteGroup;
 
 	typedef struct Sprite {
-		Vec2   pos;
-		int16  gi;
-		int8   state, frame;
-		int8   sheet, group;
-		uint16 time;
+		Vec2  pos;
+		uint16 i, framec;
+		uint16 timer, duration;
 	} Sprite;
 
 	typedef struct SpriteSheet {
-		char name[32];
-		int w, h, z;
-		int groupc;
-		struct VArray       sprites;
-		struct SpriteGroup* groups;
+		int16 w, h, z;
+		HTable groups;
+		VArray sprites;
 
-		Image* albedo;
-		Image* normal;
 		Pipeline* pipeln;
-		SBO sprite_sheet_data;
-		SBO sprite_data;
+		Image*    albedo;
+		Image*    normal;
+		SBO       sprite_sheet_data;
+		SBO       sprite_data;
 	} SpriteSheet;
 
-	SpriteSheet* sprite_sheet_new(char* name);
-	SpriteSheet* sprite_sheet_load(SpriteSheet* sheet_data);
+	typedef struct SpriteSheetCreateInfo {
+		int w, h;
+		int spritec;
+		char (* names)[32];
+		int*         framecs;
+		SpriteFrame* (* frames)[8];
+		int16*       durations;
+	} SpriteSheetCreateInfo;
 
 	/* ---------------------------------------------------------------- */
 
@@ -308,17 +292,6 @@ direction_enum = {
 	["ne"]           = ffi.C.DIR_NE,
 	["sw"]           = ffi.C.DIR_SW,
 	["se"]           = ffi.C.DIR_SE,
-}
-
-animation_enum = {
-	idle    = ffi.C.SPRITE_STATE_IDLE,
-	walk    = ffi.C.SPRITE_STATE_WALK,
-	run     = ffi.C.SPRITE_STATE_RUN,
-	attack1 = ffi.C.SPRITE_STATE_ATTACK1,
-	attack2 = ffi.C.SPRITE_STATE_ATTACK2,
-
-	grass = ffi.C.SPRITE_STATE_GRASS,
-	dirt  = ffi.C.SPRITE_STATE_DIRT,
 }
 
 function vec2(x, y)

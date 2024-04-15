@@ -3,6 +3,10 @@ import re
 from math import *
 from mathutils import *
 
+render_groups = [
+    ["player", "weapon"]
+]
+
 original_path = bpy.data.scenes[0].render.filepath
 
 matcap_dir = "/home/charles/Pictures/matcaps/"
@@ -15,9 +19,8 @@ matcaps    = [
 matcap_tex = bpy.data.materials["matcap"].node_tree.nodes["matcap"].image
 matcap_fac = bpy.data.materials["matcap"].node_tree.nodes["factor"].inputs[0]
 
-models   = [model for model in bpy.data.collections["models"].objects      if model.type == "MESH"]
-attmts   = [attmt for attmt in bpy.data.collections["attachments"].objects if attmt.type == "MESH"]
-tiles    = [tile  for tile  in bpy.data.collections["tiles"].objects       if tile.type  == "MESH"]
+models   = {model.name: model for model in bpy.data.collections["models"].objects if model.type == "MESH"}
+tiles    = [tile  for tile  in bpy.data.collections["tiles"].objects if tile.type  == "MESH"]
 target   = bpy.data.objects["floor"]
 armature = bpy.data.objects["armature"]
 light    = bpy.data.objects["light"]
@@ -61,32 +64,20 @@ def render_obj(obj, animations, attmt_name):
 bpy.data.scenes[0].render.engine        = "BLENDER_EEVEE"
 bpy.data.scenes[0].display.shading.type = "RENDERED"
 for obj in bpy.data.objects:
-    if obj != light:
+    if obj != light and obj != target:
         obj.hide_render = True
 
 try:
-    for model in models:
-        model.hide_render = False
+    for group in render_groups:
+        model = models[group[0]]
+        for obj_name in group:
+            models[obj_name].hide_render = False
+        
         animations = [action for action in bpy.data.actions if action.name.startswith(model.name)]
         render_obj(model, animations, model.name)
         
-        render_with = []
-        for attmt in attmts:
-            if attmt.parent == model:
-                render_with.append(attmt)
-            else:
-                for constraint in attmt.constraints:
-                    if constraint.target == model:
-                        render_with.append(attmt)
-        
-        model.is_holdout = True
-        for attmt in render_with:
-            attmt.hide_render = False
-            render_obj(attmt, animations, attmt.name)
-            attmt.hide_render = True
-        model.is_holdout = False
-        
-        model.hide_render = True
+        for obj_name in group:
+            models[obj_name].hide_render = True
     
     for tile in tiles:
         tile.hide_render = False

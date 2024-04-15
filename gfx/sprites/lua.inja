@@ -13,10 +13,11 @@ return {
 			{%- if not loop.is_first -%}
 				} },
 			{%- endif -%}
-			{ id = "{{ sprite.id }}", frames = {
-		{%- endif %}	{ {{ sprite.trimmedRect.x }}, {{ sprite.trimmedRect.y }}, {{ sprite.trimmedRect.w }}, {{ sprite.trimmedRect.h }}, },
+			{ id = "{{ sprite.id }}", frames = { [0] =
+		{%- endif %}	{ [0] = {{ sprite.trimmedRect.x }}, {{ sprite.trimmedRect.y }}, {{ sprite.trimmedRect.w }}, {{ sprite.trimmedRect.h }}, },
 		{%- set prev = sprite.id -%}
 	{%- endfor %}
 	},
 }
 }
+

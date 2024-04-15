@@ -4,7 +4,7 @@ lib/*.so
 lib/*.a
 build/
 shaders/spirv
-gfx/sprites/renders/*.png
+gfx/sprites/renders/*
 gfx/sprites/sheets/*.png
 gfx/sprites/*.png
 gfx/sprites/*.lua
@@ -16,3 +16,4 @@ csage
 *.blend1
 
 !gfx/sprites/sprightgen.lua
+
