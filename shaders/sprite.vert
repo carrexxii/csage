@@ -18,11 +18,10 @@ struct SpriteFrame {
 };
 struct Sprite {
 	vec2     pos;
-	int16_t  gi;
-	int8_t   state, frame;
-	int8_t   sheet, group;
-	uint16_t time;
+	uint8_t  dir, framec;
+	uint16_t gi, timer, duration;
 };
+
 layout(binding = 10) readonly buffer SpriteSheetBufferSBO {
 	int w, h, z;
 	int scale;
@@ -34,13 +33,12 @@ layout(binding = 11) readonly buffer SpriteBufferSBO {
 
 layout(push_constant) uniform PushConstants {
 	int sheet;
-	mat4 view;
 } push;
 
 void main()
 {
 	Sprite      sprite = sprites.data[gl_VertexIndex / 6];
-	SpriteFrame frame  = sheet.frames[sprite.gi + sprite.frame];
+	SpriteFrame frame  = sheet.frames[sprite.gi + sprite.timer/sprite.duration];
 	vec3 pos = rect_verts[gl_VertexIndex % 6];
 
 	Fpos = pos + vec3(sprite.pos, sheet.z);
@@ -53,3 +51,4 @@ void main()
 	           -(sprite.pos.x + sprite.pos.y) / 2.0f);
 	gl_Position = cam.proj * cam.view * vec4(pos, 1.0f);
 }
+

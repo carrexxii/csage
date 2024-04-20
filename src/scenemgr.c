@@ -47,7 +47,7 @@ static isize      deferc;
 static SceneDefer defers[MAX_DEFER_FUNCTIONS];
 
 ///
-// Map map;
+Map map;
 ///
 
 void scenemgr_init(SDL_Window* win)
@@ -61,6 +61,7 @@ void scenemgr_init(SDL_Window* win)
 	renderer_init();
 	pipelns_init();
 	maps_init();
+	models_init();
 	sprites_init();
 	font_init();
 	ui_init();
@@ -75,10 +76,13 @@ void scenemgr_init(SDL_Window* win)
 	// map_new(&map, "test");
 	// scenemgr_defer((DeferFn)map_free, &map);
 
-	player_init();
-	game_cam.follow = &entity_get_body(player_entity, player_group)->pos;
+	// player_init();
+	// game_cam.follow = &entity_get_body(player_entity, player_group)->pos;
 
-	load_level("test");
+	model_new("fish.glb");
+	model_update_pipelines();
+
+	// load_level("test");
 	switch_scene(SCENE_GAME);
 }
 
@@ -214,6 +218,7 @@ static void load_game()
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(sprites_record_commands);
+	renderer_add_to_draw_list(models_record_commands);
 	renderer_add_to_draw_list(ui_record_commands);
 	renderer_add_to_draw_list(particles_record_commands);
 	renderer_add_to_draw_list(font_record_commands);
@@ -259,6 +264,7 @@ static void load_editor()
 
 	renderer_clear_draw_list();
 	renderer_add_to_draw_list(sprites_record_commands);
+	renderer_add_to_draw_list(models_record_commands);
 	renderer_add_to_draw_list(particles_record_commands);
 	renderer_add_to_draw_list(ui_record_commands);
 	renderer_add_to_draw_list(font_record_commands);

@@ -21,23 +21,18 @@ void uilist_new(UIContainer* parent, int strc, String* strs, UIStyle* style, Rec
 		},
 	};
 
-	String str = string_new(NULL, 1024, NULL);
+	char buf[2048];
 	float text_w = (obj.rect.w * config.winw / 2.0f) - 2.0f*obj.padding.x;
 	for (int i = 0; i < strc; i++) {
-		// TODO: make a string_ function
-		if (numbered) {
-			sprintf(str.data, "%d. ", i);
-			str.len += strlen(str.data);
-		}
-		str_cat(str.data, strs[i].data);
-		obj.uilist.text_objs[i] = font_render(str, UI_TEXT_Z_LVL, text_w);
-		string_clear(&str);
+		if (numbered)
+			sprintf(buf, "%d. ", i);
+		str_cat(buf, strs[i].data);
+		obj.uilist.text_objs[i] = font_render(STRING(buf), UI_TEXT_Z_LVL, text_w);
 	}
-	string_free(&str);
 
 	ui_add(parent, &obj);
 	INFO(TERM_DARK_CYAN "[UI] Created new string list (%d strings) with parent %p (%.2f, %.2f, %.2f, %.2f)",
-	      strc, (void*)parent, rect.x, rect.y, rect.w, rect.h);
+	     strc, (void*)parent, rect.x, rect.y, rect.w, rect.h);
 }
 
 void uilist_build(UIObject* obj)

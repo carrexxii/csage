@@ -31,7 +31,20 @@ void sprites_init()
 
 void sprites_update()
 {
+	SpriteSheet* sheet;
+	Sprite*      sprite;
+	for (int i = 0; i < sheetc; i++) {
+		sheet = &sheets[i];
 
+		for (int j = 0; j < sheet->sprites.len; j++) {
+			sprite = varray_get(&sheet->sprites, j);
+			if (!sprite->duration)
+				break;
+
+			sprite->timer += DT_MS;
+			sprite->timer %= sprite->framec * sprite->duration;
+		}
+	}
 }
 
 void sprites_record_commands(VkCommandBuffer cmd_buf)
@@ -45,7 +58,7 @@ void sprites_record_commands(VkCommandBuffer cmd_buf)
 		if (!sheet->sprites.len)
 			continue;
 
-		buffer_update(sheet->sprite_data, sheet->sprites.len*sizeof(Sprite), sheet->sprites.data, 0);
+		buffer_update(sheet->sprite_sbo, sheet->sprites.len*sizeof(Sprite), sheet->sprites.data, 0);
 		push_const.sheet = i;
 
 		pl = sheet->pipeln;
@@ -65,8 +78,8 @@ void sprites_free()
 		htable_free(&sheet->groups);
 		sfree(sheet->groups_data);
 
-		sbo_free(&sheet->sprite_sheet_data);
-		sbo_free(&sheet->sprite_data);
+		sbo_free(&sheet->sheet_sbo);
+		sbo_free(&sheet->sprite_sbo);
 		pipeln_free(sheet->pipeln);
 	}
 }
@@ -91,82 +104,151 @@ SpriteSheet* sprite_sheet_new(const char* name, int z_lvl)
 	const SpriteSheetCreateInfo* sheetci = lua_topointer(lua_state, -1);
 	lua_pop(lua_state, 1);
 
+	sheet->w = sheetci->w;
+	sheet->h = sheetci->h;
+	sheet->z = z_lvl;
+	sheet->groups_data = smalloc(sheetci->spritec*sizeof(SpriteGroup)); // TODO: array into htable?
+	sheet->groups      = htable_new(2*sheetci->spritec); // FIXME: not sure what the correct size should be
+	sheet->sprites     = varray_new(DEFAULT_SPRITE_COUNT, sizeof(Sprite));
+
+	int dirc = str_contains(name, "tile")? 1: 8;
+
+	// TODO Combine loops
+	/* Metadata for sprite groups */
+	isize framec = 0;
+	sheet->groupc = sheetci->spritec;
+	for (int i = 0; i < sheetci->spritec; i++) {
+		htable_insert(&sheet->groups, STRING(sheetci->names[i]), i);
+		sheet->groups_data[i].gi       = framec;
+		sheet->groups_data[i].framec   = sheetci->framecs[i];
+		sheet->groups_data[i].duration = sheetci->durations[i];
+		framec += dirc*sheetci->framecs[i];
+	}
+
+	/* Flatten the frame data */
+	framec = 0;
+	for (int i = 0; i < sheetci->spritec; i++)
+		framec += dirc*sheetci->framecs[i];
+	sheet->frames = smalloc(framec*sizeof(SpriteFrame));
+
+	framec = 0;
+	for (int i = 0; i < sheetci->spritec; i++)                   /* Sprite    */
+		for (int d = dirc == 1? SPRITE_DIR_SW: 0; d < dirc; d++) /* Direction */
+			for (int j = 0; j < sheetci->framecs[i]; j++)        /* Frame     */
+				memcpy(sheet->frames + framec++, &sheetci->frames[i][d][j], sizeof(SpriteFrame));
+
+	sheet->sprite_sbo = sbo_new(DEFAULT_SPRITE_COUNT * sizeof(Sprite));
+	sheet->sheet_sbo  = sbo_new(SIZEOF_SHEET_HEADER + framec*sizeof(SpriteFrame));
+	buffer_update(sheet->sheet_sbo, SIZEOF_SHEET_HEADER, (int[]){ sheet->w, sheet->h, sheet->z, SPRITE_SCALE }, 0);
+	buffer_update(sheet->sheet_sbo, framec*sizeof(SpriteFrame), sheet->frames, SIZEOF_SHEET_HEADER);
+
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s.png", name);
 	sheet->albedo = load_image(STRING(path));
 	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/sheets/%s-normal.png", name);
 	sheet->normal = load_image(STRING(path));
 
-	sheet->w = sheetci->w;
-	sheet->h = sheetci->h;
-	sheet->z = z_lvl;
-	sheet->groups_data = smalloc(sheetci->spritec*sizeof(SpriteGroup)); // TODO: array into htable?
-	sheet->groups  = htable_new(2*sheetci->spritec); // FIXME: not sure what the correct size should be
-	sheet->sprites = varray_new(DEFAULT_SPRITE_COUNT, sizeof(Sprite));
+	sheet->pipeln = pipeln_new(&pipeln_ci, "Sprites");
+	sprite_sheet_update_pipeln(sheet);
 
-	/* Metadata for sprite groups */
-	for (int i = 0; i < sheetci->spritec; i++) {
-		htable_insert(&sheet->groups, STRING(sheetci->names[i]), i);
-		sheet->groups_data[i].framec   = sheetci->framecs[i];
-		sheet->groups_data[i].duration = sheetci->durations[i];
-	}
+	sheetc++;
+	INFO(TERM_DARK_GREEN "[GFX] Created new sprite sheet \"%s\" (%dx%d at %d)", name, sheet->w, sheet->h, sheet->z);
+	return sheet;
+}
 
-	/* Flatten the frame data */
-	SpriteFrame* frames;
-	isize framec = 0;
-	for (int i = 0; i < sheetci->spritec; i++)
-		framec += 8*sheetci->framecs[i];
-	DV(framec);
-	frames = smalloc(framec*sizeof(SpriteFrame));
-
-	framec = 0;
-	for (int i = 0; i < sheetci->spritec; i++)            /* Sprite    */
-		for (int d = 0; d < 8; d++)                       /* Direction */
-			for (int j = 0; j < sheetci->framecs[i]; j++) /* Frame     */
-				memcpy(frames + framec++, &sheetci->frames[i][d][j], sizeof(SpriteFrame));
-
-	sheet->sprite_data = sbo_new(framec*sizeof(SpriteFrame));
-	buffer_update(sheet->sprite_data, framec*sizeof(SpriteFrame), frames, 0);
-
+void sprite_sheet_update_pipeln(SpriteSheet* sheet)
+{
 	pipeln_ci.ubos[0] = global_camera_ubo;
 	pipeln_ci.ubos[1] = global_light_ubo;
-	pipeln_ci.sbos[0] = sheet->sprite_sheet_data;
-	pipeln_ci.sbos[1] = sheet->sprite_data;
+	pipeln_ci.sbos[0] = sheet->sheet_sbo;
+	pipeln_ci.sbos[1] = sheet->sprite_sbo;
 	pipeln_ci.sbos[2] = global_spot_lights_sbo;
 	pipeln_ci.sbos[3] = global_point_lights_sbo;
 	pipeln_ci.imgs[0] = sheet->albedo;
 	pipeln_ci.imgs[1] = sheet->normal;
-	sheet->pipeln = pipeln_new(&pipeln_ci, "Sprites");
-	pipeln_update(sheet->pipeln, &pipeln_ci);
+	sheet->pipeln = pipeln_update(sheet->pipeln, &pipeln_ci);
+}
 
-	sfree(frames);
-	sheetc++;
-	return sheet;
+void sprite_sheet_free(SpriteSheet* sheet)
+{
+
 }
 
 /* -------------------------------------------------------------------- */
 
 Sprite* sprite_new(SpriteSheet* sheet, String name, Vec2 pos)
 {
-	intptr i = htable_get(&sheet->groups, name);
-	if (i == -1) {
-		ERROR("[GFX] Sprite with name \"%s\" could not be found in sheet \"%s\"", name.data, sheet->name);
-		return NULL;
-	}
-
-	SpriteGroup group = sheet->groups_data[i];
-	Sprite sprite =  (Sprite){
-		.pos      = pos,
-		.gi       = group.gi,
-		.framec   = group.framec,
-		.timer    = 0,
-		.duration = group.duration,
+	Sprite sprite = {
+		.pos = pos,
 	};
+	sprite_set_state(sheet, &sprite, name, 0);
 
 	isize spri = varray_push(&sheet->sprites, &sprite);
 	return varray_get(&sheet->sprites, spri);
 }
 
+// Sprite* sprite_new_by_gi(SpriteSheet* sheet, isize gi, Vec2 pos)
+// {
 
+// }
+// // 	SpriteGroup* group;
+// // 	for (int i = 0; i < sheet->groupc; i++) {
+// // 		group = &sheet->groups[i];
+// // 		if (BETWEEN(gi, group->states[0].gi, group->states[group->statec - 1].gi))
+// // 			return sprite_new(sheet, i, pos);
+// // 	}
+
+// // 	ERROR("[GFX] Could not find group containing gi %d in sheet %p", gi, (void*)sheet);
+// // 	return NULL;
+
+Sprite* sprite_new_batch(SpriteSheet* sheet, String name, isize spritec, Vec2* poss)
+{
+	ASSERT(spritec, > 0);
+
+	/* Prefetch the state data */
+	Sprite sprite;
+	sprite_set_state(sheet, &sprite, name, SPRITE_DIR_SW);
+
+	Sprite* sprites = smalloc(spritec * sizeof(Sprite));
+	for (int i = 0; i < spritec; i++)
+		sprites[i] = (Sprite){
+			.pos      = poss[i],
+			.gi       = sprite.gi,
+			.framec   = sprite.framec,
+			.duration = sprite.duration,
+		};
+
+	isize spri = varray_push_many(&sheet->sprites, spritec, sprites);
+
+	if (sheet->sprite_sbo.sz < (isize)(sheet->sprites.cap * sizeof(Sprite))) {
+		resmgr_defer(RES_BUFFER, &sheet->sprite_sbo);
+		sheet->sprite_sbo = sbo_new(sheet->sprites.cap * sizeof(Sprite));
+		sprite_sheet_update_pipeln(sheet);
+	}
+
+	free(sprites);
+	INFO(TERM_DARK_GREEN "[GFX] Created new sprite batch with %ld sprites", spritec);
+	return varray_get(&sheet->sprites, spri);
+}
+
+void sprite_set_state(SpriteSheet* sheet, Sprite* sprite, String name, SpriteDir dir)
+{
+	intptr i = htable_get(&sheet->groups, name);
+	if (i == -1) {
+		ERROR("[GFX] Sprite with name \"%s\" could not be found in sheet \"%s\"", name.data, sheet->name);
+		return;
+	}
+
+	sprite_set_statei(sheet, sprite, i, dir);
+}
+
+void sprite_set_statei(SpriteSheet* sheet, Sprite* sprite, intptr i, SpriteDir dir)
+{
+	SpriteGroup group = sheet->groups_data[i];
+	sprite->gi       = group.gi + dir*group.framec;
+	sprite->framec   = group.framec;
+	sprite->duration = group.duration;
+	INFO("%d, %d, %d", sprite->gi, sprite->framec, sprite->duration);
+}
 
 // #include <vulkan/vulkan.h>
 

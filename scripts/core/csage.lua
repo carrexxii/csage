@@ -117,44 +117,46 @@ ffi.cdef [[
 
 	/* ---------------------------------------------------------------- */
 
-	typedef enum SpriteFrameType {
-		SPRITE_FRAME_E  = 0,
-		SPRITE_FRAME_NE = 1,
-		SPRITE_FRAME_N  = 2,
-		SPRITE_FRAME_NW = 3,
-		SPRITE_FRAME_W  = 4,
-		SPRITE_FRAME_SW = 5,
-		SPRITE_FRAME_S  = 6,
-		SPRITE_FRAME_SE = 7,
-		SPRITE_FRAME_NONE,
-	} SpriteFrameType;
+	typedef enum SpriteDir {
+		SPRITE_DIR_E  = 0,
+		SPRITE_DIR_NE = 1,
+		SPRITE_DIR_N  = 2,
+		SPRITE_DIR_NW = 3,
+		SPRITE_DIR_W  = 4,
+		SPRITE_DIR_SW = 5,
+		SPRITE_DIR_S  = 6,
+		SPRITE_DIR_SE = 7,
+		SPRITE_DIR_NONE,
+	} SpriteDir;
 
 	typedef struct SpriteFrame {
 		uint16 x, y, w, h;
 	} SpriteFrame;
 
 	typedef struct SpriteGroup {
-		int         duration;
-		int         framec;
-		SpriteFrame frames[];
+		uint16 duration;
+		uint16 framec;
+		uint16 gi;
 	} SpriteGroup;
 
 	typedef struct Sprite {
-		Vec2  pos;
-		uint16 i, framec;
-		uint16 timer, duration;
+		Vec2   pos;
+		uint8  dir, framec;
+		uint16 gi, timer, duration;
 	} Sprite;
 
 	typedef struct SpriteSheet {
+		char name[32];
 		int16 w, h, z;
+		SpriteGroup* groups_data;
 		HTable groups;
 		VArray sprites;
 
 		Pipeline* pipeln;
 		Image*    albedo;
 		Image*    normal;
-		SBO       sprite_sheet_data;
-		SBO       sprite_data;
+		SBO       sheet_sbo;
+		SBO       sprite_sbo;
 	} SpriteSheet;
 
 	typedef struct SpriteSheetCreateInfo {
@@ -292,6 +294,18 @@ direction_enum = {
 	["ne"]           = ffi.C.DIR_NE,
 	["sw"]           = ffi.C.DIR_SW,
 	["se"]           = ffi.C.DIR_SE,
+}
+
+sprite_dir_enum = {
+	["e"]  = ffi.C.SPRITE_DIR_E ,
+	["ne"] = ffi.C.SPRITE_DIR_NE,
+	["n"]  = ffi.C.SPRITE_DIR_N ,
+	["nw"] = ffi.C.SPRITE_DIR_NW,
+	["w"]  = ffi.C.SPRITE_DIR_W ,
+	["sw"] = ffi.C.SPRITE_DIR_SW,
+	["s"]  = ffi.C.SPRITE_DIR_S ,
+	["se"] = ffi.C.SPRITE_DIR_SE,
+	[""]   = ffi.C.SPRITE_DIR_NONE,
 }
 
 function vec2(x, y)

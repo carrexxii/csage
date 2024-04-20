@@ -50,7 +50,7 @@ Pipeline* pipeln_new(PipelineCreateInfo* ci, const char* name)
 	DEFAULT(ci->push_stages      , VK_SHADER_STAGE_ALL);
 
 	int i = *(int*)varray_pop(&free_pipelns);
-	Pipeline* atomic pipeln = &pipelns[i];
+	Pipeline* pipeln = &pipelns[i];
 	if (pipeln->is_active)
 		pipeln_free(pipeln);
 

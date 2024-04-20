@@ -2,6 +2,7 @@
 #define GFX_SPRITE_H
 
 #include "common.h"
+#include "soe.h"
 #include "maths/types.h"
 #include "buffers.h"
 #include "image.h"
@@ -9,6 +10,8 @@
 
 #define MAX_SPRITE_SHEETS    8
 #define DEFAULT_SPRITE_COUNT 8
+#define SIZEOF_SHEET_HEADER  sizeof(int[4])
+#define SPRITE_SCALE         45
 
 typedef enum SpriteDir: uint8 {
 	SPRITE_DIR_E  = 0,
@@ -41,15 +44,17 @@ typedef struct Sprite {
 typedef struct SpriteSheet {
 	char name[32];
 	int16 w, h, z;
+	int16 groupc;
 	SpriteGroup* groups_data;
+	SpriteFrame* frames;
 	HTable groups;
 	VArray sprites;
 
 	Pipeline* pipeln;
 	Image*    albedo;
 	Image*    normal;
-	SBO       sprite_sheet_data;
-	SBO       sprite_data;
+	SBO       sheet_sbo;
+	SBO       sprite_sbo;
 } SpriteSheet;
 
 typedef struct SpriteSheetCreateInfo {
@@ -67,9 +72,28 @@ void sprites_record_commands(VkCommandBuffer cmd_buf);
 void sprites_free(void);
 
 SpriteSheet* sprite_sheet_new(const char* name, int z_lvl);
+void         sprite_sheet_update_pipeln(SpriteSheet* sheet);
 void         sprite_sheet_free(SpriteSheet* sheet);
 
 Sprite* sprite_new(SpriteSheet* sheet, String name, Vec2 pos);
+Sprite* sprite_new_batch(SpriteSheet* sheet, String name, isize spritec, Vec2* poss);
+void    sprite_set_state(SpriteSheet* sheet, Sprite* sprite, String name, SpriteDir dir);
+void    sprite_set_statei(SpriteSheet* sheet, Sprite* sprite, intptr i, SpriteDir dir);
+
+static inline enum SpriteDir sprite_dir_of_mask(enum DirectionMask dir)
+{
+	switch (dir) {
+	case DIR_E: return SPRITE_DIR_E; case DIR_NE: return SPRITE_DIR_NE;
+	case DIR_N: return SPRITE_DIR_N; case DIR_NW: return SPRITE_DIR_NW;
+	case DIR_W: return SPRITE_DIR_W; case DIR_SW: return SPRITE_DIR_SW;
+	case DIR_S: return SPRITE_DIR_S; case DIR_SE: return SPRITE_DIR_SE;
+	default:
+		ERROR("[GFX] Cannot convert direction \"%s\" (%d) to SpriteDir", STRING_OF_DIRECTION_MASK(dir), dir);
+		return SPRITE_DIR_NONE;
+	}
+}
+
+#endif
 
 // #include "common.h"
 // #include "maths/types.h"
@@ -166,5 +190,5 @@ Sprite* sprite_new(SpriteSheet* sheet, String name, Vec2 pos);
 // Sprite* sprite_new_by_gi(SpriteSheet* sheet, int gi, Vec2 pos);
 // void    sprite_set_state(Sprite* sprite, SpriteStateType type, DirectionMask dir);
 
-#endif
+// #endif
 

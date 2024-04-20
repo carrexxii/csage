@@ -1,4 +1,5 @@
 #include "resmgr.h"
+#include "lua.h"
 #include "input.h"
 #include "gfx/ui/ui.h"
 #include "gfx/sprite.h"
@@ -35,6 +36,7 @@ static void cb_select_tile(int i)
 {
 	tileset.selection = i;
 	// tileset.sprite = sprite_new_by_gi(tileset.sheet, i, VEC2_ZERO);
+	tileset.sprite = sprite_new(tileset.sheet, STRING("tiles-grass"), VEC2_ZERO);
 }
 
 static void cb_load_tileset(int) {
@@ -51,26 +53,24 @@ static void cb_load_tileset(int) {
 		ui_free_container(tset_container);
 	tset_container = ui_new_container(RECT(-1.0f, -1.0f, 1.0f, 1.0f), NULL);
 
-	// SpriteGroup* group;
-	// SpriteState* state;
-	// Rect uv_rect;
-	// Rect rect = RECT(-1.0f, -1.0f, 2.0f / UI_TILESET_GRID_COLUMNS, UI_TILESET_TILE_HEIGHT);
-	// int spri = 0;
-	// for (int i = 0; i < tileset.sheet->groupc; i++) {
-	// 	group = &tileset.sheet->groups[i];
-	// 	for (int j = 0; j < group->statec; j++) {
-	// 		state = &group->states[j];
-	// 		uv_rect = RECT((float)state->frames[0].x / tileset.sheet->w, (float)state->frames[0].y / tileset.sheet->h,
-	// 		               (float)state->frames[0].w / tileset.sheet->w, (float)state->frames[0].h / tileset.sheet->h);
-	// 		button_new(tset_container, rect, STRING(""), tileset.sheet->albedo, uv_rect, cb_select_tile, state->gi, NULL);
+	SpriteGroup* group;
+	SpriteFrame* frames;
+	Rect uv_rect;
+	Rect rect = RECT(-1.0f, -1.0f, 2.0f / UI_TILESET_GRID_COLUMNS, UI_TILESET_TILE_HEIGHT);
+	int spri = 0;
+	for (int i = 0; i < tileset.sheet->groupc; i++) {
+		group  = &tileset.sheet->groups_data[i];
+		frames = tileset.sheet->frames;
+		uv_rect = RECT((float)frames[group->gi].x / tileset.sheet->w, (float)frames[group->gi].y / tileset.sheet->h,
+		               (float)frames[group->gi].w / tileset.sheet->w, (float)frames[group->gi].h / tileset.sheet->h);
+		button_new(tset_container, rect, STRING(""), tileset.sheet->albedo, uv_rect, cb_select_tile, group->gi, NULL);
 
-	// 		rect.x += rect.w;
-	// 		if (rect.x + rect.w > 1.0f) {
-	// 			rect.x = -1.0f;
-	// 			rect.y += rect.h;
-	// 		}
-	// 	}
-	// }
+		rect.x += rect.w;
+		if (rect.x + rect.w > 1.0f) {
+			rect.x = -1.0f;
+			rect.y += rect.h;
+		}
+	}
 }
 
 static void cb_select_file(int index) {

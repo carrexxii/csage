@@ -10,6 +10,7 @@ void player_init()
 {
 	player_group  = entity_new_group("player", 0);
 	player_entity = entity_new(player_group, &(struct EntityCreateInfo){
+		.sprite_name = STRING("player-idle"),
 		.speed = 0.2f,
 	});
 

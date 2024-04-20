@@ -51,3 +51,4 @@ void main()
 
 	Foutput = vec4(pow(total, vec3(1.77)), albedo.a);
 }
+

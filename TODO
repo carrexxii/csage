@@ -1,2 +1,5 @@
 - Add https://github.com/KhronosGroup/glslang as a tool
 - Add https://github.com/KhronosGroup/Vulkan-Headers as a lib
+
+Add a global flag to indicate starting for resource allocation/freeing
+

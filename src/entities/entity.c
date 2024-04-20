@@ -32,8 +32,10 @@ void entities_update()
 			sprite->pos = group->bodies[j].pos;
 
 			if (body->changed_state) {
-				SpriteStateType state = body->moving? SPRITE_STATE_RUN: SPRITE_STATE_IDLE;
-				sprite_set_state(sprite, state, body->dir_mask);
+				if (body->moving)
+					sprite_set_state(group->sheet, sprite, STRING("player-run"), sprite_dir_of_mask(body->dir_mask));
+				else
+					sprite_set_state(group->sheet, sprite, STRING("player-idle"), sprite_dir_of_mask(body->dir_mask));
 				body->changed_state = false;
 			}
 		}
@@ -101,7 +103,8 @@ void entity_free_group(GroupID gid)
 
 EntityID entity_new(GroupID gid, EntityCreateInfo* ci)
 {
-	assert(gid < entity_groupc);
+	ASSERT(gid, < entity_groupc);
+	ASSERT(ci->sprite_name.data, != NULL);
 
 	DEFAULT(ci, (struct EntityCreateInfo*)&default_entity_ci);
 
@@ -116,7 +119,7 @@ EntityID entity_new(GroupID gid, EntityCreateInfo* ci)
 		};
 
 	group->sprites[group->count] = group->sheet->sprites.len;
-	sprite_new(group->sheet, 0, ci->pos);
+	sprite_new(group->sheet, ci->sprite_name, ci->pos);
 
 	return group->count++;
 }
@@ -144,7 +147,7 @@ isize entity_new_batch(GroupID gid, isize entityc, EntityCreateInfo* cis)
 		};
 
 		group->sprites[i] = group->sheet->sprites.len;
-		sprite_new(group->sheet, ci->sprite_group, ci->pos);
+		sprite_new(group->sheet, ci->sprite_name, ci->pos);
 	}
 
 	if (group->ais)

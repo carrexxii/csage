@@ -81,9 +81,9 @@ typedef struct EntityGroup {
 } EntityGroup;
 
 typedef struct EntityCreateInfo {
+	String sprite_name;
 	Vec2   pos;
 	float  speed;
-	int    sprite_group;
 	AIType ai_type;
 } EntityCreateInfo;
 

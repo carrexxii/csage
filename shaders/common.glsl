@@ -50,6 +50,14 @@ const vec3 rect_verts[6] = {
 	vec3(0.0f, 1.0f, 0.0f),
 };
 
+struct Material {
+	vec4  albedo;
+	float metallic;
+	float roughness;
+	vec4 pad0;
+	vec4 pad1;
+};
+
 const float material_shininess = 4.0f;
 vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir, vec3 albedo)
 {
@@ -112,3 +120,4 @@ bool is_in_rect(vec2 p, vec2 tl, vec2 br)
 	vec2 s = step(tl, p) - step(br, p);
 	return abs(s.x * s.y) > 0.0001;
 }
+

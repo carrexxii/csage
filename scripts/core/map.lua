@@ -20,18 +20,18 @@ function load_tiled_map(fname)
 		point_lightc = 0,
 	}
 
-	local sheet
-	for _, tset in pairs(map_data.tilesets) do
-		if map.sprite_sheet then
-			print("[LUA] Multiple sprite sheets for: ", fname, "(Only the last will be used)")
-		end
+	-- local sheet
+	-- for _, tset in pairs(map_data.tilesets) do
+	-- 	if map.sprite_sheet then
+	-- 		print("[LUA] Multiple sprite sheets for: ", fname, "(Only the last will be used)")
+	-- 	end
 
-		sheet = load_sprite_sheet(sprite_path .. tset.name .. ".lua")
-		if not sheet then
-			print("[LUA] No spritesheet associated with map: ", fname)
-			return nil
-		end
-	end
+	-- 	sheet = load_sprite_sheet(sprite_path .. tset.name .. ".lua")
+	-- 	if not sheet then
+	-- 		print("[LUA] No spritesheet associated with map: ", fname)
+	-- 		return nil
+	-- 	end
+	-- end
 
 	for _, layer in pairs(map_data.layers) do
 		if layer.type == "tilelayer" then
@@ -112,3 +112,4 @@ function load_tiled_map(fname)
 	-- map.sprite_sheet = ffi.C.sprite_sheet_load(sheet)
 	return ffi.new("struct Map", map);
 end
+

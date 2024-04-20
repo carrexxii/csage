@@ -45,21 +45,22 @@ void map_new(Map* map, const char* name)
 	global_point_lights_sbo = map->point_lights_sbo;
 
 	/*** -------------------- Load the Sprite Sheet -------------------- ***/
-	snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", "tiles");
-	lua_getglobal(lua_state, "load_sprite_sheet");
-	lua_pushstring(lua_state, path);
-	if (lua_pcall(lua_state, 1, 1, 0)) {
-		ERROR("[LUA] Failed in call to \"load_sprite_sheet\": \n\t%s", lua_tostring(lua_state, -1));
-		sfree(map->spot_lights);
-		sfree(map->point_lights);
-		return;
-	}
+	// snprintf(path, PATH_BUFFER_SIZE, SPRITE_PATH "/%s.lua", "tiles");
+	// lua_getglobal(lua_state, "load_sprite_sheet");
+	// lua_pushstring(lua_state, path);
+	// if (lua_pcall(lua_state, 1, 1, 0)) {
+	// 	ERROR("[LUA] Failed in call to \"load_sprite_sheet\": \n\t%s", lua_tostring(lua_state, -1));
+	// 	sfree(map->spot_lights);
+	// 	sfree(map->point_lights);
+	// 	return;
+	// }
 	// map->sprite_sheet = sprite_sheet_load(lua_topointer(lua_state, -1));
-	lua_pop(lua_state, 1);
+	// lua_pop(lua_state, 1);
+	map->sprite_sheet = sprite_sheet_new("tiles", -1);
 
 	/*** -------------------- Build the Map -------------------- ***/
 	Vec2* tiles = smalloc(map->w * map->h * sizeof(Vec2));
-	// SpriteStateType* tile_states = smalloc(map->w * map->h * sizeof(SpriteStateType));
+	// char* tile_names = smalloc(map->w * map->h * sizeof(char[64]));
 	MapLayer* layer;
 	for (int i = 0; i < map_data->layerc; i++) {
 		layer = map_data->layers[i];
@@ -82,7 +83,8 @@ void map_new(Map* map, const char* name)
 				}
 			}
 		}
-		// sprite_new_batch(map->sprite_sheet, sprites_get_group(map->sprite_sheet, "tiles"), tilec, tiles, tile_states);
+		Sprite* spr = sprite_new_batch(map->sprite_sheet, STRING("tiles-grass"), tilec, tiles);
+		sprite_set_state(map->sprite_sheet, spr, STRING("tiles-dirt"), SPRITE_DIR_SW);
 	}
 
 	sfree(tiles);

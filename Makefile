@@ -107,6 +107,10 @@ test:
 analyzer:
 	@make COMPILE_WITH='-DDEBUG -fanalyzer' -j12
 
+.PHONY: renderdoc
+renderdoc:
+	@LD_PRELOAD=/usr/lib/libasan.so renderdoccmd capture -c ./renderdoc.cap ./csage
+
 .PHONY: libs
 libs:
 	@mkdir -p $(LIB_DIR)/include/clib

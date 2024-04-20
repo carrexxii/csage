@@ -16,6 +16,7 @@ function load_sprite_sheet(fname)
 			local name, dir = string.match(state.id, "(.+[-].+)-(.+)")
 			if sprites[name] == nil then
 				framec = 0
+				print("->", name)
 				sprites[name] = {
 					framec   = table_len(state.frames),
 					duration = tonumber(sheet_data[name]),
@@ -23,8 +24,8 @@ function load_sprite_sheet(fname)
 				}
 			end
 
-			-- TODO: direction ordering
-			sprites[name].frames[framec] = state.frames
+			sprites[name].frames[sprite_dir_enum[dir]] = state.frames
+			print(framec)
 			framec = framec + 1
 		end
 	end
@@ -35,17 +36,14 @@ function load_sprite_sheet(fname)
 	local durations = {}
 	local spritec   = 0
 	for name, sprite in pairs(sprites) do
-		-- print("-->", name)
 		names[spritec]     = ffi.new("char[32]", name)
 		framecs[spritec]   = sprite.framec
-		durations[spritec] = sprite.duration
+		durations[spritec] = sprite.duration or 0
 		frames[spritec]    = ffi.new("SpriteFrame*[8]")
-		assert(table_len(sprite.frames) == 8)
 		for i, dir in pairs(sprite.frames) do
 			frames[spritec][i] = ffi.new("SpriteFrame[?]", sprite.framec)
 			for j, frame in pairs(dir) do
 				frames[spritec][i][j] = frame
-				-- print(i, j, frames[spritec][i][j].x, frames[spritec][i][j].y, frames[spritec][i][j].w, frames[spritec][i][j].h)
 			end
 		end
 		spritec = spritec + 1

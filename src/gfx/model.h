@@ -1,107 +1,97 @@
-// #ifndef GFX_MODEL_H
-// #define GFX_MODEL_H
+#ifndef GFX_MODEL_H
+#define GFX_MODEL_H
 
-// #include <vulkan/vulkan.h>
-// #undef CGLTF_IMPLEMENTATION
-// #include "cgltf/cgltf.h"
+#include <vulkan/vulkan.h>
+#undef CGLTF_IMPLEMENTATION
+#include "cgltf/cgltf.h"
 
-// #include "common.h"
-// #include "maths/maths.h"
-// #include "buffers.h"
-// #include "camera.h"
+#include "common.h"
+#include "maths/maths.h"
+#include "buffers.h"
+#include "image.h"
+#include "camera.h"
 
-// // TODO: rename
-// #define MAX_MODELS             16
-// #define MAX_MATERIALS          8
-// #define MODEL_MAX_IMAGES       8
-// #define MODEL_MAX_JOINTS       48
-// #define ANIMATION_MAX_NAME_LEN 32
-// #define JOINT_MAX_NAME_LEN     32
-// #define MAX_ANIMATION_FRAMES   64
-// #define MODEL_MESH_VBO_COUNT   5
+// TODO: rename
+#define DEFAULT_MODEL_COUNT    8
+#define DEFAULT_MATERIAL_COUNT 8
+#define MODEL_MAX_JOINTS       64
+#define ANIMATION_MAX_NAME_LEN 32
+#define JOINT_MAX_NAME_LEN     32
+#define MAX_ANIMATION_FRAMES   64
+#define MODEL_MESH_VBO_COUNT   5
 
-// enum InterpolationType {
-// 	INTERPOLATION_LINEAR       = cgltf_interpolation_type_linear,
-// 	INTERPOLATION_STEP         = cgltf_interpolation_type_step,
-// 	INTERPOLATION_CUBIC_SPLINE = cgltf_interpolation_type_cubic_spline,
-// };
+enum InterpolationType {
+	INTERPOLATION_LINEAR       = cgltf_interpolation_type_linear,
+	INTERPOLATION_STEP         = cgltf_interpolation_type_step,
+	INTERPOLATION_CUBIC_SPLINE = cgltf_interpolation_type_cubic_spline,
+};
 
-// enum AnimationType {
-// 	ANIMATION_TRANSLATE = cgltf_animation_path_type_translation,
-// 	ANIMATION_SCALE     = cgltf_animation_path_type_scale,
-// 	ANIMATION_ROTATE    = cgltf_animation_path_type_rotation,
-// };
+enum AnimationType {
+	ANIMATION_TRANSLATE = cgltf_animation_path_type_translation,
+	ANIMATION_SCALE     = cgltf_animation_path_type_scale,
+	ANIMATION_ROTATE    = cgltf_animation_path_type_rotation,
+};
 
-// struct Mesh {
-// 	VBO    vbos[MODEL_MESH_VBO_COUNT];
-// 	IBO    ibo;
-// 	int    vertc;
-// 	uint16 indc;
-// 	int    mtli;
-// };
+typedef struct Mesh {
+	VBO    vbos[MODEL_MESH_VBO_COUNT];
+	IBO    ibo;
+	int    vertc;
+	uint16 indc;
+	int    mtli;
+} Mesh;
 
-// /* This must be aligned correctly for the shader */
-// struct Material {
-// 	float albedo[4];
-// 	float metallic;
-// 	float roughness;
-// 	struct Texture* tex;
-// 	VkDescriptorSet dset;
-// 	float pad0[2];
-// };
+typedef struct Material {
+	Vec4  albedo;
+	float metallic;
+	float roughness;
+	Image img;
+} Material;
 
-// struct Joint {
-// 	// struct Transform tform;
-// 	float tform[16];
-// 	float inv_bind[16];
-// 	int   parent;
-// 	float pad0[3];
-// };
+typedef struct Joint {
+	// struct Transform tform;
+	float tform[16];
+	float inv_bind[16];
+	int   parent;
+	float pad0[3];
+} Joint;
 
-// struct Skin {
-// 	SBO sbo;
-// 	int jointc;
-// 	float pad0;
-// 	struct Joint joints[];
-// };
+typedef struct Skin {
+	SBO sbo;
+	int jointc;
+	float pad0;
+	Joint joints[];
+} Skin;
 
-// struct KeyFrame {
-// 	struct Transform* tforms;
-// 	float time;
-// };
+typedef struct KeyFrame {
+	Transform* tforms;
+	float time;
+} KeyFrame;
 
-// struct ModelAnimation {
-// 	// enum AnimationType     type;
-// 	// enum InterpolationType interp;
-// 	struct KeyFrame* frms;
-// 	int frmc;
-// 	int curr_frm;
-// };
+typedef struct ModelAnimation {
+	// enum AnimationType     type;
+	// enum InterpolationType interp;
+	KeyFrame* frms;
+	int frmc;
+	int curr_frm;
+} ModelAnimation;
 
-// // TODO: can make weights uint8
-// struct Model {
-// 	struct Mesh*      meshes;
-// 	struct Material*  mtls;
-// 	struct ModelAnimation* anims;
-// 	struct Skin*      skin;
-// 	int meshc;
-// 	int mtlc;
-// 	int animc;
-// 	int curr_anim;
-// 	float timer;
-// };
+typedef struct Model {
+	isize meshc;
+	Mesh* meshes;
+	isize           animc;
+	ModelAnimation* anims;
+	Skin* skin;
+	isize curr_anim;
+	int64 timer;
+} Model;
 
-// void models_init();
-// struct Model* model_new(char* path);
-// void models_update();
-// void models_record_commands(VkCommandBuffer cmd_buf, struct Camera* cam);
-// void model_free(ID mdl_id);
-// void models_free();
+void  models_init(void);
+void  model_update_pipelines(void);
+isize model_new(const char* name);
+void  models_update(void);
+void  models_record_commands(VkCommandBuffer cmd_buf);
+void  model_free(int mdl_id);
+void  models_free(void);
 
-// extern void (*update_mdl_tforms)(SBO); // TODO: make this static
-// extern Mat4x4* mdl_tforms;
-
-// extern struct Material default_mtl;
-
-// #endif
+#endif
 
